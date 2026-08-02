@@ -1,0 +1,4 @@
+storeFile=../kal-tracker-release.jks
+storePassword=CHANGE_ME
+keyAlias=kal-tracker
+keyPassword=CHANGE_ME

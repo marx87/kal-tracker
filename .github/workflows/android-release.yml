@@ -1,0 +1,286 @@
+name: Android signed release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Versione SemVer, per esempio 0.1.0
+        required: true
+        type: string
+      build_number:
+        description: VersionCode Android strettamente crescente
+        required: true
+        type: number
+      notes:
+        description: Note di rilascio
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ inputs.version }}
+      BUILD_NUMBER: ${{ inputs.build_number }}
+      RELEASE_NOTES: ${{ inputs.notes }}
+      RELEASES_REPO: marx87/kal-tracker-releases
+      OTA_PUBLIC_KEY_BASE64: ${{ vars.OTA_PUBLIC_KEY_BASE64 }}
+      OTA_KEY_ID: ota-2026-01
+      EXPECTED_SIGNER_SHA256: ${{ vars.ANDROID_SIGNER_SHA256 }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - name: Validate public configuration
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == "marx87/kal-tracker" ]]
+          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          [[ -n "${RELEASE_NOTES// }" ]]
+          [[ -n "$OTA_PUBLIC_KEY_BASE64" ]]
+          [[ -n "$EXPECTED_SIGNER_SHA256" ]]
+          [[ "$(printf '%s' "$OTA_PUBLIC_KEY_BASE64" | base64 --decode | wc -c)" -eq 32 ]]
+
+      - name: Test source before loading signing secrets
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart run build_runner build
+          git diff --exit-code -- lib/core/database/app_database.g.dart
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+
+      - name: Configure Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ -n "$ANDROID_KEYSTORE_BASE64" ]]
+          [[ -n "$ANDROID_KEY_ALIAS" ]]
+          [[ -n "$ANDROID_STORE_PASSWORD" ]]
+          [[ -n "$ANDROID_KEY_PASSWORD" ]]
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/kal-tracker-release.jks
+          chmod 600 android/kal-tracker-release.jks
+          {
+            printf 'storeFile=../kal-tracker-release.jks\n'
+            printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
+          chmod 600 android/key.properties
+
+      - name: Build signed APK
+        run: |
+          set -euo pipefail
+          flutter build apk --release --no-pub \
+            --build-name "$VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=OTA_PUBLIC_KEY_BASE64="$OTA_PUBLIC_KEY_BASE64" \
+            --dart-define=OTA_KEY_ID="$OTA_KEY_ID" \
+            --dart-define=OTA_CHANNEL=personal
+
+      - name: Remove Android signing material
+        if: always()
+        run: rm -f android/key.properties android/kal-tracker-release.jks
+
+      - name: Validate APK, sign manifest and stage assets
+        env:
+          OTA_PRIVATE_KEY_BASE64: ${{ secrets.OTA_ED25519_PRIVATE_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          [[ -n "$OTA_PRIVATE_KEY_BASE64" ]]
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          [[ -f "$APK" ]]
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          AAPT="$BUILD_TOOLS/aapt"
+          APKSIGNER="$BUILD_TOOLS/apksigner"
+          [[ -x "$AAPT" && -x "$APKSIGNER" ]]
+
+          BADGING="$($AAPT dump badging "$APK" | head -1)"
+          PACKAGE="$(sed -n "s/package: name='\([^']*\)'.*/\1/p" <<<"$BADGING")"
+          APK_VERSION="$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" <<<"$BADGING")"
+          APK_BUILD="$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" <<<"$BADGING")"
+          [[ "$PACKAGE" == "it.marcomartelli.kaltracker" ]]
+          [[ "$APK_VERSION" == "$VERSION" ]]
+          [[ "$APK_BUILD" == "$BUILD_NUMBER" ]]
+
+          ACTUAL_SIGNER="$($APKSIGNER verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' | tr -d ':')"
+          EXPECTED_SIGNER="$(tr '[:upper:]' '[:lower:]' <<<"$EXPECTED_SIGNER_SHA256" | tr -d ':[:space:]')"
+          [[ -n "$ACTUAL_SIGNER" && "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]]
+
+          TAG="v${VERSION}-b${BUILD_NUMBER}"
+          APK_NAME="kal-tracker-${TAG}.apk"
+          ASSET_URL="https://github.com/${RELEASES_REPO}/releases/download/${TAG}/${APK_NAME}"
+          STAGE="$RUNNER_TEMP/kal-release"
+          mkdir -p "$STAGE"
+          cp "$APK" "$STAGE/$APK_NAME"
+          APK_SHA="$(sha256sum "$STAGE/$APK_NAME" | awk '{print $1}')"
+          APK_SIZE="$(stat -c%s "$STAGE/$APK_NAME")"
+
+          jq -n \
+            --arg applicationId "it.marcomartelli.kaltracker" \
+            --arg platform "android" \
+            --arg channel "personal" \
+            --arg version "$VERSION" \
+            --argjson buildNumber "$BUILD_NUMBER" \
+            --argjson minimumSupportedBuild 1 \
+            --arg tag "$TAG" \
+            --arg assetUrl "$ASSET_URL" \
+            --arg sha256 "$APK_SHA" \
+            --argjson sizeBytes "$APK_SIZE" \
+            --arg notes "$RELEASE_NOTES" \
+            --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg sourceRepository "$GITHUB_REPOSITORY" \
+            --arg sourceCommit "$GITHUB_SHA" \
+            '{applicationId:$applicationId,platform:$platform,channel:$channel,
+              version:$version,buildNumber:$buildNumber,
+              minimumSupportedBuild:$minimumSupportedBuild,tag:$tag,
+              assetUrl:$assetUrl,sha256:$sha256,sizeBytes:$sizeBytes,
+              notes:$notes,publishedAt:$publishedAt,
+              sourceRepository:$sourceRepository,sourceCommit:$sourceCommit}' \
+            > "$STAGE/payload.json"
+
+          PRIVATE_KEY="$RUNNER_TEMP/ota-private.pem"
+          PUBLIC_KEY="$RUNNER_TEMP/ota-public.pem"
+          trap 'rm -f "$PRIVATE_KEY" "$PUBLIC_KEY"' EXIT
+          printf '%s' "$OTA_PRIVATE_KEY_BASE64" | base64 --decode > "$PRIVATE_KEY"
+          chmod 600 "$PRIVATE_KEY"
+          DERIVED_PUBLIC="$(openssl pkey -in "$PRIVATE_KEY" -pubout -outform DER | tail -c 32 | base64 -w0)"
+          [[ "$DERIVED_PUBLIC" == "$OTA_PUBLIC_KEY_BASE64" ]]
+          openssl pkey -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
+          openssl pkeyutl -sign -rawin -inkey "$PRIVATE_KEY" \
+            -in "$STAGE/payload.json" -out "$STAGE/signature.bin"
+          openssl pkeyutl -verify -rawin -pubin -inkey "$PUBLIC_KEY" \
+            -in "$STAGE/payload.json" -sigfile "$STAGE/signature.bin"
+
+          PAYLOAD_B64="$(base64 -w0 "$STAGE/payload.json" | tr '+/' '-_' | tr -d '=')"
+          SIGNATURE_B64="$(base64 -w0 "$STAGE/signature.bin" | tr '+/' '-_' | tr -d '=')"
+          jq -n --argjson schema 1 --arg keyId "$OTA_KEY_ID" \
+            --arg payload "$PAYLOAD_B64" --arg signature "$SIGNATURE_B64" \
+            '{schema:$schema,keyId:$keyId,payload:$payload,signature:$signature}' \
+            > "$STAGE/kal-tracker-update.json"
+
+          jq -n \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg commit "$GITHUB_SHA" \
+            --arg workflowRun "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            '{repository:$repository,commit:$commit,workflowRun:$workflowRun}' \
+            > "$STAGE/SOURCE.json"
+          rm -f "$STAGE/payload.json" "$STAGE/signature.bin"
+          (
+            cd "$STAGE"
+            sha256sum "$APK_NAME" kal-tracker-update.json SOURCE.json > SHA256SUMS
+          )
+          printf '%s\n' "$RELEASE_NOTES" > "$STAGE/RELEASE_NOTES.md"
+
+          MANIFEST_SHA="$(sha256sum "$STAGE/kal-tracker-update.json" | awk '{print $1}')"
+          SUMS_SHA="$(sha256sum "$STAGE/SHA256SUMS" | awk '{print $1}')"
+          SOURCE_SHA="$(sha256sum "$STAGE/SOURCE.json" | awk '{print $1}')"
+          {
+            printf 'TAG=%s\n' "$TAG"
+            printf 'APK_NAME=%s\n' "$APK_NAME"
+            printf 'STAGE=%s\n' "$STAGE"
+            printf 'APK_SHA=%s\n' "$APK_SHA"
+            printf 'MANIFEST_SHA=%s\n' "$MANIFEST_SHA"
+            printf 'SUMS_SHA=%s\n' "$SUMS_SHA"
+            printf 'SOURCE_SHA=%s\n' "$SOURCE_SHA"
+          } >> "$GITHUB_ENV"
+
+      - name: Publish verified GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ -n "$GH_TOKEN" ]]
+          test "$(gh repo view "$RELEASES_REPO" --json visibility --jq .visibility)" = PUBLIC
+
+          RELEASE_TAGS="$(gh api --paginate "repos/${RELEASES_REPO}/releases?per_page=100" \
+            --jq '.[] | select(.draft == false) | .tag_name')"
+          MAX_BUILD="$(printf '%s\n' "$RELEASE_TAGS" | sed -n 's/^v[0-9][0-9.]*-b\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)"
+          MAX_BUILD="${MAX_BUILD:-0}"
+          if (( BUILD_NUMBER <= MAX_BUILD )); then
+            echo "Build $BUILD_NUMBER non crescente: ultima build pubblicata $MAX_BUILD" >&2
+            exit 1
+          fi
+
+          MAX_VERSION="$(printf '%s\n' "$RELEASE_TAGS" | sed -n 's/^v\([0-9][0-9.]*\)-b[0-9][0-9]*$/\1/p' | sort -V | tail -1)"
+          if [[ -n "$MAX_VERSION" && "$VERSION" != "$MAX_VERSION" ]]; then
+            LOWEST_VERSION="$(printf '%s\n%s\n' "$VERSION" "$MAX_VERSION" | sort -V | head -1)"
+            if [[ "$LOWEST_VERSION" == "$VERSION" ]]; then
+              echo "Versione $VERSION precedente alla versione pubblicata $MAX_VERSION" >&2
+              exit 1
+            fi
+          fi
+
+          if gh release view "$TAG" --repo "$RELEASES_REPO" >/dev/null 2>&1; then
+            echo "La release $TAG esiste già" >&2
+            exit 1
+          fi
+          gh release create "$TAG" \
+            "$STAGE/$APK_NAME" \
+            "$STAGE/kal-tracker-update.json" \
+            "$STAGE/SHA256SUMS" \
+            "$STAGE/SOURCE.json" \
+            --repo "$RELEASES_REPO" \
+            --title "Kal Tracker $VERSION ($BUILD_NUMBER)" \
+            --notes-file "$STAGE/RELEASE_NOTES.md" \
+            --draft
+
+          asset_digest() {
+            gh release view "$TAG" --repo "$RELEASES_REPO" --json assets \
+              --jq ".assets[] | select(.name == \"$1\") | .digest"
+          }
+          [[ "$(asset_digest "$APK_NAME")" == "sha256:$APK_SHA" ]]
+          [[ "$(asset_digest kal-tracker-update.json)" == "sha256:$MANIFEST_SHA" ]]
+          [[ "$(asset_digest SHA256SUMS)" == "sha256:$SUMS_SHA" ]]
+          [[ "$(asset_digest SOURCE.json)" == "sha256:$SOURCE_SHA" ]]
+
+          gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest
+
+          LATEST_MANIFEST="https://github.com/${RELEASES_REPO}/releases/latest/download/kal-tracker-update.json"
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors \
+            "$LATEST_MANIFEST" -o "$RUNNER_TEMP/remote-manifest.json"
+          cmp "$STAGE/kal-tracker-update.json" "$RUNNER_TEMP/remote-manifest.json"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: kal-tracker-release-${{ inputs.version }}-${{ inputs.build_number }}
+          path: |
+            ${{ runner.temp }}/kal-release/*.apk
+            ${{ runner.temp }}/kal-release/kal-tracker-update.json
+            ${{ runner.temp }}/kal-release/SHA256SUMS
+            ${{ runner.temp }}/kal-release/SOURCE.json
+          if-no-files-found: warn
+          retention-days: 30
