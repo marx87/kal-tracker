@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/core/updates/update_banner.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/calorie_progress_card.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/friendly_day_header.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/playful_empty_state.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/wellness_meal_card.dart';
+import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
+import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 
 class TodayDiaryScreen extends ConsumerWidget {
   const TodayDiaryScreen({super.key});
@@ -18,13 +25,27 @@ class TodayDiaryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Kal Tracker', style: TextStyle(fontWeight: FontWeight.w800)),
-            Text('Diario di Marco', style: TextStyle(fontSize: 13)),
+            Text(
+              'Kal Tracker',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppPalette.forestDark,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              'Diario di Marco',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+            ),
           ],
         ),
+        actions: const [
+          Padding(padding: EdgeInsets.only(right: 16), child: _ProfileBadge()),
+        ],
       ),
       body: diary.when(
         data: (value) => _DiaryBody(diary: value, day: today),
@@ -45,12 +66,45 @@ class TodayDiaryScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddFoodSheet(BuildContext context) {
-    return showModalBottomSheet<void>(
+  Future<void> _showAddFoodSheet(BuildContext context) async {
+    await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) => const AddManualFoodSheet(),
+    );
+  }
+}
+
+class _ProfileBadge extends StatelessWidget {
+  const _ProfileBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Profilo di Marco',
+      image: true,
+      child: ExcludeSemantics(
+        child: Container(
+          width: 42,
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppPalette.mint,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: AppPalette.paper, width: 2),
+          ),
+          child: const Text(
+            'M',
+            style: TextStyle(
+              color: AppPalette.forestDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -64,220 +118,66 @@ class _DiaryBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formattedDay = DateFormat('EEEE d MMMM', 'it').format(day);
-    return ListView(
+    final target = ref
+        .watch(nutritionTargetProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const NutritionTarget.standard(),
+        );
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-      children: [
-        const UpdateBanner(),
-        Text(
-          _capitalize(formattedDay),
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: Colors.black54),
-        ),
-        const SizedBox(height: 14),
-        _SummaryCard(nutrients: diary.totals),
-        const SizedBox(height: 22),
-        if (diary.entries.isEmpty) const _EmptyState(),
-        for (final mealType in MealType.values) ...[
-          _MealSection(
-            mealType: mealType,
-            entries: diary.entriesFor(mealType),
-            onDelete: (entry) async {
-              try {
-                await ref.read(diaryRepositoryProvider).deleteEntry(entry.id);
-              } on Object {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Non riesco a eliminare questa voce.'),
-                    ),
-                  );
-                }
-              }
-            },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const UpdateBanner(),
+          const SizedBox(height: 12),
+          FriendlyDayHeader(
+            greeting: _greetingFor(day),
+            name: 'Marco',
+            dateLabel: _capitalize(formattedDay),
+          ),
+          const SizedBox(height: 18),
+          CalorieProgressCard(
+            nutrients: diary.totals,
+            targetCalories: target.calories,
+          ),
+          const SizedBox(height: 22),
+          if (diary.entries.isEmpty) ...[
+            const PlayfulDiaryEmptyState(),
+            const SizedBox(height: 18),
+          ],
+          Text('I tuoi pasti', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'Tutto quello che aggiungi contribuisce al riepilogo.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
           ),
           const SizedBox(height: 12),
-        ],
-      ],
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.nutrients});
-
-  final Nutrients nutrients;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      color: colors.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Calorie registrate',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${nutrients.calories.round()} kcal',
-              key: const Key('daily_calories'),
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: _MacroValue(
-                    label: 'Proteine',
-                    value: nutrients.protein,
-                  ),
-                ),
-                Expanded(
-                  child: _MacroValue(
-                    label: 'Carboidrati',
-                    value: nutrients.carbs,
-                  ),
-                ),
-                Expanded(
-                  child: _MacroValue(label: 'Grassi', value: nutrients.fat),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MacroValue extends StatelessWidget {
-  const _MacroValue({required this.label, required this.value});
-
-  final String label;
-  final double value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '${value.toStringAsFixed(1)} g',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
-  }
-}
-
-class _MealSection extends StatelessWidget {
-  const _MealSection({
-    required this.mealType,
-    required this.entries,
-    required this.onDelete,
-  });
-
-  final MealType mealType;
-  final List<DiaryEntry> entries;
-  final ValueChanged<DiaryEntry> onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(mealType.icon, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  mealType.label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${entries.fold<double>(0, (sum, entry) => sum + entry.nutrients.calories).round()} kcal',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ],
-            ),
-            if (entries.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                child: Text(
-                  'Nessun alimento',
-                  style: TextStyle(color: Colors.black45),
-                ),
-              )
-            else
-              for (final entry in entries)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(entry.foodName),
-                  subtitle: Text(
-                    '${entry.grams.toStringAsFixed(entry.grams % 1 == 0 ? 0 : 1)} g · '
-                    'P ${entry.nutrients.protein.toStringAsFixed(1)} · '
-                    'C ${entry.nutrients.carbs.toStringAsFixed(1)} · '
-                    'G ${entry.nutrients.fat.toStringAsFixed(1)}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${entry.nutrients.calories.round()} kcal',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+          for (final mealType in MealType.values) ...[
+            WellnessMealCard(
+              title: mealType.label,
+              icon: mealType.icon,
+              accent: mealType.accent,
+              softColor: mealType.softColor,
+              entries: diary.entriesFor(mealType),
+              onDelete: (entry) async {
+                try {
+                  await ref.read(diaryRepositoryProvider).deleteEntry(entry.id);
+                } on Object {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Non riesco a eliminare questa voce.'),
                       ),
-                      IconButton(
-                        tooltip: 'Elimina ${entry.foodName}',
-                        onPressed: () => onDelete(entry),
-                        icon: const Icon(Icons.delete_outline_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.eco_outlined,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Il diario è vuoto. Inizia con un alimento: funziona già anche senza rete.',
+                    );
+                  }
+                }
+              },
             ),
-          ),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     );
@@ -310,7 +210,20 @@ class _ErrorState extends StatelessWidget {
 }
 
 class AddManualFoodSheet extends ConsumerStatefulWidget {
-  const AddManualFoodSheet({super.key});
+  const AddManualFoodSheet({
+    this.initialFoodName,
+    this.initialGrams,
+    this.initialPer100g,
+    this.initialMealType = MealType.lunch,
+    this.onSaved,
+    super.key,
+  });
+
+  final String? initialFoodName;
+  final double? initialGrams;
+  final Nutrients? initialPer100g;
+  final MealType initialMealType;
+  final Future<void> Function()? onSaved;
 
   @override
   ConsumerState<AddManualFoodSheet> createState() => _AddManualFoodSheetState();
@@ -324,8 +237,24 @@ class _AddManualFoodSheetState extends ConsumerState<AddManualFoodSheet> {
   final _protein = TextEditingController();
   final _carbs = TextEditingController();
   final _fat = TextEditingController();
-  MealType _mealType = MealType.lunch;
+  late MealType _mealType;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mealType = widget.initialMealType;
+    _foodName.text = widget.initialFoodName ?? '';
+    if (widget.initialGrams case final grams?) {
+      _grams.text = _editableNumber(grams);
+    }
+    if (widget.initialPer100g case final nutrients?) {
+      _calories.text = _editableNumber(nutrients.calories);
+      _protein.text = _editableNumber(nutrients.protein);
+      _carbs.text = _editableNumber(nutrients.carbs);
+      _fat.text = _editableNumber(nutrients.fat);
+    }
+  }
 
   @override
   void dispose() {
@@ -474,8 +403,9 @@ class _AddManualFoodSheetState extends ConsumerState<AddManualFoodSheet> {
       await ref
           .read(diaryRepositoryProvider)
           .addManualFood(profileId: profile.id, input: input);
+      await widget.onSaved?.call();
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } on Object catch (_) {
       if (mounted) {
@@ -538,6 +468,20 @@ extension MealTypePresentation on MealType {
     MealType.dinner => Icons.nightlight_outlined,
     MealType.snack => Icons.eco_outlined,
   };
+
+  Color get accent => switch (this) {
+    MealType.breakfast => AppPalette.yellow,
+    MealType.lunch => AppPalette.coral,
+    MealType.dinner => AppPalette.lilac,
+    MealType.snack => AppPalette.leaf,
+  };
+
+  Color get softColor => switch (this) {
+    MealType.breakfast => AppPalette.yellowSoft,
+    MealType.lunch => AppPalette.coralSoft,
+    MealType.dinner => AppPalette.lilacSoft,
+    MealType.snack => AppPalette.mint,
+  };
 }
 
 double? _parseNumber(String value) {
@@ -546,9 +490,23 @@ double? _parseNumber(String value) {
   return parsed != null && parsed.isFinite ? parsed : null;
 }
 
+String _editableNumber(double value) => value == value.roundToDouble()
+    ? value.round().toString()
+    : value.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '');
+
 String _capitalize(String value) {
   if (value.isEmpty) {
     return value;
   }
   return '${value[0].toUpperCase()}${value.substring(1)}';
+}
+
+String _greetingFor(DateTime day) {
+  if (day.hour < 12) {
+    return 'Buongiorno';
+  }
+  if (day.hour < 18) {
+    return 'Buon pomeriggio';
+  }
+  return 'Buonasera';
 }

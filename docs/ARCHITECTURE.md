@@ -6,14 +6,14 @@ Flutter UI
 Repository applicativi
    ↓
 Drift / SQLite + outbox
-   ↓ sincronizzazione futura
+   ↓ sincronizzazione da collegare
 Supabase Auth + Postgres + Storage
 
 Supabase meal_analysis_jobs
-   ↓
-worker personale sul Mac mini
-   ↓
-Codex / Claude / modello locale
+   ↓ RPC con lease e identità dedicata
+servizio personale launchd sul Mac mini
+   ↓ adapter sostituibile
+Codex CLI / futuro Claude o modello locale
 ```
 
 ## Regole
@@ -24,4 +24,7 @@ Codex / Claude / modello locale
 - Le cancellazioni applicative sono tombstone, non eliminazioni fisiche immediate.
 - Il giorno alimentare è calcolato in `Europe/Rome`, indipendentemente dal fuso del dispositivo.
 - L’AI propone alimenti e quantità; il motore deterministico calcola i nutrienti dopo la conferma.
+- Il worker non conserva `service_role`: usa un utente Auth dedicato, RPC limitate e legge soltanto la foto del job preso in lease.
+- Le foto sono immutabili, verificate per percorso, dimensione, SHA-256, MIME e firma reale del formato prima dell'analisi.
+- Se il Mac è spento, il job resta in coda e tutte le funzioni manuali continuano a funzionare.
 - Gym Tracker resta autorevole per gli allenamenti e verrà replicato in sola lettura verso Supabase.

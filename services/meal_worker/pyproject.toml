@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kal-meal-worker"
+version = "0.1.0"
+description = "Worker locale Codex per le foto dei pasti di Kal Tracker"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+kal-meal-analyze = "kal_meal_worker.cli:main"
+kal-meal-worker = "kal_meal_worker.service_cli:main"
+
+[tool.setuptools.package-data]
+kal_meal_worker = ["meal_analysis.schema.json"]

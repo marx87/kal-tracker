@@ -1,30 +1,33 @@
 # Kal Tracker
 
-App privata Flutter per il diario alimentare di Marco, con funzionamento local-first, sincronizzazione Supabase, analisi fotografica futura e collegamento a Gym Tracker.
+App privata Flutter per il diario alimentare di Marco, con funzionamento local-first, sincronizzazione Supabase, analisi fotografica sul Mac mini e collegamento a Gym Tracker.
 
 ## Stato attuale
 
-Il primo vertical slice è operativo:
+La beta locale `0.2.0` è operativa:
 
 - app Flutter iOS/Android;
-- profilo locale Marco;
-- diario giornaliero diviso per pasto;
-- inserimento manuale di grammi e valori per 100 g;
-- calcolo deterministico di calorie e macro;
-- persistenza Drift/SQLite;
+- dashboard giocosa con profilo Marco, anello calorie e quattro pasti;
+- catalogo offline di 12 alimenti con ricerca, preferiti, recenti e aggiunta rapida;
+- obiettivi calorie/macro, acqua giornaliera, peso, cronologia e grafico;
+- sei ricette fit iniziali e creazione di ricette personali con anteprima per porzione;
+- calcolo deterministico di calorie e macro, mai delegato all'AI;
+- persistenza Drift/SQLite con migrazione `v1 → v2` verificata;
 - tombstone e outbox locale per la sincronizzazione futura;
-- fondazione OTA Android con manifest Ed25519 firmato;
-- test di dominio, database su memoria e disco, cambio ora legale, interfaccia e firma del manifest;
-- CI GitHub riproducibile e flusso di release Android firmato con protezione anti-rollback.
+- schema Supabase con RLS, Storage foto privato e coda worker a lease/privilegi minimi;
+- adapter Codex CLI strutturato, senza API key e senza calcolo di calorie;
+- fondazione OTA Android con manifest Ed25519 firmato e protezione anti-rollback;
+- 44 test Flutter, test Python e tooling di sicurezza eseguiti in CI;
+- build APK debug e iOS Simulator verificate.
 
-Supabase non è ancora collegato a un progetto remoto e l’OTA resta disabilitato nelle build locali finché non viene incorporata la chiave pubblica.
+Supabase non è ancora collegato a un progetto remoto. Upload foto, sincronizzazione tra dispositivi e import Gym Tracker restano quindi disattivati. Anche l’OTA di produzione resta disabilitato finché non vengono create e configurate le chiavi definitive; l’APK debug usa un package separato e non è una baseline OTA.
 
 ## Struttura
 
 ```text
 apps/mobile/             app Flutter
 supabase/migrations/     schema Postgres e RLS
-services/meal_worker/    worker AI, fase successiva
+services/meal_worker/    adapter e servizio automatico Codex sul Mac mini
 docs/                    architettura e rilascio
 .github/workflows/       CI e release Android
 ```
@@ -59,3 +62,7 @@ Non inserire mai `service_role`, keystore o credenziali Codex/Claude nell’app 
 - iOS richiede una build firmata Ad Hoc o TestFlight; non supporta l’auto-installazione di un IPA dall’app.
 
 Configurazione dettagliata: [docs/OTA.md](docs/OTA.md).
+
+Collegamento verificato con Gym Tracker: [docs/GYM_TRACKER_INTEGRATION.md](docs/GYM_TRACKER_INTEGRATION.md).
+
+Protocollo least-privilege del worker: [docs/MEAL_WORKER_PROTOCOL.md](docs/MEAL_WORKER_PROTOCOL.md).
