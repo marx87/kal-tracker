@@ -27,6 +27,7 @@ jobs:
   release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: release
     env:
       VERSION: ${{ inputs.version }}
@@ -49,6 +50,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+          cache: gradle
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: 3.44.6
