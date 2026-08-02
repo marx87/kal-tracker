@@ -10,11 +10,32 @@ fail() {
   exit 1
 }
 
+has_pattern() {
+  local pattern="$1"
+  local case_mode="${2:-sensitive}"
+
+  if command -v rg >/dev/null 2>&1; then
+    local rg_args=(--quiet --multiline --multiline-dotall)
+    [[ "$case_mode" == 'insensitive' ]] && rg_args+=(--ignore-case)
+    rg "${rg_args[@]}" "$pattern" "$migration"
+    return
+  fi
+
+  if [[ "$case_mode" == 'insensitive' ]]; then
+    LC_ALL=C perl -0777 -e \
+      '$pattern = shift; $content = <>; exit($content =~ /$pattern/is ? 0 : 1)' \
+      "$pattern" "$migration"
+  else
+    LC_ALL=C perl -0777 -e \
+      '$pattern = shift; $content = <>; exit($content =~ /$pattern/s ? 0 : 1)' \
+      "$pattern" "$migration"
+  fi
+}
+
 require_pattern() {
   local pattern="$1"
   local description="$2"
-  rg --quiet --multiline --multiline-dotall "$pattern" "$migration" \
-    || fail "missing $description"
+  has_pattern "$pattern" || fail "missing $description"
 }
 
 [[ -f "$migration" ]] || fail "migration file"
@@ -62,13 +83,13 @@ done
 require_pattern 'grant execute on function.*to authenticated;' \
   'authenticated-only RPC grants'
 
-if rg --quiet --ignore-case --multiline --multiline-dotall \
+if has_pattern \
   'grant[[:space:][:print:]]*to[[:space:]]+(anon|public|service_role)' \
-  "$migration"; then
+  insensitive; then
   fail 'an RPC/table grant to anon, public, or service_role'
 fi
 
-if rg --quiet --ignore-case 'service_role' "$migration"; then
+if has_pattern 'service_role' insensitive; then
   fail 'service_role reference in worker migration'
 fi
 
