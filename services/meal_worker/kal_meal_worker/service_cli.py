@@ -9,6 +9,7 @@ import threading
 
 from .claude_analyzer import ClaudeAnalyzer
 from .codex_analyzer import CodexAnalyzer
+from .doctor import run_doctor
 from .keychain import MacOSKeychainPassword
 from .supabase_gateway import (
     SupabaseAuth,
@@ -17,6 +18,46 @@ from .supabase_gateway import (
 )
 from .transport import UrllibTransport
 from .worker import CycleOutcome, MealWorker, RetryPolicy
+
+
+def _add_connection_arguments(subparser: argparse.ArgumentParser) -> None:
+    subparser.add_argument(
+        "--supabase-url",
+        default=os.environ.get("KAL_SUPABASE_URL"),
+    )
+    subparser.add_argument(
+        "--publishable-key",
+        default=os.environ.get("KAL_SUPABASE_PUBLISHABLE_KEY"),
+    )
+    subparser.add_argument(
+        "--worker-email",
+        default=os.environ.get("KAL_MEAL_WORKER_EMAIL"),
+    )
+    subparser.add_argument(
+        "--keychain-service",
+        default=os.environ.get(
+            "KAL_MEAL_WORKER_KEYCHAIN_SERVICE",
+            "com.kaltracker.meal-worker.supabase",
+        ),
+    )
+    subparser.add_argument(
+        "--keychain-account",
+        default=os.environ.get("KAL_MEAL_WORKER_KEYCHAIN_ACCOUNT"),
+    )
+    subparser.add_argument(
+        "--provider",
+        choices=("claude", "codex"),
+        default=os.environ.get("KAL_MEAL_ANALYZER_PROVIDER", "claude"),
+    )
+    subparser.add_argument(
+        "--claude-executable",
+        default=os.environ.get("KAL_CLAUDE_EXECUTABLE", "claude"),
+    )
+    subparser.add_argument(
+        "--codex-executable",
+        default=os.environ.get("KAL_CODEX_EXECUTABLE", "codex"),
+    )
+    subparser.add_argument("--request-timeout", type=float, default=30)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,47 +69,12 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
+
     serve = subcommands.add_parser("serve", help="Avvia il poll loop a job singolo")
-    serve.add_argument(
-        "--supabase-url",
-        default=os.environ.get("KAL_SUPABASE_URL"),
-    )
-    serve.add_argument(
-        "--publishable-key",
-        default=os.environ.get("KAL_SUPABASE_PUBLISHABLE_KEY"),
-    )
-    serve.add_argument(
-        "--worker-email",
-        default=os.environ.get("KAL_MEAL_WORKER_EMAIL"),
-    )
-    serve.add_argument(
-        "--keychain-service",
-        default=os.environ.get(
-            "KAL_MEAL_WORKER_KEYCHAIN_SERVICE",
-            "com.kaltracker.meal-worker.supabase",
-        ),
-    )
-    serve.add_argument(
-        "--keychain-account",
-        default=os.environ.get("KAL_MEAL_WORKER_KEYCHAIN_ACCOUNT"),
-    )
-    serve.add_argument(
-        "--provider",
-        choices=("claude", "codex"),
-        default=os.environ.get("KAL_MEAL_ANALYZER_PROVIDER", "claude"),
-    )
-    serve.add_argument(
-        "--claude-executable",
-        default=os.environ.get("KAL_CLAUDE_EXECUTABLE", "claude"),
-    )
-    serve.add_argument(
-        "--codex-executable",
-        default=os.environ.get("KAL_CODEX_EXECUTABLE", "codex"),
-    )
+    _add_connection_arguments(serve)
     serve.add_argument("--poll-seconds", type=float, default=5)
     serve.add_argument("--lease-seconds", type=int, default=180)
     serve.add_argument("--heartbeat-seconds", type=float)
-    serve.add_argument("--request-timeout", type=float, default=30)
     serve.add_argument("--claude-timeout", type=int, default=120)
     serve.add_argument("--codex-timeout", type=int, default=120)
     serve.add_argument("--operation-attempts", type=int, default=3)
@@ -78,6 +84,17 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
         default="INFO",
     )
+
+    doctor = subcommands.add_parser(
+        "doctor",
+        help=(
+            "Verifica Portachiavi, CLI AI, raggiungibilita Supabase, "
+            "RPC e bucket foto"
+        ),
+    )
+    _add_connection_arguments(doctor)
+    doctor.add_argument("--cli-timeout", type=float, default=30)
+
     return parser
 
 
@@ -93,6 +110,23 @@ def create_analyzer(arguments: argparse.Namespace) -> ClaudeAnalyzer | CodexAnal
             executable=(arguments.codex_executable,),
             timeout_seconds=arguments.codex_timeout,
         )
+    raise ValueError(f"Provider analisi non supportato: {arguments.provider}")
+
+
+def resolve_keychain_account(arguments: argparse.Namespace) -> str:
+    """L'account Portachiavi esplicito vince, altrimenti l'email del worker."""
+    account = (arguments.keychain_account or "").strip()
+    if account:
+        return account
+    return (arguments.worker_email or "").strip()
+
+
+def resolve_analyzer_executable(arguments: argparse.Namespace) -> str:
+    provider = (arguments.provider or "").strip().lower()
+    if provider == "claude":
+        return arguments.claude_executable
+    if provider == "codex":
+        return arguments.codex_executable
     raise ValueError(f"Provider analisi non supportato: {arguments.provider}")
 
 
@@ -113,12 +147,9 @@ def _install_signal_handlers(stop: threading.Event) -> None:
     signal.signal(signal.SIGINT, request_stop)
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    arguments = parser.parse_args(argv)
-    if arguments.command != "serve":
-        parser.error("Comando non supportato")
-
+def _run_serve(
+    parser: argparse.ArgumentParser, arguments: argparse.Namespace
+) -> int:
     logging.basicConfig(
         level=getattr(logging, arguments.log_level),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -129,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
         parser, arguments.publishable_key, "publishable key Supabase"
     )
     worker_email = _required(parser, arguments.worker_email, "email worker")
-    keychain_account = arguments.keychain_account or worker_email
+    keychain_account = resolve_keychain_account(arguments)
 
     try:
         transport = UrllibTransport()
@@ -182,6 +213,65 @@ def main(argv: list[str] | None = None) -> int:
     _install_signal_handlers(stop)
     worker.serve(stop_event=stop)
     return 0
+
+
+def _run_doctor(
+    parser: argparse.ArgumentParser, arguments: argparse.Namespace
+) -> int:
+    base_url = _required(parser, arguments.supabase_url, "URL Supabase")
+    publishable_key = _required(
+        parser, arguments.publishable_key, "publishable key Supabase"
+    )
+    worker_email = _required(parser, arguments.worker_email, "email worker")
+    keychain_account = resolve_keychain_account(arguments)
+
+    try:
+        transport = UrllibTransport()
+        password = MacOSKeychainPassword(
+            service=arguments.keychain_service,
+            account=keychain_account,
+        )
+        auth = SupabaseAuth(
+            base_url=base_url,
+            publishable_key=publishable_key,
+            email=worker_email,
+            password_provider=password,
+            transport=transport,
+            request_timeout=arguments.request_timeout,
+        )
+        gateway = SupabaseMealGateway(
+            auth=auth,
+            transport=transport,
+            request_timeout=arguments.request_timeout,
+        )
+        analyzer_executable = resolve_analyzer_executable(arguments)
+    except (SupabaseConfigurationError, ValueError) as error:
+        print(f"Configurazione worker non valida: {error}", file=sys.stderr)
+        return 2
+
+    return run_doctor(
+        provider=(arguments.provider or "").strip().lower(),
+        analyzer_executable=analyzer_executable,
+        keychain_service=arguments.keychain_service,
+        keychain_account=keychain_account,
+        password_provider=password,
+        auth=auth,
+        gateway=gateway,
+        transport=transport,
+        request_timeout=arguments.request_timeout,
+        cli_timeout_seconds=arguments.cli_timeout,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    arguments = parser.parse_args(argv)
+    if arguments.command == "serve":
+        return _run_serve(parser, arguments)
+    if arguments.command == "doctor":
+        return _run_doctor(parser, arguments)
+    parser.error("Comando non supportato")
+    return 2
 
 
 if __name__ == "__main__":

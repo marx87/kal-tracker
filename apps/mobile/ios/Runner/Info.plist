@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Kal Tracker usa la fotocamera per fotografare il pasto e proporne l’analisi nel diario.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kal Tracker legge la foto scelta dalla galleria per proporne l’analisi nel diario.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

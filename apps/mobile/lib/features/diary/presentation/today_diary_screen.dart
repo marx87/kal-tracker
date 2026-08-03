@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:kal_tracker/core/config/app_config.dart';
+import 'package:kal_tracker/core/sync/sync_auth.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/core/updates/update_banner.dart';
@@ -15,6 +18,11 @@ import 'package:kal_tracker/features/diary/presentation/widgets/meal_templates_s
 import 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/playful_empty_state.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/wellness_meal_card.dart';
+import 'package:kal_tracker/features/photo_meal/data/photo_meal_gateway.dart';
+import 'package:kal_tracker/features/photo_meal/data/photo_meal_repository.dart';
+import 'package:kal_tracker/features/photo_meal/domain/photo_meal_job.dart';
+import 'package:kal_tracker/features/photo_meal/domain/photo_pipeline.dart';
+import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 
@@ -173,6 +181,9 @@ class _DiaryBody extends ConsumerWidget {
             ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
           ),
           const SizedBox(height: 12),
+          // Punto d'ingresso stabile alla revisione: la snackbar dura 8
+          // secondi, il badge resta finché ci sono proposte pronte.
+          const PhotoProposalsBadge(),
           for (final mealType in MealType.values) ...[
             WellnessMealCard(
               title: mealType.label,
@@ -188,6 +199,7 @@ class _DiaryBody extends ConsumerWidget {
               onSaveAsTemplate: () => _saveTemplate(context, ref, mealType),
               onApplyTemplate: () => _applyTemplate(context, ref, mealType),
             ),
+            _PhotoMealSection(mealType: mealType, day: day),
             const SizedBox(height: 12),
           ],
         ],
@@ -481,6 +493,190 @@ class _DiaryBody extends ConsumerWidget {
         const SnackBar(content: Text('Non riesco ad annullare l’aggiunta.')),
       );
     }
+  }
+}
+
+/// Punto d'ingresso della foto pasto: azione sotto ogni pasto e stato
+/// del job in corso. Attiva solo con Supabase configurato; senza sessione
+/// invita ad accedere in Progressi → Sincronizzazione (mai un crash).
+class _PhotoMealSection extends ConsumerWidget {
+  const _PhotoMealSection({required this.mealType, required this.day});
+
+  final MealType mealType;
+  final DateTime day;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final configured = ref.watch(appConfigProvider).hasSupabaseConfiguration;
+    final jobs = ref
+        .watch(photoMealJobsProvider)
+        .maybeWhen(
+          data: (value) => value,
+          orElse: () => const <PhotoMealJob>[],
+        );
+    final mealJobs = [
+      for (final job in jobs)
+        if (job.mealType == mealType && DiaryDay.isSameDay(job.day, day)) job,
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextButton.icon(
+            key: Key('photo_meal_button_${mealType.storageValue}'),
+            onPressed: configured ? () => _capturePhoto(context, ref) : null,
+            icon: const Icon(Icons.photo_camera_outlined, size: 18),
+            label: const Text('Fotografa il pasto'),
+          ),
+          for (final job in mealJobs)
+            _PhotoJobStatusRow(
+              key: Key('photo_job_status_${job.id}'),
+              job: job,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _capturePhoto(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ref.read(syncAuthProvider).signedIn) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Per fotografare il pasto serve l’accesso al cloud: vai in '
+            'Progressi → Sincronizzazione e accedi.',
+          ),
+        ),
+      );
+      return;
+    }
+    final source = await showModalBottomSheet<PhotoMealSource>(
+      context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('photo_source_camera'),
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Scatta una foto'),
+              onTap: () => Navigator.pop(context, PhotoMealSource.camera),
+            ),
+            ListTile(
+              key: const Key('photo_source_gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Scegli dalla galleria'),
+              onTap: () => Navigator.pop(context, PhotoMealSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) {
+      return;
+    }
+    try {
+      final profile = await ref.read(marcoProfileProvider.future);
+      final job = await ref
+          .read(photoMealJobsProvider.notifier)
+          .capture(
+            source: source,
+            profileId: profile.id,
+            mealType: mealType,
+            day: day,
+          );
+      if (job != null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Foto inviata: l’analisi parte appena il Mac è disponibile. '
+              'Nel frattempo puoi sempre aggiungere a mano.',
+            ),
+          ),
+        );
+      }
+    } on PhotoMealException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on PhotoPipelineException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Non riesco a inviare la foto: riprova tra poco.'),
+        ),
+      );
+    }
+  }
+}
+
+class _PhotoJobStatusRow extends ConsumerWidget {
+  const _PhotoJobStatusRow({required this.job, super.key});
+
+  final PhotoMealJob job;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviewReady = job.status == PhotoMealJobStatus.needsReview;
+    return InkWell(
+      key: Key('photo_job_open_${job.id}'),
+      // La riga «proposta pronta da rivedere» deve portare alla revisione:
+      // la snackbar dura 8 secondi e non può essere l'unico ingresso.
+      onTap: reviewReady
+          ? () => GoRouter.of(context).push('/photo-review/${job.id}')
+          : null,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 4, 4),
+        child: Row(
+          children: [
+            if (job.inProgress)
+              const SizedBox.square(
+                dimension: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                job.status == PhotoMealJobStatus.failed
+                    ? Icons.error_outline_rounded
+                    : Icons.fact_check_outlined,
+                size: 16,
+                color: AppPalette.mutedInk,
+              ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Foto: ${job.status.label.toLowerCase()}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+              ),
+            ),
+            if (reviewReady)
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: AppPalette.mutedInk,
+              ),
+            if (job.inProgress)
+              IconButton(
+                key: Key('photo_job_refresh_${job.id}'),
+                tooltip: 'Aggiorna lo stato',
+                visualDensity: VisualDensity.compact,
+                iconSize: 16,
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: () =>
+                    ref.read(photoMealJobsProvider.notifier).refresh(),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
