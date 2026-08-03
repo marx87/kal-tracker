@@ -65,7 +65,8 @@ Flusso: `Flutter → Storage privato + job Supabase → worker launchd → Codex
 - [x] alimenti alternativi, grammi stimati, confidenza e dubbi;
 - [x] schermata Flutter di revisione e conferma (voci modificabili, conferma esplicita, giorno preservato, idempotente); *(fase 5)*
 - [x] worker INSTALLATO e in esecuzione sul Mac via launchd (identità automation dedicata, password nel Portachiavi, binding attivo, `doctor` 6/6); *(fase 5)*
-- [ ] prova reale end-to-end con una foto vera dal telefono (v0.4.0-b4 pubblicata, serve l'accesso sync sul dispositivo);
+- [x] prova reale end-to-end COLLAUDATA con una foto vera di Marco (3/08 sera): telefono → Storage → coda → worker launchd → Claude CLI → needs_review in 37 s; scoperto e corretto sul campo il rifiuto del meta-schema draft 2020-12 da parte della CLI;
+- [x] calorie stimate nelle proposte: il modello compila per100g (mai kcal totali), la revisione mostra «≈ N kcal · stima da foto» e il totale delle selezionate, sempre via NutritionCalculator; retrocompatibile coi risultati vecchi; *(fase 6, v0.5.0-b5)*
 - [ ] benchmark Codex/Claude sullo stesso corpus personale.
 
 Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento non blocca l'inserimento manuale.
@@ -145,4 +146,4 @@ Scelte fatte e cose da sapere prima di continuare. Fonte: sviluppo + revisione a
 
 **Piccole cose rimaste aperte**
 - L'app non ha ancora un'icona propria né splash screen personalizzata.
-- Versione corrente `0.4.0+4` (rilasciate v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 con la foto assistita); l'OTA rifiuta regressioni di build number.
+- Versione corrente `0.5.0+5` (rilasciate v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 foto assistita, v0.5.0-b5 stime kcal); l'OTA rifiuta regressioni di build number.
