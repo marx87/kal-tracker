@@ -56,15 +56,16 @@ Criterio: una giornata completa è registrabile con Mac e rete spenti, poi si si
 
 Flusso: `Flutter → Storage privato + job Supabase → worker launchd → Codex/Claude → bozza → conferma → diario`.
 
-- [ ] acquisizione Flutter, riduzione foto e rimozione EXIF/GPS;
+- [x] acquisizione Flutter, riduzione foto (1280px, JPEG q80) e rimozione EXIF/GPS sul telefono; *(fase 5)*
 - [x] schema coda con lease, timeout, retry e claim atomico;
 - [x] identità worker Supabase dedicata, senza `service_role`;
 - [x] una sola analisi alla volta e pulizia dei file temporanei;
 - [x] Codex CLI effimera/read-only con JSON Schema obbligatorio;
 - [x] adapter Claude CLI (`claude --print --output-format json`, sessione effimera, stesso schema) con provider selezionabile e **claude come predefinito** — i crediti Codex sono esauriti; *(fase 4)*
 - [x] alimenti alternativi, grammi stimati, confidenza e dubbi;
-- [ ] schermata Flutter di revisione e conferma;
-- [ ] installazione e prova reale del servizio `launchd`;
+- [x] schermata Flutter di revisione e conferma (voci modificabili, conferma esplicita, giorno preservato, idempotente); *(fase 5)*
+- [x] worker INSTALLATO e in esecuzione sul Mac via launchd (identità automation dedicata, password nel Portachiavi, binding attivo, `doctor` 6/6); *(fase 5)*
+- [ ] prova reale end-to-end con una foto vera dal telefono (v0.4.0-b4 pubblicata, serve l'accesso sync sul dispositivo);
 - [ ] benchmark Codex/Claude sullo stesso corpus personale.
 
 Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento non blocca l'inserimento manuale.
@@ -144,4 +145,4 @@ Scelte fatte e cose da sapere prima di continuare. Fonte: sviluppo + revisione a
 
 **Piccole cose rimaste aperte**
 - L'app non ha ancora un'icona propria né splash screen personalizzata.
-- Il build number è `0.2.0+2`: alla prossima release da main va portato a `0.3.0+3` (l'OTA rifiuta regressioni di build number).
+- Versione corrente `0.4.0+4` (rilasciate v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 con la foto assistita); l'OTA rifiuta regressioni di build number.
