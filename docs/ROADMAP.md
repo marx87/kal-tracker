@@ -14,7 +14,7 @@ Kal Tracker è un'app privata iOS/Android per Marco. Il diario deve continuare a
 
 ### M0 — Fondazione installabile
 
-Stato: in corso.
+Stato: codice completato, configurazione privata ancora da eseguire.
 
 - [x] monorepo Flutter iOS/Android;
 - [x] package `it.marcomartelli.kaltracker`;
@@ -27,12 +27,13 @@ Stato: in corso.
 
 ### M1 — Diario personale
 
-- obiettivi calorie e macro;
-- alimenti personali, recenti e preferiti;
-- modifica, copia e modelli di pasto;
-- peso, acqua e andamento settimanale;
-- sync offline-first Supabase con retry, conflitti e tombstone;
-- export e ripristino verificati.
+- [x] obiettivi calorie e macro collegati alla dashboard;
+- [x] catalogo offline, recenti, preferiti e inserimento manuale;
+- [x] peso, acqua, cronologia e grafico;
+- [x] calcoli e snapshot nutrizionali deterministici;
+- [ ] modifica, copia e modelli di pasto;
+- [ ] sync offline-first Supabase con retry, conflitti e tombstone;
+- [ ] export e ripristino verificati.
 
 Criterio: una giornata completa è registrabile con Mac e rete spenti, poi si sincronizza senza duplicati.
 
@@ -47,23 +48,27 @@ Criterio: una giornata completa è registrabile con Mac e rete spenti, poi si si
 
 Flusso: `Flutter → Storage privato + job Supabase → worker launchd → Codex/Claude → bozza → conferma → diario`.
 
-- riduzione foto e rimozione EXIF/GPS;
-- coda con lease, timeout, retry e recupero dopo sleep;
-- una sola analisi alla volta;
-- JSON Schema obbligatorio;
-- alimenti alternativi, grammi stimati, confidenza e dubbi;
-- eliminazione della foto temporanea;
-- benchmark Codex/Claude sullo stesso corpus personale.
+- [ ] acquisizione Flutter, riduzione foto e rimozione EXIF/GPS;
+- [x] schema coda con lease, timeout, retry e claim atomico;
+- [x] identità worker Supabase dedicata, senza `service_role`;
+- [x] una sola analisi alla volta e pulizia dei file temporanei;
+- [x] Codex CLI effimera/read-only con JSON Schema obbligatorio;
+- [x] alimenti alternativi, grammi stimati, confidenza e dubbi;
+- [ ] schermata Flutter di revisione e conferma;
+- [ ] installazione e prova reale del servizio `launchd`;
+- [ ] benchmark Codex/Claude sullo stesso corpus personale.
 
 Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento non blocca l'inserimento manuale.
 
 ### M4 — Ricette fit
 
-- ingredienti, porzioni e ridimensionamento automatico;
-- calcolo per ricetta e per porzione;
-- preferiti, tag, filtri e ricerca;
-- suggerimenti in base ai macro rimanenti;
-- inserimento della porzione nel diario.
+- [x] sei ricette fit iniziali;
+- [x] ricette personali con ingredienti, grammi, porzioni e istruzioni;
+- [x] calcolo per ricetta e per porzione;
+- [x] preferiti e inserimento della porzione nel diario;
+- [ ] modifica/duplicazione di una ricetta esistente;
+- [ ] immagini, tag, filtri e ricerca;
+- [ ] suggerimenti in base ai macro rimanenti.
 
 ### M5 — Collegamento Gym Tracker
 
@@ -82,9 +87,9 @@ Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento no
 
 ## Ordine del prossimo lavoro
 
-1. Creare le chiavi release con backup cifrato e pubblicare il primo APK firmato.
-2. Collegare un progetto Supabase dedicato e applicare/testare le RLS.
-3. Implementare push/pull dell'outbox con conflitti tramite `row_version`.
-4. Completare diario, alimenti e obiettivi prima di iniziare la fotografia.
-5. Costruire il worker Mac con Codex come primo adapter.
-6. Aggiungere ricette e soltanto dopo il bridge Gym Tracker.
+1. Creare le chiavi release con due backup cifrati e pubblicare il primo APK firmato.
+2. Collegare un progetto Supabase dedicato e applicare/testare le tre migrazioni.
+3. Implementare Auth Marco e push/pull dell'outbox con conflitti tramite `row_version`.
+4. Collegare upload foto e revisione Flutter al worker Codex già predisposto.
+5. Provare il servizio sul Mac e misurarlo su foto di pasti realmente pesati.
+6. Implementare il bridge Gym Tracker in sola lettura.

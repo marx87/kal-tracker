@@ -13,9 +13,12 @@
 **/*service_role*.json
 **/*private*.pem
 **/*private*.key
+**/github-actions-secrets.env
 
 # Tool locali
 supabase/.temp/
 services/meal_worker/tmp/
 services/meal_worker/.venv/
+**/__pycache__/
+*.py[cod]
 *.log

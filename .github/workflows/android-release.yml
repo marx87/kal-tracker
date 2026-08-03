@@ -11,6 +11,10 @@ on:
         description: VersionCode Android strettamente crescente
         required: true
         type: number
+      source_commit:
+        description: Commit sorgente presente nella storia di main (SHA completo)
+        required: true
+        type: string
       notes:
         description: Note di rilascio
         required: true
@@ -32,6 +36,7 @@ jobs:
     env:
       VERSION: ${{ inputs.version }}
       BUILD_NUMBER: ${{ inputs.build_number }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
       RELEASE_NOTES: ${{ inputs.notes }}
       RELEASES_REPO: marx87/kal-tracker-releases
       OTA_PUBLIC_KEY_BASE64: ${{ vars.OTA_PUBLIC_KEY_BASE64 }}
@@ -43,9 +48,67 @@ jobs:
       run:
         working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Checkout trusted release tooling from main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+
+      - name: Test release tooling without secrets
+        run: ../../scripts/tests/release_tooling_test.sh
+
+      - name: Preserve trusted release tooling
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/release-tooling"
+          install -m 700 \
+            ../../scripts/check_ota_monotonicity.sh \
+            ../../scripts/check_latest_ota_release.sh \
+            "$RUNNER_TEMP/release-tooling/"
+
+      - name: Checkout selected source commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.source_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate source selection and public configuration
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == "marx87/kal-tracker" ]]
+          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          IFS=. read -r VERSION_MAJOR VERSION_MINOR VERSION_PATCH <<<"$VERSION"
+          for VERSION_COMPONENT in "$VERSION_MAJOR" "$VERSION_MINOR" "$VERSION_PATCH"; do
+            (( ${#VERSION_COMPONENT} <= 10 ))
+            (( 10#$VERSION_COMPONENT <= 2147483647 ))
+          done
+          [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          (( ${#BUILD_NUMBER} <= 10 ))
+          (( BUILD_NUMBER <= 2100000000 ))
+          [[ "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          RELEASE_SOURCE_SHA="$(git rev-parse HEAD)"
+          [[ "$RELEASE_SOURCE_SHA" == "$SOURCE_COMMIT" ]]
+          git cat-file -e "$GITHUB_SHA^{commit}"
+          git merge-base --is-ancestor "$RELEASE_SOURCE_SHA" "$GITHUB_SHA"
+          printf 'RELEASE_SOURCE_SHA=%s\n' "$RELEASE_SOURCE_SHA" >> "$GITHUB_ENV"
+          [[ -n "${RELEASE_NOTES// }" ]]
+          (( ${#RELEASE_NOTES} <= 10000 ))
+          [[ -n "$OTA_PUBLIC_KEY_BASE64" ]]
+          [[ "$EXPECTED_SIGNER_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$(printf '%s' "$OTA_PUBLIC_KEY_BASE64" | openssl base64 -d -A | wc -c | tr -d '[:space:]')" -eq 32 ]]
+
+      - name: Reject rollback against signed latest release
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/release-tooling/check_latest_ota_release.sh" \
+            --candidate-version "$VERSION" \
+            --candidate-build "$BUILD_NUMBER" \
+            --public-key-base64 "$OTA_PUBLIC_KEY_BASE64" \
+            --expected-key-id "$OTA_KEY_ID" \
+            --source-repo "$GITHUB_REPOSITORY" \
+            --releases-repo "$RELEASES_REPO"
+
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
@@ -56,17 +119,6 @@ jobs:
           flutter-version: 3.44.6
           channel: stable
           cache: true
-
-      - name: Validate public configuration
-        run: |
-          set -euo pipefail
-          [[ "$GITHUB_REPOSITORY" == "marx87/kal-tracker" ]]
-          [[ "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
-          [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
-          [[ -n "${RELEASE_NOTES// }" ]]
-          [[ -n "$OTA_PUBLIC_KEY_BASE64" ]]
-          [[ -n "$EXPECTED_SIGNER_SHA256" ]]
-          [[ "$(printf '%s' "$OTA_PUBLIC_KEY_BASE64" | base64 --decode | wc -c)" -eq 32 ]]
 
       - name: Test source before loading signing secrets
         run: |
@@ -90,10 +142,15 @@ jobs:
           [[ -n "$ANDROID_KEY_ALIAS" ]]
           [[ -n "$ANDROID_STORE_PASSWORD" ]]
           [[ -n "$ANDROID_KEY_PASSWORD" ]]
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/kal-tracker-release.jks
-          chmod 600 android/kal-tracker-release.jks
+          [[ ! -e android/key.properties && ! -L android/key.properties ]]
+          ANDROID_SIGNING_DIR="$(mktemp -d "$RUNNER_TEMP/kal-android-signing.XXXXXX")"
+          chmod 700 "$ANDROID_SIGNING_DIR"
+          printf 'ANDROID_SIGNING_DIR=%s\n' "$ANDROID_SIGNING_DIR" >> "$GITHUB_ENV"
+          KEYSTORE_PATH="$ANDROID_SIGNING_DIR/kal-tracker-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | openssl base64 -d -A > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
           {
-            printf 'storeFile=../kal-tracker-release.jks\n'
+            printf 'storeFile=%s\n' "$KEYSTORE_PATH"
             printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
             printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
             printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
@@ -114,7 +171,13 @@ jobs:
 
       - name: Remove Android signing material
         if: always()
-        run: rm -f android/key.properties android/kal-tracker-release.jks
+        run: |
+          set -euo pipefail
+          rm -f -- android/key.properties
+          if [[ -n "${ANDROID_SIGNING_DIR:-}" && -d "$ANDROID_SIGNING_DIR" ]]; then
+            rm -f -- "$ANDROID_SIGNING_DIR/kal-tracker-release.jks"
+            rmdir "$ANDROID_SIGNING_DIR"
+          fi
 
       - name: Validate APK, sign manifest and stage assets
         env:
@@ -123,7 +186,19 @@ jobs:
           set -euo pipefail
           [[ -n "$OTA_PRIVATE_KEY_BASE64" ]]
           APK=build/app/outputs/flutter-apk/app-release.apk
-          [[ -f "$APK" ]]
+          [[ -f "$APK" && ! -L "$APK" ]]
+
+          sha256_file() {
+            local digest
+            digest="$(openssl dgst -sha256 -r "$1" | awk '{print tolower($1)}')"
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+            printf '%s' "$digest"
+          }
+
+          file_size() {
+            wc -c <"$1" | tr -d '[:space:]'
+          }
+
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           AAPT="$BUILD_TOOLS/aapt"
           APKSIGNER="$BUILD_TOOLS/apksigner"
@@ -137,18 +212,20 @@ jobs:
           [[ "$APK_VERSION" == "$VERSION" ]]
           [[ "$APK_BUILD" == "$BUILD_NUMBER" ]]
 
-          ACTUAL_SIGNER="$($APKSIGNER verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' | tr -d ':')"
+          ACTUAL_SIGNER="$($APKSIGNER verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' | tr -d ':[:space:]')"
           EXPECTED_SIGNER="$(tr '[:upper:]' '[:lower:]' <<<"$EXPECTED_SIGNER_SHA256" | tr -d ':[:space:]')"
-          [[ -n "$ACTUAL_SIGNER" && "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]]
+          [[ "$ACTUAL_SIGNER" =~ ^[0-9a-f]{64}$ && "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]]
 
           TAG="v${VERSION}-b${BUILD_NUMBER}"
           APK_NAME="kal-tracker-${TAG}.apk"
           ASSET_URL="https://github.com/${RELEASES_REPO}/releases/download/${TAG}/${APK_NAME}"
           STAGE="$RUNNER_TEMP/kal-release"
-          mkdir -p "$STAGE"
+          [[ ! -e "$STAGE" ]]
+          mkdir -m 700 "$STAGE"
           cp "$APK" "$STAGE/$APK_NAME"
-          APK_SHA="$(sha256sum "$STAGE/$APK_NAME" | awk '{print $1}')"
-          APK_SIZE="$(stat -c%s "$STAGE/$APK_NAME")"
+          APK_SHA="$(sha256_file "$STAGE/$APK_NAME")"
+          APK_SIZE="$(file_size "$STAGE/$APK_NAME")"
+          (( APK_SIZE > 0 && APK_SIZE <= 314572800 ))
 
           jq -n \
             --arg applicationId "it.marcomartelli.kaltracker" \
@@ -164,21 +241,32 @@ jobs:
             --arg notes "$RELEASE_NOTES" \
             --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --arg sourceRepository "$GITHUB_REPOSITORY" \
-            --arg sourceCommit "$GITHUB_SHA" \
+            --arg sourceCommit "$RELEASE_SOURCE_SHA" \
+            --arg workflowCommit "$GITHUB_SHA" \
+            --arg workflowRef "$GITHUB_WORKFLOW_REF" \
+            --arg workflowRun "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --argjson workflowRunAttempt "$GITHUB_RUN_ATTEMPT" \
+            --arg releaseRepository "$RELEASES_REPO" \
             '{applicationId:$applicationId,platform:$platform,channel:$channel,
               version:$version,buildNumber:$buildNumber,
               minimumSupportedBuild:$minimumSupportedBuild,tag:$tag,
               assetUrl:$assetUrl,sha256:$sha256,sizeBytes:$sizeBytes,
               notes:$notes,publishedAt:$publishedAt,
-              sourceRepository:$sourceRepository,sourceCommit:$sourceCommit}' \
+              sourceRepository:$sourceRepository,sourceCommit:$sourceCommit,
+              workflowCommit:$workflowCommit,workflowRef:$workflowRef,
+              workflowRun:$workflowRun,workflowRunAttempt:$workflowRunAttempt,
+              releaseRepository:$releaseRepository}' \
             > "$STAGE/payload.json"
 
-          PRIVATE_KEY="$RUNNER_TEMP/ota-private.pem"
-          PUBLIC_KEY="$RUNNER_TEMP/ota-public.pem"
-          trap 'rm -f "$PRIVATE_KEY" "$PUBLIC_KEY"' EXIT
-          printf '%s' "$OTA_PRIVATE_KEY_BASE64" | base64 --decode > "$PRIVATE_KEY"
+          OTA_KEY_TEMP="$(mktemp -d "$RUNNER_TEMP/kal-ota-key.XXXXXX")"
+          chmod 700 "$OTA_KEY_TEMP"
+          printf 'OTA_KEY_TEMP=%s\n' "$OTA_KEY_TEMP" >> "$GITHUB_ENV"
+          PRIVATE_KEY="$OTA_KEY_TEMP/private.pem"
+          PUBLIC_KEY="$OTA_KEY_TEMP/public.pem"
+          trap 'rm -f "$PRIVATE_KEY" "$PUBLIC_KEY"; rmdir "$OTA_KEY_TEMP" 2>/dev/null || true' EXIT
+          printf '%s' "$OTA_PRIVATE_KEY_BASE64" | openssl base64 -d -A > "$PRIVATE_KEY"
           chmod 600 "$PRIVATE_KEY"
-          DERIVED_PUBLIC="$(openssl pkey -in "$PRIVATE_KEY" -pubout -outform DER | tail -c 32 | base64 -w0)"
+          DERIVED_PUBLIC="$(openssl pkey -in "$PRIVATE_KEY" -pubout -outform DER | tail -c 32 | openssl base64 -A)"
           [[ "$DERIVED_PUBLIC" == "$OTA_PUBLIC_KEY_BASE64" ]]
           openssl pkey -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
           openssl pkeyutl -sign -rawin -inkey "$PRIVATE_KEY" \
@@ -186,29 +274,43 @@ jobs:
           openssl pkeyutl -verify -rawin -pubin -inkey "$PUBLIC_KEY" \
             -in "$STAGE/payload.json" -sigfile "$STAGE/signature.bin"
 
-          PAYLOAD_B64="$(base64 -w0 "$STAGE/payload.json" | tr '+/' '-_' | tr -d '=')"
-          SIGNATURE_B64="$(base64 -w0 "$STAGE/signature.bin" | tr '+/' '-_' | tr -d '=')"
+          PAYLOAD_B64="$(openssl base64 -A -in "$STAGE/payload.json" | tr '+/' '-_' | tr -d '=')"
+          SIGNATURE_B64="$(openssl base64 -A -in "$STAGE/signature.bin" | tr '+/' '-_' | tr -d '=')"
           jq -n --argjson schema 1 --arg keyId "$OTA_KEY_ID" \
             --arg payload "$PAYLOAD_B64" --arg signature "$SIGNATURE_B64" \
             '{schema:$schema,keyId:$keyId,payload:$payload,signature:$signature}' \
             > "$STAGE/kal-tracker-update.json"
 
+          MANIFEST_SHA="$(sha256_file "$STAGE/kal-tracker-update.json")"
           jq -n \
-            --arg repository "$GITHUB_REPOSITORY" \
-            --arg commit "$GITHUB_SHA" \
+            --argjson schema 1 \
+            --arg sourceRepository "$GITHUB_REPOSITORY" \
+            --arg sourceCommit "$RELEASE_SOURCE_SHA" \
+            --arg workflowCommit "$GITHUB_SHA" \
+            --arg workflowRef "$GITHUB_WORKFLOW_REF" \
             --arg workflowRun "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            '{repository:$repository,commit:$commit,workflowRun:$workflowRun}' \
+            --argjson workflowRunAttempt "$GITHUB_RUN_ATTEMPT" \
+            --arg releaseRepository "$RELEASES_REPO" \
+            --arg releaseTag "$TAG" \
+            --arg apkSha256 "$APK_SHA" \
+            --arg manifestSha256 "$MANIFEST_SHA" \
+            '{schema:$schema,
+              source:{repository:$sourceRepository,commit:$sourceCommit},
+              workflow:{commit:$workflowCommit,ref:$workflowRef,run:$workflowRun,runAttempt:$workflowRunAttempt},
+              release:{repository:$releaseRepository,tag:$releaseTag},
+              artifacts:{apkSha256:$apkSha256,manifestSha256:$manifestSha256}}' \
             > "$STAGE/SOURCE.json"
           rm -f "$STAGE/payload.json" "$STAGE/signature.bin"
           (
             cd "$STAGE"
-            sha256sum "$APK_NAME" kal-tracker-update.json SOURCE.json > SHA256SUMS
+            for asset in "$APK_NAME" kal-tracker-update.json SOURCE.json; do
+              printf '%s  %s\n' "$(sha256_file "$asset")" "$asset"
+            done > SHA256SUMS
           )
           printf '%s\n' "$RELEASE_NOTES" > "$STAGE/RELEASE_NOTES.md"
 
-          MANIFEST_SHA="$(sha256sum "$STAGE/kal-tracker-update.json" | awk '{print $1}')"
-          SUMS_SHA="$(sha256sum "$STAGE/SHA256SUMS" | awk '{print $1}')"
-          SOURCE_SHA="$(sha256sum "$STAGE/SOURCE.json" | awk '{print $1}')"
+          SUMS_SHA="$(sha256_file "$STAGE/SHA256SUMS")"
+          SOURCE_SHA="$(sha256_file "$STAGE/SOURCE.json")"
           {
             printf 'TAG=%s\n' "$TAG"
             printf 'APK_NAME=%s\n' "$APK_NAME"
@@ -219,30 +321,87 @@ jobs:
             printf 'SOURCE_SHA=%s\n' "$SOURCE_SHA"
           } >> "$GITHUB_ENV"
 
+      - name: Recheck signed latest immediately before publish
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/release-tooling/check_latest_ota_release.sh" \
+            --candidate-version "$VERSION" \
+            --candidate-build "$BUILD_NUMBER" \
+            --public-key-base64 "$OTA_PUBLIC_KEY_BASE64" \
+            --expected-key-id "$OTA_KEY_ID" \
+            --source-repo "$GITHUB_REPOSITORY" \
+            --releases-repo "$RELEASES_REPO"
+
       - name: Publish verified GitHub Release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
         run: |
           set -euo pipefail
           [[ -n "$GH_TOKEN" ]]
+          RELEASE_GH_CONFIG="$(mktemp -d "$RUNNER_TEMP/kal-release-gh.XXXXXX")"
+          chmod 700 "$RELEASE_GH_CONFIG"
+          trap 'find "$RELEASE_GH_CONFIG" -depth -mindepth 1 -delete; rmdir "$RELEASE_GH_CONFIG"' EXIT
+          export GH_CONFIG_DIR="$RELEASE_GH_CONFIG"
+          export GH_HOST=github.com
+          export GH_PROMPT_DISABLED=1
+          export GH_PAGER=cat
           test "$(gh repo view "$RELEASES_REPO" --json visibility --jq .visibility)" = PUBLIC
+
+          semver_is_lower_than() {
+            local candidate="$1"
+            local existing="$2"
+            local c_major c_minor c_patch e_major e_minor e_patch
+            IFS=. read -r c_major c_minor c_patch <<<"$candidate"
+            IFS=. read -r e_major e_minor e_patch <<<"$existing"
+            if ((10#$c_major != 10#$e_major)); then
+              ((10#$c_major < 10#$e_major))
+            elif ((10#$c_minor != 10#$e_minor)); then
+              ((10#$c_minor < 10#$e_minor))
+            else
+              ((10#$c_patch < 10#$e_patch))
+            fi
+          }
 
           RELEASE_TAGS="$(gh api --paginate "repos/${RELEASES_REPO}/releases?per_page=100" \
             --jq '.[] | select(.draft == false) | .tag_name')"
-          MAX_BUILD="$(printf '%s\n' "$RELEASE_TAGS" | sed -n 's/^v[0-9][0-9.]*-b\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)"
-          MAX_BUILD="${MAX_BUILD:-0}"
+          MAX_BUILD=0
+          MAX_VERSION=0.0.0
+          while IFS= read -r existing_tag; do
+            [[ -n "$existing_tag" ]] || continue
+            if [[ "$existing_tag" =~ ^v((0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*))-b([1-9][0-9]*)$ ]]; then
+              EXISTING_VERSION="${BASH_REMATCH[1]}"
+              EXISTING_MAJOR="${BASH_REMATCH[2]}"
+              EXISTING_MINOR="${BASH_REMATCH[3]}"
+              EXISTING_PATCH="${BASH_REMATCH[4]}"
+              EXISTING_BUILD="${BASH_REMATCH[5]}"
+              for EXISTING_COMPONENT in "$EXISTING_MAJOR" "$EXISTING_MINOR" "$EXISTING_PATCH"; do
+                (( ${#EXISTING_COMPONENT} <= 10 && 10#$EXISTING_COMPONENT <= 2147483647 )) || {
+                  echo "Tag OTA esistente con SemVer non valida: $existing_tag" >&2
+                  exit 1
+                }
+              done
+              (( ${#EXISTING_BUILD} <= 10 )) || {
+                echo "Tag OTA esistente con build non valida: $existing_tag" >&2
+                exit 1
+              }
+              (( 10#$EXISTING_BUILD <= 2100000000 )) || {
+                echo "Tag OTA esistente oltre il limite Android: $existing_tag" >&2
+                exit 1
+              }
+              (( 10#$EXISTING_BUILD <= MAX_BUILD )) || MAX_BUILD=$((10#$EXISTING_BUILD))
+              if semver_is_lower_than "$MAX_VERSION" "$EXISTING_VERSION"; then
+                MAX_VERSION="$EXISTING_VERSION"
+              fi
+            fi
+          done <<<"$RELEASE_TAGS"
           if (( BUILD_NUMBER <= MAX_BUILD )); then
             echo "Build $BUILD_NUMBER non crescente: ultima build pubblicata $MAX_BUILD" >&2
             exit 1
           fi
 
-          MAX_VERSION="$(printf '%s\n' "$RELEASE_TAGS" | sed -n 's/^v\([0-9][0-9.]*\)-b[0-9][0-9]*$/\1/p' | sort -V | tail -1)"
-          if [[ -n "$MAX_VERSION" && "$VERSION" != "$MAX_VERSION" ]]; then
-            LOWEST_VERSION="$(printf '%s\n%s\n' "$VERSION" "$MAX_VERSION" | sort -V | head -1)"
-            if [[ "$LOWEST_VERSION" == "$VERSION" ]]; then
-              echo "Versione $VERSION precedente alla versione pubblicata $MAX_VERSION" >&2
-              exit 1
-            fi
+          if semver_is_lower_than "$VERSION" "$MAX_VERSION"; then
+            echo "Versione $VERSION precedente alla versione pubblicata $MAX_VERSION" >&2
+            exit 1
           fi
 
           if gh release view "$TAG" --repo "$RELEASES_REPO" >/dev/null 2>&1; then
@@ -270,8 +429,12 @@ jobs:
 
           gh release edit "$TAG" --repo "$RELEASES_REPO" --draft=false --latest
 
+          unset GH_TOKEN
           LATEST_MANIFEST="https://github.com/${RELEASES_REPO}/releases/latest/download/kal-tracker-update.json"
-          curl --fail --silent --show-error --location --retry 5 --retry-all-errors \
+          curl --disable --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 10 --max-time 60 --max-filesize 1048576 \
+            --retry 5 --retry-all-errors \
             "$LATEST_MANIFEST" -o "$RUNNER_TEMP/remote-manifest.json"
           cmp "$STAGE/kal-tracker-update.json" "$RUNNER_TEMP/remote-manifest.json"
 
@@ -286,3 +449,29 @@ jobs:
             ${{ runner.temp }}/kal-release/SOURCE.json
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Remove all transient release material
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f -- \
+            android/key.properties \
+            "$RUNNER_TEMP/remote-manifest.json"
+          if [[ -n "${ANDROID_SIGNING_DIR:-}" && -d "$ANDROID_SIGNING_DIR" ]]; then
+            rm -f -- "$ANDROID_SIGNING_DIR/kal-tracker-release.jks"
+            rmdir "$ANDROID_SIGNING_DIR"
+          fi
+          if [[ -d "$RUNNER_TEMP/kal-release" ]]; then
+            find "$RUNNER_TEMP/kal-release" -type f -delete
+            rmdir "$RUNNER_TEMP/kal-release"
+          fi
+          if [[ -d "$RUNNER_TEMP/release-tooling" ]]; then
+            rm -f -- \
+              "$RUNNER_TEMP/release-tooling/check_ota_monotonicity.sh" \
+              "$RUNNER_TEMP/release-tooling/check_latest_ota_release.sh"
+            rmdir "$RUNNER_TEMP/release-tooling"
+          fi
+          if [[ -n "${OTA_KEY_TEMP:-}" && -d "$OTA_KEY_TEMP" ]]; then
+            rm -f -- "$OTA_KEY_TEMP/private.pem" "$OTA_KEY_TEMP/public.pem"
+            rmdir "$OTA_KEY_TEMP"
+          fi
