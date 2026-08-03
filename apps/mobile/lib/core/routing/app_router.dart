@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kal_tracker/core/presentation/app_shell.dart';
+import 'package:kal_tracker/core/sync/sync_engine.dart';
 import 'package:kal_tracker/features/backup/presentation/backup_screen.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart';
@@ -8,9 +9,12 @@ import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart'
 import 'package:kal_tracker/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_editor_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
+import 'package:kal_tracker/features/sync/presentation/sync_screen.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/progress_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Avvia il motore di sync insieme all'app (inerte senza configurazione).
+  ref.watch(syncBootstrapProvider);
   final router = GoRouter(
     routes: [
       StatefulShellRoute.indexedStack(
@@ -90,6 +94,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'backup',
                     name: 'backup',
                     builder: (context, state) => const BackupScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sync',
+                    name: 'sync',
+                    builder: (context, state) => const SyncScreen(),
                   ),
                 ],
               ),

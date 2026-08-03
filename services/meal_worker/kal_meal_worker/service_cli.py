@@ -7,6 +7,7 @@ import signal
 import sys
 import threading
 
+from .claude_analyzer import ClaudeAnalyzer
 from .codex_analyzer import CodexAnalyzer
 from .keychain import MacOSKeychainPassword
 from .supabase_gateway import (
@@ -21,7 +22,10 @@ from .worker import CycleOutcome, MealWorker, RetryPolicy
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kal-meal-worker",
-        description="Worker privato Supabase -> Codex per le foto dei pasti.",
+        description=(
+            "Worker privato Supabase -> CLI AI (Claude o Codex) "
+            "per le foto dei pasti."
+        ),
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
     serve = subcommands.add_parser("serve", help="Avvia il poll loop a job singolo")
@@ -49,6 +53,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("KAL_MEAL_WORKER_KEYCHAIN_ACCOUNT"),
     )
     serve.add_argument(
+        "--provider",
+        choices=("claude", "codex"),
+        default=os.environ.get("KAL_MEAL_ANALYZER_PROVIDER", "claude"),
+    )
+    serve.add_argument(
+        "--claude-executable",
+        default=os.environ.get("KAL_CLAUDE_EXECUTABLE", "claude"),
+    )
+    serve.add_argument(
         "--codex-executable",
         default=os.environ.get("KAL_CODEX_EXECUTABLE", "codex"),
     )
@@ -56,6 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--lease-seconds", type=int, default=180)
     serve.add_argument("--heartbeat-seconds", type=float)
     serve.add_argument("--request-timeout", type=float, default=30)
+    serve.add_argument("--claude-timeout", type=int, default=120)
     serve.add_argument("--codex-timeout", type=int, default=120)
     serve.add_argument("--operation-attempts", type=int, default=3)
     serve.add_argument("--once", action="store_true")
@@ -65,6 +79,21 @@ def build_parser() -> argparse.ArgumentParser:
         default="INFO",
     )
     return parser
+
+
+def create_analyzer(arguments: argparse.Namespace) -> ClaudeAnalyzer | CodexAnalyzer:
+    provider = (arguments.provider or "").strip().lower()
+    if provider == "claude":
+        return ClaudeAnalyzer(
+            executable=(arguments.claude_executable,),
+            timeout_seconds=arguments.claude_timeout,
+        )
+    if provider == "codex":
+        return CodexAnalyzer(
+            executable=(arguments.codex_executable,),
+            timeout_seconds=arguments.codex_timeout,
+        )
+    raise ValueError(f"Provider analisi non supportato: {arguments.provider}")
 
 
 def _required(parser: argparse.ArgumentParser, value: str | None, name: str) -> str:
@@ -121,10 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             transport=transport,
             request_timeout=arguments.request_timeout,
         )
-        analyzer = CodexAnalyzer(
-            executable=(arguments.codex_executable,),
-            timeout_seconds=arguments.codex_timeout,
-        )
+        analyzer = create_analyzer(arguments)
         worker = MealWorker(
             gateway=gateway,
             analyzer=analyzer,

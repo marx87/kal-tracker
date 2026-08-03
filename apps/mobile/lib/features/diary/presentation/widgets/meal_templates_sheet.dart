@@ -199,6 +199,31 @@ class _TemplateTile extends ConsumerWidget {
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) => AlertDialog(
+        key: const Key('delete_template_dialog'),
+        title: Text('Elimino ${template.name}?'),
+        content: const Text(
+          'Sparisce dai tuoi modelli, ma le voci già nel diario restano.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('confirm_delete_template'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
     try {
       await ref
           .read(mealTemplateRepositoryProvider)

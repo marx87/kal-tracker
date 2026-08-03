@@ -2,17 +2,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
-from .codex_analyzer import CodexAnalyzer, CodexAnalyzerError
+from .analyzer_errors import AnalyzerError
+from .claude_analyzer import ClaudeAnalyzer
+from .codex_analyzer import CodexAnalyzer
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Analizza una foto pasto con la Codex CLI di Marco.",
+        description="Analizza una foto pasto con la CLI AI di Marco.",
     )
     parser.add_argument("image", type=Path, help="Foto JPEG, PNG o WebP")
+    parser.add_argument(
+        "--provider",
+        choices=("claude", "codex"),
+        default=os.environ.get("KAL_MEAL_ANALYZER_PROVIDER", "claude"),
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -24,11 +32,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
-    try:
-        result = CodexAnalyzer(timeout_seconds=arguments.timeout).analyze(
-            arguments.image
+    if arguments.provider == "codex":
+        analyzer: ClaudeAnalyzer | CodexAnalyzer = CodexAnalyzer(
+            timeout_seconds=arguments.timeout
         )
-    except CodexAnalyzerError as error:
+    else:
+        analyzer = ClaudeAnalyzer(timeout_seconds=arguments.timeout)
+    try:
+        result = analyzer.analyze(arguments.image)
+    except AnalyzerError as error:
         print(str(error), file=sys.stderr)
         return 2
 

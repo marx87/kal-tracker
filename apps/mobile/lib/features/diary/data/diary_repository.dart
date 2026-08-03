@@ -315,6 +315,52 @@ class DiaryRepository {
     });
   }
 
+  Future<void> restoreEntry(String itemId) async {
+    final now = AppTime.nowUtc();
+    await _database.transaction(() async {
+      final existing = await (_database.select(
+        _database.mealItems,
+      )..where((item) => item.id.equals(itemId))).getSingleOrNull();
+      if (existing == null) {
+        throw StateError('Voce del diario non trovata.');
+      }
+      if (existing.deletedAt == null) {
+        return;
+      }
+
+      final changedRows =
+          await (_database.update(_database.mealItems)..where(
+                (item) => item.id.equals(itemId) & item.deletedAt.isNotNull(),
+              ))
+              .write(
+                MealItemsCompanion(
+                  deletedAt: const Value(null),
+                  updatedAt: Value(now),
+                ),
+              );
+      if (changedRows != 1) {
+        throw StateError('La voce del diario è stata modificata.');
+      }
+
+      final meal = await (_database.select(
+        _database.meals,
+      )..where((row) => row.id.equals(existing.mealId))).getSingle();
+      final per100g = _per100gOf(existing);
+      await _writeItemOutbox(
+        itemId: itemId,
+        meal: meal,
+        foodName: existing.foodName,
+        grams: existing.grams,
+        per100g: per100g,
+        totals: NutritionCalculator.scale(
+          per100g: per100g,
+          grams: existing.grams,
+        ),
+        now: now,
+      );
+    });
+  }
+
   Future<MealItem> _requireEditableItem(String itemId) async {
     final existing = await (_database.select(
       _database.mealItems,
