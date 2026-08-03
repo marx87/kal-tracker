@@ -1,0 +1,3 @@
+[console_scripts]
+kal-meal-analyze = kal_meal_worker.cli:main
+kal-meal-worker = kal_meal_worker.service_cli:main

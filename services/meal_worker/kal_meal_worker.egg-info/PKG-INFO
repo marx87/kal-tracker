@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: kal-meal-worker
+Version: 0.1.0
+Summary: Worker locale Codex per le foto dei pasti di Kal Tracker
+Requires-Python: >=3.11

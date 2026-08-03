@@ -74,6 +74,10 @@ class ClaudeAnalyzerTest(unittest.TestCase):
             )
             schema = json.loads(command[command.index("--json-schema") + 1])
             self.assertIn("foods", schema["properties"])
+            # Il validatore della CLI rifiuta il meta-schema draft 2020-12:
+            # $schema/$id non devono mai arrivare a --json-schema.
+            self.assertNotIn("$schema", schema)
+            self.assertNotIn("$id", schema)
             self.assertNotIn("ANTHROPIC_API_KEY", observed["environment"])
             self.assertNotIn("KAL_SUPABASE_URL", observed["environment"])
             self.assertEqual(result.foods[0].name, "Riso basmati cotto")

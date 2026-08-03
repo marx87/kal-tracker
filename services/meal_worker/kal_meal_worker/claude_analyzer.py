@@ -95,10 +95,13 @@ class ClaudeAnalyzer:
 
         schema_path = Path(__file__).with_name("meal_analysis.schema.json")
         try:
-            schema = json.dumps(
-                json.loads(schema_path.read_text(encoding="utf-8")),
-                separators=(",", ":"),
-            )
+            schema_document = json.loads(schema_path.read_text(encoding="utf-8"))
+            # Il validatore della CLI claude non conosce il meta-schema
+            # draft 2020-12: le chiavi $schema/$id vanno rimosse prima
+            # di passare il documento a --json-schema.
+            schema_document.pop("$schema", None)
+            schema_document.pop("$id", None)
+            schema = json.dumps(schema_document, separators=(",", ":"))
         except (OSError, json.JSONDecodeError) as error:
             raise ClaudeAnalyzerError(
                 "Schema di analisi non disponibile",
