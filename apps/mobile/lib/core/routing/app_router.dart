@@ -8,6 +8,7 @@ import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart
 import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_review_screen.dart';
+import 'package:kal_tracker/features/quick_add/barcode_scan_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_editor_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
@@ -118,6 +119,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'photo-review',
         builder: (context, state) =>
             PhotoReviewScreen(jobId: state.pathParameters['jobId']!),
+      ),
+      // Anche lo scanner vive fuori dalla shell: schermo intero,
+      // raggiungibile dal menu smart del FAB o direttamente come rotta.
+      GoRoute(
+        path: '/barcode-scan',
+        name: 'barcode-scan',
+        builder: (context, state) => const BarcodeScanScreen(),
       ),
     ],
   );
