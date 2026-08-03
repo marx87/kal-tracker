@@ -31,7 +31,10 @@ void main() {
       findsOneWidget,
     );
 
+    // Il FAB apre il menu smart: la strada manuale è la prima voce.
     await tester.tap(find.byKey(const Key('add_food_button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick_add_manual')));
     await tester.pumpAndSettle();
 
     await tester.enterText(

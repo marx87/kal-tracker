@@ -40,8 +40,11 @@ class CatalogImportResult {
 ///
 /// L'import è versionato: la version dell'asset viene confrontata con quella
 /// già importata (file JSON locale, stesso pattern di BackupStorage) e il
-/// batch parte solo se serve. `insertOrIgnore` sugli id stabili `cat-*` rende
-/// l'operazione idempotente e non tocca mai le copie personali.
+/// batch parte solo se serve. Su una version più alta le righe `catalog`
+/// esistenti vengono AGGIORNATE (valori per-100g e porzione di default) e le
+/// voci nuove inserite con `insertOrIgnore` sugli id stabili `cat-*`: è
+/// sicuro perché le modifiche dell'utente vivono in copie personali con id
+/// nuovi e `source: 'custom'`, mai sulle righe `catalog`.
 class CatalogSeedImporter {
   CatalogSeedImporter(
     this._database, {
@@ -96,6 +99,27 @@ class CatalogSeedImporter {
               updatedAt: now,
             ),
         ], mode: InsertMode.insertOrIgnore);
+        // Version bump: le righe catalog già presenti vengono allineate
+        // all'asset (valori e porzione). Il filtro su source='catalog'
+        // garantisce che le copie personali (id nuovi, source='custom')
+        // non vengano mai toccate; niente outbox, come per gli insert.
+        for (final item in items) {
+          batch.update(
+            _database.foods,
+            FoodsCompanion(
+              name: Value(item.name),
+              caloriesPer100g: Value(item.per100g.calories),
+              proteinPer100g: Value(item.per100g.protein),
+              carbsPer100g: Value(item.per100g.carbs),
+              fatPer100g: Value(item.per100g.fat),
+              defaultServingGrams: Value(item.portionGrams),
+              updatedAt: Value(now),
+            ),
+            where: (table) =>
+                table.id.equals(item.id) &
+                table.source.equals(FoodSource.catalog),
+          );
+        }
       });
       await _writeImportedVersion(asset.version, now);
       return CatalogImportResult.imported(

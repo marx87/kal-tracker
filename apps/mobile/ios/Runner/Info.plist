@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Kal Tracker usa la fotocamera per fotografare il pasto e proporne l’analisi nel diario.</string>
+	<string>Kal Tracker usa la fotocamera per fotografare il pasto da analizzare e per leggere i codici a barre dei prodotti.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Kal Tracker legge la foto scelta dalla galleria per proporne l’analisi nel diario.</string>
 	<key>UIApplicationSceneManifest</key>

@@ -10,19 +10,27 @@ import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
+import 'package:kal_tracker/features/wellbeing/domain/water_settings.dart';
 import 'package:kal_tracker/features/wellbeing/domain/wellbeing_models.dart';
+import 'package:kal_tracker/features/wellbeing/presentation/water_palette.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/wellbeing_providers.dart';
 
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
-
-  static const _waterGoal = 2000;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final target = ref.watch(nutritionTargetProvider);
     final water = ref.watch(todayWaterProvider);
     final weights = ref.watch(recentWeightsProvider);
+    // L'obiettivo acqua ora è configurabile dal widget del diario:
+    // qui si legge lo stesso valore (default 2000 ml).
+    final waterGoal = ref
+        .watch(waterSettingsProvider)
+        .maybeWhen(
+          data: (value) => value.goalMilliliters,
+          orElse: () => WaterSettings.defaultGoalMilliliters,
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -76,7 +84,7 @@ class ProgressScreen extends ConsumerWidget {
           water.when(
             data: (value) => _WaterCard(
               intake: value,
-              goal: _waterGoal,
+              goal: waterGoal,
               onAdd250: () => _addWater(context, ref, 250),
               onAdd500: () => _addWater(context, ref, 500),
             ),
@@ -345,8 +353,8 @@ class _WaterCard extends StatelessWidget {
               children: [
                 const _SectionIcon(
                   icon: Icons.water_drop_rounded,
-                  color: Color(0xFF397CB3),
-                  background: Color(0xFFE0F0FC),
+                  color: WaterPalette.deep,
+                  background: WaterPalette.soft,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -367,9 +375,9 @@ class _WaterCard extends StatelessWidget {
                 ),
                 Text(
                   '${(progress * 100).round()}%',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: const Color(0xFF397CB3),
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(color: WaterPalette.deep),
                 ),
               ],
             ),
@@ -378,8 +386,8 @@ class _WaterCard extends StatelessWidget {
               minHeight: 10,
               borderRadius: BorderRadius.circular(10),
               value: progress,
-              backgroundColor: const Color(0xFFE0F0FC),
-              color: const Color(0xFF397CB3),
+              backgroundColor: WaterPalette.soft,
+              color: WaterPalette.deep,
             ),
             const SizedBox(height: 14),
             Row(

@@ -29,7 +29,9 @@ assegna id stabili deterministici "cat-" + slug del nome e scrive l'asset
 ordinato per categoria e nome con intestazione {"version": N, "items": [...]}.
 
 Riusabile per le versioni successive del catalogo: basta puntare a nuovi
-chunk e alzare --version.
+chunk e alzare --version. Storia delle version:
+  1 = catalogo iniziale (795 voci);
+  2 = audit "porzioni oneste" (solo portionGrams ritoccati, per-100g intatti).
 """
 
 from __future__ import annotations
@@ -288,7 +290,7 @@ def main() -> int:
         help="file asset di destinazione",
     )
     parser.add_argument(
-        "--version", type=int, default=1, help="version scritta nell'intestazione"
+        "--version", type=int, default=2, help="version scritta nell'intestazione"
     )
     args = parser.parse_args()
     return build(args.chunk_dir, args.out, args.version)

@@ -409,7 +409,7 @@
     "aliases": ["millefoglie", "diplomatico", "sfoglia con crema"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 380, "proteinPer100g": 5, "carbsPer100g": 40, "fatPer100g": 22,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Profiteroles",
@@ -453,50 +453,50 @@
     "aliases": ["gelato alla crema", "gelato alla panna", "fior di latte"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 220, "proteinPer100g": 4, "carbsPer100g": 25, "fatPer100g": 11,
-    "portionGrams": 100,
-    "note": "coppetta media, 2 palline"
+    "portionGrams": 120,
+    "note": "coppetta media da gelateria, 2-3 palline"
   },
   {
     "name": "Gelato al cioccolato",
     "aliases": ["gelato cioccolato fondente", "gelato al cacao"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 240, "proteinPer100g": 4.5, "carbsPer100g": 28, "fatPer100g": 12,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Gelato alla nocciola",
     "aliases": ["gelato nocciola", "gelato gusto nocciola"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 250, "proteinPer100g": 5, "carbsPer100g": 26, "fatPer100g": 14,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Gelato al pistacchio",
     "aliases": ["gelato pistacchio", "gelato gusto pistacchio"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 250, "proteinPer100g": 5.5, "carbsPer100g": 25, "fatPer100g": 14,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Gelato alla stracciatella",
     "aliases": ["stracciatella", "gelato con scaglie di cioccolato"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 235, "proteinPer100g": 4, "carbsPer100g": 27, "fatPer100g": 12,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Gelato alla frutta",
     "aliases": ["gelato alla fragola", "gelato al limone cremoso", "gelato frutta"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 160, "proteinPer100g": 2, "carbsPer100g": 30, "fatPer100g": 3.5,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Sorbetto al limone",
     "aliases": ["sorbetto", "sorbetto limone", "gelato sorbetto"],
     "category": "Colazione, dolci e snack",
     "kcalPer100g": 130, "proteinPer100g": 0.5, "carbsPer100g": 32, "fatPer100g": 0.2,
-    "portionGrams": 100
+    "portionGrams": 120
   },
   {
     "name": "Cono gelato ricoperto confezionato",

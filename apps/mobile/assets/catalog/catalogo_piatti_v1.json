@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "items": [
     {
       "id": "cat-cannelloni-ricotta-e-spinaci",
@@ -1835,7 +1835,7 @@
       "proteinPer100g": 24.0,
       "carbsPer100g": 0.5,
       "fatPer100g": 5.5,
-      "portionGrams": 120.0
+      "portionGrams": 150.0
     },
     {
       "id": "cat-filetto-di-maiale",
@@ -2274,7 +2274,7 @@
       "proteinPer100g": 28.0,
       "carbsPer100g": 0.5,
       "fatPer100g": 4.0,
-      "portionGrams": 120.0
+      "portionGrams": 150.0
     },
     {
       "id": "cat-salame-corallina",
@@ -2590,7 +2590,7 @@
       "proteinPer100g": 20.0,
       "carbsPer100g": 1.0,
       "fatPer100g": 15.0,
-      "portionGrams": 120.0,
+      "portionGrams": 150.0,
       "note": "con salsa tonnata"
     },
     {
@@ -4612,7 +4612,7 @@
       "proteinPer100g": 8.0,
       "carbsPer100g": 35.0,
       "fatPer100g": 17.5,
-      "portionGrams": 250.0
+      "portionGrams": 300.0
     },
     {
       "id": "cat-pizza-margherita",
@@ -4999,7 +4999,7 @@
       "proteinPer100g": 1.7,
       "carbsPer100g": 8.0,
       "fatPer100g": 0.1,
-      "portionGrams": 100.0,
+      "portionGrams": 150.0,
       "note": "precotte, senza condimento"
     },
     {
@@ -5469,7 +5469,7 @@
       "proteinPer100g": 1.3,
       "carbsPer100g": 4.5,
       "fatPer100g": 6.4,
-      "portionGrams": 100.0,
+      "portionGrams": 150.0,
       "note": "saltati con olio e aglio"
     },
     {
@@ -5639,7 +5639,7 @@
       "proteinPer100g": 3.0,
       "carbsPer100g": 9.0,
       "fatPer100g": 16.5,
-      "portionGrams": 100.0,
+      "portionGrams": 150.0,
       "note": "con maionese"
     },
     {
@@ -5903,7 +5903,7 @@
       "proteinPer100g": 1.0,
       "carbsPer100g": 5.0,
       "fatPer100g": 2.9,
-      "portionGrams": 120.0,
+      "portionGrams": 150.0,
       "note": "spellati, con filo d'olio"
     },
     {
@@ -6089,7 +6089,7 @@
       "proteinPer100g": 1.3,
       "carbsPer100g": 2.5,
       "fatPer100g": 3.5,
-      "portionGrams": 100.0,
+      "portionGrams": 150.0,
       "note": "con filo d'olio"
     },
     {
@@ -6384,7 +6384,7 @@
       "proteinPer100g": 3.1,
       "carbsPer100g": 18.6,
       "fatPer100g": 0.2,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -6720,7 +6720,7 @@
       "proteinPer100g": 5.0,
       "carbsPer100g": 24.0,
       "fatPer100g": 0.8,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -6811,7 +6811,7 @@
       "proteinPer100g": 3.4,
       "carbsPer100g": 19.9,
       "fatPer100g": 0.6,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -6942,7 +6942,7 @@
       "proteinPer100g": 3.5,
       "carbsPer100g": 23.7,
       "fatPer100g": 1.0,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -6957,7 +6957,7 @@
       "proteinPer100g": 2.3,
       "carbsPer100g": 28.0,
       "fatPer100g": 0.4,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -7308,7 +7308,7 @@
       "proteinPer100g": 4.4,
       "carbsPer100g": 21.3,
       "fatPer100g": 1.9,
-      "portionGrams": 150.0,
+      "portionGrams": 180.0,
       "note": "valori da cotto"
     },
     {
@@ -7323,7 +7323,7 @@
       "proteinPer100g": 2.5,
       "carbsPer100g": 27.5,
       "fatPer100g": 0.4,
-      "portionGrams": 180.0,
+      "portionGrams": 200.0,
       "note": "valori da cotto"
     },
     {
@@ -7339,7 +7339,7 @@
       "proteinPer100g": 2.4,
       "carbsPer100g": 28.0,
       "fatPer100g": 0.3,
-      "portionGrams": 180.0,
+      "portionGrams": 200.0,
       "note": "valori da cotto, scolato"
     },
     {
@@ -7368,7 +7368,7 @@
       "proteinPer100g": 2.6,
       "carbsPer100g": 24.5,
       "fatPer100g": 1.0,
-      "portionGrams": 180.0,
+      "portionGrams": 200.0,
       "note": "valori da cotto"
     },
     {
@@ -7383,7 +7383,7 @@
       "proteinPer100g": 3.5,
       "carbsPer100g": 27.0,
       "fatPer100g": 1.5,
-      "portionGrams": 180.0,
+      "portionGrams": 200.0,
       "note": "valori da cotto"
     },
     {
@@ -10311,7 +10311,7 @@
       "proteinPer100g": 4.5,
       "carbsPer100g": 28.0,
       "fatPer100g": 12.0,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-gelato-al-pistacchio",
@@ -10325,7 +10325,7 @@
       "proteinPer100g": 5.5,
       "carbsPer100g": 25.0,
       "fatPer100g": 14.0,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-gelato-alla-frutta",
@@ -10340,7 +10340,7 @@
       "proteinPer100g": 2.0,
       "carbsPer100g": 30.0,
       "fatPer100g": 3.5,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-gelato-alla-nocciola",
@@ -10354,7 +10354,7 @@
       "proteinPer100g": 5.0,
       "carbsPer100g": 26.0,
       "fatPer100g": 14.0,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-gelato-alla-stracciatella",
@@ -10368,7 +10368,7 @@
       "proteinPer100g": 4.0,
       "carbsPer100g": 27.0,
       "fatPer100g": 12.0,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-gelato-fiordilatte",
@@ -10383,8 +10383,8 @@
       "proteinPer100g": 4.0,
       "carbsPer100g": 25.0,
       "fatPer100g": 11.0,
-      "portionGrams": 100.0,
-      "note": "coppetta media, 2 palline"
+      "portionGrams": 120.0,
+      "note": "coppetta media da gelateria, 2-3 palline"
     },
     {
       "id": "cat-ghiacciolo",
@@ -10505,7 +10505,7 @@
       "proteinPer100g": 5.0,
       "carbsPer100g": 40.0,
       "fatPer100g": 22.0,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-muesli-con-frutta-secca",
@@ -10729,7 +10729,7 @@
       "proteinPer100g": 0.5,
       "carbsPer100g": 32.0,
       "fatPer100g": 0.2,
-      "portionGrams": 100.0
+      "portionGrams": 120.0
     },
     {
       "id": "cat-strudel-di-mele",

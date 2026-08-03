@@ -114,6 +114,12 @@ class ClaudeAnalyzerTest(unittest.TestCase):
             self.assertIn("PER 100 GRAMMI", prompt)
             self.assertIn("NON fornire MAI le calorie totali", prompt)
             self.assertIn("i totali li calcola sempre l'app", prompt)
+            # Grammi onesti: peso reale della porzione, non porzione teorica.
+            self.assertIn("PESO REALE", prompt)
+            self.assertIn("280-400 g", prompt)
+            self.assertIn("vietato proporre 100-150 g", prompt)
+            self.assertIn("26-27 cm", prompt)
+            self.assertIn("fascia min/max", prompt)
 
     def test_accepts_wrapper_with_result_string(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

@@ -91,7 +91,8 @@ void main() {
       File('assets/catalog/catalogo_piatti_v1.json').readAsStringSync(),
     );
 
-    expect(asset.version, 1);
+    // Version 2: audit "porzioni oneste" (solo portionGrams ritoccati).
+    expect(asset.version, 2);
     expect(asset.items, hasLength(795));
 
     final ids = asset.items.map((item) => item.id).toSet();

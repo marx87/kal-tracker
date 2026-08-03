@@ -136,7 +136,7 @@ void main() {
   );
 
   test(
-    'il version bump aggiunge senza toccare catalogo e copie personali',
+    'il version bump aggiorna le righe catalog e non tocca le copie personali',
     () async {
       await importer(() => _asset(items: baseItems)).importIfNeeded();
 
@@ -158,8 +158,14 @@ void main() {
         () => _asset(
           version: 2,
           items: [
-            // Stesso id con valori diversi: NON deve sovrascrivere.
-            _item(id: 'cat-pasta-al-ragu', name: 'Pasta al ragù', kcal: 999),
+            // Stesso id con porzione e valori nuovi: la riga catalog DEVE
+            // essere aggiornata (audit porzioni oneste), la copia no.
+            _item(
+              id: 'cat-pasta-al-ragu',
+              name: 'Pasta al ragù',
+              kcal: 160,
+              portion: 380,
+            ),
             ...baseItems.skip(1),
             _item(id: 'cat-lasagne', name: 'Lasagne alla bolognese', kcal: 180),
           ],
@@ -175,18 +181,19 @@ void main() {
         'cat-tiramisu',
         'cat-lasagne',
       });
-      expect(
-        rows
-            .singleWhere((row) => row.id == 'cat-pasta-al-ragu')
-            .caloriesPer100g,
-        150,
-      );
+      final ragu = rows.singleWhere((row) => row.id == 'cat-pasta-al-ragu');
+      expect(ragu.caloriesPer100g, 160);
+      expect(ragu.defaultServingGrams, 380);
+      expect(ragu.source, FoodSource.catalog);
 
+      // La copia personale resta esattamente com'era.
       final copy = await repository.getFood(
         profileId: profileId,
         foodId: copyId,
       );
       expect(copy?.name, 'Ragù di casa');
+      expect(copy?.per100g.calories, 140);
+      expect(copy?.defaultServingGrams, 400);
       expect(copy?.source, FoodSource.custom);
 
       // In outbox c'è solo la copia personale, mai i piatti del catalogo.

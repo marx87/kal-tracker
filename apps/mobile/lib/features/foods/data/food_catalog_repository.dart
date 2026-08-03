@@ -68,19 +68,150 @@ class FoodCatalogRepository {
     return result == null ? null : _mapRow(result);
   }
 
+  /// [source] permette al flusso barcode di marcare l'origine ('barcode'):
+  /// per tutto il resto l'alimento resta personale come un 'custom'.
   Future<String> createFood({
     required String profileId,
     required FoodDraft draft,
+    String source = FoodSource.custom,
   }) async {
     draft.validate();
     final id = _uuid.v4();
     final now = AppTime.nowUtc();
 
     await _database.transaction(() async {
-      await _insertFood(id: id, profileId: profileId, draft: draft, now: now);
+      await _insertFood(
+        id: id,
+        profileId: profileId,
+        draft: draft,
+        now: now,
+        source: source,
+      );
     });
     return id;
   }
+
+  /// Cerca un alimento per codice a barre tra quelli visibili al profilo
+  /// (i globali e i propri, mai i tombstone). Sola lettura, nessun effetto
+  /// collaterale: un proprio tombstone col barcode NON torna vivo qui —
+  /// la riesumazione avviene solo alla conferma del salvataggio, con
+  /// [resurrectFoodByBarcode].
+  Future<FoodCatalogItem?> findByBarcode({
+    required String profileId,
+    required String barcode,
+  }) async {
+    final clean = barcode.trim();
+    if (clean.isEmpty) {
+      return null;
+    }
+    final live = await (_baseQuery(
+      profileId,
+    )..where(_database.foods.barcode.equals(clean))).getSingleOrNull();
+    return live == null ? null : _mapRow(live);
+  }
+
+  /// I valori di un proprio alimento eliminato con questo barcode, da
+  /// riproporre nella scheda di conferma. Sola lettura: il tombstone resta
+  /// morto finché non si conferma con [resurrectFoodByBarcode].
+  Future<FoodDraft?> findTombstoneDraftByBarcode({
+    required String profileId,
+    required String barcode,
+  }) async {
+    final clean = barcode.trim();
+    if (clean.isEmpty) {
+      return null;
+    }
+    final tombstone = await _tombstoneByBarcode(
+      profileId: profileId,
+      barcode: clean,
+    );
+    if (tombstone == null) {
+      return null;
+    }
+    return FoodDraft(
+      name: tombstone.name,
+      brand: tombstone.brand,
+      barcode: tombstone.barcode,
+      per100g: Nutrients(
+        calories: tombstone.caloriesPer100g,
+        protein: tombstone.proteinPer100g,
+        carbs: tombstone.carbsPer100g,
+        fat: tombstone.fatPer100g,
+      ),
+      defaultServingGrams: tombstone.defaultServingGrams,
+    );
+  }
+
+  /// Il vincolo UNIQUE su barcode vale anche per le righe eliminate: alla
+  /// CONFERMA del salvataggio un proprio tombstone col barcode del [draft]
+  /// torna vivo coi valori confermati (update + upsert in outbox) invece
+  /// di far fallire l'insert con lo stesso codice. Ritorna l'id riesumato,
+  /// oppure null se non c'è nessun tombstone e si deve creare da zero.
+  Future<String?> resurrectFoodByBarcode({
+    required String profileId,
+    required FoodDraft draft,
+  }) async {
+    draft.validate();
+    final clean = _cleanOptional(draft.barcode);
+    if (clean == null) {
+      return null;
+    }
+    final now = AppTime.nowUtc();
+    return _database.transaction(() async {
+      final tombstone = await _tombstoneByBarcode(
+        profileId: profileId,
+        barcode: clean,
+      );
+      if (tombstone == null) {
+        return null;
+      }
+      final cleanBrand = _cleanOptional(draft.brand);
+      await (_database.update(
+        _database.foods,
+      )..where((row) => row.id.equals(tombstone.id))).write(
+        FoodsCompanion(
+          name: Value(draft.name.trim()),
+          brand: Value(cleanBrand),
+          caloriesPer100g: Value(draft.per100g.calories),
+          proteinPer100g: Value(draft.per100g.protein),
+          carbsPer100g: Value(draft.per100g.carbs),
+          fatPer100g: Value(draft.per100g.fat),
+          defaultServingGrams: Value(draft.defaultServingGrams),
+          updatedAt: Value(now),
+          deletedAt: const Value(null),
+        ),
+      );
+      await _appendOutbox(
+        entityType: 'food',
+        entityId: tombstone.id,
+        operation: 'upsert',
+        payload: _foodPayload(
+          id: tombstone.id,
+          profileId: profileId,
+          draft: draft,
+          brand: cleanBrand,
+          barcode: clean,
+          now: now,
+        ),
+        now: now,
+      );
+      return tombstone.id;
+    });
+  }
+
+  Future<CatalogFood?> _tombstoneByBarcode({
+    required String profileId,
+    required String barcode,
+  }) =>
+      (_database.select(_database.foods)
+            ..where(
+              (row) =>
+                  row.barcode.equals(barcode) &
+                  row.deletedAt.isNotNull() &
+                  row.ownerProfileId.equals(profileId),
+            )
+            ..limit(1))
+          .getSingleOrNull();
 
   Future<String> createCustomFood({
     required String profileId,
@@ -272,6 +403,7 @@ class FoodCatalogRepository {
     required String profileId,
     required FoodDraft draft,
     required DateTime now,
+    String source = FoodSource.custom,
   }) async {
     final cleanBrand = _cleanOptional(draft.brand);
     final cleanBarcode = _cleanOptional(draft.barcode);
@@ -290,7 +422,7 @@ class FoodCatalogRepository {
             carbsPer100g: draft.per100g.carbs,
             fatPer100g: draft.per100g.fat,
             defaultServingGrams: Value(draft.defaultServingGrams),
-            source: const Value(FoodSource.custom),
+            source: Value(source),
             createdAt: now,
             updatedAt: now,
           ),

@@ -167,7 +167,7 @@
     "aliases": ["roastbeef all'inglese", "rosbif", "roast beef affettato"],
     "category": "Carne e salumi",
     "kcalPer100g": 150, "proteinPer100g": 28, "carbsPer100g": 0.5, "fatPer100g": 4,
-    "portionGrams": 120
+    "portionGrams": 150
   },
   {
     "name": "Bollito di manzo",
@@ -459,7 +459,7 @@
     "aliases": ["vitel tonne", "vitello con salsa tonnata", "girello tonnato"],
     "category": "Carne e salumi",
     "kcalPer100g": 220, "proteinPer100g": 20, "carbsPer100g": 1, "fatPer100g": 15,
-    "portionGrams": 120,
+    "portionGrams": 150,
     "note": "con salsa tonnata"
   },
   {
@@ -474,7 +474,7 @@
     "aliases": ["fettina di vitello", "fettina ai ferri", "fettina di carne"],
     "category": "Carne e salumi",
     "kcalPer100g": 150, "proteinPer100g": 24, "carbsPer100g": 0.5, "fatPer100g": 5.5,
-    "portionGrams": 120
+    "portionGrams": 150
   },
   {
     "name": "Cordon bleu",

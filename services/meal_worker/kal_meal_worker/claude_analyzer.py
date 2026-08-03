@@ -54,7 +54,16 @@ schema strutturato.
 Regole:
 - identifica separatamente gli alimenti visibili;
 - proponi al massimo tre alternative quando l'identificazione e incerta;
-- stima una fascia realistica di grammi e un valore suggerito;
+- stima il PESO REALE della porzione visibile nel piatto, non una porzione
+  teorica "da dieta": usa i riferimenti visivi (un piatto piano standard e
+  largo 26-27 cm, una forchetta ~20 cm) per capire quanto il piatto e pieno;
+- tara i grammi sulle porzioni reali italiane: un piatto normale di pasta o
+  riso condito pesa 280-400 g da cotto (vietato proporre 100-150 g se il
+  piatto e pieno), un secondo 150-250 g, un contorno 150-250 g, una pizza
+  intera 280-350 g;
+- dichiara l'incertezza nella fascia min/max di grammi con il valore
+  suggerito all'interno: fascia stretta se i riferimenti visivi sono chiari,
+  larga se la porzione e ambigua;
 - segnala olio, burro, salse, condimenti o ingredienti nascosti da confermare;
 - usa confidence basse quando porzione o alimento non sono distinguibili;
 - formula domande brevi per le informazioni che cambiano davvero il risultato;

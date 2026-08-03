@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
-import 'package:kal_tracker/core/sync/sync_auth.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/core/updates/update_banner.dart';
@@ -17,13 +16,14 @@ import 'package:kal_tracker/features/diary/presentation/widgets/friendly_day_hea
 import 'package:kal_tracker/features/diary/presentation/widgets/meal_templates_sheet.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/playful_empty_state.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/water_intake_card.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/wellness_meal_card.dart';
-import 'package:kal_tracker/features/photo_meal/data/photo_meal_gateway.dart';
 import 'package:kal_tracker/features/photo_meal/data/photo_meal_repository.dart';
 import 'package:kal_tracker/features/photo_meal/domain/photo_meal_job.dart';
-import 'package:kal_tracker/features/photo_meal/domain/photo_pipeline.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/meal_analysis_result.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
+import 'package:kal_tracker/features/quick_add/photo_meal_launcher.dart';
+import 'package:kal_tracker/features/quick_add/quick_add_menu.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 
@@ -74,10 +74,58 @@ class TodayDiaryScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('add_food_button'),
-        onPressed: () => _showAddFoodSheet(context),
+        onPressed: () => _openQuickAddMenu(context, ref),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Aggiungi alimento'),
       ),
+    );
+  }
+
+  /// Menu smart del FAB: manuale, catalogo, foto o codice a barre.
+  /// La voce manuale riapre lo stesso sheet di sempre: un tap in più,
+  /// ma le altre strade sono a portata di pollice.
+  Future<void> _openQuickAddMenu(BuildContext context, WidgetRef ref) async {
+    final action = await showQuickAddMenu(context);
+    if (action == null || !context.mounted) {
+      return;
+    }
+    switch (action) {
+      case QuickAddAction.manual:
+        await _showAddFoodSheet(context);
+      case QuickAddAction.catalog:
+        // Il ritorno rapido al diario è la tab «Oggi», sempre visibile.
+        GoRouter.of(context).go('/foods');
+      case QuickAddAction.photo:
+        await _startPhotoFlow(context, ref);
+      case QuickAddAction.barcode:
+        await GoRouter.of(context).push('/barcode-scan');
+    }
+  }
+
+  /// La foto dal menu smart non ha un pasto di contesto: si chiede prima.
+  /// Stessi guard del pulsante sotto i pasti: mai un crash offline.
+  Future<void> _startPhotoFlow(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ref.read(appConfigProvider).hasSupabaseConfiguration) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La foto del pasto non è attiva su questa installazione: puoi '
+            'aggiungere a mano, dal catalogo o col codice a barre.',
+          ),
+        ),
+      );
+      return;
+    }
+    final mealType = await showQuickAddMealPicker(context);
+    if (mealType == null || !context.mounted) {
+      return;
+    }
+    await startPhotoMealCapture(
+      context: context,
+      ref: ref,
+      mealType: mealType,
+      day: ref.read(selectedDayProvider),
     );
   }
 
@@ -167,6 +215,14 @@ class _DiaryBody extends ConsumerWidget {
           CalorieProgressCard(
             nutrients: diary.totals,
             targetCalories: target.calories,
+          ),
+          const SizedBox(height: 14),
+          // L'acqua in evidenza, subito sotto l'anello calorie: segue il
+          // giorno selezionato come tutto il resto del diario.
+          WaterIntakeCard(
+            day: day,
+            today: today,
+            dayLabel: diaryDayLabel(day, today),
           ),
           const SizedBox(height: 22),
           if (diary.entries.isEmpty) ...[
@@ -541,78 +597,15 @@ class _PhotoMealSection extends ConsumerWidget {
     );
   }
 
-  Future<void> _capturePhoto(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    if (!ref.read(syncAuthProvider).signedIn) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Per fotografare il pasto serve l’accesso al cloud: vai in '
-            'Progressi → Sincronizzazione e accedi.',
-          ),
-        ),
+  // Flusso condiviso col menu smart del FAB (guard, sorgente, snackbar):
+  // qui il pasto arriva dal contesto, lì lo sceglie prima Marco.
+  Future<void> _capturePhoto(BuildContext context, WidgetRef ref) =>
+      startPhotoMealCapture(
+        context: context,
+        ref: ref,
+        mealType: mealType,
+        day: day,
       );
-      return;
-    }
-    final source = await showModalBottomSheet<PhotoMealSource>(
-      context: context,
-      useRootNavigator: true,
-      useSafeArea: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const Key('photo_source_camera'),
-              leading: const Icon(Icons.photo_camera_rounded),
-              title: const Text('Scatta una foto'),
-              onTap: () => Navigator.pop(context, PhotoMealSource.camera),
-            ),
-            ListTile(
-              key: const Key('photo_source_gallery'),
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Scegli dalla galleria'),
-              onTap: () => Navigator.pop(context, PhotoMealSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source == null) {
-      return;
-    }
-    try {
-      final profile = await ref.read(marcoProfileProvider.future);
-      final job = await ref
-          .read(photoMealJobsProvider.notifier)
-          .capture(
-            source: source,
-            profileId: profile.id,
-            mealType: mealType,
-            day: day,
-          );
-      if (job != null) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Foto inviata: l’analisi parte appena il Mac è disponibile. '
-              'Nel frattempo puoi sempre aggiungere a mano.',
-            ),
-          ),
-        );
-      }
-    } on PhotoMealException catch (error) {
-      messenger.showSnackBar(SnackBar(content: Text(error.message)));
-    } on PhotoPipelineException catch (error) {
-      messenger.showSnackBar(SnackBar(content: Text(error.message)));
-    } on Object {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Non riesco a inviare la foto: riprova tra poco.'),
-        ),
-      );
-    }
-  }
 }
 
 class _PhotoJobStatusRow extends ConsumerWidget {

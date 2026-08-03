@@ -471,4 +471,115 @@ void main() {
       expect(await repository.getFood(profileId: 'other', foodId: id), isNull);
     },
   );
+
+  test(
+    'findByBarcode trova solo gli alimenti vivi visibili al profilo',
+    () async {
+      final id = await repository.createFood(
+        profileId: profileId,
+        draft: const FoodDraft(
+          name: 'Yogurt greco',
+          barcode: '8001111111111',
+          per100g: Nutrients(calories: 97, protein: 9, carbs: 3.9, fat: 5),
+          defaultServingGrams: 170,
+        ),
+      );
+
+      final found = await repository.findByBarcode(
+        profileId: profileId,
+        barcode: '8001111111111',
+      );
+      expect(found?.id, id);
+      expect(found?.barcode, '8001111111111');
+
+      // Nessun match per un codice mai visto o vuoto.
+      expect(
+        await repository.findByBarcode(
+          profileId: profileId,
+          barcode: '4009999999999',
+        ),
+        isNull,
+      );
+      expect(
+        await repository.findByBarcode(profileId: profileId, barcode: '  '),
+        isNull,
+      );
+
+      // L'alimento di un altro profilo resta invisibile, anche col barcode.
+      final now = AppTime.nowUtc();
+      await database
+          .into(database.appProfiles)
+          .insert(
+            AppProfilesCompanion.insert(
+              id: 'other-scan',
+              displayName: 'Altro',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      expect(
+        await repository.findByBarcode(
+          profileId: 'other-scan',
+          barcode: '8001111111111',
+        ),
+        isNull,
+      );
+    },
+  );
+
+  test('la lookup non riesuma un tombstone: torna vivo solo alla conferma '
+      'con resurrectFoodByBarcode', () async {
+    final id = await repository.createFood(
+      profileId: profileId,
+      draft: const FoodDraft(
+        name: 'Cracker integrali',
+        barcode: '8002222222222',
+        per100g: Nutrients(calories: 430, protein: 10, carbs: 65, fat: 13),
+      ),
+    );
+    await repository.deleteFood(profileId: profileId, foodId: id);
+
+    // La sola lookup è in sola lettura: il tombstone resta invisibile,
+    // resta morto e in outbox non compare nessuna riesumazione.
+    expect(
+      await repository.findByBarcode(
+        profileId: profileId,
+        barcode: '8002222222222',
+      ),
+      isNull,
+    );
+    final proposed = await repository.findTombstoneDraftByBarcode(
+      profileId: profileId,
+      barcode: '8002222222222',
+    );
+    expect(proposed?.name, 'Cracker integrali');
+    var stored = await (database.select(
+      database.foods,
+    )..where((row) => row.id.equals(id))).getSingle();
+    expect(stored.deletedAt, isNotNull);
+    Future<List<String>> outboxOperations() async =>
+        (await database.select(database.syncOutbox).get())
+            .where((row) => row.entityId == id)
+            .map((row) => row.operation)
+            .toList();
+    expect(await outboxOperations(), ['upsert', 'delete']);
+
+    // Alla conferma la stessa riga torna viva, coi valori confermati.
+    final revivedId = await repository.resurrectFoodByBarcode(
+      profileId: profileId,
+      draft: const FoodDraft(
+        name: 'Cracker integrali bio',
+        barcode: '8002222222222',
+        per100g: Nutrients(calories: 420, protein: 11, carbs: 63, fat: 12),
+      ),
+    );
+    expect(revivedId, id);
+    stored = await (database.select(
+      database.foods,
+    )..where((row) => row.id.equals(id))).getSingle();
+    expect(stored.deletedAt, isNull);
+    expect(stored.name, 'Cracker integrali bio');
+    expect(stored.caloriesPer100g, 420);
+    expect(await outboxOperations(), ['upsert', 'delete', 'upsert']);
+  });
 }
