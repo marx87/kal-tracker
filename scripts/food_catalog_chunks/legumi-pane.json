@@ -1,0 +1,629 @@
+[
+  {
+    "name": "Ceci lessati",
+    "aliases": ["ceci cotti", "ceci bolliti"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 120, "proteinPer100g": 7, "carbsPer100g": 18.9, "fatPer100g": 2.4,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Ceci in scatola (scolati)",
+    "aliases": ["ceci in barattolo", "ceci sgocciolati"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 100, "proteinPer100g": 6.7, "carbsPer100g": 13.9, "fatPer100g": 1.8,
+    "portionGrams": 150,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Ceci in umido",
+    "aliases": ["ceci al pomodoro", "zimino di ceci"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 130, "proteinPer100g": 6.5, "carbsPer100g": 15, "fatPer100g": 4.5,
+    "portionGrams": 200,
+    "note": "con soffritto e pomodoro"
+  },
+  {
+    "name": "Fagioli borlotti lessati",
+    "aliases": ["borlotti cotti", "fagioli lessi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 97, "proteinPer100g": 7, "carbsPer100g": 15.9, "fatPer100g": 0.7,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Fagioli borlotti in scatola (scolati)",
+    "aliases": ["borlotti in barattolo", "borlotti in scatola"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 84, "proteinPer100g": 5.7, "carbsPer100g": 13.3, "fatPer100g": 0.6,
+    "portionGrams": 150,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Fagioli cannellini lessati",
+    "aliases": ["cannellini cotti", "fagioli bianchi lessati"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 91, "proteinPer100g": 6.5, "carbsPer100g": 14.9, "fatPer100g": 0.6,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Fagioli cannellini in scatola (scolati)",
+    "aliases": ["cannellini in barattolo", "cannellini in scatola"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 80, "proteinPer100g": 5.5, "carbsPer100g": 12.5, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Fagioli all'uccelletto",
+    "aliases": ["fagioli al pomodoro", "cannellini all'uccelletto"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 110, "proteinPer100g": 6, "carbsPer100g": 12, "fatPer100g": 4,
+    "portionGrams": 200,
+    "note": "cannellini con pomodoro e olio"
+  },
+  {
+    "name": "Fagioli neri lessati",
+    "aliases": ["fagioli neri cotti", "black beans"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 105, "proteinPer100g": 7.5, "carbsPer100g": 17, "fatPer100g": 0.6,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Fagioli di Spagna lessati",
+    "aliases": ["fagioloni bianchi", "fagioli bianchi di Spagna"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 105, "proteinPer100g": 7, "carbsPer100g": 17, "fatPer100g": 0.7,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Lenticchie lessate",
+    "aliases": ["lenticchie cotte", "lenticchie bollite"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 105, "proteinPer100g": 8, "carbsPer100g": 16.5, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Lenticchie in scatola (scolate)",
+    "aliases": ["lenticchie in barattolo"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 82, "proteinPer100g": 6.2, "carbsPer100g": 13, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Lenticchie in umido",
+    "aliases": ["lenticchie stufate", "lenticchie al pomodoro"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 115, "proteinPer100g": 7, "carbsPer100g": 14, "fatPer100g": 3.5,
+    "portionGrams": 200,
+    "note": "con soffritto"
+  },
+  {
+    "name": "Lenticchie rosse decorticate lessate",
+    "aliases": ["lenticchie rosse cotte", "lenticchie decorticate"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 100, "proteinPer100g": 7.6, "carbsPer100g": 16, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Piselli lessati",
+    "aliases": ["piselli cotti", "piselli bolliti", "piselli surgelati cotti"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 76, "proteinPer100g": 5.4, "carbsPer100g": 11, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Piselli in scatola (scolati)",
+    "aliases": ["piselli in barattolo"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 68, "proteinPer100g": 4.5, "carbsPer100g": 10.5, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Piselli con prosciutto",
+    "aliases": ["piselli in padella", "piselli e pancetta"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 95, "proteinPer100g": 6.5, "carbsPer100g": 9, "fatPer100g": 3.8,
+    "portionGrams": 200,
+    "note": "saltati con olio e prosciutto"
+  },
+  {
+    "name": "Fave fresche lessate",
+    "aliases": ["fave cotte", "fave fresche"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 55, "proteinPer100g": 5.2, "carbsPer100g": 6.5, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "sgusciate, valori da cotto"
+  },
+  {
+    "name": "Fave secche lessate",
+    "aliases": ["fave secche cotte", "fave decorticate lessate"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 100, "proteinPer100g": 7.5, "carbsPer100g": 16, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Fave e cicoria",
+    "aliases": ["purè di fave", "macco di fave", "fave bianche e cicoria"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 120, "proteinPer100g": 5, "carbsPer100g": 13, "fatPer100g": 5,
+    "portionGrams": 250,
+    "note": "purea di fave con cicoria e olio"
+  },
+  {
+    "name": "Cicerchie lessate",
+    "aliases": ["cicerchie cotte"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 120, "proteinPer100g": 8.5, "carbsPer100g": 19, "fatPer100g": 0.7,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Lupini in salamoia",
+    "aliases": ["lupini", "lupini sgusciati"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 114, "proteinPer100g": 16.4, "carbsPer100g": 7.1, "fatPer100g": 2.4,
+    "portionGrams": 100,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Edamame lessati",
+    "aliases": ["edamame", "fagioli di soia verdi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 122, "proteinPer100g": 11, "carbsPer100g": 8.5, "fatPer100g": 5.2,
+    "portionGrams": 100,
+    "note": "sgranati, valori da cotto"
+  },
+  {
+    "name": "Hummus di ceci",
+    "aliases": ["hummus", "crema di ceci"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 180, "proteinPer100g": 6, "carbsPer100g": 12, "fatPer100g": 12,
+    "portionGrams": 50,
+    "note": "con tahina e olio"
+  },
+  {
+    "name": "Falafel",
+    "aliases": ["polpette di ceci", "falafel di ceci"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 330, "proteinPer100g": 13, "carbsPer100g": 30, "fatPer100g": 17.5,
+    "portionGrams": 100,
+    "note": "fritti"
+  },
+  {
+    "name": "Burger di legumi",
+    "aliases": ["burger vegetale", "hamburger di legumi", "burger di ceci"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 190, "proteinPer100g": 10, "carbsPer100g": 16, "fatPer100g": 9,
+    "portionGrams": 100,
+    "note": "cotto in padella"
+  },
+  {
+    "name": "Riso bianco bollito",
+    "aliases": ["riso bollito", "riso lesso", "riso scondito"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 130, "proteinPer100g": 2.4, "carbsPer100g": 28, "fatPer100g": 0.3,
+    "portionGrams": 180,
+    "note": "valori da cotto, scolato"
+  },
+  {
+    "name": "Riso in bianco condito",
+    "aliases": ["riso in bianco", "riso olio e parmigiano"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 155, "proteinPer100g": 3, "carbsPer100g": 26.5, "fatPer100g": 4.3,
+    "portionGrams": 200,
+    "note": "con un filo d'olio"
+  },
+  {
+    "name": "Riso integrale bollito",
+    "aliases": ["riso integrale cotto"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 120, "proteinPer100g": 2.6, "carbsPer100g": 24.5, "fatPer100g": 1,
+    "portionGrams": 180,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Riso basmati bollito",
+    "aliases": ["basmati cotto", "riso basmati"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 125, "proteinPer100g": 2.5, "carbsPer100g": 27.5, "fatPer100g": 0.4,
+    "portionGrams": 180,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Riso venere bollito",
+    "aliases": ["riso nero", "venere cotto"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 135, "proteinPer100g": 3.5, "carbsPer100g": 27, "fatPer100g": 1.5,
+    "portionGrams": 180,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Farro bollito",
+    "aliases": ["farro cotto", "farro lessato"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 125, "proteinPer100g": 5, "carbsPer100g": 24, "fatPer100g": 0.8,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Orzo perlato bollito",
+    "aliases": ["orzo cotto", "orzo lessato"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 123, "proteinPer100g": 2.3, "carbsPer100g": 28, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Quinoa bollita",
+    "aliases": ["quinoa cotta"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 120, "proteinPer100g": 4.4, "carbsPer100g": 21.3, "fatPer100g": 1.9,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Cous cous cotto",
+    "aliases": ["couscous", "cuscus"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 112, "proteinPer100g": 3.8, "carbsPer100g": 23.2, "fatPer100g": 0.2,
+    "portionGrams": 180,
+    "note": "solo semola cotta, non condito"
+  },
+  {
+    "name": "Cous cous alle verdure",
+    "aliases": ["couscous verdure", "cuscus con verdure"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 140, "proteinPer100g": 4, "carbsPer100g": 22, "fatPer100g": 4,
+    "portionGrams": 250,
+    "note": "con condimento medio"
+  },
+  {
+    "name": "Bulgur cotto",
+    "aliases": ["bulgur", "bulgur di grano"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 83, "proteinPer100g": 3.1, "carbsPer100g": 18.6, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Miglio cotto",
+    "aliases": ["miglio"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 119, "proteinPer100g": 3.5, "carbsPer100g": 23.7, "fatPer100g": 1,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Grano saraceno cotto",
+    "aliases": ["saraceno cotto", "grano saraceno in chicchi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 92, "proteinPer100g": 3.4, "carbsPer100g": 19.9, "fatPer100g": 0.6,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Polenta",
+    "aliases": ["polenta di mais", "polenta morbida"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 85, "proteinPer100g": 2, "carbsPer100g": 18, "fatPer100g": 0.5,
+    "portionGrams": 250,
+    "note": "cotta in acqua, non condita"
+  },
+  {
+    "name": "Fiocchi d'avena",
+    "aliases": ["avena in fiocchi", "fiocchi avena", "avena"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 375, "proteinPer100g": 13, "carbsPer100g": 60, "fatPer100g": 7,
+    "portionGrams": 40,
+    "note": "crudi, per porridge o yogurt"
+  },
+  {
+    "name": "Pane comune",
+    "aliases": ["rosetta", "ciabatta", "pane bianco", "michetta"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 275, "proteinPer100g": 8.1, "carbsPer100g": 57.5, "fatPer100g": 0.5,
+    "portionGrams": 80,
+    "note": "una rosetta media"
+  },
+  {
+    "name": "Pane casereccio",
+    "aliases": ["pane di Lariano", "pagnotta", "pane di campagna"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 270, "proteinPer100g": 8.3, "carbsPer100g": 55, "fatPer100g": 1,
+    "portionGrams": 80,
+    "note": "2 fette"
+  },
+  {
+    "name": "Pane toscano",
+    "aliases": ["pane sciapo", "pane senza sale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 270, "proteinPer100g": 8.5, "carbsPer100g": 55, "fatPer100g": 0.7,
+    "portionGrams": 80
+  },
+  {
+    "name": "Pane integrale",
+    "aliases": ["pane nero", "pane con crusca"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 243, "proteinPer100g": 8.5, "carbsPer100g": 48.5, "fatPer100g": 1.3,
+    "portionGrams": 60
+  },
+  {
+    "name": "Pane di segale",
+    "aliases": ["pane nero di segale", "segale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 219, "proteinPer100g": 6.6, "carbsPer100g": 45.4, "fatPer100g": 1.7,
+    "portionGrams": 60
+  },
+  {
+    "name": "Pane ai cereali",
+    "aliases": ["pane multicereale", "pane ai semi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 260, "proteinPer100g": 9, "carbsPer100g": 46, "fatPer100g": 4,
+    "portionGrams": 60
+  },
+  {
+    "name": "Pane di Altamura",
+    "aliases": ["pane di semola", "pane giallo", "pane pugliese"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 270, "proteinPer100g": 8.5, "carbsPer100g": 54, "fatPer100g": 1.5,
+    "portionGrams": 80
+  },
+  {
+    "name": "Pane all'olio",
+    "aliases": ["panino all'olio", "pane condito"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 300, "proteinPer100g": 8, "carbsPer100g": 52, "fatPer100g": 6,
+    "portionGrams": 60
+  },
+  {
+    "name": "Pane al latte",
+    "aliases": ["panino al latte"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 295, "proteinPer100g": 9, "carbsPer100g": 50, "fatPer100g": 6,
+    "portionGrams": 50
+  },
+  {
+    "name": "Baguette",
+    "aliases": ["filone francese", "pane francese"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 270, "proteinPer100g": 9, "carbsPer100g": 54, "fatPer100g": 1.5,
+    "portionGrams": 60
+  },
+  {
+    "name": "Pancarré",
+    "aliases": ["pane in cassetta", "pan bauletto", "pane per tramezzini", "pane per toast"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 275, "proteinPer100g": 8.5, "carbsPer100g": 50, "fatPer100g": 4.5,
+    "portionGrams": 50,
+    "note": "2 fette"
+  },
+  {
+    "name": "Pancarré integrale",
+    "aliases": ["pane in cassetta integrale", "pan bauletto integrale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 250, "proteinPer100g": 9.5, "carbsPer100g": 43, "fatPer100g": 4,
+    "portionGrams": 50,
+    "note": "2 fette"
+  },
+  {
+    "name": "Panino per hamburger",
+    "aliases": ["panino burger", "bun"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 280, "proteinPer100g": 9, "carbsPer100g": 49, "fatPer100g": 5,
+    "portionGrams": 70,
+    "note": "un panino vuoto"
+  },
+  {
+    "name": "Pane senza glutine",
+    "aliases": ["pane gluten free"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 245, "proteinPer100g": 3.5, "carbsPer100g": 47, "fatPer100g": 4.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Pane arabo",
+    "aliases": ["pita", "pane pita"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 275, "proteinPer100g": 9, "carbsPer100g": 55.7, "fatPer100g": 1.2,
+    "portionGrams": 70,
+    "note": "una pita"
+  },
+  {
+    "name": "Pane azzimo",
+    "aliases": ["azzimo"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 377, "proteinPer100g": 10.7, "carbsPer100g": 79.6, "fatPer100g": 0.8,
+    "portionGrams": 30
+  },
+  {
+    "name": "Pane carasau",
+    "aliases": ["carasau", "carta musica"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 385, "proteinPer100g": 10.9, "carbsPer100g": 82.9, "fatPer100g": 2.3,
+    "portionGrams": 30
+  },
+  {
+    "name": "Pane tostato",
+    "aliases": ["crostini", "bruschetta senza condimento"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 315, "proteinPer100g": 9.5, "carbsPer100g": 65, "fatPer100g": 1,
+    "portionGrams": 40,
+    "note": "pane comune tostato"
+  },
+  {
+    "name": "Fette biscottate",
+    "aliases": ["fette", "biscottate"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 408, "proteinPer100g": 11.3, "carbsPer100g": 82.3, "fatPer100g": 6,
+    "portionGrams": 20,
+    "note": "2-3 fette"
+  },
+  {
+    "name": "Grissini",
+    "aliases": ["grissini torinesi", "grissino"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 430, "proteinPer100g": 12, "carbsPer100g": 68, "fatPer100g": 12,
+    "portionGrams": 25,
+    "note": "circa una bustina e mezza"
+  },
+  {
+    "name": "Grissini integrali",
+    "aliases": ["grissino integrale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 420, "proteinPer100g": 12.5, "carbsPer100g": 62, "fatPer100g": 13,
+    "portionGrams": 25
+  },
+  {
+    "name": "Taralli",
+    "aliases": ["tarallini", "taralli pugliesi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 440, "proteinPer100g": 9, "carbsPer100g": 60, "fatPer100g": 18,
+    "portionGrams": 40,
+    "note": "una manciata abbondante"
+  },
+  {
+    "name": "Friselle",
+    "aliases": ["frisa", "frisella", "friselle pugliesi"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 360, "proteinPer100g": 11, "carbsPer100g": 72, "fatPer100g": 2.5,
+    "portionGrams": 50,
+    "note": "secca, da inzuppare"
+  },
+  {
+    "name": "Piadina vuota",
+    "aliases": ["piada", "piadina romagnola", "piadina classica"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 320, "proteinPer100g": 7.5, "carbsPer100g": 52, "fatPer100g": 9,
+    "portionGrams": 120,
+    "note": "una piadina intera, senza farcitura"
+  },
+  {
+    "name": "Piadina integrale vuota",
+    "aliases": ["piada integrale", "piadina integrale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 310, "proteinPer100g": 8.5, "carbsPer100g": 48, "fatPer100g": 9.5,
+    "portionGrams": 120,
+    "note": "una piadina intera, senza farcitura"
+  },
+  {
+    "name": "Tortilla di grano",
+    "aliases": ["wrap", "tortilla", "piadina messicana"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 310, "proteinPer100g": 8, "carbsPer100g": 50, "fatPer100g": 8,
+    "portionGrams": 65,
+    "note": "un wrap vuoto"
+  },
+  {
+    "name": "Crackers salati",
+    "aliases": ["cracker", "crackers"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 428, "proteinPer100g": 9.5, "carbsPer100g": 70, "fatPer100g": 12,
+    "portionGrams": 25,
+    "note": "un pacchetto"
+  },
+  {
+    "name": "Crackers integrali",
+    "aliases": ["cracker integrale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 420, "proteinPer100g": 10, "carbsPer100g": 65, "fatPer100g": 13,
+    "portionGrams": 25,
+    "note": "un pacchetto"
+  },
+  {
+    "name": "Gallette di riso",
+    "aliases": ["galletta di riso", "gallette riso soffiato"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 387, "proteinPer100g": 8, "carbsPer100g": 81.5, "fatPer100g": 2.8,
+    "portionGrams": 20,
+    "note": "2-3 gallette"
+  },
+  {
+    "name": "Gallette di mais",
+    "aliases": ["galletta di mais"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 380, "proteinPer100g": 7.5, "carbsPer100g": 80, "fatPer100g": 2,
+    "portionGrams": 20,
+    "note": "2-3 gallette"
+  },
+  {
+    "name": "Pangrattato",
+    "aliases": ["pane grattugiato", "mollica di pane"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 360, "proteinPer100g": 11, "carbsPer100g": 72, "fatPer100g": 2.5,
+    "portionGrams": 20
+  },
+  {
+    "name": "Farina di grano tenero 00",
+    "aliases": ["farina 00", "farina bianca", "manitoba"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 340, "proteinPer100g": 11, "carbsPer100g": 72, "fatPer100g": 1,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina integrale",
+    "aliases": ["farina di grano integrale"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 320, "proteinPer100g": 11.9, "carbsPer100g": 62, "fatPer100g": 2,
+    "portionGrams": 100
+  },
+  {
+    "name": "Semola rimacinata di grano duro",
+    "aliases": ["semola", "farina di grano duro", "semola rimacinata"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 350, "proteinPer100g": 12, "carbsPer100g": 73, "fatPer100g": 1,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina di mais",
+    "aliases": ["farina per polenta", "fioretto", "bramata"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 355, "proteinPer100g": 8.7, "carbsPer100g": 76, "fatPer100g": 2,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina di riso",
+    "aliases": ["farina riso"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 360, "proteinPer100g": 6.5, "carbsPer100g": 79, "fatPer100g": 1,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina di ceci",
+    "aliases": ["farina per farinata", "farina ceci"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 350, "proteinPer100g": 20, "carbsPer100g": 47, "fatPer100g": 6,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina di farro",
+    "aliases": ["farina farro"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 335, "proteinPer100g": 13, "carbsPer100g": 65, "fatPer100g": 2,
+    "portionGrams": 100
+  },
+  {
+    "name": "Farina d'avena",
+    "aliases": ["farina avena"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 370, "proteinPer100g": 12.5, "carbsPer100g": 60, "fatPer100g": 7.5,
+    "portionGrams": 100
+  },
+  {
+    "name": "Amido di mais",
+    "aliases": ["maizena", "amido"],
+    "category": "Legumi, cereali e pane",
+    "kcalPer100g": 350, "proteinPer100g": 0.3, "carbsPer100g": 87, "fatPer100g": 0.1,
+    "portionGrams": 20,
+    "note": "per addensare"
+  }
+]

@@ -1,0 +1,722 @@
+[
+  {
+    "name": "Insalata verde",
+    "aliases": ["lattuga", "insalata", "iceberg", "lattughino"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 19, "proteinPer100g": 1.8, "carbsPer100g": 2.2, "fatPer100g": 0.4,
+    "portionGrams": 80,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Insalata mista condita",
+    "aliases": ["insalatona", "insalata condita", "misticanza condita"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 1.2, "carbsPer100g": 2.5, "fatPer100g": 6.5,
+    "portionGrams": 150,
+    "note": "con olio e aceto"
+  },
+  {
+    "name": "Rucola",
+    "aliases": ["rughetta", "ruchetta"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 28, "proteinPer100g": 2.6, "carbsPer100g": 3.9, "fatPer100g": 0.7,
+    "portionGrams": 50,
+    "note": "cruda, senza condimento"
+  },
+  {
+    "name": "Radicchio rosso",
+    "aliases": ["radicchio", "trevisana"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 18, "proteinPer100g": 1.4, "carbsPer100g": 1.6, "fatPer100g": 0.5,
+    "portionGrams": 80,
+    "note": "crudo, senza condimento"
+  },
+  {
+    "name": "Pomodori da insalata",
+    "aliases": ["pomodoro", "pomodorini", "ciliegino"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 19, "proteinPer100g": 1.0, "carbsPer100g": 2.9, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "crudi, senza condimento"
+  },
+  {
+    "name": "Insalata di pomodori condita",
+    "aliases": ["pomodori conditi", "pomodori con olio", "pomodori in insalata"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 45, "proteinPer100g": 0.9, "carbsPer100g": 3.0, "fatPer100g": 3.5,
+    "portionGrams": 180,
+    "note": "con olio e sale"
+  },
+  {
+    "name": "Insalata caprese",
+    "aliases": ["caprese", "pomodoro e mozzarella"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 150, "proteinPer100g": 9.0, "carbsPer100g": 3.0, "fatPer100g": 11.5,
+    "portionGrams": 200,
+    "note": "pomodoro, mozzarella, olio e basilico"
+  },
+  {
+    "name": "Carote crude",
+    "aliases": ["carota", "carote"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 35, "proteinPer100g": 1.1, "carbsPer100g": 7.6, "fatPer100g": 0.2,
+    "portionGrams": 100,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Insalata di carote",
+    "aliases": ["carote julienne", "carote grattugiate condite"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 60, "proteinPer100g": 0.9, "carbsPer100g": 6.5, "fatPer100g": 3.5,
+    "portionGrams": 120,
+    "note": "con olio e limone"
+  },
+  {
+    "name": "Finocchi crudi",
+    "aliases": ["finocchio", "finocchi in insalata"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 15, "proteinPer100g": 1.2, "carbsPer100g": 2.2, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Insalata di finocchi e arance",
+    "aliases": ["finocchi e arance", "insalata siciliana"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 55, "proteinPer100g": 1.0, "carbsPer100g": 6.5, "fatPer100g": 2.9,
+    "portionGrams": 150,
+    "note": "con olio"
+  },
+  {
+    "name": "Pinzimonio di verdure",
+    "aliases": ["pinzimonio", "verdure in pinzimonio"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 85, "proteinPer100g": 1.5, "carbsPer100g": 4.0, "fatPer100g": 7.0,
+    "portionGrams": 150,
+    "note": "verdure crude con olio per intingere"
+  },
+  {
+    "name": "Cetrioli",
+    "aliases": ["cetriolo", "cetrioli in insalata"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 14, "proteinPer100g": 0.7, "carbsPer100g": 1.8, "fatPer100g": 0.5,
+    "portionGrams": 100,
+    "note": "crudi, senza condimento"
+  },
+  {
+    "name": "Puntarelle alla romana",
+    "aliases": ["puntarelle", "puntarelle con alici", "insalata di puntarelle"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 2.5, "carbsPer100g": 3.5, "fatPer100g": 7.5,
+    "portionGrams": 120,
+    "note": "condite con salsa di alici, aglio e olio"
+  },
+  {
+    "name": "Spinaci lessati",
+    "aliases": ["spinaci lessi", "spinaci al vapore", "spinaci bolliti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 24, "proteinPer100g": 3.0, "carbsPer100g": 1.5, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Spinaci saltati in padella",
+    "aliases": ["spinaci in padella", "spinaci ripassati", "spinaci aglio e olio", "spinaci al burro"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 80, "proteinPer100g": 3.0, "carbsPer100g": 2.0, "fatPer100g": 6.8,
+    "portionGrams": 150,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Cicoria ripassata in padella",
+    "aliases": ["cicoria ripassata", "cicoria in padella", "cicoria strascinata", "cicoria"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 75, "proteinPer100g": 1.8, "carbsPer100g": 2.5, "fatPer100g": 6.5,
+    "portionGrams": 150,
+    "note": "con aglio, olio e peperoncino"
+  },
+  {
+    "name": "Cicoria lessata all'agro",
+    "aliases": ["cicoria lessa", "cicoria all'agro", "cicoria bollita"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 45, "proteinPer100g": 1.4, "carbsPer100g": 1.5, "fatPer100g": 3.5,
+    "portionGrams": 150,
+    "note": "con poco olio e limone"
+  },
+  {
+    "name": "Scarola ripassata",
+    "aliases": ["scarola in padella", "scarola stufata", "scarola"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 75, "proteinPer100g": 1.5, "carbsPer100g": 2.5, "fatPer100g": 6.5,
+    "portionGrams": 150,
+    "note": "con olio e aglio, eventuali olive"
+  },
+  {
+    "name": "Bietole lessate",
+    "aliases": ["bieta lessa", "bietola", "erbette lesse"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 20, "proteinPer100g": 1.9, "carbsPer100g": 2.0, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Bietole ripassate",
+    "aliases": ["bieta in padella", "bietole saltate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 1.8, "carbsPer100g": 2.5, "fatPer100g": 5.9,
+    "portionGrams": 150,
+    "note": "con aglio e olio"
+  },
+  {
+    "name": "Cavolo nero ripassato",
+    "aliases": ["cavolo nero", "cavolo nero in padella"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 80, "proteinPer100g": 3.0, "carbsPer100g": 4.0, "fatPer100g": 5.8,
+    "portionGrams": 150,
+    "note": "con aglio e olio"
+  },
+  {
+    "name": "Agretti ripassati",
+    "aliases": ["agretti", "barba di frate", "barba dei frati"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 1.8, "carbsPer100g": 2.2, "fatPer100g": 6.0,
+    "portionGrams": 150,
+    "note": "con aglio e olio"
+  },
+  {
+    "name": "Broccoli lessati",
+    "aliases": ["broccoli lessi", "broccoli al vapore", "broccoli bolliti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 27, "proteinPer100g": 3.0, "carbsPer100g": 2.0, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Broccoli ripassati aglio olio e peperoncino",
+    "aliases": ["broccoli ripassati", "broccoli in padella", "broccoli saltati"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 85, "proteinPer100g": 3.0, "carbsPer100g": 3.0, "fatPer100g": 6.8,
+    "portionGrams": 150,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Cime di rapa ripassate",
+    "aliases": ["broccoletti ripassati", "friarielli", "cime di rapa", "broccoletti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 80, "proteinPer100g": 3.2, "carbsPer100g": 2.0, "fatPer100g": 6.6,
+    "portionGrams": 150,
+    "note": "con aglio, olio e peperoncino"
+  },
+  {
+    "name": "Broccolo romanesco all'agro",
+    "aliases": ["broccolo romano", "broccolo romanesco", "romanesco lesso"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 55, "proteinPer100g": 2.8, "carbsPer100g": 3.0, "fatPer100g": 3.8,
+    "portionGrams": 150,
+    "note": "lessato, condito con olio e limone"
+  },
+  {
+    "name": "Cavolfiore lesso",
+    "aliases": ["cavolfiore", "cavolfiore al vapore", "cavolfiore bollito"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 25, "proteinPer100g": 2.0, "carbsPer100g": 2.5, "fatPer100g": 0.3,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Cavolfiore gratinato",
+    "aliases": ["cavolfiore al forno", "cavolfiore con besciamella", "gratin di cavolfiore"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 110, "proteinPer100g": 4.0, "carbsPer100g": 7.0, "fatPer100g": 7.2,
+    "portionGrams": 200,
+    "note": "con besciamella e formaggio"
+  },
+  {
+    "name": "Verza stufata",
+    "aliases": ["verza in padella", "cavolo verza", "verza"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 60, "proteinPer100g": 1.5, "carbsPer100g": 4.0, "fatPer100g": 4.2,
+    "portionGrams": 150,
+    "note": "con olio"
+  },
+  {
+    "name": "Zucchine grigliate",
+    "aliases": ["zucchine alla griglia", "zucchine alla piastra"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 55, "proteinPer100g": 1.3, "carbsPer100g": 1.8, "fatPer100g": 4.5,
+    "portionGrams": 150,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Zucchine trifolate",
+    "aliases": ["zucchine in padella", "zucchine saltate", "zucchine aglio e prezzemolo"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 1.4, "carbsPer100g": 2.5, "fatPer100g": 6.0,
+    "portionGrams": 150,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Zucchine alla scapece",
+    "aliases": ["concia di zucchine", "zucchine fritte con aceto e menta", "zucchine alla concia"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 120, "proteinPer100g": 1.5, "carbsPer100g": 5.0, "fatPer100g": 10.4,
+    "portionGrams": 100,
+    "note": "zucchine fritte con aceto e menta"
+  },
+  {
+    "name": "Melanzane grigliate",
+    "aliases": ["melanzane alla griglia", "melanzane alla piastra"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 60, "proteinPer100g": 1.2, "carbsPer100g": 2.6, "fatPer100g": 5.0,
+    "portionGrams": 150,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Melanzane a funghetto",
+    "aliases": ["melanzane al funghetto", "melanzane in padella", "melanzane saltate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 110, "proteinPer100g": 1.3, "carbsPer100g": 4.0, "fatPer100g": 9.8,
+    "portionGrams": 150,
+    "note": "con olio, aglio e pomodoro"
+  },
+  {
+    "name": "Melanzane fritte",
+    "aliases": ["melanzane in padella fritte", "melanzane dorate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 180, "proteinPer100g": 1.5, "carbsPer100g": 7.0, "fatPer100g": 16.0,
+    "portionGrams": 100,
+    "note": "assorbono molto olio"
+  },
+  {
+    "name": "Parmigiana di melanzane",
+    "aliases": ["parmigiana", "melanzane alla parmigiana"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 190, "proteinPer100g": 7.0, "carbsPer100g": 9.0, "fatPer100g": 14.0,
+    "portionGrams": 250,
+    "note": "con melanzane fritte, pomodoro, mozzarella e parmigiano"
+  },
+  {
+    "name": "Caponata di melanzane",
+    "aliases": ["caponata", "caponata siciliana"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 105, "proteinPer100g": 1.5, "carbsPer100g": 8.0, "fatPer100g": 7.5,
+    "portionGrams": 200,
+    "note": "in agrodolce con sedano, olive e capperi"
+  },
+  {
+    "name": "Polpette di melanzane",
+    "aliases": ["polpette di melanzane fritte"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 190, "proteinPer100g": 6.0, "carbsPer100g": 16.0, "fatPer100g": 11.0,
+    "portionGrams": 120,
+    "note": "fritte, con pane e formaggio"
+  },
+  {
+    "name": "Peperoni grigliati",
+    "aliases": ["peperoni arrosto", "peperoni alla griglia", "peperoni arrostiti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 50, "proteinPer100g": 1.0, "carbsPer100g": 5.0, "fatPer100g": 2.9,
+    "portionGrams": 120,
+    "note": "spellati, con filo d'olio"
+  },
+  {
+    "name": "Peperonata",
+    "aliases": ["peperoni in umido", "peperoni con pomodoro e cipolla"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 85, "proteinPer100g": 1.3, "carbsPer100g": 6.5, "fatPer100g": 6.0,
+    "portionGrams": 200,
+    "note": "con pomodoro, cipolla e olio"
+  },
+  {
+    "name": "Friggitelli in padella",
+    "aliases": ["friggitelli", "peperoncini verdi fritti", "friarielli napoletani dolci"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 80, "proteinPer100g": 1.3, "carbsPer100g": 4.5, "fatPer100g": 6.4,
+    "portionGrams": 100,
+    "note": "saltati con olio e aglio"
+  },
+  {
+    "name": "Peperoni e patate in padella",
+    "aliases": ["patate e peperoni", "peperoni con patate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 110, "proteinPer100g": 1.8, "carbsPer100g": 12.0, "fatPer100g": 6.2,
+    "portionGrams": 200,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Verdure grigliate miste",
+    "aliases": ["griglia di verdure", "verdure alla griglia", "misto verdure grigliate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 60, "proteinPer100g": 1.3, "carbsPer100g": 4.0, "fatPer100g": 4.6,
+    "portionGrams": 200,
+    "note": "zucchine, melanzane e peperoni con filo d'olio"
+  },
+  {
+    "name": "Verdure al forno miste",
+    "aliases": ["verdure arrosto", "teglia di verdure al forno"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 1.5, "carbsPer100g": 8.0, "fatPer100g": 5.8,
+    "portionGrams": 250,
+    "note": "con patate, zucchine, peperoni e olio"
+  },
+  {
+    "name": "Verdure al vapore miste",
+    "aliases": ["verdure lesse", "verdure bollite", "misto di verdure al vapore"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 30, "proteinPer100g": 2.0, "carbsPer100g": 3.5, "fatPer100g": 0.4,
+    "portionGrams": 200,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Verdure in pastella fritte",
+    "aliases": ["fritto di verdure", "verdure fritte", "verdure in tempura"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 200, "proteinPer100g": 4.0, "carbsPer100g": 20.0, "fatPer100g": 11.5,
+    "portionGrams": 100,
+    "note": "misto in pastella"
+  },
+  {
+    "name": "Radicchio alla griglia",
+    "aliases": ["radicchio grigliato", "trevisana alla griglia"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 45, "proteinPer100g": 1.3, "carbsPer100g": 2.5, "fatPer100g": 3.5,
+    "portionGrams": 100,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Funghi trifolati",
+    "aliases": ["funghi in padella", "funghi saltati", "champignon trifolati"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 80, "proteinPer100g": 3.0, "carbsPer100g": 2.5, "fatPer100g": 6.5,
+    "portionGrams": 150,
+    "note": "con olio, aglio e prezzemolo"
+  },
+  {
+    "name": "Funghi porcini alla griglia",
+    "aliases": ["porcini grigliati", "porcini", "funghi porcini"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 45, "proteinPer100g": 3.5, "carbsPer100g": 2.0, "fatPer100g": 2.5,
+    "portionGrams": 150,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Patate lesse",
+    "aliases": ["patate bollite", "patate al vapore", "patata lessa"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 85, "proteinPer100g": 1.9, "carbsPer100g": 18.9, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Patate al forno",
+    "aliases": ["patate arrosto", "patate al rosmarino", "patate arrostite"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 150, "proteinPer100g": 2.5, "carbsPer100g": 25.0, "fatPer100g": 4.5,
+    "portionGrams": 200,
+    "note": "con olio e rosmarino"
+  },
+  {
+    "name": "Patate fritte",
+    "aliases": ["patate fritte in casa", "patate fritte surgelate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 188, "proteinPer100g": 2.5, "carbsPer100g": 25.0, "fatPer100g": 8.5,
+    "portionGrams": 150,
+    "note": "fritte in casa, fresche o surgelate (valore CREA); per quelle da friggitoria vedi Patatine fritte"
+  },
+  {
+    "name": "Patate saltate in padella",
+    "aliases": ["patate in padella", "patate rosolate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 140, "proteinPer100g": 2.2, "carbsPer100g": 20.0, "fatPer100g": 5.8,
+    "portionGrams": 200,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Patate in umido",
+    "aliases": ["spezzatino di patate", "patate al sugo", "patate al pomodoro"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 2.0, "carbsPer100g": 15.0, "fatPer100g": 2.5,
+    "portionGrams": 250,
+    "note": "con pomodoro e olio"
+  },
+  {
+    "name": "Purè di patate",
+    "aliases": ["purè", "purea di patate", "pure di patate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 100, "proteinPer100g": 2.5, "carbsPer100g": 13.5, "fatPer100g": 3.8,
+    "portionGrams": 200,
+    "note": "con latte e burro"
+  },
+  {
+    "name": "Insalata di patate",
+    "aliases": ["patate in insalata", "patate all'olio"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 110, "proteinPer100g": 1.9, "carbsPer100g": 15.0, "fatPer100g": 4.8,
+    "portionGrams": 200,
+    "note": "patate lesse condite con olio"
+  },
+  {
+    "name": "Crocchette di patate",
+    "aliases": ["crocchè", "crocchette", "panzerotti di patate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 220, "proteinPer100g": 4.5, "carbsPer100g": 24.0, "fatPer100g": 11.5,
+    "portionGrams": 100,
+    "note": "fritte, impanate"
+  },
+  {
+    "name": "Gateau di patate",
+    "aliases": ["gattò di patate", "sformato di patate", "torta di patate salata"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 160, "proteinPer100g": 6.0, "carbsPer100g": 15.0, "fatPer100g": 8.5,
+    "portionGrams": 250,
+    "note": "con prosciutto e formaggio"
+  },
+  {
+    "name": "Pomodori ripieni di riso",
+    "aliases": ["pomodori col riso", "pomodori al riso", "pomodori ripieni alla romana"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 120, "proteinPer100g": 2.5, "carbsPer100g": 16.0, "fatPer100g": 5.2,
+    "portionGrams": 250,
+    "note": "al forno, spesso con patate"
+  },
+  {
+    "name": "Zucchine ripiene di carne",
+    "aliases": ["zucchine ripiene", "zucchine farcite"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 120, "proteinPer100g": 7.0, "carbsPer100g": 5.0, "fatPer100g": 7.8,
+    "portionGrams": 250,
+    "note": "al forno con ripieno di macinato"
+  },
+  {
+    "name": "Peperoni ripieni",
+    "aliases": ["peperoni farciti", "peperoni ripieni di carne", "peperoni ripieni al forno"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 130, "proteinPer100g": 6.0, "carbsPer100g": 10.0, "fatPer100g": 7.5,
+    "portionGrams": 250,
+    "note": "con carne e pane, al forno"
+  },
+  {
+    "name": "Melanzane ripiene",
+    "aliases": ["melanzane farcite", "melanzane ripiene al forno"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 130, "proteinPer100g": 6.5, "carbsPer100g": 7.0, "fatPer100g": 8.4,
+    "portionGrams": 250,
+    "note": "con carne o pane e formaggio, al forno"
+  },
+  {
+    "name": "Pomodori gratinati",
+    "aliases": ["pomodori al forno", "pomodori gratin", "pomodori al gratin"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 2.0, "carbsPer100g": 8.0, "fatPer100g": 5.6,
+    "portionGrams": 150,
+    "note": "con pangrattato e olio"
+  },
+  {
+    "name": "Pomodori secchi sott'olio",
+    "aliases": ["pomodori secchi", "pomodori sott'olio"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 215, "proteinPer100g": 4.0, "carbsPer100g": 20.0, "fatPer100g": 13.0,
+    "portionGrams": 30,
+    "note": "sgocciolati"
+  },
+  {
+    "name": "Fiori di zucca fritti",
+    "aliases": ["fiori di zucca in pastella", "fiori di zucca", "fiori fritti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 220, "proteinPer100g": 5.0, "carbsPer100g": 18.0, "fatPer100g": 14.5,
+    "portionGrams": 80,
+    "note": "in pastella, eventuale mozzarella e alici"
+  },
+  {
+    "name": "Carciofi alla romana",
+    "aliases": ["carciofo alla romana", "carciofi con mentuccia"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 2.5, "carbsPer100g": 5.0, "fatPer100g": 6.6,
+    "portionGrams": 120,
+    "note": "stufati con olio, aglio e mentuccia"
+  },
+  {
+    "name": "Carciofi alla giudia",
+    "aliases": ["carciofo alla giudia", "carciofi fritti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 150, "proteinPer100g": 3.0, "carbsPer100g": 8.0, "fatPer100g": 11.5,
+    "portionGrams": 100,
+    "note": "fritti interi"
+  },
+  {
+    "name": "Carciofi trifolati",
+    "aliases": ["carciofi in padella", "carciofi saltati", "carciofi aglio e prezzemolo"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 85, "proteinPer100g": 2.8, "carbsPer100g": 5.0, "fatPer100g": 6.0,
+    "portionGrams": 150,
+    "note": "valori da cotto con olio"
+  },
+  {
+    "name": "Carciofini sott'olio",
+    "aliases": ["carciofi sott'olio", "carciofini"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 190, "proteinPer100g": 2.5, "carbsPer100g": 8.0, "fatPer100g": 16.0,
+    "portionGrams": 50,
+    "note": "sgocciolati"
+  },
+  {
+    "name": "Cipolle al forno",
+    "aliases": ["cipolle arrosto", "cipolle arrostite"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 1.3, "carbsPer100g": 10.0, "fatPer100g": 2.8,
+    "portionGrams": 150,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Cipolline in agrodolce",
+    "aliases": ["cipolline borettane", "cipolle in agrodolce", "borettane"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 100, "proteinPer100g": 1.2, "carbsPer100g": 15.0, "fatPer100g": 3.8,
+    "portionGrams": 100,
+    "note": "con zucchero e aceto"
+  },
+  {
+    "name": "Finocchi gratinati",
+    "aliases": ["finocchi al forno", "finocchi con besciamella", "finocchi gratin"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 100, "proteinPer100g": 3.5, "carbsPer100g": 6.5, "fatPer100g": 6.7,
+    "portionGrams": 200,
+    "note": "con besciamella e formaggio"
+  },
+  {
+    "name": "Asparagi lessati",
+    "aliases": ["asparagi lessi", "asparagi al vapore", "asparagi bolliti"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 29, "proteinPer100g": 3.0, "carbsPer100g": 3.0, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Asparagi al burro e parmigiano",
+    "aliases": ["asparagi alla parmigiana", "asparagi al burro", "asparagi gratinati"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 90, "proteinPer100g": 4.5, "carbsPer100g": 3.0, "fatPer100g": 7.0,
+    "portionGrams": 150,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Fagiolini lessati",
+    "aliases": ["fagiolini lessi", "fagiolini al vapore", "cornetti lessi"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 35, "proteinPer100g": 2.1, "carbsPer100g": 4.5, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Fagiolini all'olio e limone",
+    "aliases": ["fagiolini conditi", "fagiolini all'agro", "insalata di fagiolini"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 2.0, "carbsPer100g": 4.5, "fatPer100g": 5.3,
+    "portionGrams": 150,
+    "note": "lessati e conditi"
+  },
+  {
+    "name": "Fagiolini al pomodoro",
+    "aliases": ["fagiolini in umido", "fagiolini al sugo"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 60, "proteinPer100g": 2.0, "carbsPer100g": 5.0, "fatPer100g": 3.5,
+    "portionGrams": 200,
+    "note": "in padella con pomodoro e olio"
+  },
+  {
+    "name": "Piselli al prosciutto",
+    "aliases": ["piselli in padella", "piselli con prosciutto", "piselli stufati"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 100, "proteinPer100g": 6.5, "carbsPer100g": 10.0, "fatPer100g": 3.8,
+    "portionGrams": 150,
+    "note": "con cipolla e prosciutto"
+  },
+  {
+    "name": "Piselli lessati",
+    "aliases": ["piselli lessi", "piselli al vapore", "piselli"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 68, "proteinPer100g": 5.0, "carbsPer100g": 11.0, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "valori da cotto, senza condimento"
+  },
+  {
+    "name": "Fave fresche crude",
+    "aliases": ["fave fresche", "fave", "fave sgranate"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 70, "proteinPer100g": 5.5, "carbsPer100g": 9.0, "fatPer100g": 0.5,
+    "portionGrams": 100,
+    "note": "sgranate, senza pecorino"
+  },
+  {
+    "name": "Fagioli all'uccelletto",
+    "aliases": ["fagioli al pomodoro", "cannellini all'uccelletto"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 100, "proteinPer100g": 6.0, "carbsPer100g": 13.0, "fatPer100g": 3.0,
+    "portionGrams": 200,
+    "note": "cannellini con pomodoro, salvia e olio"
+  },
+  {
+    "name": "Zucca al forno",
+    "aliases": ["zucca arrosto", "zucca gialla al forno"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 45, "proteinPer100g": 1.4, "carbsPer100g": 8.0, "fatPer100g": 1.0,
+    "portionGrams": 150,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Barbabietole lesse",
+    "aliases": ["barbabietola", "rape rosse", "barbabietole precotte"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 43, "proteinPer100g": 1.7, "carbsPer100g": 8.0, "fatPer100g": 0.1,
+    "portionGrams": 100,
+    "note": "precotte, senza condimento"
+  },
+  {
+    "name": "Giardiniera sott'aceto",
+    "aliases": ["giardiniera", "verdure sott'aceto", "verdure in agrodolce"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 30, "proteinPer100g": 1.0, "carbsPer100g": 4.5, "fatPer100g": 0.8,
+    "portionGrams": 60,
+    "note": "sgocciolata"
+  },
+  {
+    "name": "Verdure sott'olio miste",
+    "aliases": ["sott'oli", "verdure sott'olio", "antipasto di verdure sott'olio"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 130, "proteinPer100g": 1.5, "carbsPer100g": 5.0, "fatPer100g": 11.0,
+    "portionGrams": 50,
+    "note": "sgocciolate"
+  },
+  {
+    "name": "Olive verdi",
+    "aliases": ["olive verdi in salamoia", "olive"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 130, "proteinPer100g": 1.2, "carbsPer100g": 1.5, "fatPer100g": 13.0,
+    "portionGrams": 30,
+    "note": "in salamoia, sgocciolate"
+  },
+  {
+    "name": "Olive nere",
+    "aliases": ["olive nere al forno", "olive di Gaeta", "olive nere in salamoia"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 235, "proteinPer100g": 1.5, "carbsPer100g": 3.0, "fatPer100g": 24.0,
+    "portionGrams": 30,
+    "note": "sgocciolate"
+  },
+  {
+    "name": "Insalata russa",
+    "aliases": ["insalata capricciosa"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 200, "proteinPer100g": 3.0, "carbsPer100g": 9.0, "fatPer100g": 16.5,
+    "portionGrams": 100,
+    "note": "con maionese"
+  },
+  {
+    "name": "Mais dolce",
+    "aliases": ["mais in scatola", "granoturco dolce", "mais per insalata"],
+    "category": "Contorni e verdure",
+    "kcalPer100g": 95, "proteinPer100g": 2.7, "carbsPer100g": 18.0, "fatPer100g": 1.2,
+    "portionGrams": 50,
+    "note": "in scatola, sgocciolato"
+  }
+]

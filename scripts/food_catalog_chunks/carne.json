@@ -1,0 +1,646 @@
+[
+  {
+    "name": "Petto di pollo alla griglia",
+    "aliases": ["pollo ai ferri", "petto di pollo alla piastra", "pollo alla griglia"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 135, "proteinPer100g": 27, "carbsPer100g": 0.5, "fatPer100g": 3,
+    "portionGrams": 150,
+    "note": "valori da cotto, con un filo d'olio"
+  },
+  {
+    "name": "Petto di pollo in padella",
+    "aliases": ["fettina di pollo", "pollo in padella", "petto di pollo all'olio"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 165, "proteinPer100g": 26, "carbsPer100g": 1, "fatPer100g": 6.5,
+    "portionGrams": 150,
+    "note": "con condimento medio"
+  },
+  {
+    "name": "Cotoletta di pollo",
+    "aliases": ["pollo impanato", "milanese di pollo", "petto di pollo impanato"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 250, "proteinPer100g": 20, "carbsPer100g": 13, "fatPer100g": 13,
+    "portionGrams": 150,
+    "note": "impanata e fritta"
+  },
+  {
+    "name": "Pollo arrosto",
+    "aliases": ["pollo al forno", "pollo allo spiedo", "pollo di rosticceria"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 200, "proteinPer100g": 25, "carbsPer100g": 0, "fatPer100g": 11,
+    "portionGrams": 200,
+    "note": "con pelle, valori sulla parte edibile"
+  },
+  {
+    "name": "Coscia di pollo al forno",
+    "aliases": ["cosce di pollo", "fuso di pollo", "sovracoscia al forno"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 185, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 10,
+    "portionGrams": 150,
+    "note": "valori sulla parte edibile senza osso"
+  },
+  {
+    "name": "Alette di pollo fritte",
+    "aliases": ["ali di pollo", "alette fritte", "ali di pollo fritte"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 290, "proteinPer100g": 22, "carbsPer100g": 8, "fatPer100g": 19,
+    "portionGrams": 150,
+    "note": "valori sulla parte edibile"
+  },
+  {
+    "name": "Pollo alla cacciatora",
+    "aliases": ["pollo in umido", "pollo al pomodoro", "pollo con olive"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 130, "proteinPer100g": 16, "carbsPer100g": 3, "fatPer100g": 6,
+    "portionGrams": 250,
+    "note": "con sugo, porzione con osso"
+  },
+  {
+    "name": "Straccetti di pollo",
+    "aliases": ["bocconcini di pollo in padella", "pollo a straccetti"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 155, "proteinPer100g": 24, "carbsPer100g": 1, "fatPer100g": 6,
+    "portionGrams": 150
+  },
+  {
+    "name": "Crocchette di pollo",
+    "aliases": ["nuggets di pollo", "bocconcini di pollo impanati", "nuggets"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 270, "proteinPer100g": 14, "carbsPer100g": 16, "fatPer100g": 16.5,
+    "portionGrams": 120,
+    "note": "fritte"
+  },
+  {
+    "name": "Spiedini di pollo alla griglia",
+    "aliases": ["spiedini di pollo", "spiedini di carne bianca"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 160, "proteinPer100g": 24, "carbsPer100g": 2, "fatPer100g": 6.5,
+    "portionGrams": 150
+  },
+  {
+    "name": "Pollo al curry",
+    "aliases": ["bocconcini di pollo al curry", "curry di pollo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 145, "proteinPer100g": 15, "carbsPer100g": 5, "fatPer100g": 7.5,
+    "portionGrams": 250,
+    "note": "con salsa, senza riso"
+  },
+  {
+    "name": "Pollo lesso",
+    "aliases": ["pollo bollito", "gallina lessa", "bollito di pollo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 27, "carbsPer100g": 0, "fatPer100g": 6.5,
+    "portionGrams": 200,
+    "note": "valori sulla parte edibile"
+  },
+  {
+    "name": "Hamburger di pollo",
+    "aliases": ["burger di pollo", "hamburger di tacchino", "svizzera di pollo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 180, "proteinPer100g": 22, "carbsPer100g": 1, "fatPer100g": 9.5,
+    "portionGrams": 120,
+    "note": "solo carne, cotto in padella"
+  },
+  {
+    "name": "Fesa di tacchino ai ferri",
+    "aliases": ["tacchino alla piastra", "fettina di tacchino", "petto di tacchino ai ferri"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 130, "proteinPer100g": 28, "carbsPer100g": 0.5, "fatPer100g": 2,
+    "portionGrams": 150
+  },
+  {
+    "name": "Arrosto di tacchino",
+    "aliases": ["tacchino al forno", "fesa di tacchino arrosto"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 160, "proteinPer100g": 26, "carbsPer100g": 1, "fatPer100g": 6,
+    "portionGrams": 150
+  },
+  {
+    "name": "Cotoletta di tacchino",
+    "aliases": ["tacchino impanato", "milanese di tacchino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 240, "proteinPer100g": 20, "carbsPer100g": 12, "fatPer100g": 12.5,
+    "portionGrams": 150,
+    "note": "impanata e fritta"
+  },
+  {
+    "name": "Bistecca di manzo ai ferri",
+    "aliases": ["bistecca alla griglia", "controfiletto ai ferri", "entrecote"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 190, "proteinPer100g": 28, "carbsPer100g": 0, "fatPer100g": 8.5,
+    "portionGrams": 200,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Bistecca alla fiorentina",
+    "aliases": ["fiorentina", "bistecca con l'osso", "costata alla fiorentina"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 230, "proteinPer100g": 26, "carbsPer100g": 0, "fatPer100g": 14,
+    "portionGrams": 300,
+    "note": "parte edibile di una porzione con osso da ~400 g"
+  },
+  {
+    "name": "Filetto di manzo",
+    "aliases": ["filetto ai ferri", "filetto di vitellone", "filetto alla griglia"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 28, "carbsPer100g": 0, "fatPer100g": 6.5,
+    "portionGrams": 180
+  },
+  {
+    "name": "Tagliata di manzo",
+    "aliases": ["tagliata con rucola", "tagliata di vitellone", "tagliata"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 200, "proteinPer100g": 26, "carbsPer100g": 0.5, "fatPer100g": 10.5,
+    "portionGrams": 200,
+    "note": "condita con olio"
+  },
+  {
+    "name": "Hamburger di manzo",
+    "aliases": ["svizzera", "burger di manzo", "medaglione di manzo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 250, "proteinPer100g": 26, "carbsPer100g": 0, "fatPer100g": 16,
+    "portionGrams": 150,
+    "note": "solo carne, cotto in padella"
+  },
+  {
+    "name": "Roast beef",
+    "aliases": ["roastbeef all'inglese", "rosbif", "roast beef affettato"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 150, "proteinPer100g": 28, "carbsPer100g": 0.5, "fatPer100g": 4,
+    "portionGrams": 120
+  },
+  {
+    "name": "Bollito di manzo",
+    "aliases": ["lesso", "carne lessa", "bollito misto"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 180, "proteinPer100g": 28, "carbsPer100g": 0, "fatPer100g": 7.5,
+    "portionGrams": 200
+  },
+  {
+    "name": "Brasato di manzo",
+    "aliases": ["brasato al vino rosso", "brasato al Barolo", "brasato"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 190, "proteinPer100g": 25, "carbsPer100g": 2, "fatPer100g": 9,
+    "portionGrams": 250,
+    "note": "con fondo di cottura"
+  },
+  {
+    "name": "Spezzatino di manzo",
+    "aliases": ["spezzatino in umido", "bocconcini di manzo in umido", "spezzatino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 155, "proteinPer100g": 20, "carbsPer100g": 3, "fatPer100g": 7,
+    "portionGrams": 250,
+    "note": "con sugo, senza patate"
+  },
+  {
+    "name": "Spezzatino di manzo con patate",
+    "aliases": ["spezzatino con patate", "spezzatino e patate"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 120, "proteinPer100g": 11, "carbsPer100g": 8, "fatPer100g": 5,
+    "portionGrams": 350,
+    "note": "piatto completo con patate"
+  },
+  {
+    "name": "Straccetti di manzo con rucola",
+    "aliases": ["straccetti alla rughetta", "straccetti di vitellone", "straccetti di manzo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 23, "carbsPer100g": 1, "fatPer100g": 8.5,
+    "portionGrams": 150
+  },
+  {
+    "name": "Carpaccio di manzo condito",
+    "aliases": ["carpaccio", "carpaccio con rucola e grana"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 165, "proteinPer100g": 23, "carbsPer100g": 0.5, "fatPer100g": 8,
+    "portionGrams": 100,
+    "note": "con olio e scaglie di grana"
+  },
+  {
+    "name": "Polpette al sugo",
+    "aliases": ["polpette al pomodoro", "polpette della nonna", "polpette in umido"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 200, "proteinPer100g": 13, "carbsPer100g": 8, "fatPer100g": 13,
+    "portionGrams": 200,
+    "note": "circa 4-5 polpette con sugo"
+  },
+  {
+    "name": "Polpette fritte",
+    "aliases": ["polpettine fritte", "polpette di carne fritte"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 260, "proteinPer100g": 15, "carbsPer100g": 12, "fatPer100g": 17,
+    "portionGrams": 150
+  },
+  {
+    "name": "Polpettone",
+    "aliases": ["polpettone al forno", "polpettone di manzo", "polpettone ripieno"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 220, "proteinPer100g": 16, "carbsPer100g": 7, "fatPer100g": 14,
+    "portionGrams": 180
+  },
+  {
+    "name": "Involtini di manzo al sugo",
+    "aliases": ["involtini al pomodoro", "braciole al sugo", "involtini di carne"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 190, "proteinPer100g": 20, "carbsPer100g": 3, "fatPer100g": 11,
+    "portionGrams": 180
+  },
+  {
+    "name": "Ossobuco",
+    "aliases": ["ossobuco alla milanese", "ossobuco in umido", "ossibuchi"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 150, "proteinPer100g": 20, "carbsPer100g": 2, "fatPer100g": 7,
+    "portionGrams": 250,
+    "note": "porzione con osso"
+  },
+  {
+    "name": "Trippa alla romana",
+    "aliases": ["trippa", "trippa al sugo", "trippa con pecorino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 110, "proteinPer100g": 14, "carbsPer100g": 3, "fatPer100g": 4.5,
+    "portionGrams": 250,
+    "note": "con sugo e pecorino"
+  },
+  {
+    "name": "Coda alla vaccinara",
+    "aliases": ["coda di bue", "coda in umido", "coda"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 210, "proteinPer100g": 18, "carbsPer100g": 4, "fatPer100g": 13.5,
+    "portionGrams": 300,
+    "note": "porzione con osso, con sugo"
+  },
+  {
+    "name": "Fegato alla veneziana",
+    "aliases": ["fegato con cipolle", "fegato in padella", "fegato di vitello"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 160, "proteinPer100g": 18, "carbsPer100g": 5, "fatPer100g": 7.5,
+    "portionGrams": 150
+  },
+  {
+    "name": "Coratella con carciofi",
+    "aliases": ["coratella", "coratella d'abbacchio"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 140, "proteinPer100g": 16, "carbsPer100g": 3, "fatPer100g": 7,
+    "portionGrams": 200
+  },
+  {
+    "name": "Picchiapò",
+    "aliases": ["picchiapo", "lesso rifatto", "bollito ripassato con cipolla e pomodoro"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 140, "proteinPer100g": 16, "carbsPer100g": 4, "fatPer100g": 6.5,
+    "portionGrams": 250
+  },
+  {
+    "name": "Lingua con salsa verde",
+    "aliases": ["lingua di bovino lessa", "lingua bollita"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 230, "proteinPer100g": 22, "carbsPer100g": 0.5, "fatPer100g": 15.5,
+    "portionGrams": 120,
+    "note": "condita con salsa verde"
+  },
+  {
+    "name": "Kebab di carne",
+    "aliases": ["kebab", "doner kebab", "carne kebab"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 230, "proteinPer100g": 20, "carbsPer100g": 3, "fatPer100g": 15,
+    "portionGrams": 200,
+    "note": "sola carne, senza pane e salse"
+  },
+  {
+    "name": "Braciola di maiale ai ferri",
+    "aliases": ["braciola alla griglia", "lombata di maiale", "costata di maiale"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 220, "proteinPer100g": 28, "carbsPer100g": 0, "fatPer100g": 12,
+    "portionGrams": 180,
+    "note": "porzione con osso"
+  },
+  {
+    "name": "Costine di maiale",
+    "aliases": ["spuntature", "costine alla griglia", "spuntature al sugo", "ribs"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 290, "proteinPer100g": 22, "carbsPer100g": 0, "fatPer100g": 22,
+    "portionGrams": 170,
+    "note": "parte edibile di una porzione con osso da ~250 g"
+  },
+  {
+    "name": "Salsiccia alla griglia",
+    "aliases": ["salsiccia di maiale", "salsicce arrosto", "salamella"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 300, "proteinPer100g": 18, "carbsPer100g": 0.5, "fatPer100g": 25,
+    "portionGrams": 150,
+    "note": "circa 2 salsicce"
+  },
+  {
+    "name": "Salsicce e broccoletti",
+    "aliases": ["salsiccia con broccoletti", "salsiccia e cicoria ripassata"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 200, "proteinPer100g": 14, "carbsPer100g": 3, "fatPer100g": 15,
+    "portionGrams": 300,
+    "note": "piatto completo con verdura ripassata"
+  },
+  {
+    "name": "Arista di maiale al forno",
+    "aliases": ["arrosto di maiale", "arista", "lonza al forno"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 190, "proteinPer100g": 27, "carbsPer100g": 0.5, "fatPer100g": 9,
+    "portionGrams": 150
+  },
+  {
+    "name": "Filetto di maiale",
+    "aliases": ["filetto di maiale in padella", "filetto di suino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 160, "proteinPer100g": 26, "carbsPer100g": 0.5, "fatPer100g": 6,
+    "portionGrams": 150
+  },
+  {
+    "name": "Scaloppine di maiale al vino",
+    "aliases": ["scaloppine al vino bianco", "fettine di maiale in padella"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 180, "proteinPer100g": 22, "carbsPer100g": 3, "fatPer100g": 9,
+    "portionGrams": 150,
+    "note": "infarinate, con fondo di cottura"
+  },
+  {
+    "name": "Stinco di maiale al forno",
+    "aliases": ["stinco arrosto", "stinco di maiale con patate"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 230, "proteinPer100g": 26, "carbsPer100g": 0, "fatPer100g": 14,
+    "portionGrams": 230,
+    "note": "parte edibile di una porzione con osso da ~350 g"
+  },
+  {
+    "name": "Porchetta",
+    "aliases": ["porchetta di Ariccia", "panino con porchetta"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 280, "proteinPer100g": 25, "carbsPer100g": 0.5, "fatPer100g": 20,
+    "portionGrams": 120,
+    "note": "solo carne, senza pane"
+  },
+  {
+    "name": "Cotechino",
+    "aliases": ["cotechino lessato", "cotechino con lenticchie"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 320, "proteinPer100g": 21, "carbsPer100g": 0, "fatPer100g": 27,
+    "portionGrams": 100,
+    "note": "valori da cotto, senza lenticchie"
+  },
+  {
+    "name": "Zampone",
+    "aliases": ["zampone lessato", "zampone di Modena"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 320, "proteinPer100g": 21, "carbsPer100g": 1, "fatPer100g": 26,
+    "portionGrams": 130,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Wurstel",
+    "aliases": ["würstel", "wurstel di suino", "wurstel in padella"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 270, "proteinPer100g": 12, "carbsPer100g": 2, "fatPer100g": 24,
+    "portionGrams": 100,
+    "note": "circa 2 wurstel medi"
+  },
+  {
+    "name": "Arrosticini di pecora",
+    "aliases": ["arrosticini", "rustelle", "spiedini di pecora"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 230, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 15,
+    "portionGrams": 200,
+    "note": "circa 10 arrosticini"
+  },
+  {
+    "name": "Abbacchio al forno con patate",
+    "aliases": ["agnello al forno con patate", "abbacchio arrosto", "agnello arrosto"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 220, "proteinPer100g": 18, "carbsPer100g": 7, "fatPer100g": 13.5,
+    "portionGrams": 300,
+    "note": "piatto completo con patate, porzione con osso"
+  },
+  {
+    "name": "Abbacchio a scottadito",
+    "aliases": ["scottadito", "costolette d'agnello alla griglia", "braciolette d'abbacchio"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 270, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 19,
+    "portionGrams": 140,
+    "note": "parte edibile di una porzione con osso da ~200 g"
+  },
+  {
+    "name": "Spezzatino d'agnello",
+    "aliases": ["agnello in umido", "agnello alla cacciatora", "agnello spezzatino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 200, "proteinPer100g": 19, "carbsPer100g": 2, "fatPer100g": 13,
+    "portionGrams": 250,
+    "note": "porzione con osso"
+  },
+  {
+    "name": "Cotoletta alla milanese",
+    "aliases": ["cotoletta di vitello", "milanese", "orecchia d'elefante"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 260, "proteinPer100g": 21, "carbsPer100g": 13, "fatPer100g": 14,
+    "portionGrams": 180,
+    "note": "impanata e fritta nel burro"
+  },
+  {
+    "name": "Scaloppine al limone",
+    "aliases": ["scaloppine di vitello", "fettine al limone", "scaloppina"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 22, "carbsPer100g": 3, "fatPer100g": 8,
+    "portionGrams": 150,
+    "note": "infarinate, con fondo di cottura"
+  },
+  {
+    "name": "Saltimbocca alla romana",
+    "aliases": ["saltimbocca", "fettine con prosciutto e salvia"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 190, "proteinPer100g": 24, "carbsPer100g": 1, "fatPer100g": 10,
+    "portionGrams": 150
+  },
+  {
+    "name": "Vitello tonnato",
+    "aliases": ["vitel tonne", "vitello con salsa tonnata", "girello tonnato"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 220, "proteinPer100g": 20, "carbsPer100g": 1, "fatPer100g": 15,
+    "portionGrams": 120,
+    "note": "con salsa tonnata"
+  },
+  {
+    "name": "Arrosto di vitello",
+    "aliases": ["vitello al forno", "arrosto morto", "arrosto di vitello al latte"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 26, "carbsPer100g": 0.5, "fatPer100g": 7,
+    "portionGrams": 150
+  },
+  {
+    "name": "Fettina di vitello in padella",
+    "aliases": ["fettina di vitello", "fettina ai ferri", "fettina di carne"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 150, "proteinPer100g": 24, "carbsPer100g": 0.5, "fatPer100g": 5.5,
+    "portionGrams": 120
+  },
+  {
+    "name": "Cordon bleu",
+    "aliases": ["cordon bleu di pollo", "valdostana impanata", "cordon blu"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 250, "proteinPer100g": 15, "carbsPer100g": 14, "fatPer100g": 15.5,
+    "portionGrams": 140,
+    "note": "ripieno di prosciutto e formaggio"
+  },
+  {
+    "name": "Coniglio alla cacciatora",
+    "aliases": ["coniglio in umido", "coniglio con olive", "coniglio in porchetta"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 160, "proteinPer100g": 22, "carbsPer100g": 1.5, "fatPer100g": 7.5,
+    "portionGrams": 250,
+    "note": "porzione con osso"
+  },
+  {
+    "name": "Coniglio arrosto",
+    "aliases": ["coniglio al forno", "coniglio arrosto con patate"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 170, "proteinPer100g": 25, "carbsPer100g": 0.5, "fatPer100g": 7.5,
+    "portionGrams": 200,
+    "note": "porzione con osso, senza patate"
+  },
+  {
+    "name": "Bistecca di cavallo",
+    "aliases": ["carne di cavallo ai ferri", "fettina di cavallo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 140, "proteinPer100g": 27, "carbsPer100g": 0.5, "fatPer100g": 3.5,
+    "portionGrams": 180
+  },
+  {
+    "name": "Prosciutto crudo",
+    "aliases": ["crudo", "prosciutto crudo dolce", "crudo e mozzarella"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 270, "proteinPer100g": 26, "carbsPer100g": 0, "fatPer100g": 18,
+    "portionGrams": 60
+  },
+  {
+    "name": "Prosciutto cotto",
+    "aliases": ["cotto", "prosciutto", "prosciutto cotto alta qualita"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 215, "proteinPer100g": 19, "carbsPer100g": 1, "fatPer100g": 15,
+    "portionGrams": 60
+  },
+  {
+    "name": "Mortadella",
+    "aliases": ["mortazza", "mortadella con pistacchio"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 310, "proteinPer100g": 15, "carbsPer100g": 1, "fatPer100g": 27.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Salame Milano",
+    "aliases": ["salame milanese", "salame", "salame affettato"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 400, "proteinPer100g": 26, "carbsPer100g": 1, "fatPer100g": 32.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Salame corallina",
+    "aliases": ["corallina", "corallina romana", "salame romano"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 400, "proteinPer100g": 25, "carbsPer100g": 0.5, "fatPer100g": 33,
+    "portionGrams": 50
+  },
+  {
+    "name": "Cacciatorino",
+    "aliases": ["salamino cacciatore", "cacciatore", "salamino"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 425, "proteinPer100g": 25, "carbsPer100g": 0.5, "fatPer100g": 35.5,
+    "portionGrams": 50,
+    "note": "circa mezzo salamino"
+  },
+  {
+    "name": "Spianata piccante",
+    "aliases": ["spianata calabra", "salame piccante", "spianata"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 450, "proteinPer100g": 22, "carbsPer100g": 1, "fatPer100g": 40,
+    "portionGrams": 50
+  },
+  {
+    "name": "Soppressata",
+    "aliases": ["soppressata calabrese", "sopressata"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 390, "proteinPer100g": 26, "carbsPer100g": 0.5, "fatPer100g": 31.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Nduja",
+    "aliases": ["'nduja", "nduja calabrese", "nduja spalmabile"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 450, "proteinPer100g": 15, "carbsPer100g": 1, "fatPer100g": 43,
+    "portionGrams": 30
+  },
+  {
+    "name": "Finocchiona",
+    "aliases": ["salame al finocchio", "finocchiona toscana"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 395, "proteinPer100g": 24, "carbsPer100g": 0.5, "fatPer100g": 32.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Bresaola",
+    "aliases": ["bresaola della Valtellina", "bresaola con rucola e grana"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 150, "proteinPer100g": 32, "carbsPer100g": 0.5, "fatPer100g": 2.5,
+    "portionGrams": 60,
+    "note": "valori senza condimento"
+  },
+  {
+    "name": "Speck",
+    "aliases": ["speck affettato", "speck a cubetti"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 300, "proteinPer100g": 28, "carbsPer100g": 0.5, "fatPer100g": 20.5,
+    "portionGrams": 60
+  },
+  {
+    "name": "Coppa",
+    "aliases": ["capocollo", "coppa stagionata", "capicollo"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 400, "proteinPer100g": 27, "carbsPer100g": 0.5, "fatPer100g": 32,
+    "portionGrams": 50
+  },
+  {
+    "name": "Lonzino",
+    "aliases": ["lonza stagionata", "lonzino stagionato", "capolonza"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 320, "proteinPer100g": 32, "carbsPer100g": 1, "fatPer100g": 21,
+    "portionGrams": 50
+  },
+  {
+    "name": "Pancetta",
+    "aliases": ["pancetta arrotolata", "pancetta tesa", "pancetta a cubetti"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 400, "proteinPer100g": 15, "carbsPer100g": 0.5, "fatPer100g": 38,
+    "portionGrams": 50
+  },
+  {
+    "name": "Guanciale",
+    "aliases": ["guanciale stagionato", "guanciale per carbonara"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 620, "proteinPer100g": 12, "carbsPer100g": 0, "fatPer100g": 63,
+    "portionGrams": 30,
+    "note": "crudo stagionato; in padella perde parte del grasso"
+  },
+  {
+    "name": "Lardo",
+    "aliases": ["lardo stagionato", "lardo alle erbe"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 770, "proteinPer100g": 4, "carbsPer100g": 0, "fatPer100g": 84,
+    "portionGrams": 20
+  },
+  {
+    "name": "Salsiccia stagionata",
+    "aliases": ["salsiccia secca", "salsiccia dolce stagionata", "salamella secca"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 430, "proteinPer100g": 24, "carbsPer100g": 1, "fatPer100g": 37,
+    "portionGrams": 60
+  },
+  {
+    "name": "Fesa di tacchino affettata",
+    "aliases": ["affettato di tacchino", "tacchino al forno affettato", "fesa affettata"],
+    "category": "Carne e salumi",
+    "kcalPer100g": 105, "proteinPer100g": 22, "carbsPer100g": 1.5, "fatPer100g": 1.5,
+    "portionGrams": 80
+  }
+]

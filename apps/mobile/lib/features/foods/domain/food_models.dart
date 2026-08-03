@@ -2,6 +2,7 @@ import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 
 abstract final class FoodSource {
   static const String seed = 'seed';
+  static const String catalog = 'catalog';
   static const String custom = 'custom';
 }
 
@@ -80,6 +81,12 @@ class FoodCatalogItem {
   final DateTime? lastUsedAt;
 
   bool get isSeed => source == FoodSource.seed;
+
+  bool get isCatalog => source == FoodSource.catalog;
+
+  /// Fornito dall'app (seed essenziale o catalogo piatti): non si elimina
+  /// e la modifica crea una copia personale.
+  bool get isBuiltIn => isSeed || isCatalog;
 }
 
 class AtwaterCheck {

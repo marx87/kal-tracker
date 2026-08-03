@@ -1,0 +1,722 @@
+[
+  {
+    "name": "Nigiri di salmone",
+    "aliases": ["nigiri salmone", "sushi salmone", "nighiri"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 145, "proteinPer100g": 7.5, "carbsPer100g": 20, "fatPer100g": 4,
+    "portionGrams": 70,
+    "note": "1 pezzo circa 35 g"
+  },
+  {
+    "name": "Nigiri di tonno",
+    "aliases": ["nigiri tonno", "sushi tonno"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 130, "proteinPer100g": 8.5, "carbsPer100g": 20, "fatPer100g": 1.5,
+    "portionGrams": 70,
+    "note": "1 pezzo circa 35 g"
+  },
+  {
+    "name": "Nigiri di gambero",
+    "aliases": ["nigiri gambero", "sushi gambero", "ebi nigiri"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 125, "proteinPer100g": 8, "carbsPer100g": 20, "fatPer100g": 1,
+    "portionGrams": 70,
+    "note": "1 pezzo circa 35 g"
+  },
+  {
+    "name": "Hosomaki al salmone",
+    "aliases": ["hosomaki", "maki salmone", "roll salmone"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 140, "proteinPer100g": 5.5, "carbsPer100g": 26, "fatPer100g": 1.5,
+    "portionGrams": 80,
+    "note": "1 pezzo circa 12 g"
+  },
+  {
+    "name": "Uramaki California",
+    "aliases": ["california roll", "uramaki", "roll california"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 170, "proteinPer100g": 6, "carbsPer100g": 25, "fatPer100g": 5,
+    "portionGrams": 120,
+    "note": "1 pezzo circa 30 g; con surimi e avocado"
+  },
+  {
+    "name": "Uramaki salmone e formaggio cremoso",
+    "aliases": ["roll salmone formaggio", "uramaki salmone"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 185, "proteinPer100g": 6.5, "carbsPer100g": 24, "fatPer100g": 7,
+    "portionGrams": 120,
+    "note": "1 pezzo circa 30 g"
+  },
+  {
+    "name": "Sashimi di salmone",
+    "aliases": ["sashimi salmone", "salmone crudo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 200, "proteinPer100g": 20, "carbsPer100g": 0, "fatPer100g": 13,
+    "portionGrams": 100,
+    "note": "pesce crudo senza riso"
+  },
+  {
+    "name": "Sashimi di tonno",
+    "aliases": ["sashimi tonno", "tonno crudo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 115, "proteinPer100g": 23, "carbsPer100g": 0, "fatPer100g": 2,
+    "portionGrams": 100,
+    "note": "pesce crudo senza riso"
+  },
+  {
+    "name": "Temaki al salmone",
+    "aliases": ["temaki", "cono sushi"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 160, "proteinPer100g": 7, "carbsPer100g": 20, "fatPer100g": 5.5,
+    "portionGrams": 90,
+    "note": "1 cono circa 90 g"
+  },
+  {
+    "name": "Edamame",
+    "aliases": ["fagioli di soia", "edamame bolliti"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 120, "proteinPer100g": 11, "carbsPer100g": 9, "fatPer100g": 5,
+    "portionGrams": 80,
+    "note": "fagioli di soia bolliti, peso sgranato"
+  },
+  {
+    "name": "Ramen con maiale",
+    "aliases": ["ramen", "noodles in brodo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 110, "proteinPer100g": 5.5, "carbsPer100g": 13, "fatPer100g": 4,
+    "portionGrams": 500,
+    "note": "brodo, noodles e carne; valori sul piatto completo"
+  },
+  {
+    "name": "Tempura mista di gamberi e verdure",
+    "aliases": ["tempura", "gamberi in tempura"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 190, "proteinPer100g": 6, "carbsPer100g": 18, "fatPer100g": 10.5,
+    "portionGrams": 150,
+    "note": "fritta"
+  },
+  {
+    "name": "Poke bowl con salmone",
+    "aliases": ["poke salmone", "poke"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 140, "proteinPer100g": 8, "carbsPer100g": 16, "fatPer100g": 5,
+    "portionGrams": 400,
+    "note": "riso, salmone, verdure e salse; bowl media"
+  },
+  {
+    "name": "Poke bowl con tonno",
+    "aliases": ["poke tonno"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 125, "proteinPer100g": 9, "carbsPer100g": 16, "fatPer100g": 3,
+    "portionGrams": 400,
+    "note": "bowl media con condimento"
+  },
+  {
+    "name": "Poke bowl con pollo",
+    "aliases": ["poke pollo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 135, "proteinPer100g": 9.5, "carbsPer100g": 15, "fatPer100g": 4.5,
+    "portionGrams": 400,
+    "note": "bowl media con condimento"
+  },
+  {
+    "name": "Poke bowl vegetariano con tofu",
+    "aliases": ["poke tofu", "poke veg"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 120, "proteinPer100g": 6, "carbsPer100g": 14, "fatPer100g": 4.5,
+    "portionGrams": 400,
+    "note": "bowl media con condimento"
+  },
+  {
+    "name": "Riso alla cantonese",
+    "aliases": ["riso cantonese", "riso cinese"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 165, "proteinPer100g": 6, "carbsPer100g": 24, "fatPer100g": 5,
+    "portionGrams": 250,
+    "note": "con uovo, prosciutto e piselli"
+  },
+  {
+    "name": "Involtini primavera",
+    "aliases": ["involtino primavera", "spring roll"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 220, "proteinPer100g": 4.5, "carbsPer100g": 24, "fatPer100g": 11.5,
+    "portionGrams": 80,
+    "note": "fritti, 1 pezzo circa 40 g"
+  },
+  {
+    "name": "Pollo alle mandorle",
+    "aliases": ["pollo mandorle"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 160, "proteinPer100g": 12, "carbsPer100g": 8, "fatPer100g": 9,
+    "portionGrams": 250,
+    "note": "da ristorante cinese"
+  },
+  {
+    "name": "Pollo in agrodolce",
+    "aliases": ["pollo agrodolce", "pollo fritto cinese"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 210, "proteinPer100g": 10, "carbsPer100g": 22, "fatPer100g": 9.5,
+    "portionGrams": 250,
+    "note": "pollo fritto in salsa agrodolce"
+  },
+  {
+    "name": "Spaghetti di riso saltati con verdure",
+    "aliases": ["spaghetti di riso", "noodles saltati", "spaghetti cinesi"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 155, "proteinPer100g": 4, "carbsPer100g": 26, "fatPer100g": 4,
+    "portionGrams": 250,
+    "note": "saltati in padella con olio"
+  },
+  {
+    "name": "Ravioli cinesi al vapore",
+    "aliases": ["ravioli al vapore", "jiaozi", "dim sum"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 130, "proteinPer100g": 7, "carbsPer100g": 17, "fatPer100g": 3.5,
+    "portionGrams": 150,
+    "note": "ripieno di carne, 1 pezzo circa 35 g"
+  },
+  {
+    "name": "Ravioli cinesi alla griglia",
+    "aliases": ["ravioli alla piastra", "gyoza"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 180, "proteinPer100g": 7.5, "carbsPer100g": 20, "fatPer100g": 8,
+    "portionGrams": 150,
+    "note": "ripieno di carne, cotti alla piastra"
+  },
+  {
+    "name": "Manzo con bambù e funghi",
+    "aliases": ["manzo bambù", "manzo funghi cinese"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 120, "proteinPer100g": 11, "carbsPer100g": 5, "fatPer100g": 6.5,
+    "portionGrams": 250,
+    "note": "da ristorante cinese"
+  },
+  {
+    "name": "Nuvole di drago",
+    "aliases": ["patatine di gambero", "chips di gambero"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 530, "proteinPer100g": 2, "carbsPer100g": 60, "fatPer100g": 31,
+    "portionGrams": 30,
+    "note": "patatine di gambero fritte"
+  },
+  {
+    "name": "Panino kebab",
+    "aliases": ["kebab", "doner kebab", "piadina kebab", "durum"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 215, "proteinPer100g": 11, "carbsPer100g": 20, "fatPer100g": 10,
+    "portionGrams": 350,
+    "note": "piadina con carne, verdure e salse"
+  },
+  {
+    "name": "Falafel",
+    "aliases": ["polpette di ceci"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 330, "proteinPer100g": 13, "carbsPer100g": 31, "fatPer100g": 17.5,
+    "portionGrams": 100,
+    "note": "fritti, 1 pezzo circa 25 g"
+  },
+  {
+    "name": "Pita con falafel e salse",
+    "aliases": ["panino falafel", "falafel wrap"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 230, "proteinPer100g": 8, "carbsPer100g": 30, "fatPer100g": 8.5,
+    "portionGrams": 300,
+    "note": "con verdure e salsa allo yogurt o tahina"
+  },
+  {
+    "name": "Hummus di ceci",
+    "aliases": ["hummus", "crema di ceci"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 240, "proteinPer100g": 7.5, "carbsPer100g": 14, "fatPer100g": 17,
+    "portionGrams": 50,
+    "note": "con tahina e olio"
+  },
+  {
+    "name": "Cous cous con verdure",
+    "aliases": ["couscous verdure", "cuscus"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 130, "proteinPer100g": 4, "carbsPer100g": 22, "fatPer100g": 3,
+    "portionGrams": 250,
+    "note": "condito, pronto da gastronomia"
+  },
+  {
+    "name": "Cous cous con pollo",
+    "aliases": ["couscous pollo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 145, "proteinPer100g": 8, "carbsPer100g": 20, "fatPer100g": 4,
+    "portionGrams": 300,
+    "note": "condito, pronto da gastronomia"
+  },
+  {
+    "name": "Pollo al curry",
+    "aliases": ["curry di pollo", "pollo indiano"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 150, "proteinPer100g": 12, "carbsPer100g": 6, "fatPer100g": 8.5,
+    "portionGrams": 250,
+    "note": "senza riso, con salsa"
+  },
+  {
+    "name": "Burrito con carne e fagioli",
+    "aliases": ["burrito", "burrito manzo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 190, "proteinPer100g": 9, "carbsPer100g": 22, "fatPer100g": 7.5,
+    "portionGrams": 350,
+    "note": "con riso, formaggio e salse"
+  },
+  {
+    "name": "Tacos con carne",
+    "aliases": ["taco", "tacos messicani"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 210, "proteinPer100g": 10, "carbsPer100g": 20, "fatPer100g": 10,
+    "portionGrams": 200,
+    "note": "2 tacos circa 200 g"
+  },
+  {
+    "name": "Guacamole",
+    "aliases": ["salsa avocado"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 150, "proteinPer100g": 2, "carbsPer100g": 8, "fatPer100g": 13,
+    "portionGrams": 50,
+    "note": "salsa di avocado"
+  },
+  {
+    "name": "Nachos con formaggio",
+    "aliases": ["nachos", "tortilla chips con formaggio"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 320, "proteinPer100g": 8, "carbsPer100g": 32, "fatPer100g": 18,
+    "portionGrams": 150,
+    "note": "con salsa al formaggio fusa"
+  },
+  {
+    "name": "Quesadilla al formaggio",
+    "aliases": ["quesadillas"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 290, "proteinPer100g": 12, "carbsPer100g": 26, "fatPer100g": 15.5,
+    "portionGrams": 180,
+    "note": "tortilla ripiena di formaggio, alla piastra"
+  },
+  {
+    "name": "Chili con carne",
+    "aliases": ["chili"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 120, "proteinPer100g": 9, "carbsPer100g": 9, "fatPer100g": 5,
+    "portionGrams": 300,
+    "note": "carne macinata e fagioli in umido"
+  },
+  {
+    "name": "Paella di pesce",
+    "aliases": ["paella"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 155, "proteinPer100g": 8, "carbsPer100g": 18, "fatPer100g": 5.5,
+    "portionGrams": 350,
+    "note": "riso, pesce e frutti di mare"
+  },
+  {
+    "name": "Insalatona con tonno e uova",
+    "aliases": ["insalata tonno", "insalatona"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 110, "proteinPer100g": 8, "carbsPer100g": 3, "fatPer100g": 7,
+    "portionGrams": 350,
+    "note": "condita con olio"
+  },
+  {
+    "name": "Insalatona con pollo grigliato",
+    "aliases": ["insalata pollo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 105, "proteinPer100g": 9, "carbsPer100g": 3.5, "fatPer100g": 6,
+    "portionGrams": 350,
+    "note": "condita con olio"
+  },
+  {
+    "name": "Insalata caprese",
+    "aliases": ["caprese", "mozzarella e pomodoro"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 160, "proteinPer100g": 9, "carbsPer100g": 3, "fatPer100g": 12.5,
+    "portionGrams": 250,
+    "note": "mozzarella, pomodoro e olio"
+  },
+  {
+    "name": "Insalata di riso",
+    "aliases": ["riso freddo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 160, "proteinPer100g": 5, "carbsPer100g": 22, "fatPer100g": 5.5,
+    "portionGrams": 300,
+    "note": "con sottaceti, tonno e wurstel"
+  },
+  {
+    "name": "Insalata di pasta fredda",
+    "aliases": ["pasta fredda", "pasta estiva"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 170, "proteinPer100g": 6, "carbsPer100g": 24, "fatPer100g": 5.5,
+    "portionGrams": 300,
+    "note": "con pomodorini e mozzarella"
+  },
+  {
+    "name": "Insalata greca",
+    "aliases": ["greca", "insalata con feta"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 130, "proteinPer100g": 4.5, "carbsPer100g": 4.5, "fatPer100g": 10.5,
+    "portionGrams": 300,
+    "note": "feta, olive, pomodori e cetrioli, condita"
+  },
+  {
+    "name": "Insalata di farro",
+    "aliases": ["farro freddo", "farro con verdure"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 140, "proteinPer100g": 5, "carbsPer100g": 22, "fatPer100g": 3.5,
+    "portionGrams": 300,
+    "note": "con verdure, condita"
+  },
+  {
+    "name": "Insalata di polpo e patate",
+    "aliases": ["polpo e patate"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 105, "proteinPer100g": 10, "carbsPer100g": 7, "fatPer100g": 3.5,
+    "portionGrams": 250,
+    "note": "condita con olio e prezzemolo"
+  },
+  {
+    "name": "Insalata di mare",
+    "aliases": ["antipasto di mare"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 120, "proteinPer100g": 11, "carbsPer100g": 4, "fatPer100g": 6.5,
+    "portionGrams": 200,
+    "note": "da gastronomia, condita"
+  },
+  {
+    "name": "Pollo allo spiedo",
+    "aliases": ["pollo arrosto", "pollo girarrosto"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 200, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 11.5,
+    "portionGrams": 300,
+    "note": "con pelle; mezzo pollo circa 300 g"
+  },
+  {
+    "name": "Parmigiana di melanzane",
+    "aliases": ["melanzane alla parmigiana", "parmigiana"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 190, "proteinPer100g": 7, "carbsPer100g": 9, "fatPer100g": 14,
+    "portionGrams": 250,
+    "note": "melanzane fritte, pomodoro e formaggio"
+  },
+  {
+    "name": "Insalata russa",
+    "aliases": ["russa"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 200, "proteinPer100g": 3.5, "carbsPer100g": 10, "fatPer100g": 16.5,
+    "portionGrams": 150,
+    "note": "verdure e maionese, da gastronomia"
+  },
+  {
+    "name": "Vitello tonnato",
+    "aliases": ["vitel tonne"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 190, "proteinPer100g": 15, "carbsPer100g": 2, "fatPer100g": 13.5,
+    "portionGrams": 150,
+    "note": "con salsa tonnata"
+  },
+  {
+    "name": "Polpette al sugo",
+    "aliases": ["polpette al pomodoro"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 180, "proteinPer100g": 11, "carbsPer100g": 8, "fatPer100g": 11.5,
+    "portionGrams": 250,
+    "note": "di carne, con sugo di pomodoro"
+  },
+  {
+    "name": "Roast beef",
+    "aliases": ["roastbeef", "rosbif"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 150, "proteinPer100g": 26, "carbsPer100g": 0.5, "fatPer100g": 5,
+    "portionGrams": 120,
+    "note": "affettato, senza condimento"
+  },
+  {
+    "name": "Frittata di zucchine",
+    "aliases": ["frittata verdure"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 145, "proteinPer100g": 9, "carbsPer100g": 3, "fatPer100g": 10.5,
+    "portionGrams": 150,
+    "note": "da gastronomia"
+  },
+  {
+    "name": "Filetto di baccalà fritto",
+    "aliases": ["baccalà fritto", "filetti di baccalà"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 240, "proteinPer100g": 13, "carbsPer100g": 12, "fatPer100g": 15,
+    "portionGrams": 150,
+    "note": "in pastella, 1 filetto circa 150 g"
+  },
+  {
+    "name": "Porchetta",
+    "aliases": ["porchetta romana"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 280, "proteinPer100g": 22, "carbsPer100g": 0.5, "fatPer100g": 21,
+    "portionGrams": 100,
+    "note": "affettata"
+  },
+  {
+    "name": "Pollo alla cacciatora",
+    "aliases": ["cacciatora"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 140, "proteinPer100g": 15, "carbsPer100g": 3, "fatPer100g": 7.5,
+    "portionGrams": 300,
+    "note": "con osso, in umido"
+  },
+  {
+    "name": "Melanzane ripiene",
+    "aliases": ["melanzane al forno ripiene"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 130, "proteinPer100g": 5, "carbsPer100g": 10, "fatPer100g": 8,
+    "portionGrams": 250,
+    "note": "da gastronomia"
+  },
+  {
+    "name": "Seppie con piselli",
+    "aliases": ["seppie e piselli"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 90, "proteinPer100g": 10, "carbsPer100g": 5, "fatPer100g": 3,
+    "portionGrams": 300,
+    "note": "in umido, da gastronomia"
+  },
+  {
+    "name": "Caffè espresso senza zucchero",
+    "aliases": ["caffè", "espresso", "caffè amaro"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 9, "proteinPer100g": 0.1, "carbsPer100g": 1.7, "fatPer100g": 0.2,
+    "portionGrams": 30,
+    "note": "1 tazzina circa 30 g"
+  },
+  {
+    "name": "Caffè espresso con zucchero",
+    "aliases": ["caffè zuccherato", "caffè dolce"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 65, "proteinPer100g": 0.1, "carbsPer100g": 15.7, "fatPer100g": 0.2,
+    "portionGrams": 35,
+    "note": "con 1 cucchiaino di zucchero"
+  },
+  {
+    "name": "Caffè macchiato",
+    "aliases": ["macchiato", "caffè macchiato caldo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 23, "proteinPer100g": 0.9, "carbsPer100g": 2.5, "fatPer100g": 0.9,
+    "portionGrams": 40,
+    "note": "senza zucchero"
+  },
+  {
+    "name": "Caffè d'orzo",
+    "aliases": ["orzo", "orzo in tazza"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 10, "proteinPer100g": 0.2, "carbsPer100g": 2.2, "fatPer100g": 0,
+    "portionGrams": 120,
+    "note": "in tazza, senza zucchero"
+  },
+  {
+    "name": "Caffè al ginseng",
+    "aliases": ["ginseng"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 40, "proteinPer100g": 0.8, "carbsPer100g": 7, "fatPer100g": 1,
+    "portionGrams": 120,
+    "note": "da bar, già zuccherato"
+  },
+  {
+    "name": "Cappuccino senza zucchero",
+    "aliases": ["cappuccino amaro", "cappuccio"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 40, "proteinPer100g": 2.1, "carbsPer100g": 3.3, "fatPer100g": 2.1,
+    "portionGrams": 150,
+    "note": "con latte intero"
+  },
+  {
+    "name": "Cappuccino con zucchero",
+    "aliases": ["cappuccio zuccherato"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 52, "proteinPer100g": 2, "carbsPer100g": 6.6, "fatPer100g": 2,
+    "portionGrams": 155,
+    "note": "con 1 cucchiaino di zucchero"
+  },
+  {
+    "name": "Latte macchiato",
+    "aliases": ["caffellatte", "caffè latte"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 50, "proteinPer100g": 2.8, "carbsPer100g": 4.4, "fatPer100g": 2.4,
+    "portionGrams": 200,
+    "note": "con latte intero, senza zucchero"
+  },
+  {
+    "name": "Tè caldo senza zucchero",
+    "aliases": ["tè", "the", "tisana"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 5, "proteinPer100g": 0.1, "carbsPer100g": 1.1, "fatPer100g": 0,
+    "portionGrams": 250,
+    "note": "praticamente acalorico"
+  },
+  {
+    "name": "Tè caldo con zucchero",
+    "aliases": ["the zuccherato"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 9, "proteinPer100g": 0.1, "carbsPer100g": 2.1, "fatPer100g": 0,
+    "portionGrams": 255,
+    "note": "con 1 cucchiaino di zucchero"
+  },
+  {
+    "name": "Tè freddo in bottiglia",
+    "aliases": ["the freddo", "tè al limone"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 28, "proteinPer100g": 0, "carbsPer100g": 7, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "zuccherato, gusto limone o pesca"
+  },
+  {
+    "name": "Succo di frutta alla pesca",
+    "aliases": ["succo pesca", "succo di frutta"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 55, "proteinPer100g": 0.3, "carbsPer100g": 13.5, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "1 brick circa 200 ml"
+  },
+  {
+    "name": "Spremuta di arancia",
+    "aliases": ["spremuta", "succo d'arancia fresco"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 45, "proteinPer100g": 0.6, "carbsPer100g": 10.5, "fatPer100g": 0.2,
+    "portionGrams": 200,
+    "note": "senza zucchero aggiunto"
+  },
+  {
+    "name": "Succo ACE",
+    "aliases": ["ace"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 45, "proteinPer100g": 0.2, "carbsPer100g": 10.8, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "arancia, carota e limone"
+  },
+  {
+    "name": "Bibita cola",
+    "aliases": ["cola", "coca"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 42, "proteinPer100g": 0, "carbsPer100g": 10.6, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "1 lattina = 330 ml"
+  },
+  {
+    "name": "Bibita cola zero",
+    "aliases": ["cola zero", "coca zero"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 5, "proteinPer100g": 0.1, "carbsPer100g": 1.1, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "praticamente acalorica"
+  },
+  {
+    "name": "Aranciata",
+    "aliases": ["bibita all'arancia"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 39, "proteinPer100g": 0.1, "carbsPer100g": 9.5, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "1 lattina = 330 ml"
+  },
+  {
+    "name": "Energy drink",
+    "aliases": ["bevanda energetica"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 45, "proteinPer100g": 0.4, "carbsPer100g": 11, "fatPer100g": 0,
+    "portionGrams": 250,
+    "note": "1 lattina = 250 ml, zuccherato"
+  },
+  {
+    "name": "Birra chiara",
+    "aliases": ["birra", "birra bionda", "birra alla spina", "lager"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 43, "proteinPer100g": 0.5, "carbsPer100g": 3.5, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "bevanda alcolica ~5% vol: le kcal includono l'alcol (7 kcal/g)"
+  },
+  {
+    "name": "Birra doppio malto",
+    "aliases": ["birra rossa", "doppio malto"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 60, "proteinPer100g": 0.6, "carbsPer100g": 5, "fatPer100g": 0,
+    "portionGrams": 330,
+    "note": "bevanda alcolica ~7% vol: le kcal includono l'alcol"
+  },
+  {
+    "name": "Vino rosso",
+    "aliases": ["rosso", "bicchiere di vino"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 82, "proteinPer100g": 0.1, "carbsPer100g": 2.6, "fatPer100g": 0,
+    "portionGrams": 125,
+    "note": "bevanda alcolica ~13% vol: le kcal includono l'alcol"
+  },
+  {
+    "name": "Vino bianco",
+    "aliases": ["bianco", "vino fermo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 80, "proteinPer100g": 0.1, "carbsPer100g": 2.2, "fatPer100g": 0,
+    "portionGrams": 125,
+    "note": "bevanda alcolica ~12% vol: le kcal includono l'alcol"
+  },
+  {
+    "name": "Prosecco",
+    "aliases": ["spumante", "bollicine", "flute"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 75, "proteinPer100g": 0.2, "carbsPer100g": 1.5, "fatPer100g": 0,
+    "portionGrams": 100,
+    "note": "spumante brut, bevanda alcolica ~11% vol"
+  },
+  {
+    "name": "Spritz",
+    "aliases": ["aperitivo spritz"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 70, "proteinPer100g": 0.1, "carbsPer100g": 8, "fatPer100g": 0,
+    "portionGrams": 200,
+    "note": "cocktail alcolico con aperitivo amaro e prosecco"
+  },
+  {
+    "name": "Gin tonic",
+    "aliases": ["gin e tonica"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 72, "proteinPer100g": 0, "carbsPer100g": 4.5, "fatPer100g": 0,
+    "portionGrams": 200,
+    "note": "cocktail alcolico: le kcal includono l'alcol"
+  },
+  {
+    "name": "Mojito",
+    "aliases": ["cocktail mojito"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 82, "proteinPer100g": 0, "carbsPer100g": 8.5, "fatPer100g": 0,
+    "portionGrams": 220,
+    "note": "cocktail alcolico con rum, zucchero e menta"
+  },
+  {
+    "name": "Negroni",
+    "aliases": ["cocktail negroni"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 170, "proteinPer100g": 0, "carbsPer100g": 12, "fatPer100g": 0,
+    "portionGrams": 100,
+    "note": "cocktail alcolico (gin, vermouth e bitter)"
+  },
+  {
+    "name": "Amaro digestivo",
+    "aliases": ["amaro", "digestivo"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 250, "proteinPer100g": 0, "carbsPer100g": 25, "fatPer100g": 0,
+    "portionGrams": 40,
+    "note": "liquore alcolico ~30% vol, 1 bicchierino = 40 ml"
+  },
+  {
+    "name": "Limoncello",
+    "aliases": ["liquore al limone"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 320, "proteinPer100g": 0, "carbsPer100g": 32, "fatPer100g": 0,
+    "portionGrams": 40,
+    "note": "liquore alcolico ~28% vol, 1 bicchierino = 40 ml"
+  },
+  {
+    "name": "Grappa",
+    "aliases": ["distillato", "acquavite"],
+    "category": "Piatti pronti, etnici e bevande",
+    "kcalPer100g": 235, "proteinPer100g": 0, "carbsPer100g": 0, "fatPer100g": 0,
+    "portionGrams": 40,
+    "note": "distillato alcolico ~40% vol: quasi tutte le kcal dall'alcol"
+  }
+]

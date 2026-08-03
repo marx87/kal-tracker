@@ -11,7 +11,9 @@ import 'package:uuid/uuid.dart';
 class BackupRepository {
   BackupRepository(this._database, {Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
-  static const String _seedFoodSource = 'seed';
+  /// Alimenti forniti dall'app (seed essenziali e catalogo piatti):
+  /// sopravvivono al restore «sostituisci tutto» e non generano tombstone.
+  static const List<String> _builtInFoodSources = ['seed', 'catalog'];
 
   final AppDatabase _database;
   final Uuid _uuid;
@@ -849,7 +851,7 @@ class BackupRepository {
   Future<Map<String, Set<String>>> _existingKeys() async {
     final foods = await (_database.select(
       _database.foods,
-    )..where((row) => row.source.equals(_seedFoodSource).not())).get();
+    )..where((row) => row.source.isIn(_builtInFoodSources).not())).get();
     final preferences = await _database.select(_database.foodPreferences).get();
     final targets = await _database.select(_database.nutritionTargets).get();
     return {
@@ -910,7 +912,7 @@ class BackupRepository {
     await _database.delete(_database.foodPreferences).go();
     await (_database.delete(
       _database.foods,
-    )..where((row) => row.source.equals(_seedFoodSource).not())).go();
+    )..where((row) => row.source.isIn(_builtInFoodSources).not())).go();
     await _database.delete(_database.waterLogs).go();
     await _database.delete(_database.bodyMeasurements).go();
     await _database.delete(_database.nutritionTargets).go();

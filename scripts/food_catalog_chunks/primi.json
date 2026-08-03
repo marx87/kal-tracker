@@ -1,0 +1,1277 @@
+[
+  {
+    "name": "Pasta al pomodoro",
+    "aliases": [
+      "pasta al sugo",
+      "spaghetti al pomodoro",
+      "penne al pomodoro",
+      "pomodoro e basilico"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 4.5,
+    "carbsPer100g": 23,
+    "fatPer100g": 2.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta al ragù",
+    "aliases": [
+      "pasta alla bolognese",
+      "tagliatelle al ragù",
+      "pasta al ragu",
+      "spaghetti al ragù"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 150,
+    "proteinPer100g": 7,
+    "carbsPer100g": 20,
+    "fatPer100g": 4.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla carbonara",
+    "aliases": [
+      "carbonara",
+      "spaghetti alla carbonara",
+      "rigatoni alla carbonara"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 190,
+    "proteinPer100g": 8.5,
+    "carbsPer100g": 20,
+    "fatPer100g": 8.5,
+    "portionGrams": 350,
+    "note": "con guanciale, uova e pecorino"
+  },
+  {
+    "name": "Pasta al pesto",
+    "aliases": [
+      "trofie al pesto",
+      "pesto alla genovese",
+      "linguine al pesto"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 180,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 22,
+    "fatPer100g": 8,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta all'amatriciana",
+    "aliases": [
+      "amatriciana",
+      "matriciana",
+      "bucatini all'amatriciana"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 6.5,
+    "carbsPer100g": 21,
+    "fatPer100g": 6,
+    "portionGrams": 350,
+    "note": "con guanciale, pomodoro e pecorino"
+  },
+  {
+    "name": "Pasta cacio e pepe",
+    "aliases": [
+      "cacio e pepe",
+      "tonnarelli cacio e pepe",
+      "spaghetti cacio e pepe"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 185,
+    "proteinPer100g": 8,
+    "carbsPer100g": 22,
+    "fatPer100g": 7.5,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla gricia",
+    "aliases": [
+      "gricia",
+      "rigatoni alla gricia",
+      "amatriciana bianca"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 190,
+    "proteinPer100g": 8,
+    "carbsPer100g": 20,
+    "fatPer100g": 9,
+    "portionGrams": 320,
+    "note": "guanciale e pecorino, senza pomodoro"
+  },
+  {
+    "name": "Pasta aglio olio e peperoncino",
+    "aliases": [
+      "aglio e olio",
+      "spaghetti aglio olio",
+      "ajo e ojo",
+      "spaghettata di mezzanotte"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 195,
+    "proteinPer100g": 5,
+    "carbsPer100g": 25,
+    "fatPer100g": 8.5,
+    "portionGrams": 300,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla puttanesca",
+    "aliases": [
+      "puttanesca",
+      "spaghetti alla puttanesca",
+      "pasta olive e capperi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 155,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 21,
+    "fatPer100g": 5.5,
+    "portionGrams": 350,
+    "note": "pomodoro, olive, capperi e acciughe"
+  },
+  {
+    "name": "Pasta all'arrabbiata",
+    "aliases": [
+      "arrabbiata",
+      "penne all'arrabbiata",
+      "pasta al pomodoro piccante"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 4.5,
+    "carbsPer100g": 22,
+    "fatPer100g": 4,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla norma",
+    "aliases": [
+      "norma",
+      "pasta con le melanzane",
+      "pasta melanzane e ricotta salata"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 150,
+    "proteinPer100g": 5,
+    "carbsPer100g": 20,
+    "fatPer100g": 5.5,
+    "portionGrams": 350,
+    "note": "pomodoro, melanzane fritte e ricotta salata"
+  },
+  {
+    "name": "Pasta con tonno",
+    "aliases": [
+      "pasta al tonno",
+      "pasta tonno e pomodoro",
+      "spaghetti al tonno"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 8,
+    "carbsPer100g": 21,
+    "fatPer100g": 5,
+    "portionGrams": 350,
+    "note": "con tonno sott'olio e pomodoro"
+  },
+  {
+    "name": "Spaghetti alle vongole",
+    "aliases": [
+      "pasta alle vongole",
+      "vongole",
+      "linguine alle vongole"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 7,
+    "carbsPer100g": 20,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "vongole sgusciate incluse"
+  },
+  {
+    "name": "Spaghetti allo scoglio",
+    "aliases": [
+      "pasta allo scoglio",
+      "pasta ai frutti di mare",
+      "linguine allo scoglio"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 135,
+    "proteinPer100g": 8,
+    "carbsPer100g": 18,
+    "fatPer100g": 3.5,
+    "portionGrams": 400,
+    "note": "con cozze, vongole, gamberi e calamari"
+  },
+  {
+    "name": "Pasta al salmone",
+    "aliases": [
+      "pasta salmone e panna",
+      "penne al salmone",
+      "farfalle al salmone"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 175,
+    "proteinPer100g": 8,
+    "carbsPer100g": 19,
+    "fatPer100g": 7.5,
+    "portionGrams": 320,
+    "note": "con salmone affumicato e panna"
+  },
+  {
+    "name": "Pasta panna e prosciutto",
+    "aliases": [
+      "pasta alla papalina",
+      "penne panna e prosciutto",
+      "pasta panna e cotto"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 190,
+    "proteinPer100g": 7.5,
+    "carbsPer100g": 19,
+    "fatPer100g": 9.5,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta zucchine e gamberetti",
+    "aliases": [
+      "pasta gamberi e zucchine",
+      "linguine zucchine e gamberi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 6.5,
+    "carbsPer100g": 18,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla boscaiola",
+    "aliases": [
+      "boscaiola",
+      "pasta funghi e panna",
+      "pasta funghi e salsiccia"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 170,
+    "proteinPer100g": 6,
+    "carbsPer100g": 20,
+    "fatPer100g": 7.5,
+    "portionGrams": 350,
+    "note": "con funghi, panna e pancetta"
+  },
+  {
+    "name": "Pasta con salsiccia",
+    "aliases": [
+      "pasta salsiccia e pomodoro",
+      "rigatoni con salsiccia",
+      "pasta sugo di salsiccia"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 185,
+    "proteinPer100g": 8.5,
+    "carbsPer100g": 20,
+    "fatPer100g": 8,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta con broccoli",
+    "aliases": [
+      "pasta e broccoli",
+      "orecchiette ai broccoli",
+      "pasta broccoli e acciughe"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 5,
+    "carbsPer100g": 19,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta con zucchine",
+    "aliases": [
+      "pasta e zucchine",
+      "spaghetti alle zucchine",
+      "pasta zucchine e parmigiano"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 4.5,
+    "carbsPer100g": 19,
+    "fatPer100g": 4,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta alla checca",
+    "aliases": [
+      "checca",
+      "pasta pomodoro fresco e mozzarella",
+      "pasta fredda alla checca"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 6,
+    "carbsPer100g": 21,
+    "fatPer100g": 6,
+    "portionGrams": 320,
+    "note": "pomodoro crudo, mozzarella e basilico"
+  },
+  {
+    "name": "Rigatoni con la pajata",
+    "aliases": [
+      "pajata",
+      "pagliata",
+      "rigatoni alla pajata"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 8,
+    "carbsPer100g": 18,
+    "fatPer100g": 6.5,
+    "portionGrams": 350,
+    "note": "romano, con sugo di pajata"
+  },
+  {
+    "name": "Pasta alla zozzona",
+    "aliases": [
+      "zozzona",
+      "rigatoni alla zozzona"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 195,
+    "proteinPer100g": 8.5,
+    "carbsPer100g": 19,
+    "fatPer100g": 9.5,
+    "portionGrams": 350,
+    "note": "guanciale, salsiccia, uovo e pomodoro"
+  },
+  {
+    "name": "Pasta alla genovese",
+    "aliases": [
+      "genovese napoletana",
+      "ziti alla genovese",
+      "pasta con cipolle e carne"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 7.5,
+    "carbsPer100g": 18,
+    "fatPer100g": 6.5,
+    "portionGrams": 350,
+    "note": "sugo di cipolle e manzo"
+  },
+  {
+    "name": "Pasta con le sarde",
+    "aliases": [
+      "pasta alle sarde",
+      "bucatini con le sarde",
+      "pasta sarde e finocchietto"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 155,
+    "proteinPer100g": 7,
+    "carbsPer100g": 19,
+    "fatPer100g": 5.5,
+    "portionGrams": 350,
+    "note": "siciliana, con sarde, finocchietto e uvetta"
+  },
+  {
+    "name": "Orecchiette con cime di rapa",
+    "aliases": [
+      "orecchiette alle cime di rapa",
+      "pasta cime di rapa",
+      "orecchiette broccoletti"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 135,
+    "proteinPer100g": 5,
+    "carbsPer100g": 19,
+    "fatPer100g": 4.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Tagliatelle ai funghi porcini",
+    "aliases": [
+      "pasta ai funghi",
+      "fettuccine ai porcini",
+      "tagliatelle ai funghi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 150,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 22,
+    "fatPer100g": 4.5,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta burro e parmigiano",
+    "aliases": [
+      "pasta al burro",
+      "fettuccine burro e parmigiano",
+      "fettuccine Alfredo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 210,
+    "proteinPer100g": 8,
+    "carbsPer100g": 24,
+    "fatPer100g": 9,
+    "portionGrams": 300,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Pasta in bianco con olio",
+    "aliases": [
+      "pasta in bianco",
+      "pasta olio e parmigiano",
+      "pasta scondita con olio"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 25,
+    "fatPer100g": 5,
+    "portionGrams": 300,
+    "note": "pasta cotta con un filo d'olio e parmigiano"
+  },
+  {
+    "name": "Pasta al forno",
+    "aliases": [
+      "pasta al forno con besciamella",
+      "rigatoni al forno",
+      "pasta 'ncasciata",
+      "anelletti al forno"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 8,
+    "carbsPer100g": 18,
+    "fatPer100g": 7,
+    "portionGrams": 350,
+    "note": "con ragù, besciamella e formaggio"
+  },
+  {
+    "name": "Pasta patate e provola",
+    "aliases": [
+      "pasta e patate",
+      "pasta patate e provola napoletana"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 18,
+    "fatPer100g": 5,
+    "portionGrams": 350,
+    "note": "versione napoletana cremosa con provola"
+  },
+  {
+    "name": "Pizzoccheri alla valtellinese",
+    "aliases": [
+      "pizzoccheri",
+      "pizzoccheri con verza e patate"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 180,
+    "proteinPer100g": 7,
+    "carbsPer100g": 18,
+    "fatPer100g": 9,
+    "portionGrams": 350,
+    "note": "con verza, patate, burro e formaggio"
+  },
+  {
+    "name": "Pasta e fagioli",
+    "aliases": [
+      "pasta fagioli",
+      "minestra di pasta e fagioli",
+      "sagne e fagioli"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 100,
+    "proteinPer100g": 5,
+    "carbsPer100g": 15,
+    "fatPer100g": 2.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto in brodo ristretto"
+  },
+  {
+    "name": "Pasta e ceci",
+    "aliases": [
+      "pasta ceci",
+      "minestra di pasta e ceci",
+      "pasta e ceci alla romana"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 105,
+    "proteinPer100g": 5,
+    "carbsPer100g": 16,
+    "fatPer100g": 2.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Pasta e patate",
+    "aliases": [
+      "minestra di pasta e patate",
+      "pasta patate"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 110,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 18,
+    "fatPer100g": 3,
+    "portionGrams": 400,
+    "note": "versione in minestra, valori da piatto pronto"
+  },
+  {
+    "name": "Pasta e lenticchie",
+    "aliases": [
+      "pasta lenticchie",
+      "minestra di pasta e lenticchie"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 100,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 15,
+    "fatPer100g": 2,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Lasagne alla bolognese",
+    "aliases": [
+      "lasagne",
+      "lasagna al forno",
+      "lasagne al ragù"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 8.5,
+    "carbsPer100g": 13,
+    "fatPer100g": 8.5,
+    "portionGrams": 300,
+    "note": "con ragù e besciamella"
+  },
+  {
+    "name": "Lasagne vegetariane",
+    "aliases": [
+      "lasagne alle verdure",
+      "lasagne bianche",
+      "lasagne zucchine"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 145,
+    "proteinPer100g": 6,
+    "carbsPer100g": 15,
+    "fatPer100g": 7,
+    "portionGrams": 300,
+    "note": "con verdure e besciamella"
+  },
+  {
+    "name": "Cannelloni ricotta e spinaci",
+    "aliases": [
+      "cannelloni",
+      "cannelloni al forno",
+      "cannelloni di magro"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 155,
+    "proteinPer100g": 7,
+    "carbsPer100g": 14,
+    "fatPer100g": 8,
+    "portionGrams": 280,
+    "note": "con besciamella e pomodoro"
+  },
+  {
+    "name": "Ravioli ricotta e spinaci burro e salvia",
+    "aliases": [
+      "ravioli burro e salvia",
+      "ravioli di magro",
+      "tortelloni ricotta e spinaci"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 190,
+    "proteinPer100g": 7,
+    "carbsPer100g": 22,
+    "fatPer100g": 8.5,
+    "portionGrams": 280,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Ravioli di carne al ragù",
+    "aliases": [
+      "ravioli al ragu",
+      "agnolotti al ragù",
+      "ravioli di carne"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 180,
+    "proteinPer100g": 8,
+    "carbsPer100g": 22,
+    "fatPer100g": 7,
+    "portionGrams": 300,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Tortelli di zucca burro e salvia",
+    "aliases": [
+      "tortelli di zucca",
+      "ravioli di zucca",
+      "cappellacci di zucca"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 180,
+    "proteinPer100g": 6,
+    "carbsPer100g": 25,
+    "fatPer100g": 6.5,
+    "portionGrams": 280,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Tortellini in brodo",
+    "aliases": [
+      "tortellini",
+      "cappelletti in brodo",
+      "tortellini in brodo di carne"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 80,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 11,
+    "fatPer100g": 2.5,
+    "portionGrams": 400,
+    "note": "valori del piatto con il brodo"
+  },
+  {
+    "name": "Tortellini alla panna",
+    "aliases": [
+      "tortellini panna e prosciutto",
+      "tortellini con panna"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 200,
+    "proteinPer100g": 8,
+    "carbsPer100g": 20,
+    "fatPer100g": 10,
+    "portionGrams": 300,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Gnocchi al pomodoro",
+    "aliases": [
+      "gnocchi al sugo",
+      "gnocchi di patate al pomodoro"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 120,
+    "proteinPer100g": 3,
+    "carbsPer100g": 22,
+    "fatPer100g": 2.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Gnocchi alla sorrentina",
+    "aliases": [
+      "sorrentina",
+      "gnocchi pomodoro e mozzarella",
+      "gnocchi al forno"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 145,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 20,
+    "fatPer100g": 5,
+    "portionGrams": 350,
+    "note": "con pomodoro e mozzarella filante"
+  },
+  {
+    "name": "Gnocchi al ragù",
+    "aliases": [
+      "gnocchi al ragu",
+      "gnocchi alla bolognese"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 20,
+    "fatPer100g": 4.5,
+    "portionGrams": 350,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Gnocchi burro e salvia",
+    "aliases": [
+      "gnocchi al burro",
+      "gnocchi burro e parmigiano"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 22,
+    "fatPer100g": 7.5,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Gnocchi al gorgonzola",
+    "aliases": [
+      "gnocchi gorgonzola e noci",
+      "gnocchi ai quattro formaggi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 175,
+    "proteinPer100g": 6,
+    "carbsPer100g": 20,
+    "fatPer100g": 8.5,
+    "portionGrams": 320,
+    "note": "valori da cotto e condito"
+  },
+  {
+    "name": "Gnocchi alla romana",
+    "aliases": [
+      "gnocchi di semolino",
+      "gnocchi di semolino al forno"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 170,
+    "proteinPer100g": 6,
+    "carbsPer100g": 20,
+    "fatPer100g": 7.5,
+    "portionGrams": 300,
+    "note": "semolino gratinato con burro e formaggio"
+  },
+  {
+    "name": "Risotto alla milanese",
+    "aliases": [
+      "risotto allo zafferano",
+      "riso giallo",
+      "risotto giallo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 145,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 22,
+    "fatPer100g": 5,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto ai funghi",
+    "aliases": [
+      "risotto ai porcini",
+      "risotto funghi porcini",
+      "riso ai funghi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 21,
+    "fatPer100g": 4,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto alla pescatora",
+    "aliases": [
+      "risotto ai frutti di mare",
+      "risotto di mare",
+      "risotto alla marinara"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 125,
+    "proteinPer100g": 6,
+    "carbsPer100g": 20,
+    "fatPer100g": 2.5,
+    "portionGrams": 350,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Risotto agli asparagi",
+    "aliases": [
+      "risotto con asparagi",
+      "riso e asparagi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 120,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 19,
+    "fatPer100g": 3.5,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto alla zucca",
+    "aliases": [
+      "risotto zucca",
+      "riso e zucca",
+      "risotto zucca e salsiccia"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 115,
+    "proteinPer100g": 3,
+    "carbsPer100g": 20,
+    "fatPer100g": 3,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto al radicchio",
+    "aliases": [
+      "risotto radicchio",
+      "risotto al radicchio rosso",
+      "risotto radicchio e gorgonzola"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 125,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 20,
+    "fatPer100g": 3.5,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto alla parmigiana",
+    "aliases": [
+      "risotto al parmigiano",
+      "risotto in bianco",
+      "riso al parmigiano"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 4,
+    "carbsPer100g": 21,
+    "fatPer100g": 4.5,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risotto ai quattro formaggi",
+    "aliases": [
+      "risotto quattro formaggi",
+      "risotto ai formaggi",
+      "risotto al gorgonzola"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 6,
+    "carbsPer100g": 20,
+    "fatPer100g": 7,
+    "portionGrams": 320,
+    "note": "valori da cotto, mantecato"
+  },
+  {
+    "name": "Risi e bisi",
+    "aliases": [
+      "riso e piselli",
+      "risotto ai piselli",
+      "minestra di riso e piselli"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 110,
+    "proteinPer100g": 4,
+    "carbsPer100g": 18,
+    "fatPer100g": 2.5,
+    "portionGrams": 350,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Riso in bianco",
+    "aliases": [
+      "riso in bianco con olio",
+      "riso bollito condito",
+      "riso all'olio"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 2.5,
+    "carbsPer100g": 25,
+    "fatPer100g": 3.5,
+    "portionGrams": 250,
+    "note": "riso bollito con un filo d'olio"
+  },
+  {
+    "name": "Minestrone di verdure",
+    "aliases": [
+      "minestrone",
+      "zuppa di verdure",
+      "minestrone senza pasta"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 45,
+    "proteinPer100g": 2,
+    "carbsPer100g": 7,
+    "fatPer100g": 1,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Minestrone con pasta",
+    "aliases": [
+      "minestrone con pastina",
+      "minestrone con riso",
+      "minestra di verdure e pasta"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 65,
+    "proteinPer100g": 2.5,
+    "carbsPer100g": 11,
+    "fatPer100g": 1.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Passato di verdure",
+    "aliases": [
+      "vellutata di verdure",
+      "crema di verdure",
+      "passato"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 40,
+    "proteinPer100g": 1.5,
+    "carbsPer100g": 6,
+    "fatPer100g": 1.2,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Crema di zucca",
+    "aliases": [
+      "vellutata di zucca",
+      "zuppa di zucca",
+      "passato di zucca"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 55,
+    "proteinPer100g": 1.5,
+    "carbsPer100g": 8,
+    "fatPer100g": 2,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Vellutata di funghi",
+    "aliases": [
+      "crema di funghi",
+      "zuppa di funghi"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 60,
+    "proteinPer100g": 2,
+    "carbsPer100g": 6,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Zuppa di legumi",
+    "aliases": [
+      "zuppa di legumi misti",
+      "minestra di legumi",
+      "zuppa di fagioli",
+      "zuppa di lenticchie"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 80,
+    "proteinPer100g": 4.5,
+    "carbsPer100g": 12,
+    "fatPer100g": 1.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Zuppa di farro",
+    "aliases": [
+      "zuppa di farro e legumi",
+      "minestra di farro",
+      "zuppa d'orzo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 90,
+    "proteinPer100g": 3.5,
+    "carbsPer100g": 15,
+    "fatPer100g": 2,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Ribollita",
+    "aliases": [
+      "ribollita toscana",
+      "zuppa di pane e cavolo nero",
+      "zuppa toscana"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 85,
+    "proteinPer100g": 4,
+    "carbsPer100g": 12,
+    "fatPer100g": 2.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Pappa al pomodoro",
+    "aliases": [
+      "pappa col pomodoro",
+      "zuppa di pane e pomodoro"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 90,
+    "proteinPer100g": 2.5,
+    "carbsPer100g": 13,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Stracciatella in brodo",
+    "aliases": [
+      "stracciatella alla romana",
+      "stracciatella",
+      "brodo con uovo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 50,
+    "proteinPer100g": 5,
+    "carbsPer100g": 1.5,
+    "fatPer100g": 3,
+    "portionGrams": 350,
+    "note": "brodo con uovo sbattuto e parmigiano"
+  },
+  {
+    "name": "Minestrina in brodo",
+    "aliases": [
+      "pastina in brodo",
+      "minestrina",
+      "quadrucci in brodo",
+      "stelline in brodo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 50,
+    "proteinPer100g": 2,
+    "carbsPer100g": 8,
+    "fatPer100g": 1,
+    "portionGrams": 350,
+    "note": "valori del piatto con il brodo"
+  },
+  {
+    "name": "Zuppa di cipolle",
+    "aliases": [
+      "zuppa di cipolle gratinata",
+      "cipollata"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 60,
+    "proteinPer100g": 2.5,
+    "carbsPer100g": 7,
+    "fatPer100g": 2.5,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Zuppa di pesce",
+    "aliases": [
+      "cacciucco",
+      "brodetto di pesce",
+      "guazzetto di pesce"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 90,
+    "proteinPer100g": 11,
+    "carbsPer100g": 4,
+    "fatPer100g": 3.5,
+    "portionGrams": 400,
+    "note": "senza pane, valori da piatto pronto"
+  },
+  {
+    "name": "Pasta fredda con tonno e pomodorini",
+    "aliases": [
+      "pasta fredda al tonno",
+      "insalata di pasta con tonno"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 165,
+    "proteinPer100g": 7,
+    "carbsPer100g": 22,
+    "fatPer100g": 5.5,
+    "portionGrams": 300,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Insalata di pasta",
+    "aliases": [
+      "pasta fredda",
+      "pasta fredda estiva",
+      "insalata di pasta con verdure"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 175,
+    "proteinPer100g": 6,
+    "carbsPer100g": 24,
+    "fatPer100g": 6,
+    "portionGrams": 300,
+    "note": "con verdure, formaggio e olive"
+  },
+  {
+    "name": "Pasta fredda caprese",
+    "aliases": [
+      "pasta fredda mozzarella e pomodoro",
+      "pasta alla caprese"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 170,
+    "proteinPer100g": 6.5,
+    "carbsPer100g": 21,
+    "fatPer100g": 7,
+    "portionGrams": 300,
+    "note": "con mozzarella, pomodoro e basilico"
+  },
+  {
+    "name": "Insalata di riso",
+    "aliases": [
+      "riso freddo",
+      "insalata di riso estiva",
+      "riso in insalata"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 160,
+    "proteinPer100g": 5.5,
+    "carbsPer100g": 24,
+    "fatPer100g": 5,
+    "portionGrams": 300,
+    "note": "con condiriso classico"
+  },
+  {
+    "name": "Insalata di farro",
+    "aliases": [
+      "farro freddo",
+      "farro con verdure",
+      "insalata di farro estiva"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 140,
+    "proteinPer100g": 5,
+    "carbsPer100g": 24,
+    "fatPer100g": 3,
+    "portionGrams": 300,
+    "note": "con verdure e un filo d'olio"
+  },
+  {
+    "name": "Couscous con verdure",
+    "aliases": [
+      "cuscus alle verdure",
+      "couscous freddo",
+      "cous cous con verdure"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 4,
+    "carbsPer100g": 22,
+    "fatPer100g": 3,
+    "portionGrams": 300,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Polenta",
+    "aliases": [
+      "polenta cotta",
+      "polenta gialla",
+      "polenta semplice"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 85,
+    "proteinPer100g": 2,
+    "carbsPer100g": 18,
+    "fatPer100g": 0.5,
+    "portionGrams": 250,
+    "note": "polenta cotta senza condimento"
+  },
+  {
+    "name": "Polenta al ragù",
+    "aliases": [
+      "polenta al ragu",
+      "polenta col ragù",
+      "polenta al sugo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 110,
+    "proteinPer100g": 4.5,
+    "carbsPer100g": 16,
+    "fatPer100g": 3.5,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Polenta e salsiccia",
+    "aliases": [
+      "polenta con salsicce",
+      "polenta e salsiccia al sugo"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 145,
+    "proteinPer100g": 6.5,
+    "carbsPer100g": 14,
+    "fatPer100g": 7.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Polenta con gorgonzola",
+    "aliases": [
+      "polenta al gorgonzola",
+      "polenta e formaggio"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 150,
+    "proteinPer100g": 5,
+    "carbsPer100g": 15,
+    "fatPer100g": 8,
+    "portionGrams": 350,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Polenta e spezzatino",
+    "aliases": [
+      "polenta con spezzatino",
+      "polenta e brasato"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 130,
+    "proteinPer100g": 8,
+    "carbsPer100g": 13,
+    "fatPer100g": 5.5,
+    "portionGrams": 400,
+    "note": "valori da piatto pronto"
+  },
+  {
+    "name": "Polenta taragna",
+    "aliases": [
+      "taragna",
+      "polenta concia",
+      "polenta con burro e formaggio"
+    ],
+    "category": "Primi piatti",
+    "kcalPer100g": 180,
+    "proteinPer100g": 6,
+    "carbsPer100g": 16,
+    "fatPer100g": 10.5,
+    "portionGrams": 300,
+    "note": "con burro e formaggio d'alpeggio"
+  }
+]

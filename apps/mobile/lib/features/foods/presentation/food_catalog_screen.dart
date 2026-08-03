@@ -6,6 +6,7 @@ import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
+import 'package:kal_tracker/features/foods/domain/catalog_asset.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_providers.dart';
 
@@ -28,6 +29,14 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedSection = ref.watch(foodCatalogSectionProvider);
+    // La schermata tiene vivo il provider della query: il suo unico altro
+    // listener (visibleFoodsProvider) lo perde a ogni rebuild asincrono e
+    // un provider autoDispose senza listener verrebbe azzerato.
+    final searchQuery = ref.watch(foodSearchQueryProvider);
+    final selectedCategory = ref.watch(foodCategoryFilterProvider);
+    final categories =
+        ref.watch(catalogSearchIndexProvider).valueOrNull?.categories ??
+        const <String>[];
     final foods = ref.watch(visibleFoodsProvider);
 
     return Scaffold(
@@ -60,14 +69,13 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
               decoration: InputDecoration(
                 hintText: 'Cerca pollo, banana, yogurt…',
                 prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isEmpty
+                suffixIcon: searchQuery.isEmpty
                     ? null
                     : IconButton(
                         tooltip: 'Cancella ricerca',
                         onPressed: () {
                           _searchController.clear();
                           ref.read(foodSearchQueryProvider.notifier).state = '';
-                          setState(() {});
                         },
                         icon: const Icon(Icons.close_rounded),
                       ),
@@ -113,6 +121,28 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
               ],
             ),
           ),
+          if (categories.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  for (final category in categories) ...[
+                    if (category != categories.first) const SizedBox(width: 8),
+                    _SectionChip(
+                      key: Key(
+                        'food_category_${CatalogSearchIndex.slugify(category)}',
+                      ),
+                      label: category,
+                      selected: selectedCategory == category,
+                      onSelected: () => _selectCategory(category),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Expanded(
             child: foods.when(
@@ -151,6 +181,11 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
 
   void _select(FoodCatalogSection section) {
     ref.read(foodCatalogSectionProvider.notifier).state = section;
+  }
+
+  void _selectCategory(String category) {
+    final notifier = ref.read(foodCategoryFilterProvider.notifier);
+    notifier.state = notifier.state == category ? null : category;
   }
 
   Future<void> _createFood() async {
@@ -282,14 +317,14 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
 class _SectionChip extends StatelessWidget {
   const _SectionChip({
     required this.label,
-    required this.icon,
     required this.selected,
     required this.onSelected,
+    this.icon,
     super.key,
   });
 
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final bool selected;
   final VoidCallback onSelected;
 
@@ -298,7 +333,7 @@ class _SectionChip extends StatelessWidget {
     return ChoiceChip(
       selected: selected,
       onSelected: (_) => onSelected(),
-      avatar: Icon(icon, size: 18),
+      avatar: icon == null ? null : Icon(icon, size: 18),
       label: Text(label),
       labelStyle: const TextStyle(fontWeight: FontWeight.w700),
       selectedColor: AppPalette.mint,
@@ -415,10 +450,10 @@ class _FoodCard extends StatelessWidget {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.edit_rounded),
-                    title: Text(food.isSeed ? 'Personalizza' : 'Modifica'),
+                    title: Text(food.isBuiltIn ? 'Personalizza' : 'Modifica'),
                   ),
                 ),
-                if (!food.isSeed)
+                if (!food.isBuiltIn)
                   PopupMenuItem(
                     key: Key('delete_food_${food.id}'),
                     value: _FoodAction.delete,

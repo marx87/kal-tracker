@@ -29,7 +29,7 @@ class _FoodEditorScreenState extends ConsumerState<FoodEditorScreen> {
   final _serving = TextEditingController(text: '100');
   bool _loading = false;
   bool _saving = false;
-  bool _isSeed = false;
+  bool _isBuiltIn = false;
   bool _missing = false;
 
   @override
@@ -94,7 +94,10 @@ class _FoodEditorScreenState extends ConsumerState<FoodEditorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_isSeed) ...[const _SeedNotice(), const SizedBox(height: 16)],
+            if (_isBuiltIn) ...[
+              const _SeedNotice(),
+              const SizedBox(height: 16),
+            ],
             Text("L'alimento", style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 10),
             TextFormField(
@@ -259,7 +262,7 @@ class _FoodEditorScreenState extends ConsumerState<FoodEditorScreen> {
         _loading = false;
         _missing = food == null;
         if (food != null) {
-          _isSeed = food.isSeed;
+          _isBuiltIn = food.isBuiltIn;
           _name.text = food.name;
           _brand.text = food.brand ?? '';
           _barcode.text = food.barcode ?? '';
