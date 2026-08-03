@@ -184,14 +184,15 @@ jobs:
           OTA_PRIVATE_KEY_BASE64: ${{ secrets.OTA_ED25519_PRIVATE_KEY_BASE64 }}
         run: |
           set -euo pipefail
-          [[ -n "$OTA_PRIVATE_KEY_BASE64" ]]
+          fail() { echo "::error::$*" >&2; exit 1; }
+          [[ -n "$OTA_PRIVATE_KEY_BASE64" ]] || fail "secret OTA_ED25519_PRIVATE_KEY_BASE64 vuoto"
           APK=build/app/outputs/flutter-apk/app-release.apk
-          [[ -f "$APK" && ! -L "$APK" ]]
+          [[ -f "$APK" && ! -L "$APK" ]] || fail "APK non trovato: $PWD/$APK"
 
           sha256_file() {
             local digest
             digest="$(openssl dgst -sha256 -r "$1" | awk '{print tolower($1)}')"
-            [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::digest sha256 non valido per $1" >&2; exit 1; }
             printf '%s' "$digest"
           }
 
@@ -218,22 +219,26 @@ jobs:
             echo "::error::badging inatteso: package=$PACKAGE version=$APK_VERSION build=$APK_BUILD" >&2
             exit 1
           fi
+          echo "badging ok: package=$PACKAGE version=$APK_VERSION build=$APK_BUILD"
 
           SIGNER_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK")"
           ACTUAL_SIGNER="$(awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$SIGNER_OUTPUT" | tr -d ':[:space:]')"
           EXPECTED_SIGNER="$(tr '[:upper:]' '[:lower:]' <<<"$EXPECTED_SIGNER_SHA256" | tr -d ':[:space:]')"
-          [[ "$ACTUAL_SIGNER" =~ ^[0-9a-f]{64}$ && "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]]
+          [[ "$ACTUAL_SIGNER" =~ ^[0-9a-f]{64}$ ]] || fail "impronta firmatario non estratta da apksigner (output: ${SIGNER_OUTPUT:0:200})"
+          [[ "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]] || fail "firmatario APK $ACTUAL_SIGNER diverso dall'atteso $EXPECTED_SIGNER"
+          echo "firma APK ok: $ACTUAL_SIGNER"
 
           TAG="v${VERSION}-b${BUILD_NUMBER}"
           APK_NAME="kal-tracker-${TAG}.apk"
           ASSET_URL="https://github.com/${RELEASES_REPO}/releases/download/${TAG}/${APK_NAME}"
           STAGE="$RUNNER_TEMP/kal-release"
-          [[ ! -e "$STAGE" ]]
+          [[ ! -e "$STAGE" ]] || fail "stage $STAGE gia' esistente"
           mkdir -m 700 "$STAGE"
           cp "$APK" "$STAGE/$APK_NAME"
           APK_SHA="$(sha256_file "$STAGE/$APK_NAME")"
           APK_SIZE="$(file_size "$STAGE/$APK_NAME")"
-          (( APK_SIZE > 0 && APK_SIZE <= 314572800 ))
+          (( APK_SIZE > 0 && APK_SIZE <= 314572800 )) || fail "dimensione APK fuori range: $APK_SIZE byte"
+          echo "stage pronto: $APK_NAME ($APK_SIZE byte)"
 
           jq -n \
             --arg applicationId "it.marcomartelli.kaltracker" \
@@ -275,7 +280,8 @@ jobs:
           printf '%s' "$OTA_PRIVATE_KEY_BASE64" | openssl base64 -d -A > "$PRIVATE_KEY"
           chmod 600 "$PRIVATE_KEY"
           DERIVED_PUBLIC="$(openssl pkey -in "$PRIVATE_KEY" -pubout -outform DER | tail -c 32 | openssl base64 -A)"
-          [[ "$DERIVED_PUBLIC" == "$OTA_PUBLIC_KEY_BASE64" ]]
+          [[ "$DERIVED_PUBLIC" == "$OTA_PUBLIC_KEY_BASE64" ]] || fail "chiave OTA privata non corrisponde alla pubblica attesa (derivata: $DERIVED_PUBLIC)"
+          echo "chiave OTA verificata"
           openssl pkey -in "$PRIVATE_KEY" -pubout -out "$PUBLIC_KEY"
           openssl pkeyutl -sign -rawin -inkey "$PRIVATE_KEY" \
             -in "$STAGE/payload.json" -out "$STAGE/signature.bin"
@@ -328,6 +334,7 @@ jobs:
             printf 'SUMS_SHA=%s\n' "$SUMS_SHA"
             printf 'SOURCE_SHA=%s\n' "$SOURCE_SHA"
           } >> "$GITHUB_ENV"
+          echo "validazione completata: $TAG pronto per la pubblicazione"
 
       - name: Recheck signed latest immediately before publish
         run: |
