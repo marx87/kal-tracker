@@ -25,7 +25,7 @@ Stato: codice completato, configurazione privata ancora da eseguire.
 - [x] migrazione Supabase con RLS e sync ledger;
 - [x] release Android firmata e OTA con manifest Ed25519;
 - [x] configurazione sicura delle chiavi (bundle generato e validato, secret nell'environment `release`, PAT fine-grained per il repo release creato da Marco con scadenza 03/08/2027); *(fase 4)*
-- [ ] prima release firmata `v0.1.0` pubblicata (workflow in corso; corretti due difetti del workflow alla prima esecuzione reale: aapt rimosso dalle build-tools 37 → aapt2, e assert silenziosi → guardie con messaggio);
+- [x] prima release firmata **`v0.1.0-b1` PUBBLICATA** su `marx87/kal-tracker-releases` (APK + manifest OTA Ed25519 + SHA256SUMS + provenienza); il workflow, mai eseguito prima, è stato corretto in 3 punti rotti dalle build-tools 37 del runner (aapt→aapt2, assert muti→guardie con messaggio, nuovo formato output apksigner);
 - [ ] provisioning iPhone scelto e test su dispositivo reale.
 
 ### M1 — Diario personale
