@@ -50,7 +50,7 @@ Criterio: una giornata completa è registrabile con Mac e rete spenti, poi si si
 - [x] campo codice a barre (solo cifre, vincolo di unicità con errore leggibile); *(fase 3)*
 - [x] controllo di coerenza sui nutrienti: avviso non bloccante quando le calorie dichiarate si discostano oltre il 20% dai fattori di Atwater; *(fase 3)*
 - [x] catalogo italiano offline: 795 piatti e alimenti in 10 categorie con porzioni tipiche e alias di ricerca, validazione automatica (range + Atwater) e revisione a campione; importer versionato e idempotente (`scripts/build_food_catalog.py` rigenera l'asset dai chunk sorgente); *(fase 7, v0.6.0-b6)*
-- [ ] lookup barcode Open Food Facts con fonte e versione, cache offline.
+- [x] scanner barcode (mobile_scanner) con lookup Open Food Facts v2, local-first e cache offline (source 'barcode'); conferma esplicita coi valori modificabili, mai resurrezioni implicite di alimenti eliminati; *(fase 8, v0.7.0-b7)*
 
 ### M3 — Foto assistita sul Mac mini
 
@@ -144,7 +144,12 @@ Scelte fatte e cose da sapere prima di continuare. Fonte: sviluppo + revisione a
 - GitHub: environment `release` (solo branch `main`) con i 6 secret e le 4 variabili; PAT release con scadenza 03/08/2027.
 - Chiavi e password: tutto in `~/Documents/KalTracker-Signing` (bundle firma `ota-2026-08/`, password Supabase in `supabase/`).
 
+**Fase 8 — note**
+- Quick-add smart nel diario (manuale/catalogo/foto/barcode), acqua in evidenza con promemoria configurabili (permesso solo al toggle, pianificazione DST-safe), porzioni del catalogo riviste (v2, l'importer aggiorna le righe catalog esistenti senza toccare le copie personali), prompt foto rafforzato sul peso reale del piatto.
+- Da allineare: il _PROMPT di codex_analyzer.py ha ancora la vecchia riga debole sui grammi (il fallback Codex sottostimerebbe; claude e' il default quindi non urgente).
+- Minori noti: 'Dal catalogo e ricette' porta solo al catalogo (le ricette si aggiungono dalla loro tab); 'Apri impostazioni' del pannello camera e' solo-iOS (su Android invito testuale); revoca del permesso notifiche dalle impostazioni non ri-verificata al riavvio.
+
 **Piccole cose rimaste aperte**
 - Nelle sezioni Preferiti e Recenti il filtro categoria è un post-filtro sui soli id `cat-*`: un preferito personalizzato sparisce con un chip categoria attivo in quelle due sezioni (stessa classe del difetto 5 di fase 7, corretto altrove).
 - L'app non ha ancora un'icona propria né splash screen personalizzata.
-- Versione corrente `0.6.0+6` (v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 foto, v0.5.0-b5 stime kcal, v0.6.0-b6 catalogo piatti); l'OTA rifiuta regressioni di build number.
+- Versione corrente `0.7.0+7` (…, v0.6.0-b6 catalogo, v0.7.0-b7 quick-add smart + barcode + acqua con promemoria + porzioni v2); l'OTA rifiuta regressioni di build number.
