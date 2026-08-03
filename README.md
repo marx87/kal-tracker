@@ -4,20 +4,22 @@ App privata Flutter per il diario alimentare di Marco, con funzionamento local-f
 
 ## Stato attuale
 
-La beta locale `0.2.0` è operativa:
+La beta locale `0.2.0` è operativa (fase 3 completata il 3 agosto 2026):
 
 - app Flutter iOS/Android;
 - dashboard giocosa con profilo Marco, anello calorie e quattro pasti;
-- catalogo offline di 12 alimenti con ricerca, preferiti, recenti e aggiunta rapida;
+- diario navigabile per giorno (frecce, selettore data, «Torna a oggi»), modifica delle voci con anteprima live, duplica, copia di un pasto da un altro giorno e modelli di pasto riapplicabili;
+- catalogo offline con ricerca, preferiti, recenti, aggiunta rapida e alimenti personali (creazione, modifica, filtro «Solo i miei», controllo di coerenza Atwater);
 - obiettivi calorie/macro, acqua giornaliera, peso, cronologia e grafico;
-- sei ricette fit iniziali e creazione di ricette personali con anteprima per porzione;
+- ricette fit con modifica, duplicazione, tag, ricerca/filtri offline e suggerimenti in base ai macro rimanenti;
+- backup locale: export JSON versionato con checksum SHA-256 e ripristino unisci/sostituisci transazionale (Progressi → Backup);
 - calcolo deterministico di calorie e macro, mai delegato all'AI;
-- persistenza Drift/SQLite con migrazione `v1 → v2` verificata;
+- persistenza Drift/SQLite con migrazioni `v1 → v3` verificate;
 - tombstone e outbox locale per la sincronizzazione futura;
-- schema Supabase con RLS, Storage foto privato e coda worker a lease/privilegi minimi;
+- schema Supabase con RLS, Storage foto privato, coda worker a lease/privilegi minimi e migrazione per i modelli di pasto;
 - adapter Codex CLI strutturato, senza API key e senza calcolo di calorie;
 - fondazione OTA Android con manifest Ed25519 firmato e protezione anti-rollback;
-- 44 test Flutter, test Python e tooling di sicurezza eseguiti in CI;
+- 122 test Flutter, test Python e tooling di sicurezza eseguiti in CI;
 - build APK debug e iOS Simulator verificate.
 
 Supabase non è ancora collegato a un progetto remoto. Upload foto, sincronizzazione tra dispositivi e import Gym Tracker restano quindi disattivati. Anche l’OTA di produzione resta disabilitato finché non vengono create e configurate le chiavi definitive; l’APK debug usa un package separato e non è una baseline OTA.

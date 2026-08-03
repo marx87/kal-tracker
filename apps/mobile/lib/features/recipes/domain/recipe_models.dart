@@ -21,6 +21,39 @@ class RecipeIngredientDraft {
   }
 }
 
+abstract final class RecipeTags {
+  static const int maxTags = 8;
+  static const int maxTagLength = 24;
+
+  static String normalizeOne(String value) => value
+      .toLowerCase()
+      .replaceAll('#', ' ')
+      .replaceAll(',', ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  static List<String> normalize(Iterable<String> values) {
+    final normalized = <String>[];
+    for (final value in values) {
+      final tag = normalizeOne(value);
+      if (tag.isEmpty || normalized.contains(tag)) {
+        continue;
+      }
+      normalized.add(tag);
+    }
+    return normalized.toList(growable: false);
+  }
+
+  static List<String> parse(String? raw) => raw == null || raw.trim().isEmpty
+      ? const <String>[]
+      : normalize(raw.split(','));
+
+  static String? encode(Iterable<String> tags) {
+    final normalized = normalize(tags);
+    return normalized.isEmpty ? null : normalized.join(',');
+  }
+}
+
 class FitRecipeDraft {
   const FitRecipeDraft({
     required this.name,
@@ -28,6 +61,7 @@ class FitRecipeDraft {
     required this.ingredients,
     this.description,
     this.instructions,
+    this.tags = const <String>[],
     this.prepMinutes = 0,
     this.isFavorite = false,
   });
@@ -35,6 +69,7 @@ class FitRecipeDraft {
   final String name;
   final String? description;
   final String? instructions;
+  final List<String> tags;
   final int servings;
   final int prepMinutes;
   final bool isFavorite;
@@ -59,6 +94,15 @@ class FitRecipeDraft {
     }
     if (prepMinutes < 0 || prepMinutes > 10080) {
       throw const FormatException('Il tempo di preparazione non è valido.');
+    }
+    final normalizedTags = RecipeTags.normalize(tags);
+    if (normalizedTags.length > RecipeTags.maxTags) {
+      throw const FormatException('Puoi usare al massimo 8 tag.');
+    }
+    for (final tag in normalizedTags) {
+      if (tag.length > RecipeTags.maxTagLength) {
+        throw const FormatException('Un tag è troppo lungo.');
+      }
     }
     if (ingredients.isEmpty) {
       throw const FormatException('Aggiungi almeno un ingrediente.');
@@ -127,11 +171,13 @@ class FitRecipeSummary {
     required this.nutrition,
     required this.updatedAt,
     this.description,
+    this.tags = const <String>[],
   });
 
   final String id;
   final String name;
   final String? description;
+  final List<String> tags;
   final int servings;
   final int prepMinutes;
   final bool isFavorite;

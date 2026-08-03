@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
@@ -39,6 +40,14 @@ class ProgressScreen extends ConsumerWidget {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            key: const Key('open_backup_button'),
+            tooltip: 'Backup e ripristino',
+            onPressed: () => context.pushNamed('backup'),
+            icon: const Icon(Icons.save_alt_rounded),
+          ),
+        ],
       ),
       body: ListView(
         key: const Key('progress_list'),

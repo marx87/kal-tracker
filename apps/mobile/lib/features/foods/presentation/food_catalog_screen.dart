@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
@@ -87,6 +88,14 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
                 ),
                 const SizedBox(width: 8),
                 _SectionChip(
+                  key: const Key('food_section_mine'),
+                  label: 'Solo i miei',
+                  icon: Icons.person_rounded,
+                  selected: selectedSection == FoodCatalogSection.mine,
+                  onSelected: () => _select(FoodCatalogSection.mine),
+                ),
+                const SizedBox(width: 8),
+                _SectionChip(
                   key: const Key('food_section_favorites'),
                   label: 'Preferiti',
                   icon: Icons.favorite_rounded,
@@ -111,7 +120,7 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
                   ? _CatalogEmptyState(section: selectedSection)
                   : ListView.separated(
                       key: const Key('food_catalog_list'),
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
                       itemCount: items.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 10),
@@ -119,6 +128,8 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
                         food: items[index],
                         onFavorite: () => _toggleFavorite(items[index]),
                         onAdd: () => _addFood(items[index]),
+                        onEdit: () => _editFood(items[index]),
+                        onDelete: () => _deleteFood(items[index]),
                       ),
                     ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -129,11 +140,84 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('create_food_button'),
+        onPressed: _createFood,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nuovo alimento'),
+      ),
     );
   }
 
   void _select(FoodCatalogSection section) {
     ref.read(foodCatalogSectionProvider.notifier).state = section;
+  }
+
+  Future<void> _createFood() async {
+    final savedId = await context.pushNamed<String>('food-create');
+    if (savedId != null && mounted) {
+      _showMessage('Alimento salvato nel tuo catalogo.');
+    }
+  }
+
+  Future<void> _editFood(FoodCatalogItem food) async {
+    final savedId = await context.pushNamed<String>(
+      'food-edit',
+      pathParameters: {'foodId': food.id},
+    );
+    if (savedId == null || !mounted) {
+      return;
+    }
+    _showMessage(
+      savedId == food.id
+          ? '${food.name} aggiornato.'
+          : 'Ho creato la tua copia di ${food.name}.',
+    );
+  }
+
+  Future<void> _deleteFood(FoodCatalogItem food) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const Key('delete_food_dialog'),
+        title: Text('Elimino ${food.name}?'),
+        content: const Text(
+          'Sparisce dal catalogo, ma resta nel diario dei giorni passati.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('confirm_delete_food'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    try {
+      final profile = await ref.read(marcoProfileProvider.future);
+      await ref
+          .read(foodCatalogRepositoryProvider)
+          .deleteFood(profileId: profile.id, foodId: food.id);
+      if (mounted) {
+        _showMessage('${food.name} eliminato dal catalogo.');
+      }
+    } on FoodCatalogException catch (error) {
+      if (mounted) {
+        _showMessage(error.message);
+      }
+    } on Object {
+      if (mounted) {
+        _showMessage('Non riesco a eliminare ${food.name}.');
+      }
+    }
   }
 
   Future<void> _toggleFavorite(FoodCatalogItem food) async {
@@ -168,6 +252,10 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
     if (added != true || !mounted) {
       return;
     }
+    final dayLabel = diaryDayLabel(
+      ref.read(selectedDayProvider),
+      ref.read(todayProvider),
+    ).toLowerCase();
 
     try {
       final profile = await ref.read(marcoProfileProvider.future);
@@ -175,7 +263,7 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
           .read(foodCatalogRepositoryProvider)
           .markUsed(profileId: profile.id, foodId: food.id);
       if (mounted) {
-        _showMessage('${food.name} aggiunto al diario di oggi.');
+        _showMessage('${food.name} aggiunto al diario di $dayLabel.');
       }
     } on Object {
       if (mounted) {
@@ -219,16 +307,22 @@ class _SectionChip extends StatelessWidget {
   }
 }
 
+enum _FoodAction { edit, delete }
+
 class _FoodCard extends StatelessWidget {
   const _FoodCard({
     required this.food,
     required this.onFavorite,
     required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final FoodCatalogItem food;
   final VoidCallback onFavorite;
   final VoidCallback onAdd;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -272,6 +366,7 @@ class _FoodCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
+                    '${food.brand == null ? '' : '${food.brand}  •  '}'
                     '${number.format(food.defaultServingGrams)} g  •  '
                     '${number.format(serving.calories.round())} kcal',
                     style: Theme.of(
@@ -303,6 +398,38 @@ class _FoodCard extends StatelessWidget {
                 color: food.isFavorite ? AppPalette.coral : AppPalette.mutedInk,
               ),
             ),
+            PopupMenuButton<_FoodAction>(
+              key: Key('food_menu_${food.id}'),
+              tooltip: 'Gestisci ${food.name}',
+              onSelected: (action) {
+                if (action == _FoodAction.edit) {
+                  onEdit();
+                  return;
+                }
+                onDelete();
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  key: Key('edit_food_${food.id}'),
+                  value: _FoodAction.edit,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.edit_rounded),
+                    title: Text(food.isSeed ? 'Personalizza' : 'Modifica'),
+                  ),
+                ),
+                if (!food.isSeed)
+                  PopupMenuItem(
+                    key: Key('delete_food_${food.id}'),
+                    value: _FoodAction.delete,
+                    child: const ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.delete_outline_rounded),
+                      title: Text('Elimina'),
+                    ),
+                  ),
+              ],
+            ),
             IconButton.filled(
               key: Key('quick_add_${food.id}'),
               tooltip: 'Aggiungi ${food.name} al diario',
@@ -328,6 +455,11 @@ class _CatalogEmptyState extends StatelessWidget {
         Icons.search_off_rounded,
         'Nessun risultato',
         'Prova con un nome più semplice.',
+      ),
+      FoodCatalogSection.mine => (
+        Icons.person_add_alt_rounded,
+        'Nessun alimento tuo',
+        'Tocca “Nuovo alimento” per aggiungere le marche che compri.',
       ),
       FoodCatalogSection.favorites => (
         Icons.favorite_border_rounded,

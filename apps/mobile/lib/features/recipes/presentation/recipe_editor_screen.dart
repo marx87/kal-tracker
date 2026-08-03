@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_providers.dart';
@@ -11,7 +14,9 @@ import 'package:kal_tracker/features/recipes/domain/recipe_models.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart';
 
 class RecipeEditorScreen extends ConsumerStatefulWidget {
-  const RecipeEditorScreen({super.key});
+  const RecipeEditorScreen({this.recipeId, super.key});
+
+  final String? recipeId;
 
   @override
   ConsumerState<RecipeEditorScreen> createState() => _RecipeEditorScreenState();
@@ -24,9 +29,25 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
   final _servings = TextEditingController(text: '2');
   final _prepMinutes = TextEditingController(text: '20');
   final _instructions = TextEditingController();
+  final _tagInput = TextEditingController();
   final _ingredients = <_SelectedIngredient>[];
+  final _tags = <String>[];
+  bool _isFavorite = false;
   bool _showIngredientError = false;
   bool _saving = false;
+  bool _loading = false;
+  bool _missing = false;
+
+  bool get _isEditing => widget.recipeId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      _loading = true;
+      unawaited(_loadRecipe(widget.recipeId!));
+    }
+  }
 
   @override
   void dispose() {
@@ -35,155 +56,252 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     _servings.dispose();
     _prepMinutes.dispose();
     _instructions.dispose();
+    _tagInput.dispose();
     for (final ingredient in _ingredients) {
       ingredient.dispose();
     }
     super.dispose();
   }
 
+  Future<void> _loadRecipe(String recipeId) async {
+    try {
+      final details = await ref
+          .read(recipeRepositoryProvider)
+          .getRecipe(recipeId);
+      if (!mounted) {
+        return;
+      }
+      if (details == null) {
+        setState(() {
+          _loading = false;
+          _missing = true;
+        });
+        return;
+      }
+      setState(() {
+        _name.text = details.summary.name;
+        _description.text = details.summary.description ?? '';
+        _instructions.text = details.instructions ?? '';
+        _servings.text = details.summary.servings.toString();
+        _prepMinutes.text = details.summary.prepMinutes.toString();
+        _isFavorite = details.summary.isFavorite;
+        _tags
+          ..clear()
+          ..addAll(details.summary.tags);
+        for (final ingredient in details.ingredients) {
+          _ingredients.add(
+            _SelectedIngredient.fromDraft(
+              ingredient,
+              token: _uniqueToken(ingredient.foodId ?? _slug(ingredient.name)),
+            ),
+          );
+        }
+        _loading = false;
+      });
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _missing = true;
+        });
+      }
+    }
+  }
+
+  String _uniqueToken(String candidate) {
+    var token = candidate;
+    var attempt = 2;
+    while (_ingredients.any((ingredient) => ingredient.token == token)) {
+      token = '$candidate-$attempt';
+      attempt++;
+    }
+    return token;
+  }
+
   @override
   Widget build(BuildContext context) {
     final preview = _calculatePreview();
     return Scaffold(
-      appBar: AppBar(title: const Text('Nuova ricetta')),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          key: const Key('recipe_editor_list'),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _EditorIntroCard(),
-              const SizedBox(height: 18),
-              Text('La ricetta', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 10),
-              TextFormField(
-                key: const Key('recipe_name_field'),
-                controller: _name,
-                enabled: !_saving,
-                textCapitalization: TextCapitalization.sentences,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Nome ricetta'),
-                validator: (value) {
-                  final clean = value?.trim() ?? '';
-                  if (clean.isEmpty) {
-                    return 'Inserisci un nome';
-                  }
-                  if (clean.length > 160) {
-                    return 'Massimo 160 caratteri';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                key: const Key('recipe_description_field'),
-                controller: _description,
-                enabled: !_saving,
-                textCapitalization: TextCapitalization.sentences,
-                maxLength: 600,
-                minLines: 1,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Descrizione (facoltativa)',
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Expanded(
-                    child: _IntegerField(
-                      key: const Key('recipe_servings_field'),
-                      controller: _servings,
-                      label: 'Porzioni',
-                      minimum: 1,
-                      maximum: 100,
-                      enabled: !_saving,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _IntegerField(
-                      key: const Key('recipe_prep_minutes_field'),
-                      controller: _prepMinutes,
-                      label: 'Tempo (min)',
-                      minimum: 0,
-                      maximum: 10080,
-                      enabled: !_saving,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Ingredienti',
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Modifica ricetta' : 'Nuova ricetta'),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _missing
+          ? const Center(child: Text('Questa ricetta non è più disponibile.'))
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                key: const Key('recipe_editor_list'),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _EditorIntroCard(),
+                    const SizedBox(height: 18),
+                    Text(
+                      'La ricetta',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  OutlinedButton.icon(
-                    key: const Key('add_recipe_ingredient_button'),
-                    onPressed: _saving ? null : _pickIngredient,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Aggiungi'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (_ingredients.isEmpty)
-                _IngredientEmptyState(showError: _showIngredientError)
-              else
-                for (final ingredient in _ingredients) ...[
-                  _IngredientEditorCard(
-                    ingredient: ingredient,
-                    enabled: !_saving,
-                    onChanged: () => setState(() {}),
-                    onRemove: () => _removeIngredient(ingredient),
-                  ),
-                  const SizedBox(height: 9),
-                ],
-              const SizedBox(height: 12),
-              _NutritionPreview(preview: preview),
-              const SizedBox(height: 20),
-              Text(
-                'Preparazione',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                key: const Key('recipe_instructions_field'),
-                controller: _instructions,
-                enabled: !_saving,
-                textCapitalization: TextCapitalization.sentences,
-                minLines: 4,
-                maxLines: 8,
-                maxLength: 4000,
-                decoration: const InputDecoration(
-                  labelText: 'Istruzioni (facoltative)',
-                  alignLabelWithHint: true,
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      key: const Key('recipe_name_field'),
+                      controller: _name,
+                      enabled: !_saving,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome ricetta',
+                      ),
+                      validator: (value) {
+                        final clean = value?.trim() ?? '';
+                        if (clean.isEmpty) {
+                          return 'Inserisci un nome';
+                        }
+                        if (clean.length > 160) {
+                          return 'Massimo 160 caratteri';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      key: const Key('recipe_description_field'),
+                      controller: _description,
+                      enabled: !_saving,
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLength: 600,
+                      minLines: 1,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Descrizione (facoltativa)',
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _IntegerField(
+                            key: const Key('recipe_servings_field'),
+                            controller: _servings,
+                            label: 'Porzioni',
+                            minimum: 1,
+                            maximum: 100,
+                            enabled: !_saving,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _IntegerField(
+                            key: const Key('recipe_prep_minutes_field'),
+                            controller: _prepMinutes,
+                            label: 'Tempo (min)',
+                            minimum: 0,
+                            maximum: 10080,
+                            enabled: !_saving,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _TagsEditor(
+                      tags: _tags,
+                      controller: _tagInput,
+                      enabled: !_saving,
+                      onSubmitted: _addTags,
+                      onRemove: _removeTag,
+                    ),
+                    const SizedBox(height: 4),
+                    SwitchListTile(
+                      key: const Key('recipe_favorite_switch'),
+                      contentPadding: EdgeInsets.zero,
+                      value: _isFavorite,
+                      onChanged: _saving
+                          ? null
+                          : (value) => setState(() => _isFavorite = value),
+                      title: const Text('Tienila tra le preferite'),
+                      secondary: Icon(
+                        _isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: AppPalette.coral,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Ingredienti',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          key: const Key('add_recipe_ingredient_button'),
+                          onPressed: _saving ? null : _pickIngredient,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Aggiungi'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_ingredients.isEmpty)
+                      _IngredientEmptyState(showError: _showIngredientError)
+                    else
+                      for (final ingredient in _ingredients) ...[
+                        _IngredientEditorCard(
+                          ingredient: ingredient,
+                          enabled: !_saving,
+                          onChanged: () => setState(() {}),
+                          onRemove: () => _removeIngredient(ingredient),
+                        ),
+                        const SizedBox(height: 9),
+                      ],
+                    const SizedBox(height: 12),
+                    _NutritionPreview(preview: preview),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Preparazione',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      key: const Key('recipe_instructions_field'),
+                      controller: _instructions,
+                      enabled: !_saving,
+                      textCapitalization: TextCapitalization.sentences,
+                      minLines: 4,
+                      maxLines: 8,
+                      maxLength: 4000,
+                      decoration: const InputDecoration(
+                        labelText: 'Istruzioni (facoltative)',
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      key: const Key('save_recipe_button'),
+                      onPressed: _saving ? null : _save,
+                      icon: _saving
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check_rounded),
+                      label: Text(
+                        _saving
+                            ? 'Salvataggio…'
+                            : _isEditing
+                            ? 'Salva modifiche'
+                            : 'Salva ricetta',
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                key: const Key('save_recipe_button'),
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: Text(_saving ? 'Salvataggio…' : 'Salva ricetta'),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -220,7 +338,7 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     if (food == null || !mounted) {
       return;
     }
-    if (_ingredients.any((ingredient) => ingredient.food.id == food.id)) {
+    if (_ingredients.any((ingredient) => ingredient.token == food.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${food.name} è già nella ricetta.')),
       );
@@ -228,13 +346,46 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     }
     setState(() {
       _showIngredientError = false;
-      _ingredients.add(_SelectedIngredient(food));
+      _ingredients.add(_SelectedIngredient.fromCatalog(food));
     });
   }
 
   void _removeIngredient(_SelectedIngredient ingredient) {
     setState(() => _ingredients.remove(ingredient));
     ingredient.dispose();
+  }
+
+  void _addTags(String raw) {
+    final merged = RecipeTags.normalize([..._tags, ...raw.split(',')]);
+    if (merged.length == _tags.length) {
+      _tagInput.clear();
+      return;
+    }
+    if (merged.length > RecipeTags.maxTags) {
+      _message('Puoi usare al massimo ${RecipeTags.maxTags} tag.');
+      return;
+    }
+    if (merged.any((tag) => tag.length > RecipeTags.maxTagLength)) {
+      _message(
+        'Un tag può avere al massimo ${RecipeTags.maxTagLength} '
+        'caratteri.',
+      );
+      return;
+    }
+    setState(() {
+      _tags
+        ..clear()
+        ..addAll(merged);
+      _tagInput.clear();
+    });
+  }
+
+  void _removeTag(String tag) => setState(() => _tags.remove(tag));
+
+  void _message(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _save() async {
@@ -252,57 +403,140 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
     }
 
     setState(() => _saving = true);
+    final draft = FitRecipeDraft(
+      name: _name.text,
+      description: _description.text,
+      instructions: _instructions.text,
+      tags: _tags,
+      servings: int.parse(_servings.text),
+      prepMinutes: int.parse(_prepMinutes.text),
+      isFavorite: _isFavorite,
+      ingredients: [
+        for (final ingredient in _ingredients)
+          ingredient.toDraft(_parseDecimal(ingredient.grams.text)!),
+      ],
+    );
     try {
-      final profile = await ref.read(marcoProfileProvider.future);
-      final id = await ref
-          .read(recipeRepositoryProvider)
-          .createRecipe(
-            profileId: profile.id,
-            draft: FitRecipeDraft(
-              name: _name.text,
-              description: _description.text,
-              instructions: _instructions.text,
-              servings: int.parse(_servings.text),
-              prepMinutes: int.parse(_prepMinutes.text),
-              ingredients: [
-                for (final ingredient in _ingredients)
-                  ingredient.toDraft(_parseDecimal(ingredient.grams.text)!),
-              ],
-            ),
-          );
+      final repository = ref.read(recipeRepositoryProvider);
+      final String id;
+      if (widget.recipeId case final recipeId?) {
+        await repository.updateRecipe(id: recipeId, draft: draft);
+        ref.invalidate(recipeDetailsProvider(recipeId));
+        id = recipeId;
+      } else {
+        final profile = await ref.read(marcoProfileProvider.future);
+        id = await repository.createRecipe(profileId: profile.id, draft: draft);
+      }
       if (mounted) {
         context.pop(id);
       }
     } on Object {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Non riesco a salvare la ricetta.')),
-        );
+        _message('Non riesco a salvare la ricetta.');
       }
     }
   }
 }
 
 class _SelectedIngredient {
-  _SelectedIngredient(this.food)
-    : grams = TextEditingController(
-        text: _editableNumber(food.defaultServingGrams),
+  _SelectedIngredient({
+    required this.token,
+    required this.name,
+    required this.foodId,
+    required this.per100g,
+    required double grams,
+  }) : grams = TextEditingController(text: _editableNumber(grams));
+
+  // Built-in foods use local, human-readable IDs. Their nutrient snapshot is
+  // portable; keeping the remote FK null avoids sending a non-UUID value.
+  factory _SelectedIngredient.fromCatalog(FoodCatalogItem food) =>
+      _SelectedIngredient(
+        token: food.id,
+        name: food.name,
+        foodId: food.source == 'seed' ? null : food.id,
+        per100g: food.per100g,
+        grams: food.defaultServingGrams,
       );
 
-  final FoodCatalogItem food;
+  factory _SelectedIngredient.fromDraft(
+    RecipeIngredientDraft ingredient, {
+    required String token,
+  }) => _SelectedIngredient(
+    token: token,
+    name: ingredient.name,
+    foodId: ingredient.foodId,
+    per100g: ingredient.per100g,
+    grams: ingredient.grams,
+  );
+
+  final String token;
+  final String name;
+  final String? foodId;
+  final Nutrients per100g;
   final TextEditingController grams;
 
   RecipeIngredientDraft toDraft(double quantity) => RecipeIngredientDraft(
-    name: food.name,
-    // Built-in foods use local, human-readable IDs. Their nutrient snapshot is
-    // portable; keeping the remote FK null avoids sending a non-UUID value.
-    foodId: food.source == 'seed' ? null : food.id,
+    name: name,
+    foodId: foodId,
     grams: quantity,
-    per100g: food.per100g,
+    per100g: per100g,
   );
 
   void dispose() => grams.dispose();
+}
+
+class _TagsEditor extends StatelessWidget {
+  const _TagsEditor({
+    required this.tags,
+    required this.controller,
+    required this.enabled,
+    required this.onSubmitted,
+    required this.onRemove,
+  });
+
+  final List<String> tags;
+  final TextEditingController controller;
+  final bool enabled;
+  final ValueChanged<String> onSubmitted;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: const Key('recipe_tags_field'),
+          controller: controller,
+          enabled: enabled,
+          textInputAction: TextInputAction.done,
+          onSubmitted: onSubmitted,
+          decoration: const InputDecoration(
+            labelText: 'Tag (facoltativi)',
+            helperText: 'Scrivi e premi invio: pranzo, proteico, veloce…',
+            prefixIcon: Icon(Icons.sell_outlined),
+          ),
+        ),
+        if (tags.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final tag in tags)
+                InputChip(
+                  key: Key('recipe_tag_chip_$tag'),
+                  label: Text(tag),
+                  backgroundColor: AppPalette.mintSoft,
+                  onDeleted: enabled ? () => onRemove(tag) : null,
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _EditorIntroCard extends StatelessWidget {
@@ -405,13 +639,13 @@ class _IngredientEditorCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ingredient.food.name,
+                    ingredient.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    '${ingredient.food.per100g.calories.round()} kcal / 100 g',
+                    '${ingredient.per100g.calories.round()} kcal / 100 g',
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
@@ -423,7 +657,7 @@ class _IngredientEditorCard extends StatelessWidget {
             SizedBox(
               width: 88,
               child: TextFormField(
-                key: Key('recipe_ingredient_grams_${ingredient.food.id}'),
+                key: Key('recipe_ingredient_grams_${ingredient.token}'),
                 controller: ingredient.grams,
                 enabled: enabled,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -447,7 +681,7 @@ class _IngredientEditorCard extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Rimuovi ${ingredient.food.name}',
+              tooltip: 'Rimuovi ${ingredient.name}',
               onPressed: enabled ? onRemove : null,
               icon: const Icon(Icons.delete_outline_rounded),
             ),
@@ -714,6 +948,14 @@ class _FoodPickerSheetState extends ConsumerState<_FoodPickerSheet> {
       ),
     );
   }
+}
+
+String _slug(String value) {
+  final slug = value
+      .toLowerCase()
+      .replaceAll(RegExp('[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return slug.isEmpty ? 'ingrediente' : slug;
 }
 
 double? _parseDecimal(String value) {

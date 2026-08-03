@@ -66,6 +66,12 @@ void main() {
       grams: 180,
       mealType: MealType.lunch,
       eatenAt: DateTime(2026, 8, 2, 13),
+      per100g: const Nutrients(
+        calories: 157.8,
+        protein: 6.2,
+        carbs: 21.3,
+        fat: 4.5,
+      ),
       nutrients: const Nutrients(
         calories: 284,
         protein: 11.2,
@@ -95,7 +101,78 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pranzo'), findsOneWidget);
-    expect(find.byTooltip('Elimina ${entry.foodName}'), findsOneWidget);
+    expect(find.byTooltip('Azioni per ${entry.foodName}'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('la card pasto offre modifica, duplica ed elimina', (
+    tester,
+  ) async {
+    final entry = DiaryEntry(
+      id: 'entry-1',
+      mealId: 'meal-1',
+      foodName: 'Riso basmati',
+      grams: 150,
+      mealType: MealType.lunch,
+      eatenAt: DateTime(2026, 8, 2, 13),
+      per100g: const Nutrients(
+        calories: 130,
+        protein: 2.7,
+        carbs: 28,
+        fat: 0.3,
+      ),
+      nutrients: const Nutrients(
+        calories: 195,
+        protein: 4.05,
+        carbs: 42,
+        fat: 0.45,
+      ),
+    );
+    final actions = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('it'),
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: WellnessMealCard(
+              title: 'Pranzo',
+              icon: Icons.light_mode_outlined,
+              accent: AppPalette.coral,
+              softColor: AppPalette.coralSoft,
+              menuKey: const Key('meal_menu_lunch'),
+              entries: [entry],
+              onDelete: (_) => actions.add('delete'),
+              onEdit: (_) => actions.add('edit'),
+              onDuplicate: (_) => actions.add('duplicate'),
+              onCopyFromAnotherDay: () => actions.add('copy'),
+              onSaveAsTemplate: () => actions.add('template'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('diary_entry_entry-1')));
+    await tester.pumpAndSettle();
+    expect(actions, ['edit']);
+
+    await tester.tap(find.byKey(const Key('entry_menu_entry-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('duplicate_entry_entry-1')));
+    await tester.pumpAndSettle();
+    expect(actions, ['edit', 'duplicate']);
+
+    await tester.tap(find.byKey(const Key('meal_menu_lunch')));
+    await tester.pumpAndSettle();
+    expect(find.text('Applica un modello'), findsNothing);
+    await tester.tap(find.text('Copia da un altro giorno…'));
+    await tester.pumpAndSettle();
+
+    expect(actions, ['edit', 'duplicate', 'copy']);
     expect(tester.takeException(), isNull);
   });
 }

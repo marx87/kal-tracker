@@ -27,6 +27,8 @@ jobs:
         run: scripts/tests/release_tooling_test.sh
       - name: Test meal-worker database safeguards
         run: supabase/tests/meal_worker_rpc_static_test.sh
+      - name: Test meal-templates database safeguards
+        run: supabase/tests/meal_templates_static_test.sh
 
   meal-worker:
     runs-on: ubuntu-latest

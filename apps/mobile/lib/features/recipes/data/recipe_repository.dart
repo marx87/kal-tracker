@@ -16,24 +16,47 @@ class RecipeRepository {
   Stream<List<FitRecipeSummary>> watchRecipes(
     String profileId, {
     bool onlyFavorites = false,
+    String search = '',
+    String? tag,
   }) {
+    final needle = search.trim().toLowerCase();
+    final wantedTag = RecipeTags.normalizeOne(tag ?? '');
     final query = _database.select(_database.fitRecipes)
-      ..where(
-        (row) =>
-            row.profileId.equals(profileId) &
-            row.deletedAt.isNull() &
-            (onlyFavorites
-                ? row.isFavorite.equals(true)
-                : const Constant(true)),
-      )
+      ..where((row) {
+        var filter = row.profileId.equals(profileId) & row.deletedAt.isNull();
+        if (onlyFavorites) {
+          filter = filter & row.isFavorite.equals(true);
+        }
+        if (needle.isNotEmpty) {
+          filter =
+              filter &
+              (row.name.lower().contains(needle) |
+                  _hasIngredientNamed(row, needle));
+        }
+        return filter;
+      })
       ..orderBy([
         (row) => OrderingTerm.desc(row.isFavorite),
         (row) => OrderingTerm.desc(row.updatedAt),
       ]);
     return query.watch().map(
-      (rows) => rows.map(_summaryFromRow).toList(growable: false),
+      (rows) => rows
+          .map(_summaryFromRow)
+          .where(
+            (recipe) => wantedTag.isEmpty || recipe.tags.contains(wantedTag),
+          )
+          .toList(growable: false),
     );
   }
+
+  Expression<bool> _hasIngredientNamed($FitRecipesTable row, String needle) =>
+      existsQuery(
+        _database.select(_database.recipeIngredients)..where(
+          (ingredient) =>
+              ingredient.recipeId.equalsExp(row.id) &
+              ingredient.name.lower().contains(needle),
+        ),
+      );
 
   Future<FitRecipeDetails?> getRecipe(String id) async {
     final recipe =
@@ -43,29 +66,10 @@ class RecipeRepository {
     if (recipe == null) {
       return null;
     }
-    final ingredientRows =
-        await (_database.select(_database.recipeIngredients)
-              ..where((row) => row.recipeId.equals(id))
-              ..orderBy([(row) => OrderingTerm.asc(row.position)]))
-            .get();
     return FitRecipeDetails(
       summary: _summaryFromRow(recipe),
       instructions: recipe.instructions,
-      ingredients: ingredientRows
-          .map(
-            (row) => RecipeIngredientDraft(
-              name: row.name,
-              foodId: row.foodId,
-              grams: row.grams,
-              per100g: Nutrients(
-                calories: row.caloriesPer100g,
-                protein: row.proteinPer100g,
-                carbs: row.carbsPer100g,
-                fat: row.fatPer100g,
-              ),
-            ),
-          )
-          .toList(growable: false),
+      ingredients: await _ingredientsOf(id),
     );
   }
 
@@ -79,6 +83,105 @@ class RecipeRepository {
     await _database.transaction(
       () => _insertRecipe(id: id, profileId: profileId, draft: draft, now: now),
     );
+    return id;
+  }
+
+  /// Riscrive la ricetta e i suoi ingredienti come blocco unico.
+  ///
+  /// Le righe vecchie vengono cancellate prima di inserire le nuove: è l’unico
+  /// ordine che ricompatta le posizioni senza violare UNIQUE (recipe_id,
+  /// position) quando gli ingredienti diminuiscono o cambiano ordine.
+  Future<void> updateRecipe({
+    required String id,
+    required FitRecipeDraft draft,
+  }) async {
+    draft.validate();
+    final now = AppTime.nowUtc();
+    await _database.transaction(() async {
+      final existing =
+          await (_database.select(_database.fitRecipes)
+                ..where((row) => row.id.equals(id) & row.deletedAt.isNull()))
+              .getSingleOrNull();
+      if (existing == null) {
+        throw StateError('Ricetta non trovata.');
+      }
+      final nutrition = RecipeNutritionCalculator.calculate(
+        ingredients: draft.ingredients,
+        servings: draft.servings,
+      );
+      final description = _cleanOptional(draft.description);
+      final instructions = _cleanOptional(draft.instructions);
+      final tags = RecipeTags.normalize(draft.tags);
+
+      await (_database.update(
+        _database.fitRecipes,
+      )..where((row) => row.id.equals(id))).write(
+        FitRecipesCompanion(
+          name: Value(draft.name.trim()),
+          description: Value(description),
+          instructions: Value(instructions),
+          tags: Value(RecipeTags.encode(tags)),
+          servings: Value(draft.servings),
+          prepMinutes: Value(draft.prepMinutes),
+          totalCalories: Value(nutrition.total.calories),
+          totalProtein: Value(nutrition.total.protein),
+          totalCarbs: Value(nutrition.total.carbs),
+          totalFat: Value(nutrition.total.fat),
+          isFavorite: Value(draft.isFavorite),
+          updatedAt: Value(now),
+        ),
+      );
+      await (_database.delete(
+        _database.recipeIngredients,
+      )..where((row) => row.recipeId.equals(id))).go();
+      final ingredients = _ingredientRows(recipeId: id, draft: draft);
+      await _insertIngredients(ingredients);
+      await _appendOutbox(
+        entityId: id,
+        operation: 'upsert',
+        payload: _recipePayload(
+          id: id,
+          profileId: existing.profileId,
+          draft: draft,
+          description: description,
+          instructions: instructions,
+          tags: tags,
+          ingredients: ingredients,
+          nutrition: nutrition,
+          now: now,
+        ),
+        now: now,
+      );
+    });
+  }
+
+  Future<String> duplicateRecipe(String recipeId) async {
+    final id = _uuid.v4();
+    final now = AppTime.nowUtc();
+    await _database.transaction(() async {
+      final source =
+          await (_database.select(_database.fitRecipes)..where(
+                (row) => row.id.equals(recipeId) & row.deletedAt.isNull(),
+              ))
+              .getSingleOrNull();
+      if (source == null) {
+        throw StateError('Ricetta non trovata.');
+      }
+      await _insertRecipe(
+        id: id,
+        profileId: source.profileId,
+        draft: FitRecipeDraft(
+          name: _copyName(source.name),
+          description: source.description,
+          instructions: source.instructions,
+          tags: RecipeTags.parse(source.tags),
+          servings: source.servings,
+          prepMinutes: source.prepMinutes,
+          ingredients: await _ingredientsOf(recipeId),
+        ),
+        now: now,
+      );
+    });
     return id;
   }
 
@@ -171,6 +274,7 @@ class RecipeRepository {
       id: row.id,
       name: row.name,
       description: row.description,
+      tags: RecipeTags.parse(row.tags),
       servings: row.servings,
       prepMinutes: row.prepMinutes,
       isFavorite: row.isFavorite,
@@ -192,6 +296,106 @@ class RecipeRepository {
     return clean == null || clean.isEmpty ? null : clean;
   }
 
+  String _copyName(String name) {
+    const suffix = ' (copia)';
+    final base = name.trim();
+    final room = 160 - suffix.length;
+    return base.length > room
+        ? '${base.substring(0, room).trim()}$suffix'
+        : '$base$suffix';
+  }
+
+  Future<List<RecipeIngredientDraft>> _ingredientsOf(String recipeId) async {
+    final rows =
+        await (_database.select(_database.recipeIngredients)
+              ..where((row) => row.recipeId.equals(recipeId))
+              ..orderBy([(row) => OrderingTerm.asc(row.position)]))
+            .get();
+    return rows
+        .map(
+          (row) => RecipeIngredientDraft(
+            name: row.name,
+            foodId: row.foodId,
+            grams: row.grams,
+            per100g: Nutrients(
+              calories: row.caloriesPer100g,
+              protein: row.proteinPer100g,
+              carbs: row.carbsPer100g,
+              fat: row.fatPer100g,
+            ),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<RecipeIngredientsCompanion> _ingredientRows({
+    required String recipeId,
+    required FitRecipeDraft draft,
+  }) => [
+    for (final (position, ingredient) in draft.ingredients.indexed)
+      RecipeIngredientsCompanion.insert(
+        id: _uuid.v4(),
+        recipeId: recipeId,
+        foodId: Value(ingredient.foodId),
+        position: position,
+        name: ingredient.name.trim(),
+        grams: ingredient.grams,
+        caloriesPer100g: ingredient.per100g.calories,
+        proteinPer100g: ingredient.per100g.protein,
+        carbsPer100g: ingredient.per100g.carbs,
+        fatPer100g: ingredient.per100g.fat,
+      ),
+  ];
+
+  Future<void> _insertIngredients(List<RecipeIngredientsCompanion> rows) =>
+      _database.batch(
+        (batch) => batch.insertAll(_database.recipeIngredients, rows),
+      );
+
+  /// Stessa forma del payload scritto dal ripristino di un backup: i tag sono
+  /// una stringa CSV e ogni ingrediente porta id, ricetta e posizione.
+  Map<String, Object?> _recipePayload({
+    required String id,
+    required String profileId,
+    required FitRecipeDraft draft,
+    required String? description,
+    required String? instructions,
+    required List<String> tags,
+    required List<RecipeIngredientsCompanion> ingredients,
+    required RecipeNutrition nutrition,
+    required DateTime now,
+  }) => {
+    'id': id,
+    'profile_id': profileId,
+    'name': draft.name.trim(),
+    'description': description,
+    'instructions': instructions,
+    'tags': RecipeTags.encode(tags),
+    'servings': draft.servings,
+    'prep_minutes': draft.prepMinutes,
+    'is_favorite': draft.isFavorite,
+    'total_calories': nutrition.total.calories,
+    'total_protein': nutrition.total.protein,
+    'total_carbs': nutrition.total.carbs,
+    'total_fat': nutrition.total.fat,
+    'ingredients': [
+      for (final row in ingredients)
+        {
+          'id': row.id.value,
+          'recipe_id': row.recipeId.value,
+          'food_id': row.foodId.value,
+          'position': row.position.value,
+          'name': row.name.value,
+          'grams': row.grams.value,
+          'calories_per_100g': row.caloriesPer100g.value,
+          'protein_per_100g': row.proteinPer100g.value,
+          'carbs_per_100g': row.carbsPer100g.value,
+          'fat_per_100g': row.fatPer100g.value,
+        },
+    ],
+    'updated_at': now.toIso8601String(),
+  };
+
   Future<void> _insertRecipe({
     required String id,
     required String profileId,
@@ -205,6 +409,7 @@ class RecipeRepository {
     );
     final description = _cleanOptional(draft.description);
     final instructions = _cleanOptional(draft.instructions);
+    final tags = RecipeTags.normalize(draft.tags);
 
     await _database
         .into(_database.fitRecipes)
@@ -215,6 +420,7 @@ class RecipeRepository {
             name: draft.name.trim(),
             description: Value(description),
             instructions: Value(instructions),
+            tags: Value(RecipeTags.encode(tags)),
             servings: draft.servings,
             prepMinutes: Value(draft.prepMinutes),
             totalCalories: nutrition.total.calories,
@@ -226,53 +432,22 @@ class RecipeRepository {
             updatedAt: now,
           ),
         );
-    await _database.batch((batch) {
-      batch.insertAll(_database.recipeIngredients, [
-        for (final (position, ingredient) in draft.ingredients.indexed)
-          RecipeIngredientsCompanion.insert(
-            id: _uuid.v4(),
-            recipeId: id,
-            foodId: Value(ingredient.foodId),
-            position: position,
-            name: ingredient.name.trim(),
-            grams: ingredient.grams,
-            caloriesPer100g: ingredient.per100g.calories,
-            proteinPer100g: ingredient.per100g.protein,
-            carbsPer100g: ingredient.per100g.carbs,
-            fatPer100g: ingredient.per100g.fat,
-          ),
-      ]);
-    });
+    final ingredients = _ingredientRows(recipeId: id, draft: draft);
+    await _insertIngredients(ingredients);
     await _appendOutbox(
       entityId: id,
       operation: 'upsert',
-      payload: {
-        'id': id,
-        'profile_id': profileId,
-        'name': draft.name.trim(),
-        'description': description,
-        'instructions': instructions,
-        'servings': draft.servings,
-        'prep_minutes': draft.prepMinutes,
-        'is_favorite': draft.isFavorite,
-        'total_calories': nutrition.total.calories,
-        'total_protein': nutrition.total.protein,
-        'total_carbs': nutrition.total.carbs,
-        'total_fat': nutrition.total.fat,
-        'ingredients': [
-          for (final ingredient in draft.ingredients)
-            {
-              'food_id': ingredient.foodId,
-              'name': ingredient.name.trim(),
-              'grams': ingredient.grams,
-              'calories_per_100g': ingredient.per100g.calories,
-              'protein_per_100g': ingredient.per100g.protein,
-              'carbs_per_100g': ingredient.per100g.carbs,
-              'fat_per_100g': ingredient.per100g.fat,
-            },
-        ],
-        'updated_at': now.toIso8601String(),
-      },
+      payload: _recipePayload(
+        id: id,
+        profileId: profileId,
+        draft: draft,
+        description: description,
+        instructions: instructions,
+        tags: tags,
+        ingredients: ingredients,
+        nutrition: nutrition,
+        now: now,
+      ),
       now: now,
     );
   }
@@ -301,6 +476,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'bowl-pollo-riso',
     draft: FitRecipeDraft(
       name: 'Bowl pollo e riso',
+      tags: ['pranzo', 'proteico'],
       description: 'Completa, colorata e ricca di proteine.',
       instructions:
           'Scalda il riso, cuoci il pollo e i broccoli, poi componi la bowl '
@@ -341,6 +517,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'overnight-oats',
     draft: FitRecipeDraft(
       name: 'Overnight oats banana',
+      tags: ['colazione', 'veloce'],
       description: 'Colazione cremosa da preparare la sera prima.',
       instructions:
           'Mescola avena e yogurt, lascia riposare in frigo e completa con '
@@ -385,6 +562,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'riso-salmone-broccoli',
     draft: FitRecipeDraft(
       name: 'Riso con salmone e broccoli',
+      tags: ['cena', 'proteico'],
       description: 'Un piatto unico ricco di gusto e omega 3.',
       instructions:
           'Cuoci il salmone e i broccoli, uniscili al riso caldo e completa '
@@ -424,6 +602,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'toast-uova',
     draft: FitRecipeDraft(
       name: 'Toast integrale con uova',
+      tags: ['colazione', 'veloce'],
       description: 'Colazione salata o pranzo rapido e saziante.',
       instructions:
           'Tosta il pane, cuoci le uova in padella con poco olio e servi '
@@ -458,6 +637,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'coppa-yogurt-mela',
     draft: FitRecipeDraft(
       name: 'Coppa yogurt, mela e mandorle',
+      tags: ['spuntino', 'veloce'],
       description: 'Spuntino fresco, croccante e proteico.',
       instructions:
           'Dividi lo yogurt in due coppe e completa con mela a cubetti e '
@@ -492,6 +672,7 @@ const _starterRecipes = <({String slug, FitRecipeDraft draft})>[
     slug: 'pollo-croccante-broccoli',
     draft: FitRecipeDraft(
       name: 'Pollo croccante con broccoli',
+      tags: ['cena', 'proteico'],
       description: 'Teglia proteica con una panatura integrale leggera.',
       instructions:
           'Trita il pane, impana il pollo e cuocilo in forno insieme ai '

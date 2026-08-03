@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
@@ -102,6 +104,191 @@ void main() {
         .map((row) => row.operation);
     expect(operations, ['upsert', 'delete']);
   });
+
+  test('crea un alimento personale e lo mostra fra i miei', () async {
+    final id = await repository.createFood(
+      profileId: profileId,
+      draft: const FoodDraft(
+        name: ' Skyr Milbona ',
+        brand: 'Lidl',
+        barcode: '4056489123456',
+        per100g: Nutrients(calories: 63, protein: 11, carbs: 4, fat: 0.2),
+        defaultServingGrams: 150,
+      ),
+    );
+
+    final mine = await repository.watchMine(profileId: profileId).first;
+    expect(mine.single.id, id);
+    expect(mine.single.name, 'Skyr Milbona');
+    expect(mine.single.brand, 'Lidl');
+    expect(mine.single.isSeed, isFalse);
+    expect(
+      await repository.watchCatalog(profileId: profileId).first,
+      hasLength(13),
+    );
+
+    final stored = await (database.select(
+      database.foods,
+    )..where((row) => row.id.equals(id))).getSingle();
+    expect(stored.ownerProfileId, profileId);
+    expect(stored.source, 'custom');
+    expect(stored.defaultServingGrams, 150);
+
+    final outbox = (await database.select(database.syncOutbox).get())
+        .where((row) => row.entityId == id)
+        .toList();
+    expect(outbox.map((row) => row.operation), ['upsert']);
+    final payload =
+        jsonDecode(outbox.single.payloadJson) as Map<String, Object?>;
+    expect(payload['barcode'], '4056489123456');
+    expect(payload['default_serving_grams'], 150);
+  });
+
+  test('aggiorna un alimento personale mantenendo lo stesso id', () async {
+    final id = await repository.createFood(
+      profileId: profileId,
+      draft: const FoodDraft(
+        name: 'Pane proteico',
+        per100g: Nutrients(calories: 250, protein: 20, carbs: 25, fat: 7),
+      ),
+    );
+
+    final updatedId = await repository.updateFood(
+      profileId: profileId,
+      foodId: id,
+      draft: const FoodDraft(
+        name: 'Pane proteico integrale',
+        brand: 'Panificio',
+        per100g: Nutrients(calories: 244, protein: 21, carbs: 23, fat: 7.2),
+        defaultServingGrams: 60,
+      ),
+    );
+
+    expect(updatedId, id);
+    final food = await repository.getFood(profileId: profileId, foodId: id);
+    expect(food?.name, 'Pane proteico integrale');
+    expect(food?.brand, 'Panificio');
+    expect(food?.per100g.calories, closeTo(244, 0.0001));
+    expect(food?.defaultServingGrams, 60);
+
+    final operations = (await database.select(database.syncOutbox).get())
+        .where((row) => row.entityId == id)
+        .map((row) => row.operation);
+    expect(operations, ['upsert', 'upsert']);
+  });
+
+  test('modificare un alimento di base crea una copia personale', () async {
+    final copyId = await repository.updateFood(
+      profileId: profileId,
+      foodId: 'seed-banana',
+      draft: const FoodDraft(
+        name: 'Banana grande',
+        per100g: Nutrients(calories: 89, protein: 1.1, carbs: 22.8, fat: 0.3),
+        defaultServingGrams: 180,
+      ),
+    );
+
+    expect(copyId, isNot('seed-banana'));
+    final seed = await repository.getFood(
+      profileId: profileId,
+      foodId: 'seed-banana',
+    );
+    expect(seed?.name, 'Banana');
+    expect(seed?.defaultServingGrams, 120);
+
+    final copy = await repository.getFood(profileId: profileId, foodId: copyId);
+    expect(copy?.name, 'Banana grande');
+    expect(copy?.source, 'custom');
+    expect(copy?.defaultServingGrams, 180);
+
+    final mine = await repository.watchMine(profileId: profileId).first;
+    expect(mine.map((food) => food.id), [copyId]);
+
+    final operations = (await database.select(database.syncOutbox).get())
+        .where((row) => row.entityType == 'food')
+        .map((row) => row.entityId);
+    expect(operations, [copyId]);
+  });
+
+  test(
+    'un codice a barre duplicato viene rifiutato con un messaggio',
+    () async {
+      await repository.createFood(
+        profileId: profileId,
+        draft: const FoodDraft(
+          name: 'Barretta proteica',
+          barcode: '8001234567890',
+          per100g: Nutrients(calories: 350, protein: 30, carbs: 35, fat: 9),
+        ),
+      );
+
+      await expectLater(
+        repository.createFood(
+          profileId: profileId,
+          draft: const FoodDraft(
+            name: 'Barretta gemella',
+            barcode: '8001234567890',
+            per100g: Nutrients(calories: 350, protein: 30, carbs: 35, fat: 9),
+          ),
+        ),
+        throwsA(
+          isA<FoodCatalogException>().having(
+            (error) => error.message,
+            'message',
+            contains('codice a barre'),
+          ),
+        ),
+      );
+
+      expect(
+        await repository.watchMine(profileId: profileId).first,
+        hasLength(1),
+      );
+      final outbox = (await database.select(database.syncOutbox).get())
+          .where((row) => row.entityType == 'food')
+          .toList();
+      expect(outbox, hasLength(1));
+    },
+  );
+
+  test(
+    'la cancellazione soft nasconde l’alimento e protegge quelli di base',
+    () async {
+      final id = await repository.createFood(
+        profileId: profileId,
+        draft: const FoodDraft(
+          name: 'Crema di arachidi',
+          per100g: Nutrients(calories: 600, protein: 25, carbs: 12, fat: 50),
+        ),
+      );
+
+      await repository.deleteFood(profileId: profileId, foodId: id);
+      await repository.deleteFood(profileId: profileId, foodId: id);
+
+      expect(await repository.watchMine(profileId: profileId).first, isEmpty);
+      expect(
+        await repository.watchCatalog(profileId: profileId).first,
+        hasLength(12),
+      );
+      final stored = await (database.select(
+        database.foods,
+      )..where((row) => row.id.equals(id))).getSingle();
+      expect(stored.deletedAt, isNotNull);
+      final operations = (await database.select(database.syncOutbox).get())
+          .where((row) => row.entityId == id)
+          .map((row) => row.operation);
+      expect(operations, ['upsert', 'delete']);
+
+      await expectLater(
+        repository.deleteFood(profileId: profileId, foodId: 'seed-banana'),
+        throwsA(isA<FoodCatalogException>()),
+      );
+      expect(
+        await repository.getFood(profileId: profileId, foodId: 'seed-banana'),
+        isNotNull,
+      );
+    },
+  );
 
   test(
     'un alimento personalizzato non è visibile agli altri profili',

@@ -1,3 +1,4 @@
+import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 
 enum MealType {
@@ -47,6 +48,7 @@ class DiaryEntry {
     required this.grams,
     required this.mealType,
     required this.eatenAt,
+    required this.per100g,
     required this.nutrients,
   });
 
@@ -56,7 +58,20 @@ class DiaryEntry {
   final double grams;
   final MealType mealType;
   final DateTime eatenAt;
+  final Nutrients per100g;
   final Nutrients nutrients;
+}
+
+abstract final class DiaryDay {
+  static DateTime instantFor(DateTime day) =>
+      AppTime.startOfDayUtc(day).add(const Duration(hours: 12));
+
+  static bool isSameDay(DateTime first, DateTime second) =>
+      AppTime.startOfDayUtc(first) == AppTime.startOfDayUtc(second);
+
+  static DateTime shift(DateTime day, int days) => AppTime.inRome(
+    AppTime.startOfDayUtc(day).add(Duration(days: days, hours: 12)),
+  );
 }
 
 class DailyDiary {

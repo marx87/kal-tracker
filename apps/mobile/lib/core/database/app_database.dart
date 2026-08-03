@@ -209,6 +209,7 @@ class FitRecipes extends Table {
   TextColumn get name => text().withLength(min: 1, max: 160)();
   TextColumn get description => text().withLength(max: 600).nullable()();
   TextColumn get instructions => text().withLength(max: 4000).nullable()();
+  TextColumn get tags => text().withLength(max: 240).nullable()();
   IntColumn get servings => integer()();
   IntColumn get prepMinutes => integer().withDefault(const Constant(0))();
   RealColumn get totalCalories => real()();
@@ -268,6 +269,57 @@ class RecipeIngredients extends Table {
   ];
 }
 
+@DataClassName('LocalMealTemplate')
+@TableIndex(
+  name: 'idx_meal_templates_profile_updated_at',
+  columns: {#profileId, #updatedAt},
+)
+class MealTemplates extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get name => text().withLength(min: 1, max: 80)();
+  TextColumn get mealType => text().withLength(min: 1, max: 16)();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DataClassName('LocalMealTemplateItem')
+@TableIndex(
+  name: 'idx_meal_template_items_template_position',
+  columns: {#templateId, #position},
+)
+class MealTemplateItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get templateId =>
+      text().references(MealTemplates, #id, onDelete: KeyAction.cascade)();
+  IntColumn get position => integer()();
+  TextColumn get foodName => text().withLength(min: 1, max: 160)();
+  RealColumn get grams => real()();
+  RealColumn get caloriesPer100g => real()();
+  RealColumn get proteinPer100g => real()();
+  RealColumn get carbsPer100g => real()();
+  RealColumn get fatPer100g => real()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (position >= 0)',
+    'CHECK (grams > 0)',
+    'CHECK (calories_per100g >= 0)',
+    'CHECK (protein_per100g >= 0)',
+    'CHECK (carbs_per100g >= 0)',
+    'CHECK (fat_per100g >= 0)',
+    'UNIQUE (template_id, position)',
+  ];
+}
+
 @DriftDatabase(
   tables: [
     AppProfiles,
@@ -281,6 +333,8 @@ class RecipeIngredients extends Table {
     FoodPreferences,
     FitRecipes,
     RecipeIngredients,
+    MealTemplates,
+    MealTemplateItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -297,7 +351,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -315,6 +369,13 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(fitRecipes);
         await migrator.createTable(recipeIngredients);
         await _seedEssentialFoods();
+      }
+      if (from < 3) {
+        await migrator.createTable(mealTemplates);
+        await migrator.createTable(mealTemplateItems);
+        if (from >= 2) {
+          await migrator.addColumn(fitRecipes, fitRecipes.tags);
+        }
       }
     },
     beforeOpen: (details) async {

@@ -123,6 +123,193 @@ void main() {
     expect(outbox.map((row) => row.operation), ['upsert', 'delete']);
   });
 
+  test('la modifica ricalcola i totali e sposta la voce di pasto', () async {
+    final profile = await profileRepository.getOrCreateMarco();
+    final day = AppTime.nowInRome();
+    final id = await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Riso basmati',
+        grams: 150,
+        per100g: const Nutrients(
+          calories: 130,
+          protein: 2.7,
+          carbs: 28,
+          fat: 0.3,
+        ),
+        mealType: MealType.lunch,
+        eatenAt: day,
+      ),
+    );
+
+    await diaryRepository.updateEntry(
+      itemId: id,
+      grams: 200,
+      mealType: MealType.dinner,
+    );
+
+    final diary = await diaryRepository
+        .watchDay(profileId: profile.id, day: day)
+        .first;
+
+    expect(diary.entries, hasLength(1));
+    expect(diary.entriesFor(MealType.lunch), isEmpty);
+    expect(diary.entriesFor(MealType.dinner).single.id, id);
+    expect(diary.entriesFor(MealType.dinner).single.grams, 200);
+    expect(diary.totals.calories, closeTo(260, 0.0001));
+    expect(diary.totals.protein, closeTo(5.4, 0.0001));
+  });
+
+  test('la modifica scrive la outbox e rifiuta una voce cancellata', () async {
+    final profile = await profileRepository.getOrCreateMarco();
+    final day = AppTime.nowInRome();
+    final id = await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Mela',
+        grams: 100,
+        per100g: const Nutrients(
+          calories: 52,
+          protein: 0.3,
+          carbs: 14,
+          fat: 0.2,
+        ),
+        mealType: MealType.snack,
+        eatenAt: day,
+      ),
+    );
+
+    await diaryRepository.updateEntry(
+      itemId: id,
+      foodName: 'Mela Fuji',
+      grams: 120,
+    );
+    await diaryRepository.deleteEntry(id);
+
+    await expectLater(
+      diaryRepository.updateEntry(itemId: id, grams: 90),
+      throwsStateError,
+    );
+    await expectLater(
+      diaryRepository.updateEntry(itemId: 'voce-inesistente', grams: 90),
+      throwsStateError,
+    );
+
+    final item = await (database.select(
+      database.mealItems,
+    )..where((row) => row.id.equals(id))).getSingle();
+    final outbox = await database.select(database.syncOutbox).get();
+
+    expect(item.foodName, 'Mela Fuji');
+    expect(item.grams, 120);
+    expect(item.totalCalories, closeTo(62.4, 0.0001));
+    expect(outbox.map((row) => row.operation), ['upsert', 'upsert', 'delete']);
+  });
+
+  test('duplica una voce senza toccare l’originale', () async {
+    final profile = await profileRepository.getOrCreateMarco();
+    final day = AppTime.nowInRome();
+    final id = await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Yogurt greco',
+        grams: 125,
+        per100g: const Nutrients(calories: 60, protein: 10, carbs: 4, fat: 0.4),
+        mealType: MealType.breakfast,
+        eatenAt: day,
+      ),
+    );
+
+    final copyId = await diaryRepository.duplicateEntry(
+      id,
+      toMealType: MealType.snack,
+    );
+    final diary = await diaryRepository
+        .watchDay(profileId: profile.id, day: day)
+        .first;
+
+    expect(copyId, isNot(id));
+    expect(diary.entries, hasLength(2));
+    expect(diary.entriesFor(MealType.breakfast).single.id, id);
+    expect(diary.entriesFor(MealType.snack).single.foodName, 'Yogurt greco');
+    expect(diary.entriesFor(MealType.snack).single.grams, 125);
+    expect(diary.totals.calories, closeTo(150, 0.0001));
+  });
+
+  test('copia un pasto in un altro giorno creando voci nuove', () async {
+    final profile = await profileRepository.getOrCreateMarco();
+    final day = AppTime.nowInRome();
+    final yesterday = DiaryDay.shift(day, -1);
+
+    await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Petto di pollo',
+        grams: 150,
+        per100g: const Nutrients(
+          calories: 165,
+          protein: 31,
+          carbs: 0,
+          fat: 3.6,
+        ),
+        mealType: MealType.lunch,
+        eatenAt: yesterday,
+      ),
+    );
+    await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Broccoli',
+        grams: 200,
+        per100g: const Nutrients(
+          calories: 34,
+          protein: 2.8,
+          carbs: 7,
+          fat: 0.4,
+        ),
+        mealType: MealType.lunch,
+        eatenAt: yesterday,
+      ),
+    );
+
+    final createdIds = await diaryRepository.copyMeal(
+      profileId: profile.id,
+      fromDay: yesterday,
+      mealType: MealType.lunch,
+      toDay: day,
+    );
+    final emptyCopy = await diaryRepository.copyMeal(
+      profileId: profile.id,
+      fromDay: yesterday,
+      mealType: MealType.dinner,
+      toDay: day,
+    );
+
+    final source = await diaryRepository
+        .watchDay(profileId: profile.id, day: yesterday)
+        .first;
+    final target = await diaryRepository
+        .watchDay(profileId: profile.id, day: day)
+        .first;
+
+    expect(createdIds, hasLength(2));
+    expect(emptyCopy, isEmpty);
+    expect(source.entries, hasLength(2));
+    expect(target.entries, hasLength(2));
+    expect(
+      source.entries
+          .map((entry) => entry.id)
+          .toSet()
+          .intersection(target.entries.map((entry) => entry.id).toSet()),
+      isEmpty,
+    );
+    expect(target.entries.map((entry) => entry.foodName).toSet(), {
+      'Petto di pollo',
+      'Broccoli',
+    });
+    expect(target.totals.calories, closeTo(source.totals.calories, 0.0001));
+  });
+
   test('la cancellazione ripetuta non duplica la outbox', () async {
     final profile = await profileRepository.getOrCreateMarco();
     final id = await diaryRepository.addManualFood(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
@@ -21,12 +22,24 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   MealType _mealType = MealType.lunch;
   bool _adding = false;
+  bool _duplicating = false;
 
   @override
   Widget build(BuildContext context) {
     final details = ref.watch(recipeDetailsProvider(widget.recipeId));
     return Scaffold(
-      appBar: AppBar(title: const Text('Dettaglio ricetta')),
+      appBar: AppBar(
+        title: const Text('Dettaglio ricetta'),
+        actions: [
+          if (details.valueOrNull case final recipe?)
+            IconButton(
+              key: const Key('delete_recipe_button'),
+              tooltip: 'Elimina ricetta',
+              onPressed: () => _delete(recipe),
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+        ],
+      ),
       body: details.when(
         data: (recipe) => recipe == null
             ? const Center(child: Text('Questa ricetta non è più disponibile.'))
@@ -34,9 +47,12 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                 details: recipe,
                 selectedMeal: _mealType,
                 adding: _adding,
+                duplicating: _duplicating,
                 onMealChanged: (value) => setState(() => _mealType = value),
                 onAdd: () => _addServing(recipe),
                 onFavorite: () => _toggleFavorite(recipe),
+                onEdit: _openEditor,
+                onDuplicate: _duplicate,
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(
@@ -49,6 +65,79 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openEditor() async {
+    final savedId = await context.pushNamed<String>(
+      'recipe-edit',
+      pathParameters: {'recipeId': widget.recipeId},
+    );
+    if (!mounted) {
+      return;
+    }
+    ref.invalidate(recipeDetailsProvider(widget.recipeId));
+    if (savedId != null) {
+      _message('Ricetta aggiornata.');
+    }
+  }
+
+  Future<void> _duplicate() async {
+    setState(() => _duplicating = true);
+    try {
+      await ref.read(recipeRepositoryProvider).duplicateRecipe(widget.recipeId);
+      if (mounted) {
+        _message('Ho creato una copia nel tuo ricettario.');
+      }
+    } on Object {
+      if (mounted) {
+        _message('Non riesco a duplicare questa ricetta.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _duplicating = false);
+      }
+    }
+  }
+
+  Future<void> _delete(FitRecipeDetails details) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const Key('delete_recipe_dialog'),
+        title: Text('Elimino ${details.summary.name}?'),
+        content: const Text(
+          'Sparisce dal ricettario, ma le porzioni già nel diario restano.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            key: const Key('confirm_delete_recipe'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(recipeRepositoryProvider).deleteRecipe(widget.recipeId);
+      if (mounted) {
+        context.pop();
+        messenger.showSnackBar(
+          SnackBar(content: Text('${details.summary.name} eliminata.')),
+        );
+      }
+    } on Object {
+      if (mounted) {
+        _message('Non riesco a eliminare questa ricetta.');
+      }
+    }
   }
 
   Future<void> _toggleFavorite(FitRecipeDetails details) async {
@@ -121,17 +210,23 @@ class _RecipeDetailsBody extends StatelessWidget {
     required this.details,
     required this.selectedMeal,
     required this.adding,
+    required this.duplicating,
     required this.onMealChanged,
     required this.onAdd,
     required this.onFavorite,
+    required this.onEdit,
+    required this.onDuplicate,
   });
 
   final FitRecipeDetails details;
   final MealType selectedMeal;
   final bool adding;
+  final bool duplicating;
   final ValueChanged<MealType> onMealChanged;
   final VoidCallback onAdd;
   final VoidCallback onFavorite;
+  final VoidCallback onEdit;
+  final VoidCallback onDuplicate;
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +319,48 @@ class _RecipeDetailsBody extends StatelessWidget {
               ],
             ),
           ),
+        ),
+        if (summary.tags.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final tag in summary.tags)
+                Chip(
+                  key: Key('recipe_detail_tag_$tag'),
+                  label: Text(tag),
+                  backgroundColor: AppPalette.mintSoft,
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('edit_recipe_button'),
+                onPressed: duplicating ? null : onEdit,
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('Modifica'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('duplicate_recipe_button'),
+                onPressed: duplicating ? null : onDuplicate,
+                icon: duplicating
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.copy_all_rounded),
+                label: const Text('Duplica'),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Text('Ingredienti', style: Theme.of(context).textTheme.titleLarge),

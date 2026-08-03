@@ -30,6 +30,13 @@ class FoodCatalogRepository {
     int limit = 20,
   }) => _watch(profileId: profileId, onlyRecent: true, limit: limit);
 
+  Stream<List<FoodCatalogItem>> watchMine({
+    required String profileId,
+    String query = '',
+    int limit = 50,
+  }) =>
+      _watch(profileId: profileId, query: query, onlyMine: true, limit: limit);
+
   Future<FoodCatalogItem?> getFood({
     required String profileId,
     required String foodId,
@@ -40,56 +47,124 @@ class FoodCatalogRepository {
     return result == null ? null : _mapRow(result);
   }
 
-  Future<String> createCustomFood({
+  Future<String> createFood({
     required String profileId,
     required FoodDraft draft,
   }) async {
     draft.validate();
     final id = _uuid.v4();
     final now = AppTime.nowUtc();
-    final cleanBrand = _cleanOptional(draft.brand);
-    final cleanBarcode = _cleanOptional(draft.barcode);
 
     await _database.transaction(() async {
-      await _database
-          .into(_database.foods)
-          .insert(
-            FoodsCompanion.insert(
-              id: id,
-              ownerProfileId: Value(profileId),
-              name: draft.name.trim(),
-              brand: Value(cleanBrand),
-              barcode: Value(cleanBarcode),
-              caloriesPer100g: draft.per100g.calories,
-              proteinPer100g: draft.per100g.protein,
-              carbsPer100g: draft.per100g.carbs,
-              fatPer100g: draft.per100g.fat,
-              defaultServingGrams: Value(draft.defaultServingGrams),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
+      await _insertFood(id: id, profileId: profileId, draft: draft, now: now);
+    });
+    return id;
+  }
+
+  Future<String> createCustomFood({
+    required String profileId,
+    required FoodDraft draft,
+  }) => createFood(profileId: profileId, draft: draft);
+
+  /// Aggiorna un alimento personale. Gli alimenti di base restano intatti:
+  /// in quel caso nasce una copia modificabile e il metodo ne restituisce l'id.
+  Future<String> updateFood({
+    required String profileId,
+    required String foodId,
+    required FoodDraft draft,
+  }) async {
+    draft.validate();
+    final now = AppTime.nowUtc();
+
+    return _database.transaction(() async {
+      final stored =
+          await (_database.select(
+                _database.foods,
+              )..where((row) => row.id.equals(foodId) & row.deletedAt.isNull()))
+              .getSingleOrNull();
+      if (stored == null ||
+          (stored.ownerProfileId != null &&
+              stored.ownerProfileId != profileId)) {
+        throw StateError('Alimento non trovato.');
+      }
+      if (stored.source == FoodSource.seed || stored.ownerProfileId == null) {
+        final copyId = _uuid.v4();
+        await _insertFood(
+          id: copyId,
+          profileId: profileId,
+          draft: draft,
+          now: now,
+        );
+        return copyId;
+      }
+
+      final cleanBrand = _cleanOptional(draft.brand);
+      final cleanBarcode = _cleanOptional(draft.barcode);
+      await _requireFreeBarcode(barcode: cleanBarcode, foodId: foodId);
+      await (_database.update(
+        _database.foods,
+      )..where((row) => row.id.equals(foodId))).write(
+        FoodsCompanion(
+          name: Value(draft.name.trim()),
+          brand: Value(cleanBrand),
+          barcode: Value(cleanBarcode),
+          caloriesPer100g: Value(draft.per100g.calories),
+          proteinPer100g: Value(draft.per100g.protein),
+          carbsPer100g: Value(draft.per100g.carbs),
+          fatPer100g: Value(draft.per100g.fat),
+          defaultServingGrams: Value(draft.defaultServingGrams),
+          updatedAt: Value(now),
+        ),
+      );
       await _appendOutbox(
         entityType: 'food',
-        entityId: id,
+        entityId: foodId,
         operation: 'upsert',
-        payload: {
-          'id': id,
-          'owner_profile_id': profileId,
-          'name': draft.name.trim(),
-          'brand': cleanBrand,
-          'barcode': cleanBarcode,
-          'calories_per_100g': draft.per100g.calories,
-          'protein_per_100g': draft.per100g.protein,
-          'carbs_per_100g': draft.per100g.carbs,
-          'fat_per_100g': draft.per100g.fat,
-          'default_serving_grams': draft.defaultServingGrams,
-          'updated_at': now.toIso8601String(),
-        },
+        payload: _foodPayload(
+          id: foodId,
+          profileId: profileId,
+          draft: draft,
+          brand: cleanBrand,
+          barcode: cleanBarcode,
+          now: now,
+        ),
+        now: now,
+      );
+      return foodId;
+    });
+  }
+
+  Future<void> deleteFood({
+    required String profileId,
+    required String foodId,
+  }) async {
+    final now = AppTime.nowUtc();
+    await _database.transaction(() async {
+      final stored = await (_database.select(
+        _database.foods,
+      )..where((row) => row.id.equals(foodId))).getSingleOrNull();
+      if (stored == null || stored.deletedAt != null) {
+        return;
+      }
+      if (stored.source == FoodSource.seed || stored.ownerProfileId == null) {
+        throw const FoodCatalogException(
+          'Gli alimenti di base non si possono eliminare.',
+        );
+      }
+      if (stored.ownerProfileId != profileId) {
+        throw StateError('Alimento non trovato.');
+      }
+      await (_database.update(_database.foods)
+            ..where((row) => row.id.equals(foodId)))
+          .write(FoodsCompanion(updatedAt: Value(now), deletedAt: Value(now)));
+      await _appendOutbox(
+        entityType: 'food',
+        entityId: foodId,
+        operation: 'delete',
+        payload: {'id': foodId, 'deleted_at': now.toIso8601String()},
         now: now,
       );
     });
-    return id;
   }
 
   Future<void> setFavorite({
@@ -165,30 +240,95 @@ class FoodCatalogRepository {
   Future<void> deleteCustomFood({
     required String profileId,
     required String foodId,
+  }) => deleteFood(profileId: profileId, foodId: foodId);
+
+  Future<void> _insertFood({
+    required String id,
+    required String profileId,
+    required FoodDraft draft,
+    required DateTime now,
   }) async {
-    final now = AppTime.nowUtc();
-    await _database.transaction(() async {
-      final changed =
-          await (_database.update(_database.foods)..where(
-                (row) =>
-                    row.id.equals(foodId) &
-                    row.ownerProfileId.equals(profileId) &
-                    row.deletedAt.isNull(),
-              ))
-              .write(
-                FoodsCompanion(updatedAt: Value(now), deletedAt: Value(now)),
-              );
-      if (changed == 0) {
-        return;
-      }
-      await _appendOutbox(
-        entityType: 'food',
-        entityId: foodId,
-        operation: 'delete',
-        payload: {'id': foodId, 'deleted_at': now.toIso8601String()},
+    final cleanBrand = _cleanOptional(draft.brand);
+    final cleanBarcode = _cleanOptional(draft.barcode);
+    await _requireFreeBarcode(barcode: cleanBarcode, foodId: id);
+    await _database
+        .into(_database.foods)
+        .insert(
+          FoodsCompanion.insert(
+            id: id,
+            ownerProfileId: Value(profileId),
+            name: draft.name.trim(),
+            brand: Value(cleanBrand),
+            barcode: Value(cleanBarcode),
+            caloriesPer100g: draft.per100g.calories,
+            proteinPer100g: draft.per100g.protein,
+            carbsPer100g: draft.per100g.carbs,
+            fatPer100g: draft.per100g.fat,
+            defaultServingGrams: Value(draft.defaultServingGrams),
+            source: const Value(FoodSource.custom),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await _appendOutbox(
+      entityType: 'food',
+      entityId: id,
+      operation: 'upsert',
+      payload: _foodPayload(
+        id: id,
+        profileId: profileId,
+        draft: draft,
+        brand: cleanBrand,
+        barcode: cleanBarcode,
         now: now,
+      ),
+      now: now,
+    );
+  }
+
+  Map<String, Object?> _foodPayload({
+    required String id,
+    required String profileId,
+    required FoodDraft draft,
+    required String? brand,
+    required String? barcode,
+    required DateTime now,
+  }) => {
+    'id': id,
+    'owner_profile_id': profileId,
+    'name': draft.name.trim(),
+    'brand': brand,
+    'barcode': barcode,
+    'calories_per_100g': draft.per100g.calories,
+    'protein_per_100g': draft.per100g.protein,
+    'carbs_per_100g': draft.per100g.carbs,
+    'fat_per_100g': draft.per100g.fat,
+    'default_serving_grams': draft.defaultServingGrams,
+    'updated_at': now.toIso8601String(),
+  };
+
+  /// Il vincolo UNIQUE su barcode vale anche per i tombstone: qui il conflitto
+  /// diventa un messaggio leggibile invece di un errore SQLite.
+  Future<void> _requireFreeBarcode({
+    required String? barcode,
+    required String foodId,
+  }) async {
+    if (barcode == null) {
+      return;
+    }
+    final clash =
+        await (_database.select(_database.foods)
+              ..where(
+                (row) =>
+                    row.barcode.equals(barcode) & row.id.equals(foodId).not(),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (clash != null) {
+      throw const FoodCatalogException(
+        'Questo codice a barre è già usato da un altro alimento.',
       );
-    });
+    }
   }
 
   Stream<List<FoodCatalogItem>> _watch({
@@ -196,6 +336,7 @@ class FoodCatalogRepository {
     String query = '',
     bool onlyFavorites = false,
     bool onlyRecent = false,
+    bool onlyMine = false,
     required int limit,
   }) {
     if (limit <= 0 || limit > 200) {
@@ -214,6 +355,9 @@ class FoodCatalogRepository {
     }
     if (onlyRecent) {
       statement.where(_database.foodPreferences.lastUsedAt.isNotNull());
+    }
+    if (onlyMine) {
+      statement.where(_database.foods.ownerProfileId.equals(profileId));
     }
     statement
       ..orderBy(

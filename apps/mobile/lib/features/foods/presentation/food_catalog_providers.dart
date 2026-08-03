@@ -3,7 +3,7 @@ import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/foods/data/food_catalog_repository.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
 
-enum FoodCatalogSection { all, favorites, recent }
+enum FoodCatalogSection { all, mine, favorites, recent }
 
 final foodCatalogRepositoryProvider = Provider<FoodCatalogRepository>(
   (ref) => FoodCatalogRepository(ref.watch(databaseProvider)),
@@ -29,15 +29,21 @@ final visibleFoodsProvider = StreamProvider.autoDispose<List<FoodCatalogItem>>((
       profileId: profile.id,
       query: query,
     ),
+    FoodCatalogSection.mine => repository.watchMine(
+      profileId: profile.id,
+      query: query,
+    ),
     FoodCatalogSection.favorites => repository.watchFavorites(
       profileId: profile.id,
     ),
     FoodCatalogSection.recent => repository.watchRecent(profileId: profile.id),
   };
+  final filtersOnDatabase =
+      section == FoodCatalogSection.all || section == FoodCatalogSection.mine;
 
   await for (final foods in stream) {
     final cleanQuery = query.trim().toLowerCase();
-    if (section == FoodCatalogSection.all || cleanQuery.isEmpty) {
+    if (filtersOnDatabase || cleanQuery.isEmpty) {
       yield foods;
       continue;
     }
