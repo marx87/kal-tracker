@@ -51,6 +51,8 @@ dependencies:
   package_info_plus: ^10.2.1
   url_launcher: ^6.3.2
   open_file: ^3.5.11
+  image_picker: ^1.2.0
+  image: ^4.5.4
 
 dev_dependencies:
   flutter_test:

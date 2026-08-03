@@ -6,6 +6,8 @@ import 'package:kal_tracker/features/backup/presentation/backup_screen.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart';
+import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
+import 'package:kal_tracker/features/photo_meal/presentation/photo_review_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_editor_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
@@ -18,8 +20,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
+        // Il listener tiene vivo il polling dei job foto e mostra la
+        // notifica in-app "Proposta pronta da rivedere".
+        builder: (context, state, navigationShell) => PhotoProposalsListener(
+          child: AppShell(navigationShell: navigationShell),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -105,6 +110,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      // Fuori dalla shell: la revisione delle proposte foto è a schermo
+      // intero e raggiungibile anche dalla notifica in-app.
+      GoRoute(
+        path: '/photo-review/:jobId',
+        name: 'photo-review',
+        builder: (context, state) =>
+            PhotoReviewScreen(jobId: state.pathParameters['jobId']!),
       ),
     ],
   );

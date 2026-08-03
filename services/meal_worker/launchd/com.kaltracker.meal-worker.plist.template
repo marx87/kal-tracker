@@ -16,6 +16,13 @@
 
   <key>EnvironmentVariables</key>
   <dict>
+    <!-- launchd non eredita il PATH della shell: la CLI claude installata via
+         npm o Homebrew va resa raggiungibile. __CLAUDE_BIN_DIRECTORY__ e' la
+         directory che contiene l'eseguibile claude, per esempio
+         /opt/homebrew/bin oppure /Users/NOME/.nvm/versions/node/vXX/bin
+         (la stessa directory di __CLAUDE_EXECUTABLE_ABSOLUTE_PATH__). -->
+    <key>PATH</key>
+    <string>__CLAUDE_BIN_DIRECTORY__:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>KAL_SUPABASE_URL</key>
     <string>https://__PROJECT_REF__.supabase.co</string>
     <key>KAL_SUPABASE_PUBLISHABLE_KEY</key>
@@ -34,13 +41,22 @@
 
   <key>RunAtLoad</key>
   <true/>
+  <!-- Riavvio automatico con throttle: launchd attende almeno 15 secondi tra
+       un'uscita e il riavvio successivo, cosi un errore di configurazione non
+       genera un loop stretto. -->
   <key>KeepAlive</key>
   <true/>
-  <key>ProcessType</key>
-  <string>Background</string>
   <key>ThrottleInterval</key>
   <integer>15</integer>
+  <!-- Alla richiesta di stop launchd invia SIGTERM (gestito dal worker) e
+       attende fino a 30 secondi prima del SIGKILL. -->
+  <key>ExitTimeOut</key>
+  <integer>30</integer>
+  <key>ProcessType</key>
+  <string>Background</string>
 
+  <!-- Log dedicati del servizio: creare prima la directory
+       (mkdir -p __LOG_DIRECTORY__). Nei log non compaiono password o token. -->
   <key>StandardOutPath</key>
   <string>__LOG_DIRECTORY__/meal-worker.out.log</string>
   <key>StandardErrorPath</key>

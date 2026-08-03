@@ -92,6 +92,122 @@ grezzo del modello. Il contratto del risultato — massimo 12 alimenti, fasce di
 grammi, confidenze, niente calorie né macro — è identico per i due provider:
 il calcolo nutrizionale resta all'app dopo la conferma di Marco.
 
+## Installazione reale sul Mac
+
+Procedura completa per portare il worker in servizio su un Mac con macOS,
+Python 3.11+ e la CLI Claude Code già installata e autenticata (`claude auth
+status` deve rispondere con login attivo; per il provider `codex` vale
+`codex login status`).
+
+### 1. Pacchetto Python
+
+```bash
+cd services/meal_worker
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+```
+
+### 2. Provisioning utente worker, binding e Portachiavi
+
+Lo script `scripts/provision_meal_worker.sh` automatizza i passi 1-2 del
+"Provisioning una tantum" e il salvataggio nel Portachiavi. Richiede il ref del
+progetto e la service_role key **solo come variabili d'ambiente** (mai come
+argomenti): la chiave serve unicamente durante l'esecuzione amministrativa e
+non viene salvata né stampata.
+
+```bash
+export KAL_PROVISION_PROJECT_REF="PROJECT_REF"
+
+# La service_role key si incolla in un prompt nascosto, MAI dentro un
+# `export KEY="..."` digitato in shell: quella riga finirebbe in chiaro
+# in ~/.zsh_history e resterebbe su disco anche dopo l'unset.
+printf 'service_role key (input nascosto): '
+IFS= read -rs KAL_PROVISION_SERVICE_ROLE_KEY && export KAL_PROVISION_SERVICE_ROLE_KEY
+echo
+
+# prima un controllo locale senza rete e senza modifiche
+scripts/provision_meal_worker.sh \
+  --worker-email kal-meal-worker@TUODOMINIO \
+  --owner-email EMAIL_DI_MARCO \
+  --dry-run
+
+# poi l'esecuzione vera, rieseguibile senza danni
+scripts/provision_meal_worker.sh \
+  --worker-email kal-meal-worker@TUODOMINIO \
+  --owner-email EMAIL_DI_MARCO \
+  --create
+
+unset KAL_PROVISION_SERVICE_ROLE_KEY
+```
+
+Lo script, in modo idempotente:
+
+1. risolve il proprietario (da email o `--owner-id`), che deve già esistere;
+2. cerca o crea l'utente Auth worker con una password generata (64 caratteri
+   esadecimali); se l'utente esiste ma la password manca dal Portachiavi la
+   rigenera e riallinea Supabase Auth;
+3. salva la password nel Portachiavi macOS con i nomi attesi dal worker
+   (servizio `com.kaltracker.meal-worker.supabase`, account = email worker);
+4. registra il binding `meal_analysis` via REST quando i permessi lo
+   consentono; altrimenti stampa l'SQL idempotente pronto da incollare nel SQL
+   editor (la tabella è riservata, quindi il fallback manuale è normale).
+
+La registrazione pubblica degli utenti deve restare disabilitata; la revoca del
+binding resta un'azione manuale dal SQL editor (`is_active = false`).
+
+### 3. Diagnosi con `doctor`
+
+Con le variabili non segrete del worker esportate:
+
+```bash
+export KAL_SUPABASE_URL="https://PROJECT_REF.supabase.co"
+export KAL_SUPABASE_PUBLISHABLE_KEY="PUBLISHABLE_KEY"
+export KAL_MEAL_WORKER_EMAIL="kal-meal-worker@TUODOMINIO"
+export KAL_CLAUDE_EXECUTABLE="$(command -v claude)"
+
+.venv/bin/kal-meal-worker doctor
+```
+
+Il comando verifica, con un esito leggibile per riga: password nel Portachiavi,
+CLI del provider presente e autenticata, raggiungibilità del progetto Supabase,
+login dell'utente worker, esposizione dello schema `kal_tracker`/RPC e schema
+del bucket foto (privato, 10 MiB, JPEG/PNG/WebP; se i metadati sono riservati
+al worker ripiega su un oggetto di prova che deve essere negato). Il controllo
+non esegue mai un claim, quindi non può rubare job in coda: la prova completa
+del binding è il passo successivo.
+
+### 4. Prova in foreground (sblocca il Portachiavi)
+
+Nella sessione grafica, così macOS può chiedere l'autorizzazione per
+`/usr/bin/security` una sola volta:
+
+```bash
+.venv/bin/kal-meal-worker serve --once
+```
+
+Con un binding attivo e nessun job in coda l'esito atteso è un poll vuoto.
+
+### 5. Servizio launchd
+
+Compilare i placeholder del template
+`services/meal_worker/launchd/com.kaltracker.meal-worker.plist.template`:
+`__VENV_PATH__`, `__MEAL_WORKER_DIRECTORY__`, `__PROJECT_REF__`,
+`__PUBLISHABLE_KEY__`, `__WORKER_EMAIL__`,
+`__CLAUDE_EXECUTABLE_ABSOLUTE_PATH__`, `__CLAUDE_BIN_DIRECTORY__` (la
+directory che contiene `claude`, es. `/opt/homebrew/bin` o la `bin` di nvm,
+perché launchd non eredita il PATH della shell) e `__LOG_DIRECTORY__`.
+
+```bash
+mkdir -p "$HOME/Library/Logs/kal-meal-worker"   # __LOG_DIRECTORY__
+cp com.kaltracker.meal-worker.plist "$HOME/Library/LaunchAgents/"
+launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.kaltracker.meal-worker.plist"
+launchctl kickstart -k "gui/$(id -u)/com.kaltracker.meal-worker"
+```
+
+Per fermarlo: `launchctl bootout "gui/$(id -u)/com.kaltracker.meal-worker"`.
+La publishable key nel plist non è un segreto; password Supabase e credenziali
+Claude/Codex non vanno mai copiate nel plist.
+
 ## Verifica locale
 
 La migrazione richiede un PostgreSQL/Supabase reale per i test dinamici. Quando

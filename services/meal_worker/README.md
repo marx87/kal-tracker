@@ -88,7 +88,11 @@ installata e autenticata come descritto in "Provider di analisi".
 
 ## Portachiavi
 
-Con l'app **Accesso Portachiavi**, creare un nuovo elemento password:
+Il percorso consigliato e `scripts/provision_meal_worker.sh` (vedi
+[`docs/MEAL_WORKER_PROTOCOL.md`](../../docs/MEAL_WORKER_PROTOCOL.md)): crea
+l'utente worker con password generata e salva l'elemento Portachiavi con i
+nomi attesi, senza mai stampare segreti. In alternativa manuale, con l'app
+**Accesso Portachiavi**, creare un nuovo elemento password:
 
 - nome/servizio: `com.kaltracker.meal-worker.supabase`;
 - account: email dell'utente Auth worker;
@@ -137,12 +141,29 @@ Per le opzioni di provider, lease, timeout e polling:
 .venv/bin/kal-meal-worker serve --help
 ```
 
+## Diagnostica: `doctor`
+
+Con le stesse variabili non segrete di `serve`:
+
+```bash
+.venv/bin/kal-meal-worker doctor
+```
+
+Stampa un esito leggibile per riga (`OK`/`ERRORE`/`SALTATO`): password nel
+Portachiavi, CLI del provider presente e autenticata, raggiungibilita del
+progetto Supabase, login dell'utente worker, RPC dello schema `kal_tracker` e
+schema del bucket foto. Non esegue mai un claim (quindi non consuma job in
+coda) e non stampa segreti; codice di uscita 0 solo con tutti i controlli
+superati.
+
 ## launchd: solo template
 
 [`launchd/com.kaltracker.meal-worker.plist.template`](launchd/com.kaltracker.meal-worker.plist.template)
 contiene un esempio con placeholder per virtualenv, directory, log, URL,
-publishable key, email e percorso assoluto della CLI Claude (con un commento
-per tornare a Codex). Il repository non lo installa e non esegue `launchctl`:
+publishable key, email, percorso assoluto della CLI Claude (con un commento
+per tornare a Codex) e `__CLAUDE_BIN_DIRECTORY__`, la directory che contiene
+`claude` da anteporre al `PATH` del servizio (launchd non eredita il PATH
+della shell). Il repository non lo installa e non esegue `launchctl`:
 copiarlo e abilitarlo resta un passaggio manuale dopo la prova in foreground.
 
 La publishable key nel plist non e un segreto; password Supabase e credenziali
