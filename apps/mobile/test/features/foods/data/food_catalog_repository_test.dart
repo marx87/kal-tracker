@@ -433,10 +433,7 @@ void main() {
             restrictToIds: const {'cat-pasta-al-ragu'},
           )
           .first;
-      expect(all.map((food) => food.id).toSet(), {
-        'cat-pasta-al-ragu',
-        copyId,
-      });
+      expect(all.map((food) => food.id).toSet(), {'cat-pasta-al-ragu', copyId});
 
       // «Solo i miei» + categoria non deve più dare una lista vuota.
       final mine = await repository

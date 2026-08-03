@@ -195,43 +195,46 @@ void main() {
     },
   );
 
-  test('i piatti che duplicano i seed per nome non vengono importati', () async {
-    final result = await importer(
-      () => _asset(
-        items: [
-          ...baseItems,
-          // Stesso nome del seed essenziale con valori divergenti: la riga
-          // seed deve restare l'unica, senza doppioni in lista.
-          _item(
-            id: 'cat-banana',
-            name: 'Banana',
-            category: 'Frutta e frutta secca',
-            kcal: 92,
-            protein: 1.2,
-            carbs: 22,
-            fat: 0.3,
-            portion: 120,
-          ),
-        ],
-      ),
-    ).importIfNeeded();
+  test(
+    'i piatti che duplicano i seed per nome non vengono importati',
+    () async {
+      final result = await importer(
+        () => _asset(
+          items: [
+            ...baseItems,
+            // Stesso nome del seed essenziale con valori divergenti: la riga
+            // seed deve restare l'unica, senza doppioni in lista.
+            _item(
+              id: 'cat-banana',
+              name: 'Banana',
+              category: 'Frutta e frutta secca',
+              kcal: 92,
+              protein: 1.2,
+              carbs: 22,
+              fat: 0.3,
+              portion: 120,
+            ),
+          ],
+        ),
+      ).importIfNeeded();
 
-    expect(result.status, CatalogImportStatus.imported);
-    expect(result.itemCount, 2);
-    expect((await catalogRows()).map((row) => row.id).toSet(), {
-      'cat-pasta-al-ragu',
-      'cat-tiramisu',
-    });
+      expect(result.status, CatalogImportStatus.imported);
+      expect(result.itemCount, 2);
+      expect((await catalogRows()).map((row) => row.id).toSet(), {
+        'cat-pasta-al-ragu',
+        'cat-tiramisu',
+      });
 
-    // La ricerca trova una sola Banana: quella dei seed.
-    final profileId = (await LocalProfileRepository(
-      database,
-    ).getOrCreateMarco()).id;
-    final bananas = await FoodCatalogRepository(
-      database,
-    ).watchCatalog(profileId: profileId, query: 'banana').first;
-    expect(bananas.single.id, 'seed-banana');
-  });
+      // La ricerca trova una sola Banana: quella dei seed.
+      final profileId = (await LocalProfileRepository(
+        database,
+      ).getOrCreateMarco()).id;
+      final bananas = await FoodCatalogRepository(
+        database,
+      ).watchCatalog(profileId: profileId, query: 'banana').first;
+      expect(bananas.single.id, 'seed-banana');
+    },
+  );
 
   test('un asset illeggibile non blocca: si ritenta al lancio dopo', () async {
     final failed = await importer(
