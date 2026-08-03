@@ -42,6 +42,12 @@ class ProgressScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('open_sync_button'),
+            tooltip: 'Sincronizzazione',
+            onPressed: () => context.pushNamed('sync'),
+            icon: const Icon(Icons.cloud_sync_rounded),
+          ),
+          IconButton(
             key: const Key('open_backup_button'),
             tooltip: 'Backup e ripristino',
             onPressed: () => context.pushNamed('backup'),

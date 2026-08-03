@@ -238,7 +238,8 @@ class _DiaryBody extends ConsumerWidget {
         key: const Key('delete_entry_dialog'),
         title: Text('Elimino ${entry.foodName}?'),
         content: const Text(
-          'Sparisce dal diario e dal totale del giorno: non si recupera.',
+          'Sparisce dal diario e dal totale del giorno. Se cambi idea, '
+          'puoi annullare subito dopo.',
         ),
         actions: [
           TextButton(
@@ -259,11 +260,32 @@ class _DiaryBody extends ConsumerWidget {
     try {
       await ref.read(diaryRepositoryProvider).deleteEntry(entry.id);
       messenger.showSnackBar(
-        SnackBar(content: Text('${entry.foodName} eliminato dal diario.')),
+        SnackBar(
+          content: Text('${entry.foodName} eliminato dal diario.'),
+          action: SnackBarAction(
+            label: 'Annulla',
+            onPressed: () => _restoreEntry(context, ref, entry),
+          ),
+        ),
       );
     } on Object {
       messenger.showSnackBar(
         const SnackBar(content: Text('Non riesco a eliminare questa voce.')),
+      );
+    }
+  }
+
+  Future<void> _restoreEntry(
+    BuildContext context,
+    WidgetRef ref,
+    DiaryEntry entry,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(diaryRepositoryProvider).restoreEntry(entry.id);
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Non riesco a ripristinare la voce.')),
       );
     }
   }

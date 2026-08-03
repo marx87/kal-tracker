@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
@@ -309,6 +310,98 @@ void main() {
     });
     expect(target.totals.calories, closeTo(source.totals.calories, 0.0001));
   });
+
+  test(
+    'il ripristino annulla il tombstone e accoda un upsert completo',
+    () async {
+      final profile = await profileRepository.getOrCreateMarco();
+      final day = AppTime.nowInRome();
+      final id = await diaryRepository.addManualFood(
+        profileId: profile.id,
+        input: ManualFoodInput(
+          foodName: 'Mela',
+          grams: 100,
+          per100g: const Nutrients(
+            calories: 52,
+            protein: 0.3,
+            carbs: 14,
+            fat: 0.2,
+          ),
+          mealType: MealType.snack,
+          eatenAt: day,
+        ),
+      );
+
+      await diaryRepository.deleteEntry(id);
+      await diaryRepository.restoreEntry(id);
+
+      final diary = await diaryRepository
+          .watchDay(profileId: profile.id, day: day)
+          .first;
+      final item = await (database.select(
+        database.mealItems,
+      )..where((row) => row.id.equals(id))).getSingle();
+      final outbox = await database.select(database.syncOutbox).get();
+
+      expect(diary.entries.single.id, id);
+      expect(diary.totals.calories, closeTo(52, 0.0001));
+      expect(item.deletedAt, isNull);
+      expect(outbox.map((row) => row.operation), [
+        'upsert',
+        'delete',
+        'upsert',
+      ]);
+
+      final created =
+          jsonDecode(outbox.first.payloadJson) as Map<String, dynamic>;
+      final restored =
+          jsonDecode(outbox.last.payloadJson) as Map<String, dynamic>;
+      expect(restored.keys.toSet(), created.keys.toSet());
+      expect(restored['id'], id);
+      expect(restored['food_name'], 'Mela');
+      expect(restored['grams'], 100);
+      expect(restored['total_calories'], closeTo(52, 0.0001));
+      expect(restored['total_protein'], closeTo(0.3, 0.0001));
+    },
+  );
+
+  test(
+    'il doppio ripristino è idempotente e la voce mancante è rifiutata',
+    () async {
+      final profile = await profileRepository.getOrCreateMarco();
+      final id = await diaryRepository.addManualFood(
+        profileId: profile.id,
+        input: ManualFoodInput(
+          foodName: 'Pera',
+          grams: 100,
+          per100g: const Nutrients(
+            calories: 57,
+            protein: 0.4,
+            carbs: 15,
+            fat: 0.1,
+          ),
+          mealType: MealType.snack,
+          eatenAt: AppTime.nowInRome(),
+        ),
+      );
+
+      await diaryRepository.deleteEntry(id);
+      await diaryRepository.restoreEntry(id);
+      await diaryRepository.restoreEntry(id);
+
+      final outbox = await database.select(database.syncOutbox).get();
+      expect(outbox.map((row) => row.operation), [
+        'upsert',
+        'delete',
+        'upsert',
+      ]);
+
+      await expectLater(
+        diaryRepository.restoreEntry('voce-inesistente'),
+        throwsStateError,
+      );
+    },
+  );
 
   test('la cancellazione ripetuta non duplica la outbox', () async {
     final profile = await profileRepository.getOrCreateMarco();

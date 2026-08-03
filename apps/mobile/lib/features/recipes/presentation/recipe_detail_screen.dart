@@ -21,6 +21,7 @@ class RecipeDetailScreen extends ConsumerStatefulWidget {
 
 class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   MealType _mealType = MealType.lunch;
+  double _servings = 1;
   bool _adding = false;
   bool _duplicating = false;
 
@@ -46,9 +47,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             : _RecipeDetailsBody(
                 details: recipe,
                 selectedMeal: _mealType,
+                selectedServings: _servings,
                 adding: _adding,
                 duplicating: _duplicating,
                 onMealChanged: (value) => setState(() => _mealType = value),
+                onServingsChanged: (value) => setState(() => _servings = value),
                 onAdd: () => _addServing(recipe),
                 onFavorite: () => _toggleFavorite(recipe),
                 onEdit: _openEditor,
@@ -157,35 +160,27 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
     setState(() => _adding = true);
     try {
       final profile = await ref.read(marcoProfileProvider.future);
-      final servingGrams =
-          details.ingredients.fold<double>(
-            0,
-            (total, ingredient) => total + ingredient.grams,
-          ) /
-          details.summary.servings;
-      final serving = details.summary.nutrition.perServing;
-      final per100Factor = 100 / servingGrams;
-      final per100g = Nutrients(
-        calories: serving.calories * per100Factor,
-        protein: serving.protein * per100Factor,
-        carbs: serving.carbs * per100Factor,
-        fat: serving.fat * per100Factor,
-      );
+      final basis = _ServingBasis.of(details);
 
       await ref
           .read(diaryRepositoryProvider)
           .addManualFood(
             profileId: profile.id,
             input: ManualFoodInput(
-              foodName: '${details.summary.name} · 1 porzione',
-              grams: servingGrams,
-              per100g: per100g,
+              foodName:
+                  '${details.summary.name} · ${_servingsLabel(_servings)}',
+              grams: basis.gramsFor(_servings),
+              per100g: basis.per100g,
               mealType: _mealType,
               eatenAt: AppTime.nowInRome(),
             ),
           );
       if (mounted) {
-        _message('Una porzione è stata aggiunta al diario di oggi.');
+        _message(
+          _servings == 1
+              ? 'Una porzione è stata aggiunta al diario di oggi.'
+              : '${_servingsLabel(_servings)} aggiunte al diario di oggi.',
+        );
       }
     } on Object {
       if (mounted) {
@@ -209,20 +204,26 @@ class _RecipeDetailsBody extends StatelessWidget {
   const _RecipeDetailsBody({
     required this.details,
     required this.selectedMeal,
+    required this.selectedServings,
     required this.adding,
     required this.duplicating,
     required this.onMealChanged,
+    required this.onServingsChanged,
     required this.onAdd,
     required this.onFavorite,
     required this.onEdit,
     required this.onDuplicate,
   });
 
+  static const _servingOptions = [0.5, 1.0, 1.5, 2.0];
+
   final FitRecipeDetails details;
   final MealType selectedMeal;
+  final double selectedServings;
   final bool adding;
   final bool duplicating;
   final ValueChanged<MealType> onMealChanged;
+  final ValueChanged<double> onServingsChanged;
   final VoidCallback onAdd;
   final VoidCallback onFavorite;
   final VoidCallback onEdit;
@@ -235,8 +236,14 @@ class _RecipeDetailsBody extends StatelessWidget {
     final calorieLabel = NumberFormat.decimalPattern(
       'it',
     ).format(perServing.calories.round());
+    final basis = _ServingBasis.of(details);
+    final preview = NutritionCalculator.scale(
+      per100g: basis.per100g,
+      grams: basis.gramsFor(selectedServings),
+    );
 
     return ListView(
+      key: const Key('recipe_detail_list'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
       children: [
         Card(
@@ -426,6 +433,35 @@ class _RecipeDetailsBody extends StatelessWidget {
               ),
           ],
         ),
+        const SizedBox(height: 20),
+        Text('Quante porzioni?', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final option in _servingOptions)
+              ChoiceChip(
+                key: Key('serving_option_${_servingKey(option)}'),
+                label: Text(_formatServings(option)),
+                selected: selectedServings == option,
+                onSelected: (_) => onServingsChanged(option),
+                selectedColor: AppPalette.mint,
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          key: const Key('recipe_add_preview'),
+          '${_servingsLabel(selectedServings)} · '
+          '${preview.calories.round()} kcal · '
+          'P ${preview.protein.toStringAsFixed(1)} · '
+          'C ${preview.carbs.toStringAsFixed(1)} · '
+          'G ${preview.fat.toStringAsFixed(1)}',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
+        ),
         const SizedBox(height: 16),
         FilledButton.icon(
           key: const Key('add_recipe_serving_button'),
@@ -436,11 +472,44 @@ class _RecipeDetailsBody extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.add_rounded),
-          label: Text(adding ? 'Aggiunta…' : 'Aggiungi 1 porzione al diario'),
+          label: Text(
+            adding
+                ? 'Aggiunta…'
+                : 'Aggiungi ${_servingsLabel(selectedServings)} al diario',
+          ),
         ),
       ],
     );
   }
+}
+
+class _ServingBasis {
+  const _ServingBasis({required this.servingGrams, required this.per100g});
+
+  factory _ServingBasis.of(FitRecipeDetails details) {
+    final servingGrams =
+        details.ingredients.fold<double>(
+          0,
+          (total, ingredient) => total + ingredient.grams,
+        ) /
+        details.summary.servings;
+    final serving = details.summary.nutrition.perServing;
+    final per100Factor = 100 / servingGrams;
+    return _ServingBasis(
+      servingGrams: servingGrams,
+      per100g: Nutrients(
+        calories: serving.calories * per100Factor,
+        protein: serving.protein * per100Factor,
+        carbs: serving.carbs * per100Factor,
+        fat: serving.fat * per100Factor,
+      ),
+    );
+  }
+
+  final double servingGrams;
+  final Nutrients per100g;
+
+  double gramsFor(double servings) => servingGrams * servings;
 }
 
 class _NutritionFact extends StatelessWidget {
@@ -480,3 +549,14 @@ String _mealLabel(MealType meal) => switch (meal) {
   MealType.dinner => 'Cena',
   MealType.snack => 'Spuntino',
 };
+
+String _formatServings(double value) => value % 1 == 0
+    ? value.toStringAsFixed(0)
+    : value.toStringAsFixed(1).replaceAll('.', ',');
+
+String _servingsLabel(double value) =>
+    value == 1 ? '1 porzione' : '${_formatServings(value)} porzioni';
+
+String _servingKey(double value) => value % 1 == 0
+    ? value.toStringAsFixed(0)
+    : value.toStringAsFixed(1).replaceAll('.', '_');

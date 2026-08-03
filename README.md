@@ -19,7 +19,9 @@ La beta locale `0.2.0` è operativa (fase 3 completata il 3 agosto 2026):
 - schema Supabase con RLS, Storage foto privato, coda worker a lease/privilegi minimi e migrazione per i modelli di pasto;
 - adapter Codex CLI strutturato, senza API key e senza calcolo di calorie;
 - fondazione OTA Android con manifest Ed25519 firmato e protezione anti-rollback;
-- 122 test Flutter, test Python e tooling di sicurezza eseguiti in CI;
+- client di sincronizzazione Supabase (push/pull dell'outbox, conflitti last-write-wins, backoff) con schermata dedicata, spento finché non configurato;
+- worker foto con provider selezionabile: Claude CLI predefinito, Codex disponibile;
+- 154 test Flutter, 47 test Python e tooling di sicurezza eseguiti in CI;
 - build APK debug e iOS Simulator verificate.
 
 Supabase non è ancora collegato a un progetto remoto. Upload foto, sincronizzazione tra dispositivi e import Gym Tracker restano quindi disattivati. Anche l’OTA di produzione resta disabilitato finché non vengono create e configurate le chiavi definitive; l’APK debug usa un package separato e non è una baseline OTA.

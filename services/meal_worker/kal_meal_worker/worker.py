@@ -12,7 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Protocol, TypeVar
 
-from .codex_analyzer import CodexAnalyzerError
+from .analyzer_errors import AnalyzerError
 from .contract import AnalysisResult
 from .image_file import ImageIntegrityError, verify_and_write_photo
 from .supabase_gateway import (
@@ -391,7 +391,7 @@ def _download_failure(error: BaseException) -> tuple[str, bool]:
 
 
 def _analysis_failure(error: BaseException) -> tuple[str, bool]:
-    if isinstance(error, CodexAnalyzerError):
+    if isinstance(error, AnalyzerError):
         return error.error_code, error.retryable
     return "ANALYZER_INTERNAL", True
 

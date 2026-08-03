@@ -24,8 +24,12 @@
     <string>__WORKER_EMAIL__</string>
     <key>KAL_MEAL_WORKER_KEYCHAIN_SERVICE</key>
     <string>com.kaltracker.meal-worker.supabase</string>
-    <key>KAL_CODEX_EXECUTABLE</key>
-    <string>__CODEX_EXECUTABLE_ABSOLUTE_PATH__</string>
+    <key>KAL_MEAL_ANALYZER_PROVIDER</key>
+    <string>claude</string>
+    <key>KAL_CLAUDE_EXECUTABLE</key>
+    <string>__CLAUDE_EXECUTABLE_ABSOLUTE_PATH__</string>
+    <!-- Per tornare a Codex: KAL_MEAL_ANALYZER_PROVIDER=codex e
+         KAL_CODEX_EXECUTABLE=/percorso/assoluto/codex -->
   </dict>
 
   <key>RunAtLoad</key>

@@ -7,6 +7,7 @@ import 'package:kal_tracker/core/config/app_config.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/data/diary_repository.dart';
+import 'package:kal_tracker/features/diary/data/meal_template_repository.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
@@ -230,6 +231,131 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('daily_calories'))).data,
       '0 kcal',
     );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('annullare l’eliminazione riporta la voce nel diario', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final profile = await LocalProfileRepository(database).getOrCreateMarco();
+    final entryId = await DiaryRepository(database).addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Riso basmati',
+        grams: 150,
+        per100g: const Nutrients(
+          calories: 130,
+          protein: 2.7,
+          carbs: 28,
+          fat: 0.3,
+        ),
+        mealType: MealType.lunch,
+        eatenAt: AppTime.nowInRome(),
+      ),
+    );
+
+    await tester.pumpWidget(_app(database));
+    await tester.pumpAndSettle();
+
+    await _openEntryMenu(tester, entryId);
+    await tester.tap(find.byKey(Key('delete_entry_$entryId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm_delete_entry')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Riso basmati eliminato dal diario.'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('daily_calories'))).data,
+      '0 kcal',
+    );
+
+    await tester.tap(find.text('Annulla'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Riso basmati'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('daily_calories'))).data,
+      '195 kcal',
+    );
+
+    final item = await (database.select(
+      database.mealItems,
+    )..where((row) => row.id.equals(entryId))).getSingle();
+    expect(item.deletedAt, isNull);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('eliminare un modello chiede conferma e annulla non cancella', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final profile = await LocalProfileRepository(database).getOrCreateMarco();
+    final diaryRepository = DiaryRepository(database);
+    await diaryRepository.addManualFood(
+      profileId: profile.id,
+      input: ManualFoodInput(
+        foodName: 'Riso basmati',
+        grams: 150,
+        per100g: const Nutrients(
+          calories: 130,
+          protein: 2.7,
+          carbs: 28,
+          fat: 0.3,
+        ),
+        mealType: MealType.lunch,
+        eatenAt: AppTime.nowInRome(),
+      ),
+    );
+    final templateId =
+        await MealTemplateRepository(
+          database,
+          diaryRepository: diaryRepository,
+        ).saveTemplateFromMeal(
+          profileId: profile.id,
+          day: AppTime.nowInRome(),
+          mealType: MealType.lunch,
+          name: 'Pranzo veloce',
+        );
+
+    await tester.pumpWidget(_app(database));
+    await tester.pumpAndSettle();
+
+    await _openMealMenu(tester);
+    await tester.tap(find.text('Applica un modello'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('template_menu_$templateId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('delete_template_$templateId')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('delete_template_dialog')), findsOneWidget);
+    await tester.tap(find.text('Annulla'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('apply_template_$templateId')), findsOneWidget);
+    final untouched = await (database.select(
+      database.mealTemplates,
+    )..where((row) => row.id.equals(templateId))).getSingle();
+    expect(untouched.deletedAt, isNull);
+
+    await tester.tap(find.byKey(Key('template_menu_$templateId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('delete_template_$templateId')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm_delete_template')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modello “Pranzo veloce” eliminato.'), findsOneWidget);
+    final deleted = await (database.select(
+      database.mealTemplates,
+    )..where((row) => row.id.equals(templateId))).getSingle();
+    expect(deleted.deletedAt, isNotNull);
 
     await _disposeApp(tester, database);
   });
