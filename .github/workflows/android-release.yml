@@ -200,19 +200,27 @@ jobs:
           }
 
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
-          AAPT="$BUILD_TOOLS/aapt"
+          # aapt (v1) non esiste piu' nelle build-tools recenti: si usa aapt2.
+          AAPT2="$BUILD_TOOLS/aapt2"
           APKSIGNER="$BUILD_TOOLS/apksigner"
-          [[ -x "$AAPT" && -x "$APKSIGNER" ]]
+          if [[ ! -x "$AAPT2" || ! -x "$APKSIGNER" ]]; then
+            echo "::error::aapt2 o apksigner mancanti in $BUILD_TOOLS" >&2
+            exit 1
+          fi
 
-          BADGING="$($AAPT dump badging "$APK" | head -1)"
+          # Output catturato per intero: niente head/exit a valle di una pipe (SIGPIPE con pipefail).
+          BADGING_FULL="$("$AAPT2" dump badging "$APK")"
+          BADGING="${BADGING_FULL%%$'\n'*}"
           PACKAGE="$(sed -n "s/package: name='\([^']*\)'.*/\1/p" <<<"$BADGING")"
           APK_VERSION="$(sed -n "s/.*versionName='\([^']*\)'.*/\1/p" <<<"$BADGING")"
           APK_BUILD="$(sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" <<<"$BADGING")"
-          [[ "$PACKAGE" == "it.marcomartelli.kaltracker" ]]
-          [[ "$APK_VERSION" == "$VERSION" ]]
-          [[ "$APK_BUILD" == "$BUILD_NUMBER" ]]
+          if [[ "$PACKAGE" != "it.marcomartelli.kaltracker" || "$APK_VERSION" != "$VERSION" || "$APK_BUILD" != "$BUILD_NUMBER" ]]; then
+            echo "::error::badging inatteso: package=$PACKAGE version=$APK_VERSION build=$APK_BUILD" >&2
+            exit 1
+          fi
 
-          ACTUAL_SIGNER="$($APKSIGNER verify --print-certs "$APK" | awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' | tr -d ':[:space:]')"
+          SIGNER_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK")"
+          ACTUAL_SIGNER="$(awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$SIGNER_OUTPUT" | tr -d ':[:space:]')"
           EXPECTED_SIGNER="$(tr '[:upper:]' '[:lower:]' <<<"$EXPECTED_SIGNER_SHA256" | tr -d ':[:space:]')"
           [[ "$ACTUAL_SIGNER" =~ ^[0-9a-f]{64}$ && "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]]
 
