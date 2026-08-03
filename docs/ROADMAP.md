@@ -49,7 +49,7 @@ Criterio: una giornata completa è registrabile con Mac e rete spenti, poi si si
 - [x] alimenti personali: creazione, modifica, cancellazione soft, filtro «Solo i miei»; la modifica di un alimento di base (seed) crea una copia personale senza alterare l'originale; *(fase 3)*
 - [x] campo codice a barre (solo cifre, vincolo di unicità con errore leggibile); *(fase 3)*
 - [x] controllo di coerenza sui nutrienti: avviso non bloccante quando le calorie dichiarate si discostano oltre il 20% dai fattori di Atwater; *(fase 3)*
-- [ ] catalogo italiano iniziale curato (oggi: 12 seed + alimenti personali);
+- [x] catalogo italiano offline: 795 piatti e alimenti in 10 categorie con porzioni tipiche e alias di ricerca, validazione automatica (range + Atwater) e revisione a campione; importer versionato e idempotente (`scripts/build_food_catalog.py` rigenera l'asset dai chunk sorgente); *(fase 7, v0.6.0-b6)*
 - [ ] lookup barcode Open Food Facts con fonte e versione, cache offline.
 
 ### M3 — Foto assistita sul Mac mini
@@ -145,5 +145,6 @@ Scelte fatte e cose da sapere prima di continuare. Fonte: sviluppo + revisione a
 - Chiavi e password: tutto in `~/Documents/KalTracker-Signing` (bundle firma `ota-2026-08/`, password Supabase in `supabase/`).
 
 **Piccole cose rimaste aperte**
+- Nelle sezioni Preferiti e Recenti il filtro categoria è un post-filtro sui soli id `cat-*`: un preferito personalizzato sparisce con un chip categoria attivo in quelle due sezioni (stessa classe del difetto 5 di fase 7, corretto altrove).
 - L'app non ha ancora un'icona propria né splash screen personalizzata.
-- Versione corrente `0.5.0+5` (rilasciate v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 foto assistita, v0.5.0-b5 stime kcal); l'OTA rifiuta regressioni di build number.
+- Versione corrente `0.6.0+6` (v0.1.0-b1 baseline, v0.3.0-b3 completa, v0.4.0-b4 foto, v0.5.0-b5 stime kcal, v0.6.0-b6 catalogo piatti); l'OTA rifiuta regressioni di build number.
