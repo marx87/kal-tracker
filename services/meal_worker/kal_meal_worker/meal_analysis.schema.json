@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["foods", "questions", "overallConfidence", "notes"],
+  "properties": {
+    "foods": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "alternatives",
+          "minimumGrams",
+          "suggestedGrams",
+          "maximumGrams",
+          "confidence",
+          "preparation",
+          "hiddenIngredients",
+          "uncertainty"
+        ],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 120},
+          "alternatives": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {"type": "string", "minLength": 1, "maxLength": 120}
+          },
+          "minimumGrams": {"type": "number", "exclusiveMinimum": 0, "maximum": 3000},
+          "suggestedGrams": {"type": "number", "exclusiveMinimum": 0, "maximum": 3000},
+          "maximumGrams": {"type": "number", "exclusiveMinimum": 0, "maximum": 3000},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "preparation": {
+            "type": "string",
+            "enum": ["raw", "cooked", "grilled", "baked", "fried", "boiled", "mixed", "unknown"]
+          },
+          "hiddenIngredients": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {"type": "string", "minLength": 1, "maxLength": 120}
+          },
+          "uncertainty": {"type": "string", "maxLength": 300}
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"type": "string", "minLength": 1, "maxLength": 240}
+    },
+    "overallConfidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "notes": {"type": "string", "maxLength": 500}
+  }
+}

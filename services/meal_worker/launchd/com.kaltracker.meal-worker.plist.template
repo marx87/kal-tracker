@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kaltracker.meal-worker</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__VENV_PATH__/bin/kal-meal-worker</string>
+    <string>serve</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__MEAL_WORKER_DIRECTORY__</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>KAL_SUPABASE_URL</key>
+    <string>https://__PROJECT_REF__.supabase.co</string>
+    <key>KAL_SUPABASE_PUBLISHABLE_KEY</key>
+    <string>__PUBLISHABLE_KEY__</string>
+    <key>KAL_MEAL_WORKER_EMAIL</key>
+    <string>__WORKER_EMAIL__</string>
+    <key>KAL_MEAL_WORKER_KEYCHAIN_SERVICE</key>
+    <string>com.kaltracker.meal-worker.supabase</string>
+    <key>KAL_CODEX_EXECUTABLE</key>
+    <string>__CODEX_EXECUTABLE_ABSOLUTE_PATH__</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>ThrottleInterval</key>
+  <integer>15</integer>
+
+  <key>StandardOutPath</key>
+  <string>__LOG_DIRECTORY__/meal-worker.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOG_DIRECTORY__/meal-worker.err.log</string>
+</dict>
+</plist>
