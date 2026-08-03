@@ -47,6 +47,25 @@ class CodexAnalyzerTest(unittest.TestCase):
             self.assertNotIn("KAL_SUPABASE_URL", observed["environment"])
             self.assertEqual(result.foods[0].name, "Riso basmati cotto")
 
+    def test_prompt_asks_per100g_and_bans_total_calories(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            image = Path(temp) / "meal.jpg"
+            image.write_bytes(b"jpg")
+            observed = {}
+
+            def runner(command, **kwargs):
+                observed["command"] = command
+                output = Path(command[command.index("--output-last-message") + 1])
+                output.write_text(json.dumps(valid_payload()), encoding="utf-8")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            CodexAnalyzer(runner=runner).analyze(image)
+
+            prompt = observed["command"][-1]
+            self.assertIn("PER 100 GRAMMI", prompt)
+            self.assertIn("NON fornire MAI le calorie totali", prompt)
+            self.assertIn("i totali li calcola sempre l'app", prompt)
+
     def test_rejects_unsupported_file_before_starting_codex(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             image = Path(temp) / "meal.gif"

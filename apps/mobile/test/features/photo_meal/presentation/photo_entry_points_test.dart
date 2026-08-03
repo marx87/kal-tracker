@@ -99,6 +99,9 @@ void main() {
     await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
 
+    // Risultato vecchio senza per100g: etichetta di stato come oggi.
+    expect(find.text('Foto: proposta pronta da rivedere'), findsOneWidget);
+
     final row = find.byKey(const Key('photo_job_open_job-1'));
     await tester.ensureVisible(row);
     await tester.pumpAndSettle();
@@ -106,6 +109,60 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rivedi la proposta'), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('la riga «proposta pronta» mostra il totale stimato quando '
+      'le stime per 100 g ci sono', (tester) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [buildReviewJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+    // Copia grezza del risultato del worker nuovo nel registro locale:
+    // 130 kcal/100 g × 150 g suggeriti = 195 kcal, calcolate dall'app.
+    final jobStore = InMemoryPhotoMealJobStore([
+      buildLocalJob(
+        analysisResult: {
+          'foods': [
+            {
+              'name': 'Riso basmati',
+              'alternatives': ['Riso venere'],
+              'minimumGrams': 100,
+              'suggestedGrams': 150,
+              'maximumGrams': 250,
+              'confidence': 0.8,
+              'preparation': 'boiled',
+              'per100g': {
+                'energyKcal': 130,
+                'proteinG': 2.6,
+                'carbsG': 28,
+                'fatG': 0.4,
+              },
+              'hiddenIngredients': ['olio'],
+              'uncertainty': 'Porzione stimata.',
+            },
+          ],
+          'questions': <Object?>[],
+          'overallConfidence': 0.7,
+          'notes': '',
+        },
+      ),
+    ]);
+
+    await tester.pumpWidget(
+      _app(
+        database: database,
+        gateway: gateway,
+        store: store,
+        jobStore: jobStore,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Foto: ≈ 195 kcal da rivedere'), findsOneWidget);
 
     await _disposeApp(tester, database);
   });

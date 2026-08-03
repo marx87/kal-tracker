@@ -58,7 +58,12 @@ Regole:
 - segnala olio, burro, salse, condimenti o ingredienti nascosti da confermare;
 - usa confidence basse quando porzione o alimento non sono distinguibili;
 - formula domande brevi per le informazioni che cambiano davvero il risultato;
-- non stimare calorie o macronutrienti;
+- per ogni alimento compila per100g con i valori PER 100 GRAMMI cosi com'e
+  preparato (energyKcal, proteinG, carbsG, fatG), come leggendo l'etichetta
+  nutrizionale, al massimo una cifra decimale; sono stime da confermare:
+  dichiara nel campo uncertainty della voce quanto sono incerte;
+- NON fornire MAI le calorie totali del piatto o della porzione, ne in
+  numeri ne in testo: i totali li calcola sempre l'app dai grammi confermati;
 - non salvare nulla e non eseguire comandi o altri strumenti;
 - non ispezionare file diversi dall'immagine indicata.
 """.strip()

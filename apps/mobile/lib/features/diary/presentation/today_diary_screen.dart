@@ -22,6 +22,7 @@ import 'package:kal_tracker/features/photo_meal/data/photo_meal_gateway.dart';
 import 'package:kal_tracker/features/photo_meal/data/photo_meal_repository.dart';
 import 'package:kal_tracker/features/photo_meal/domain/photo_meal_job.dart';
 import 'package:kal_tracker/features/photo_meal/domain/photo_pipeline.dart';
+import 'package:kal_tracker/features/photo_meal/presentation/meal_analysis_result.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
@@ -622,6 +623,12 @@ class _PhotoJobStatusRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reviewReady = job.status == PhotoMealJobStatus.needsReview;
+    // Totale stimato della proposta (per100g × grammi suggeriti, sempre
+    // calcolato dall'app): null per i risultati vecchi senza per100g,
+    // che mostrano l'etichetta di stato come oggi.
+    final estimatedCalories = reviewReady
+        ? estimatedCaloriesFromRaw(job.analysisResult)
+        : null;
     return InkWell(
       key: Key('photo_job_open_${job.id}'),
       // La riga «proposta pronta da rivedere» deve portare alla revisione:
@@ -649,7 +656,10 @@ class _PhotoJobStatusRow extends ConsumerWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Foto: ${job.status.label.toLowerCase()}',
+                key: Key('photo_job_label_${job.id}'),
+                estimatedCalories == null
+                    ? 'Foto: ${job.status.label.toLowerCase()}'
+                    : 'Foto: ≈ ${estimatedCalories.round()} kcal da rivedere',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(

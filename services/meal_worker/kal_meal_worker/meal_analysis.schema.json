@@ -19,6 +19,7 @@
           "maximumGrams",
           "confidence",
           "preparation",
+          "per100g",
           "hiddenIngredients",
           "uncertainty"
         ],
@@ -36,6 +37,18 @@
           "preparation": {
             "type": "string",
             "enum": ["raw", "cooked", "grilled", "baked", "fried", "boiled", "mixed", "unknown"]
+          },
+          "per100g": {
+            "type": "object",
+            "description": "Valori nutrizionali stimati per 100 g dell'alimento come preparato, letti come da etichetta; numeri con al massimo una cifra decimale. Mai calorie totali del piatto: i totali li calcola l'app dai grammi.",
+            "additionalProperties": false,
+            "required": ["energyKcal", "proteinG", "carbsG", "fatG"],
+            "properties": {
+              "energyKcal": {"type": "number", "minimum": 0, "maximum": 900},
+              "proteinG": {"type": "number", "minimum": 0, "maximum": 100},
+              "carbsG": {"type": "number", "minimum": 0, "maximum": 100},
+              "fatG": {"type": "number", "minimum": 0, "maximum": 100}
+            }
           },
           "hiddenIngredients": {
             "type": "array",

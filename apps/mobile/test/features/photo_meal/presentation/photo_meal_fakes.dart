@@ -107,12 +107,14 @@ class InMemoryPhotoMealJobStore implements PhotoMealJobStore {
   }
 }
 
-/// Job del registro locale del diario (conserva giorno e pasto richiesti).
+/// Job del registro locale del diario (conserva giorno e pasto richiesti;
+/// [analysisResult] è la copia grezza del risultato remoto).
 domain.PhotoMealJob buildLocalJob({
   String id = 'job-1',
   MealType mealType = MealType.lunch,
   DateTime? day,
   domain.PhotoMealJobStatus status = domain.PhotoMealJobStatus.needsReview,
+  Map<String, Object?>? analysisResult,
 }) => domain.PhotoMealJob(
   id: id,
   profileId: 'profile-local',
@@ -121,8 +123,11 @@ domain.PhotoMealJob buildLocalJob({
   createdAt: AppTime.nowUtc(),
   storageObject: 'owner-1/$id/meal.jpg',
   status: status,
+  analysisResult: analysisResult,
 );
 
+/// Senza [per100g] l'alimento simula un risultato del worker vecchio
+/// (già nel database): valori per 100 g da compilare a mano.
 MealAnalysisFood buildFood({
   String name = 'Riso basmati',
   List<String> alternatives = const ['Riso venere'],
@@ -133,6 +138,7 @@ MealAnalysisFood buildFood({
   String preparation = 'boiled',
   List<String> hiddenIngredients = const ['olio'],
   String uncertainty = 'Porzione stimata dal piatto.',
+  MealAnalysisPer100g? per100g,
 }) => MealAnalysisFood(
   name: name,
   alternatives: alternatives,
@@ -143,6 +149,7 @@ MealAnalysisFood buildFood({
   preparation: preparation,
   hiddenIngredients: hiddenIngredients,
   uncertainty: uncertainty,
+  per100g: per100g,
 );
 
 PhotoMealJob buildReviewJob({

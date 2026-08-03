@@ -51,7 +51,8 @@ dedicate con transizioni di stato esplicite. La v0.2 non le usa ancora.
    lo stato a `processing` e rinnova il lease non ancora scaduto.
 5. Con `complete_meal_analysis_job(job_id, mutation_id, analysis_result)` salva
    il JSON strutturato e porta il job a `needs_review`: Marco deve ancora
-   confermare alimenti e quantità prima che l'app calcoli calorie e nutrienti.
+   confermare alimenti, quantità e valori per 100 g prima che l'app calcoli
+   calorie e nutrienti dai grammi confermati.
 6. Con `fail_meal_analysis_job(job_id, mutation_id, error_code, retryable)` il
    job torna in coda se ritentabile e sotto il limite di 10 tentativi;
    altrimenti diventa `failed`.
@@ -88,9 +89,31 @@ La selezione avviene con `--provider claude|codex` o con la variabile
 di avviare la CLI, filtrano l'ambiente figlio con una allowlist (niente
 `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, token o variabili `KAL_*`) e producono
 codici errore stabili (`CLAUDE_*` / `CODEX_*`) senza mai includere l'output
-grezzo del modello. Il contratto del risultato — massimo 12 alimenti, fasce di
-grammi, confidenze, niente calorie né macro — è identico per i due provider:
-il calcolo nutrizionale resta all'app dopo la conferma di Marco.
+grezzo del modello. Il contratto del risultato è identico per i due provider.
+
+### Contratto del risultato
+
+Ogni risultato contiene al massimo 12 alimenti; per ogni voce il modello
+propone fascia di grammi, confidenza, preparazione, ingredienti nascosti e
+l'oggetto obbligatorio `per100g`, cioè i valori nutrizionali stimati per
+100 g dell'alimento così com'è preparato, come letti da un'etichetta:
+`energyKcal` (0..900), `proteinG`, `carbsG` e `fatG` (0..100), al massimo una
+cifra decimale (il worker normalizza arrotondando). Sono stime da presentare
+come tali: in revisione restano modificabili come tutto il resto.
+
+Il modello **non fornisce mai le calorie totali** del piatto o della
+porzione: i totali mostrati dall'app sono sempre
+`NutritionCalculator.scale(per100g, grams)` sui grammi confermati da Marco.
+Il contratto applica anche un controllo di coerenza Atwater lasco: se
+`energyKcal` si discosta oltre il 40% da `4·proteine + 4·carboidrati +
+9·grassi` la voce viene segnalata nel campo `uncertainty` senza essere
+rifiutata.
+
+Compatibilità con i risultati storici: i job analizzati prima di questa
+versione non hanno `per100g` e restano leggibili dall'app, che tratta i
+per-100 g mancanti come campi vuoti da compilare in revisione. Il worker
+nuovo invece esige sempre `per100g` nei risultati che produce: l'opzionalità
+è solo lato app per i dati vecchi.
 
 ## Installazione reale sul Mac
 
