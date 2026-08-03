@@ -222,7 +222,8 @@ jobs:
           echo "badging ok: package=$PACKAGE version=$APK_VERSION build=$APK_BUILD"
 
           SIGNER_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK")"
-          ACTUAL_SIGNER="$(awk -F': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$SIGNER_OUTPUT" | tr -d ':[:space:]')"
+          # apksigner 37+ scrive "V2 Signer: certificate SHA-256 digest: <hex>": l'hash e' sempre l'ultimo campo.
+          ACTUAL_SIGNER="$(awk '/certificate SHA-256 digest/ {print tolower($NF); exit}' <<<"$SIGNER_OUTPUT" | tr -d ':[:space:]')"
           EXPECTED_SIGNER="$(tr '[:upper:]' '[:lower:]' <<<"$EXPECTED_SIGNER_SHA256" | tr -d ':[:space:]')"
           [[ "$ACTUAL_SIGNER" =~ ^[0-9a-f]{64}$ ]] || fail "impronta firmatario non estratta da apksigner (output: ${SIGNER_OUTPUT:0:200})"
           [[ "$ACTUAL_SIGNER" == "$EXPECTED_SIGNER" ]] || fail "firmatario APK $ACTUAL_SIGNER diverso dall'atteso $EXPECTED_SIGNER"
