@@ -10,6 +10,7 @@ import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/diary_number_field.dart';
 import 'package:kal_tracker/features/photo_meal/data/photo_meal_job_store.dart';
 import 'package:kal_tracker/features/photo_meal/data/photo_meal_repository.dart';
+import 'package:kal_tracker/features/photo_meal/presentation/meal_analysis_result.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_jobs_gateway.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_meal_job.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_review_local_store.dart';
@@ -33,6 +34,41 @@ PhotoMealJob _twoFoodsJob() => buildReviewJob(
     ),
   ],
 );
+
+/// Risultato del worker nuovo: entrambe le voci con le stime per 100 g.
+/// Riso 130 kcal × 150 g → 195; pollo 165 kcal × 120 g → 198.
+PhotoMealJob _estimatedJob() => buildReviewJob(
+  foods: [
+    buildFood(
+      per100g: const MealAnalysisPer100g(
+        energyKcal: 130,
+        proteinG: 2,
+        carbsG: 28,
+        fatG: 0.4,
+      ),
+    ),
+    buildFood(
+      name: 'Pollo alla griglia',
+      alternatives: const [],
+      minimumGrams: 80,
+      suggestedGrams: 120,
+      maximumGrams: 200,
+      confidence: 0.6,
+      preparation: 'grilled',
+      hiddenIngredients: const [],
+      uncertainty: '',
+      per100g: const MealAnalysisPer100g(
+        energyKcal: 165,
+        proteinG: 30,
+        carbsG: 0,
+        fatG: 5,
+      ),
+    ),
+  ],
+);
+
+String _numberFieldText(WidgetTester tester, String key) =>
+    tester.widget<DiaryNumberField>(find.byKey(Key(key))).controller.text;
 
 Widget _app({
   required AppDatabase database,
@@ -113,7 +149,11 @@ void main() {
     );
 
     // Un'alternativa sostituisce il nome senza salvare nulla.
-    await tester.tap(find.byKey(const Key('food_alternative_0_0')));
+    tester.testTextInput.hide();
+    final alternativeChip = find.byKey(const Key('food_alternative_0_0'));
+    await tester.ensureVisible(alternativeChip);
+    await tester.pumpAndSettle();
+    await tester.tap(alternativeChip);
     await tester.pump();
     expect(
       tester
@@ -122,6 +162,144 @@ void main() {
           .text,
       'Riso venere',
     );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('le stime per 100 g precompilano la revisione e ricalcolano '
+      'al cambio grammi', (tester) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [_estimatedJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+
+    await tester.pumpWidget(
+      _app(database: database, gateway: gateway, store: store),
+    );
+    await tester.pumpAndSettle();
+
+    // I campi per 100 g partono dalle stime del modello, modificabili.
+    expect(_numberFieldText(tester, 'food_calories_0'), '130');
+    expect(_numberFieldText(tester, 'food_protein_0'), '2');
+    expect(_numberFieldText(tester, 'food_carbs_0'), '28');
+    expect(_numberFieldText(tester, 'food_fat_0'), '0.4');
+
+    // Le kcal per voce sono CALCOLATE (mai del modello) e presentate
+    // come stime da verificare.
+    expect(
+      tester.widget<Text>(find.byKey(const Key('food_preview_0'))).data,
+      '≈ 195 kcal · P 3.0 · C 42.0 · G 0.6 · stima da foto',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('food_preview_1'))).data,
+      '≈ 198 kcal · P 36.0 · C 0.0 · G 6.0 · stima da foto',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('review_totals'))).data,
+      'Totale selezionato: ≈ 393 kcal · P 39.0 · C 42.0 · G 6.6',
+    );
+
+    // Cambiare i grammi ricalcola voce e totale: 130 × 200 / 100 = 260.
+    await tester.enterText(find.byKey(const Key('food_grams_0')), '200');
+    await tester.pump();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('food_preview_0'))).data,
+      '≈ 260 kcal · P 4.0 · C 56.0 · G 0.8 · stima da foto',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('review_totals'))).data,
+      'Totale selezionato: ≈ 458 kcal · P 40.0 · C 56.0 · G 6.8',
+    );
+
+    // Il totale in alto conta le SOLE voci selezionate.
+    tester.testTextInput.hide();
+    await tester.pump();
+    final secondCheckbox = find.byKey(const Key('food_selected_1'));
+    await tester.ensureVisible(secondCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCheckbox);
+    await tester.pump();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('review_totals'))).data,
+      'Totale selezionato: ≈ 260 kcal · P 4.0 · C 56.0 · G 0.8',
+    );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('un risultato vecchio senza per100g parte con i campi da '
+      'compilare, come oggi', (tester) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [_twoFoodsJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+
+    await tester.pumpWidget(
+      _app(database: database, gateway: gateway, store: store),
+    );
+    await tester.pumpAndSettle();
+
+    // Nessun crash e nessuna stima inventata: valori a zero da compilare.
+    expect(_numberFieldText(tester, 'food_calories_0'), '0');
+    expect(_numberFieldText(tester, 'food_protein_0'), '0');
+    expect(_numberFieldText(tester, 'food_carbs_0'), '0');
+    expect(_numberFieldText(tester, 'food_fat_0'), '0');
+    expect(find.textContaining('stima da foto'), findsNothing);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('food_preview_0'))).data,
+      '0 kcal · P 0.0 · C 0.0 · G 0.0',
+    );
+    expect(
+      tester.widget<Text>(find.byKey(const Key('review_totals'))).data,
+      'Totale selezionato: 0 kcal · P 0.0 · C 0.0 · G 0.0',
+    );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('la conferma salva i valori corretti da Marco, non le stime '
+      'della foto', (tester) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [_estimatedJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+
+    await tester.pumpWidget(
+      _app(database: database, gateway: gateway, store: store),
+    );
+    await tester.pumpAndSettle();
+
+    // Marco corregge la stima delle kcal: 130 → 110 per 100 g.
+    await tester.enterText(find.byKey(const Key('food_calories_0')), '110');
+    tester.testTextInput.hide();
+    await tester.pump();
+
+    final secondCheckbox = find.byKey(const Key('food_selected_1'));
+    await tester.ensureVisible(secondCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCheckbox);
+    await tester.pump();
+
+    final confirmButton = find.byKey(const Key('confirm_review_button'));
+    await tester.ensureVisible(confirmButton);
+    await tester.pumpAndSettle();
+    await tester.tap(confirmButton);
+    await tester.pumpAndSettle();
+
+    // Nel diario entra il valore corretto, non quello proposto dal modello.
+    final item = (await database.select(database.mealItems).get()).single;
+    expect(item.caloriesPer100g, 110);
+    expect(item.grams, 150);
+    expect(item.totalCalories, closeTo(165, 0.001));
+    expect(item.totalProtein, closeTo(3, 0.001));
+    expect(item.totalCarbs, closeTo(42, 0.001));
+    expect(item.totalFat, closeTo(0.6, 0.001));
 
     await _disposeApp(tester, database);
   });

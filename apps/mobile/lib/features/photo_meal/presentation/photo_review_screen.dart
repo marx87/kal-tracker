@@ -17,8 +17,11 @@ import 'package:kal_tracker/features/photo_meal/presentation/photo_review_provid
 /// Regola 1: NIENTE entra nel diario senza un tocco esplicito di Marco.
 /// Ogni voce è modificabile (nome, grammi, valori per 100 g) e
 /// deselezionabile; l'anteprima usa sempre NutritionCalculator. Il modello
-/// non fornisce calorie né macro per contratto: i valori per 100 g li
-/// completa Marco prima della conferma.
+/// non fornisce MAI i totali: quando propone i valori per 100 g
+/// (`per100g`, worker nuovo) i campi arrivano precompilati con le stime e
+/// le kcal mostrate restano calcolate dall'app («≈ … · stima da foto»);
+/// senza `per100g` (risultato vecchio già nel database) i valori per
+/// 100 g li completa Marco prima della conferma, come oggi.
 class PhotoReviewScreen extends ConsumerStatefulWidget {
   const PhotoReviewScreen({required this.jobId, super.key});
 
@@ -172,12 +175,15 @@ class _PhotoReviewScreenState extends ConsumerState<PhotoReviewScreen> {
                 : (value) => setState(() => _mealType = value!),
           ),
           const SizedBox(height: 12),
+          // Il totale sta IN ALTO e si ricalcola a ogni modifica: con le
+          // stime da foto è la prima cosa che Marco vede.
+          _TotalsCard(label: _totalsLabel()),
+          const SizedBox(height: 12),
           for (final (index, row) in _rows.indexed) ...[
             _proposalCard(index, row),
             const SizedBox(height: 12),
           ],
-          _TotalsCard(label: _totalsLabel()),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
           FilledButton.icon(
             key: const Key('confirm_review_button'),
             onPressed: _busy || !_rows.any((row) => row.selected)
@@ -343,16 +349,20 @@ class _PhotoReviewScreenState extends ConsumerState<PhotoReviewScreen> {
               ),
             ],
             const SizedBox(height: 10),
+            // Con le stime da foto le kcal (sempre calcolate dall'app,
+            // mai dal modello) si presentano come stime da verificare.
             Text(
               key: Key('food_preview_$index'),
               !row.selected
                   ? 'Esclusa dal diario'
                   : preview == null
                   ? '— kcal'
-                  : '${preview.calories.round()} kcal · '
+                  : '${row.hasPhotoEstimate ? '≈ ' : ''}'
+                        '${preview.calories.round()} kcal · '
                         'P ${preview.protein.toStringAsFixed(1)} · '
                         'C ${preview.carbs.toStringAsFixed(1)} · '
-                        'G ${preview.fat.toStringAsFixed(1)}',
+                        'G ${preview.fat.toStringAsFixed(1)}'
+                        '${row.hasPhotoEstimate ? ' · stima da foto' : ''}',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: row.selected
@@ -375,14 +385,18 @@ class _PhotoReviewScreenState extends ConsumerState<PhotoReviewScreen> {
       return 'Nessuna voce selezionata.';
     }
     var totals = const Nutrients.zero();
+    var estimated = false;
     for (final row in selected) {
       final preview = row.preview;
       if (preview == null) {
         return 'Totale selezionato: — kcal (completa i valori).';
       }
+      estimated = estimated || row.hasPhotoEstimate;
       totals = totals + preview;
     }
-    return 'Totale selezionato: ${totals.calories.round()} kcal · '
+    // Il «≈» segnala che almeno una voce parte dalle stime della foto.
+    return 'Totale selezionato: ${estimated ? '≈ ' : ''}'
+        '${totals.calories.round()} kcal · '
         'P ${totals.protein.toStringAsFixed(1)} · '
         'C ${totals.carbs.toStringAsFixed(1)} · '
         'G ${totals.fat.toStringAsFixed(1)}';
@@ -597,10 +611,22 @@ class _ProposalRow {
       grams = TextEditingController(
         text: editableDiaryNumber(food.suggestedGrams),
       ),
-      calories = TextEditingController(text: '0'),
-      protein = TextEditingController(text: '0'),
-      carbs = TextEditingController(text: '0'),
-      fat = TextEditingController(text: '0');
+      // Con `per100g` i campi partono dalle stime del modello (sempre
+      // modificabili); senza (risultato vecchio già nel database) restano
+      // gli «0» da compilare a mano, come oggi.
+      calories = TextEditingController(
+        text: _initialPer100g(food.per100g?.energyKcal),
+      ),
+      protein = TextEditingController(
+        text: _initialPer100g(food.per100g?.proteinG),
+      ),
+      carbs = TextEditingController(
+        text: _initialPer100g(food.per100g?.carbsG),
+      ),
+      fat = TextEditingController(text: _initialPer100g(food.per100g?.fatG));
+
+  static String _initialPer100g(double? value) =>
+      value == null ? '0' : editableDiaryNumber(value);
 
   final MealAnalysisFood food;
   final TextEditingController name;
@@ -610,6 +636,10 @@ class _ProposalRow {
   final TextEditingController carbs;
   final TextEditingController fat;
   bool selected = true;
+
+  /// I valori per 100 g sono partiti dalle stime della foto: l'anteprima
+  /// va presentata come stima da verificare.
+  bool get hasPhotoEstimate => food.per100g != null;
 
   /// Anteprima nutrizionale: SEMPRE via NutritionCalculator.scale.
   Nutrients? get preview {

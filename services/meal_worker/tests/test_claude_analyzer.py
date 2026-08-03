@@ -78,9 +78,42 @@ class ClaudeAnalyzerTest(unittest.TestCase):
             # $schema/$id non devono mai arrivare a --json-schema.
             self.assertNotIn("$schema", schema)
             self.assertNotIn("$id", schema)
+            food_schema = schema["properties"]["foods"]["items"]
+            self.assertIn("per100g", food_schema["required"])
+            per100g_schema = food_schema["properties"]["per100g"]
+            self.assertFalse(per100g_schema["additionalProperties"])
+            self.assertEqual(
+                per100g_schema["required"],
+                ["energyKcal", "proteinG", "carbsG", "fatG"],
+            )
+            self.assertEqual(
+                per100g_schema["properties"]["energyKcal"]["maximum"], 900
+            )
+            self.assertEqual(
+                per100g_schema["properties"]["proteinG"]["maximum"], 100
+            )
             self.assertNotIn("ANTHROPIC_API_KEY", observed["environment"])
             self.assertNotIn("KAL_SUPABASE_URL", observed["environment"])
             self.assertEqual(result.foods[0].name, "Riso basmati cotto")
+
+    def test_prompt_asks_per100g_and_bans_total_calories(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            image = Path(temp) / "meal.jpg"
+            image.write_bytes(b"jpg")
+            observed = {}
+            runner = make_runner(
+                wrapper_stdout(
+                    json.dumps(valid_payload()), structured=valid_payload()
+                ),
+                observed=observed,
+            )
+
+            ClaudeAnalyzer(runner=runner).analyze(image)
+
+            prompt = observed["command"][-1]
+            self.assertIn("PER 100 GRAMMI", prompt)
+            self.assertIn("NON fornire MAI le calorie totali", prompt)
+            self.assertIn("i totali li calcola sempre l'app", prompt)
 
     def test_accepts_wrapper_with_result_string(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
