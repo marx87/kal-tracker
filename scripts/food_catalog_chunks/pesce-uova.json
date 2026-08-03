@@ -1,0 +1,607 @@
+[
+  {
+    "name": "Salmone alla griglia",
+    "aliases": ["salmone ai ferri", "salmone in padella", "filetto di salmone"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 208, "proteinPer100g": 22, "carbsPer100g": 0, "fatPer100g": 13,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Salmone al forno",
+    "aliases": ["trancio di salmone al forno"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 210, "proteinPer100g": 22.5, "carbsPer100g": 0.5, "fatPer100g": 13,
+    "portionGrams": 180,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Salmone affumicato",
+    "aliases": ["salmone fumè", "fette di salmone affumicato"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 147, "proteinPer100g": 22, "carbsPer100g": 0.5, "fatPer100g": 6.5,
+    "portionGrams": 80
+  },
+  {
+    "name": "Tartare di salmone",
+    "aliases": ["salmone crudo", "cubetti di salmone"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 190, "proteinPer100g": 20, "carbsPer100g": 1, "fatPer100g": 12,
+    "portionGrams": 120,
+    "note": "condita con olio e limone"
+  },
+  {
+    "name": "Tonno fresco alla griglia",
+    "aliases": ["tonno scottato", "tonno in padella", "trancio di tonno"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 184, "proteinPer100g": 30, "carbsPer100g": 0, "fatPer100g": 6.3,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Tartare di tonno",
+    "aliases": ["tonno crudo", "cubetti di tonno"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 155, "proteinPer100g": 22, "carbsPer100g": 1, "fatPer100g": 7,
+    "portionGrams": 120,
+    "note": "condita con olio e limone"
+  },
+  {
+    "name": "Tonno sott'olio sgocciolato",
+    "aliases": ["tonno in scatola", "scatoletta di tonno", "tonno all'olio"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 192, "proteinPer100g": 25.5, "carbsPer100g": 0, "fatPer100g": 10,
+    "portionGrams": 80,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Tonno al naturale",
+    "aliases": ["tonno in scatola al naturale", "tonno senza olio"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 103, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 0.8,
+    "portionGrams": 80,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Insalata di tonno e fagioli",
+    "aliases": ["tonno e fagioli", "fagioli con tonno e cipolla"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 130, "proteinPer100g": 11, "carbsPer100g": 10, "fatPer100g": 5.5,
+    "portionGrams": 250,
+    "note": "con condimento medio"
+  },
+  {
+    "name": "Orata al forno",
+    "aliases": ["filetto di orata", "orata con patate"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 160, "proteinPer100g": 21, "carbsPer100g": 0.5, "fatPer100g": 8,
+    "portionGrams": 200,
+    "note": "con filo d'olio, valori senza patate"
+  },
+  {
+    "name": "Orata alla griglia",
+    "aliases": ["orata ai ferri", "orata alla piastra"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 140, "proteinPer100g": 20.5, "carbsPer100g": 0.5, "fatPer100g": 6.2,
+    "portionGrams": 200,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Branzino al forno",
+    "aliases": ["spigola al forno", "branzino con patate"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 155, "proteinPer100g": 21, "carbsPer100g": 0.5, "fatPer100g": 7.5,
+    "portionGrams": 200,
+    "note": "con filo d'olio, valori senza patate"
+  },
+  {
+    "name": "Branzino al cartoccio",
+    "aliases": ["spigola al cartoccio", "pesce al cartoccio"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 130, "proteinPer100g": 19, "carbsPer100g": 1.5, "fatPer100g": 5.2,
+    "portionGrams": 250
+  },
+  {
+    "name": "Merluzzo lesso",
+    "aliases": ["merluzzo al vapore", "merluzzo bollito", "filetto di merluzzo"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 96, "proteinPer100g": 21.5, "carbsPer100g": 0, "fatPer100g": 1,
+    "portionGrams": 200,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Merluzzo alla livornese",
+    "aliases": ["merluzzo al pomodoro", "merluzzo in umido"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 110, "proteinPer100g": 16, "carbsPer100g": 4, "fatPer100g": 3.5,
+    "portionGrams": 250,
+    "note": "con pomodoro e olive"
+  },
+  {
+    "name": "Bastoncini di pesce",
+    "aliases": ["bastoncini di merluzzo", "fish sticks", "bastoncini impanati"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 220, "proteinPer100g": 12.5, "carbsPer100g": 19, "fatPer100g": 10.5,
+    "portionGrams": 100,
+    "note": "4 bastoncini circa 100 g, cotti in forno"
+  },
+  {
+    "name": "Filetto di platessa impanato",
+    "aliases": ["platessa panata", "filetto di pesce impanato", "sofficini di pesce"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 200, "proteinPer100g": 14, "carbsPer100g": 15, "fatPer100g": 9.5,
+    "portionGrams": 150,
+    "note": "cotto in padella o forno"
+  },
+  {
+    "name": "Nasello al vapore",
+    "aliases": ["nasello lesso", "filetto di nasello"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 90, "proteinPer100g": 17, "carbsPer100g": 1, "fatPer100g": 1.8,
+    "portionGrams": 200,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Baccalà fritto",
+    "aliases": ["filetto di baccalà fritto", "baccalà in pastella", "filetti di baccalà"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 247, "proteinPer100g": 15, "carbsPer100g": 12, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "in pastella, da friggitoria"
+  },
+  {
+    "name": "Baccalà in guazzetto",
+    "aliases": ["baccalà alla romana", "baccalà al pomodoro", "baccalà in umido"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 120, "proteinPer100g": 17, "carbsPer100g": 4, "fatPer100g": 4,
+    "portionGrams": 250,
+    "note": "con pomodoro"
+  },
+  {
+    "name": "Baccalà mantecato",
+    "aliases": ["crema di baccalà"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 220, "proteinPer100g": 13, "carbsPer100g": 2, "fatPer100g": 18,
+    "portionGrams": 100,
+    "note": "mantecato con olio"
+  },
+  {
+    "name": "Sogliola alla mugnaia",
+    "aliases": ["sogliola al burro", "sogliola in padella"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 180, "proteinPer100g": 18, "carbsPer100g": 5, "fatPer100g": 10,
+    "portionGrams": 180,
+    "note": "con burro e farina"
+  },
+  {
+    "name": "Sogliola ai ferri",
+    "aliases": ["sogliola alla griglia", "sogliola alla piastra"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 100, "proteinPer100g": 19.5, "carbsPer100g": 0.5, "fatPer100g": 2,
+    "portionGrams": 180,
+    "note": "valori da cotto, poco condimento"
+  },
+  {
+    "name": "Trota al forno",
+    "aliases": ["trota salmonata al forno", "filetto di trota"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 150, "proteinPer100g": 21, "carbsPer100g": 0.5, "fatPer100g": 7,
+    "portionGrams": 200,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Trota affumicata",
+    "aliases": ["filetti di trota affumicata", "trota salmonata affumicata"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 120, "proteinPer100g": 21, "carbsPer100g": 0.5, "fatPer100g": 4,
+    "portionGrams": 80
+  },
+  {
+    "name": "Pesce spada alla griglia",
+    "aliases": ["spada ai ferri", "trancio di pesce spada"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 172, "proteinPer100g": 23.5, "carbsPer100g": 0, "fatPer100g": 8.5,
+    "portionGrams": 180,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Pesce spada alla siciliana",
+    "aliases": ["spada con pomodorini", "pesce spada in padella"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 135, "proteinPer100g": 16, "carbsPer100g": 3.5, "fatPer100g": 6.5,
+    "portionGrams": 250,
+    "note": "con pomodorini, olive e capperi"
+  },
+  {
+    "name": "Alici marinate",
+    "aliases": ["acciughe marinate", "alici al limone"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 165, "proteinPer100g": 16, "carbsPer100g": 1.5, "fatPer100g": 10.5,
+    "portionGrams": 100,
+    "note": "marinate in olio e aceto o limone"
+  },
+  {
+    "name": "Alici fritte",
+    "aliases": ["acciughe fritte", "alici dorate e fritte", "alici impanate"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 250, "proteinPer100g": 18, "carbsPer100g": 11, "fatPer100g": 15,
+    "portionGrams": 150,
+    "note": "infarinate e fritte"
+  },
+  {
+    "name": "Acciughe sott'olio",
+    "aliases": ["alici sott'olio", "filetti di acciuga"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 206, "proteinPer100g": 25, "carbsPer100g": 0.5, "fatPer100g": 11.5,
+    "portionGrams": 25,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Sarde alla griglia",
+    "aliases": ["sardine ai ferri", "sarde arrosto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 195, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 11,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Sgombro alla griglia",
+    "aliases": ["maccarello", "sgombro ai ferri", "sgombro al forno"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 240, "proteinPer100g": 24, "carbsPer100g": 0, "fatPer100g": 16,
+    "portionGrams": 150,
+    "note": "valori da cotto"
+  },
+  {
+    "name": "Sgombro sott'olio sgocciolato",
+    "aliases": ["filetti di sgombro in scatola", "sgombro in scatola"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 220, "proteinPer100g": 22, "carbsPer100g": 0, "fatPer100g": 14.5,
+    "portionGrams": 80,
+    "note": "peso sgocciolato"
+  },
+  {
+    "name": "Anguilla alla griglia",
+    "aliases": ["capitone", "anguilla arrosto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 280, "proteinPer100g": 22, "carbsPer100g": 0, "fatPer100g": 21,
+    "portionGrams": 120,
+    "note": "valori da cotto, pesce molto grasso"
+  },
+  {
+    "name": "Zuppa di pesce",
+    "aliases": ["guazzetto di pesce", "cacciucco", "brodetto di pesce"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 105, "proteinPer100g": 12, "carbsPer100g": 4, "fatPer100g": 4.5,
+    "portionGrams": 350,
+    "note": "senza pane, peso con sugo"
+  },
+  {
+    "name": "Frittura di paranza",
+    "aliases": ["fritto di paranza", "pesciolini fritti", "paranza"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 260, "proteinPer100g": 16, "carbsPer100g": 13, "fatPer100g": 16.5,
+    "portionGrams": 200,
+    "note": "infarinata e fritta"
+  },
+  {
+    "name": "Frittura mista di pesce",
+    "aliases": ["fritto misto di mare", "frittura calamari e gamberi", "fritto misto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 255, "proteinPer100g": 14.5, "carbsPer100g": 14, "fatPer100g": 16,
+    "portionGrams": 250,
+    "note": "da ristorante o friggitoria"
+  },
+  {
+    "name": "Calamari fritti",
+    "aliases": ["anelli di calamari fritti", "calamari impanati", "totani fritti"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 240, "proteinPer100g": 14, "carbsPer100g": 14, "fatPer100g": 14.5,
+    "portionGrams": 200,
+    "note": "infarinati e fritti"
+  },
+  {
+    "name": "Calamari alla griglia",
+    "aliases": ["calamaro ai ferri", "calamari alla piastra"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 105, "proteinPer100g": 17, "carbsPer100g": 2, "fatPer100g": 3,
+    "portionGrams": 200,
+    "note": "con filo d'olio"
+  },
+  {
+    "name": "Calamari ripieni",
+    "aliases": ["calamari farciti", "totani ripieni"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 145, "proteinPer100g": 13, "carbsPer100g": 7, "fatPer100g": 7,
+    "portionGrams": 250,
+    "note": "ripieno di pane e prezzemolo"
+  },
+  {
+    "name": "Seppie con piselli",
+    "aliases": ["seppie e piselli", "seppie in umido"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 95, "proteinPer100g": 12, "carbsPer100g": 5, "fatPer100g": 2.8,
+    "portionGrams": 300,
+    "note": "in umido con pomodoro"
+  },
+  {
+    "name": "Seppia alla griglia",
+    "aliases": ["seppie ai ferri", "seppia alla piastra"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 90, "proteinPer100g": 16, "carbsPer100g": 1.5, "fatPer100g": 1.8,
+    "portionGrams": 200,
+    "note": "valori da cotto, poco condimento"
+  },
+  {
+    "name": "Moscardini in umido",
+    "aliases": ["moscardini alla luciana", "moscardini al pomodoro"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 95, "proteinPer100g": 13, "carbsPer100g": 3, "fatPer100g": 3,
+    "portionGrams": 250,
+    "note": "con pomodoro"
+  },
+  {
+    "name": "Polpo lesso",
+    "aliases": ["polipo lesso", "polpo bollito", "polpo con limone"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 85, "proteinPer100g": 15, "carbsPer100g": 2, "fatPer100g": 1.5,
+    "portionGrams": 200,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Insalata di polpo e patate",
+    "aliases": ["polpo e patate", "insalata di polipo"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 110, "proteinPer100g": 10, "carbsPer100g": 8, "fatPer100g": 4.5,
+    "portionGrams": 250,
+    "note": "condita con olio"
+  },
+  {
+    "name": "Polpo alla luciana",
+    "aliases": ["polpo in umido", "polpo al pomodoro"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 105, "proteinPer100g": 12, "carbsPer100g": 3.5, "fatPer100g": 4.5,
+    "portionGrams": 250,
+    "note": "in umido con pomodoro"
+  },
+  {
+    "name": "Gamberi al vapore",
+    "aliases": ["gamberetti lessi", "code di gambero lesse", "gamberi sgusciati"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 99, "proteinPer100g": 21, "carbsPer100g": 0.5, "fatPer100g": 1.1,
+    "portionGrams": 150,
+    "note": "sgusciati, senza condimento"
+  },
+  {
+    "name": "Gamberoni alla griglia",
+    "aliases": ["gamberoni ai ferri", "mazzancolle alla griglia"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 110, "proteinPer100g": 20, "carbsPer100g": 0.5, "fatPer100g": 3,
+    "portionGrams": 150,
+    "note": "peso della parte edibile"
+  },
+  {
+    "name": "Gamberi in padella aglio e olio",
+    "aliases": ["gamberi saltati", "code di gambero in padella", "gamberi aglio olio e peperoncino"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 150, "proteinPer100g": 19, "carbsPer100g": 1, "fatPer100g": 8,
+    "portionGrams": 150,
+    "note": "sgusciati, con olio"
+  },
+  {
+    "name": "Gamberi fritti",
+    "aliases": ["code di gambero fritte", "gamberi in pastella", "gamberi impanati"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 250, "proteinPer100g": 13.5, "carbsPer100g": 15, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "infarinati e fritti"
+  },
+  {
+    "name": "Scampi alla griglia",
+    "aliases": ["scampi ai ferri", "scampi arrosto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 105, "proteinPer100g": 20, "carbsPer100g": 1, "fatPer100g": 2.2,
+    "portionGrams": 200,
+    "note": "peso della parte edibile"
+  },
+  {
+    "name": "Cozze al vapore",
+    "aliases": ["impepata di cozze", "cozze sgusciate", "pepata di cozze"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 150, "proteinPer100g": 20, "carbsPer100g": 6, "fatPer100g": 4.5,
+    "portionGrams": 150,
+    "note": "peso senza guscio"
+  },
+  {
+    "name": "Cozze alla marinara",
+    "aliases": ["cozze al pomodoro", "zuppa di cozze"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 120, "proteinPer100g": 13, "carbsPer100g": 6, "fatPer100g": 4.8,
+    "portionGrams": 250,
+    "note": "con pomodoro, peso senza guscio"
+  },
+  {
+    "name": "Cozze gratinate",
+    "aliases": ["cozze al forno", "cozze ripiene"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 180, "proteinPer100g": 13, "carbsPer100g": 10, "fatPer100g": 10,
+    "portionGrams": 150,
+    "note": "con pangrattato, peso senza guscio"
+  },
+  {
+    "name": "Sauté di vongole",
+    "aliases": ["vongole al vapore", "vongole in padella", "vongole sgusciate"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 140, "proteinPer100g": 20, "carbsPer100g": 4.5, "fatPer100g": 4,
+    "portionGrams": 100,
+    "note": "peso senza guscio"
+  },
+  {
+    "name": "Capesante gratinate",
+    "aliases": ["cappesante al forno", "conchiglie gratinate"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 160, "proteinPer100g": 14, "carbsPer100g": 8, "fatPer100g": 8,
+    "portionGrams": 120,
+    "note": "3 capesante circa 120 g"
+  },
+  {
+    "name": "Insalata di mare",
+    "aliases": ["antipasto di mare", "insalata di frutti di mare"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 130, "proteinPer100g": 13, "carbsPer100g": 5, "fatPer100g": 6.5,
+    "portionGrams": 200,
+    "note": "condita con olio e limone"
+  },
+  {
+    "name": "Surimi",
+    "aliases": ["bastoncini di surimi", "polpa di granchio"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 95, "proteinPer100g": 8, "carbsPer100g": 13, "fatPer100g": 0.9,
+    "portionGrams": 80
+  },
+  {
+    "name": "Uova sode",
+    "aliases": ["uovo sodo", "uovo bollito"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 155, "proteinPer100g": 12.6, "carbsPer100g": 1.1, "fatPer100g": 10.6,
+    "portionGrams": 60,
+    "note": "1 uovo circa 60 g"
+  },
+  {
+    "name": "Uova strapazzate",
+    "aliases": ["strapazzate", "uova strapazzate al burro"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 170, "proteinPer100g": 11.5, "carbsPer100g": 1.5, "fatPer100g": 13,
+    "portionGrams": 120,
+    "note": "2 uova con poco burro"
+  },
+  {
+    "name": "Uova all'occhio di bue",
+    "aliases": ["uovo al tegamino", "uova fritte", "uovo in padella"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 195, "proteinPer100g": 13, "carbsPer100g": 1, "fatPer100g": 15.5,
+    "portionGrams": 110,
+    "note": "2 uova cotte con olio o burro"
+  },
+  {
+    "name": "Uova in camicia",
+    "aliases": ["uovo poché", "uovo affogato"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 145, "proteinPer100g": 12.5, "carbsPer100g": 0.8, "fatPer100g": 10,
+    "portionGrams": 100,
+    "note": "2 uova, senza condimento"
+  },
+  {
+    "name": "Uova alla coque",
+    "aliases": ["uovo alla coque", "uovo barzotto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 145, "proteinPer100g": 12.5, "carbsPer100g": 1, "fatPer100g": 10,
+    "portionGrams": 60,
+    "note": "1 uovo circa 60 g"
+  },
+  {
+    "name": "Frittata semplice",
+    "aliases": ["frittata di sole uova", "frittata in padella"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 195, "proteinPer100g": 12, "carbsPer100g": 1.5, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "cotta con olio"
+  },
+  {
+    "name": "Frittata di zucchine",
+    "aliases": ["frittata con le zucchine"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 160, "proteinPer100g": 9.5, "carbsPer100g": 4, "fatPer100g": 12,
+    "portionGrams": 180
+  },
+  {
+    "name": "Frittata di cipolle",
+    "aliases": ["frittata con le cipolle"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 175, "proteinPer100g": 9.5, "carbsPer100g": 6, "fatPer100g": 13,
+    "portionGrams": 180
+  },
+  {
+    "name": "Frittata di patate",
+    "aliases": ["frittata con le patate", "frittata patate e cipolle"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 190, "proteinPer100g": 8, "carbsPer100g": 12, "fatPer100g": 12.5,
+    "portionGrams": 200
+  },
+  {
+    "name": "Frittata con formaggio",
+    "aliases": ["frittata al parmigiano", "frittata al formaggio"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 215, "proteinPer100g": 13.5, "carbsPer100g": 1.5, "fatPer100g": 17.5,
+    "portionGrams": 150
+  },
+  {
+    "name": "Frittata di spinaci",
+    "aliases": ["frittata con gli spinaci", "frittata verde"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 150, "proteinPer100g": 10, "carbsPer100g": 3.5, "fatPer100g": 11,
+    "portionGrams": 180
+  },
+  {
+    "name": "Frittata di asparagi",
+    "aliases": ["frittata con gli asparagi"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 155, "proteinPer100g": 10.5, "carbsPer100g": 3, "fatPer100g": 11.5,
+    "portionGrams": 180
+  },
+  {
+    "name": "Frittata di pasta",
+    "aliases": ["frittata di maccheroni", "pasta frittata", "frittata di spaghetti"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 230, "proteinPer100g": 10, "carbsPer100g": 22, "fatPer100g": 12,
+    "portionGrams": 200,
+    "note": "con pasta avanzata e formaggio"
+  },
+  {
+    "name": "Omelette",
+    "aliases": ["omelette semplice", "omelette alle erbe"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 185, "proteinPer100g": 12, "carbsPer100g": 1.5, "fatPer100g": 14.5,
+    "portionGrams": 130,
+    "note": "2 uova con poco burro"
+  },
+  {
+    "name": "Omelette prosciutto e formaggio",
+    "aliases": ["omelette farcita", "omelette al prosciutto"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 210, "proteinPer100g": 15, "carbsPer100g": 2, "fatPer100g": 16,
+    "portionGrams": 180
+  },
+  {
+    "name": "Uova in purgatorio",
+    "aliases": ["uova al pomodoro", "uova al sugo", "uova alla contadina"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 130, "proteinPer100g": 8, "carbsPer100g": 5, "fatPer100g": 8.5,
+    "portionGrams": 250,
+    "note": "2 uova cotte nel sugo di pomodoro"
+  },
+  {
+    "name": "Uova sode ripiene",
+    "aliases": ["uova ripiene", "uova alla diavola", "uova con maionese"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 185, "proteinPer100g": 11, "carbsPer100g": 2, "fatPer100g": 14.5,
+    "portionGrams": 100,
+    "note": "con maionese o tonno"
+  },
+  {
+    "name": "Albume d'uovo cotto",
+    "aliases": ["albumi", "bianco d'uovo", "albumi in padella"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 52, "proteinPer100g": 10.9, "carbsPer100g": 0.7, "fatPer100g": 0.2,
+    "portionGrams": 100,
+    "note": "senza condimento"
+  },
+  {
+    "name": "Tuorlo d'uovo",
+    "aliases": ["rosso d'uovo", "tuorlo"],
+    "category": "Pesce e uova",
+    "kcalPer100g": 325, "proteinPer100g": 15.9, "carbsPer100g": 0.6, "fatPer100g": 29,
+    "portionGrams": 20,
+    "note": "1 tuorlo circa 18-20 g"
+  }
+]

@@ -1,0 +1,602 @@
+[
+  {
+    "name": "Mela",
+    "aliases": ["mela golden", "mela fuji", "mela rossa"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 52, "proteinPer100g": 0.3, "carbsPer100g": 13.8, "fatPer100g": 0.2,
+    "portionGrams": 180,
+    "note": "1 mela media sbucciata o con buccia"
+  },
+  {
+    "name": "Pera",
+    "aliases": ["pera williams", "pera abate"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 57, "proteinPer100g": 0.4, "carbsPer100g": 15.2, "fatPer100g": 0.1,
+    "portionGrams": 180,
+    "note": "1 pera media"
+  },
+  {
+    "name": "Banana",
+    "aliases": ["banane"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 89, "proteinPer100g": 1.1, "carbsPer100g": 22.8, "fatPer100g": 0.3,
+    "portionGrams": 120,
+    "note": "1 banana media sbucciata"
+  },
+  {
+    "name": "Arancia",
+    "aliases": ["arance", "arancia tarocco", "arancia rossa"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 47, "proteinPer100g": 0.9, "carbsPer100g": 11.8, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "1 arancia grande sbucciata"
+  },
+  {
+    "name": "Mandarino",
+    "aliases": ["mandarini", "mandarancio"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 53, "proteinPer100g": 0.8, "carbsPer100g": 13.3, "fatPer100g": 0.3,
+    "portionGrams": 100,
+    "note": "2 mandarini medi sbucciati"
+  },
+  {
+    "name": "Clementina",
+    "aliases": ["clementine"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 47, "proteinPer100g": 0.9, "carbsPer100g": 12.0, "fatPer100g": 0.2,
+    "portionGrams": 80,
+    "note": "1 clementina grande sbucciata"
+  },
+  {
+    "name": "Kiwi",
+    "aliases": ["kiwi verde"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 61, "proteinPer100g": 1.1, "carbsPer100g": 14.7, "fatPer100g": 0.5,
+    "portionGrams": 100,
+    "note": "1 kiwi grande o 2 piccoli"
+  },
+  {
+    "name": "Fragole",
+    "aliases": ["fragola"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 32, "proteinPer100g": 0.7, "carbsPer100g": 7.7, "fatPer100g": 0.3,
+    "portionGrams": 150,
+    "note": "senza zucchero né limone"
+  },
+  {
+    "name": "Ciliegie",
+    "aliases": ["ciliegia", "duroni"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 63, "proteinPer100g": 1.1, "carbsPer100g": 16.0, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "peso senza nocciolo"
+  },
+  {
+    "name": "Albicocche",
+    "aliases": ["albicocca"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 48, "proteinPer100g": 1.4, "carbsPer100g": 11.1, "fatPer100g": 0.4,
+    "portionGrams": 120,
+    "note": "3 albicocche medie"
+  },
+  {
+    "name": "Pesca",
+    "aliases": ["pesche", "pesca gialla", "percoca"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 39, "proteinPer100g": 0.9, "carbsPer100g": 9.5, "fatPer100g": 0.3,
+    "portionGrams": 200,
+    "note": "1 pesca grande"
+  },
+  {
+    "name": "Pesca noce",
+    "aliases": ["nettarina", "pesca nettarina"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 44, "proteinPer100g": 1.1, "carbsPer100g": 10.6, "fatPer100g": 0.3,
+    "portionGrams": 150,
+    "note": "1 pesca noce media"
+  },
+  {
+    "name": "Susina",
+    "aliases": ["susine", "prugna fresca", "prugne fresche"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 46, "proteinPer100g": 0.7, "carbsPer100g": 11.4, "fatPer100g": 0.3,
+    "portionGrams": 100,
+    "note": "2 susine medie"
+  },
+  {
+    "name": "Uva",
+    "aliases": ["uva bianca", "uva nera", "uva da tavola"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 69, "proteinPer100g": 0.7, "carbsPer100g": 18.1, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "1 grappolo piccolo"
+  },
+  {
+    "name": "Anguria",
+    "aliases": ["cocomero", "melone d'acqua"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 30, "proteinPer100g": 0.6, "carbsPer100g": 7.5, "fatPer100g": 0.2,
+    "portionGrams": 300,
+    "note": "1 fetta grande, solo polpa"
+  },
+  {
+    "name": "Melone",
+    "aliases": ["melone cantalupo", "melone giallo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 34, "proteinPer100g": 0.8, "carbsPer100g": 8.2, "fatPer100g": 0.2,
+    "portionGrams": 200,
+    "note": "2 fette, solo polpa"
+  },
+  {
+    "name": "Fichi freschi",
+    "aliases": ["fico", "fichi"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 74, "proteinPer100g": 0.8, "carbsPer100g": 19.2, "fatPer100g": 0.3,
+    "portionGrams": 100,
+    "note": "2 fichi medi"
+  },
+  {
+    "name": "Fichi d'India",
+    "aliases": ["fico d'india", "fichidindia"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 55, "proteinPer100g": 0.8, "carbsPer100g": 13.0, "fatPer100g": 0.5,
+    "portionGrams": 150,
+    "note": "2-3 frutti sbucciati"
+  },
+  {
+    "name": "Cachi",
+    "aliases": ["caco", "kaki", "loti"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 70, "proteinPer100g": 0.6, "carbsPer100g": 18.6, "fatPer100g": 0.3,
+    "portionGrams": 150,
+    "note": "1 caco medio"
+  },
+  {
+    "name": "Melograno",
+    "aliases": ["melagrana", "chicchi di melograno"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 83, "proteinPer100g": 1.7, "carbsPer100g": 18.7, "fatPer100g": 1.2,
+    "portionGrams": 100,
+    "note": "solo chicchi"
+  },
+  {
+    "name": "Ananas",
+    "aliases": ["ananas fresco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 50, "proteinPer100g": 0.5, "carbsPer100g": 13.1, "fatPer100g": 0.1,
+    "portionGrams": 150,
+    "note": "2 fette, solo polpa"
+  },
+  {
+    "name": "Mango",
+    "aliases": ["mango fresco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 60, "proteinPer100g": 0.8, "carbsPer100g": 15.0, "fatPer100g": 0.4,
+    "portionGrams": 150,
+    "note": "mezzo mango grande"
+  },
+  {
+    "name": "Avocado",
+    "aliases": ["avocado fresco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 160, "proteinPer100g": 2.0, "carbsPer100g": 8.5, "fatPer100g": 14.7,
+    "portionGrams": 100,
+    "note": "mezzo avocado, solo polpa"
+  },
+  {
+    "name": "Pompelmo",
+    "aliases": ["pompelmo rosa", "pompelmo giallo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 42, "proteinPer100g": 0.8, "carbsPer100g": 10.7, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "1 pompelmo medio sbucciato"
+  },
+  {
+    "name": "Mirtilli",
+    "aliases": ["mirtillo", "mirtilli freschi"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 57, "proteinPer100g": 0.7, "carbsPer100g": 14.5, "fatPer100g": 0.3,
+    "portionGrams": 100,
+    "note": "1 vaschetta piccola"
+  },
+  {
+    "name": "Lamponi",
+    "aliases": ["lampone"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 52, "proteinPer100g": 1.2, "carbsPer100g": 11.9, "fatPer100g": 0.7,
+    "portionGrams": 100,
+    "note": "1 vaschetta piccola"
+  },
+  {
+    "name": "More",
+    "aliases": ["mora", "more di rovo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 43, "proteinPer100g": 1.4, "carbsPer100g": 9.6, "fatPer100g": 0.5,
+    "portionGrams": 100,
+    "note": "1 vaschetta piccola"
+  },
+  {
+    "name": "Frutti di bosco misti",
+    "aliases": ["frutti di bosco", "misto bosco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 45, "proteinPer100g": 1.0, "carbsPer100g": 10.5, "fatPer100g": 0.4,
+    "portionGrams": 125,
+    "note": "misto fresco o scongelato, senza zucchero"
+  },
+  {
+    "name": "Ribes",
+    "aliases": ["ribes rosso"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 56, "proteinPer100g": 1.4, "carbsPer100g": 13.8, "fatPer100g": 0.2,
+    "portionGrams": 80,
+    "note": ""
+  },
+  {
+    "name": "Nespole",
+    "aliases": ["nespola"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 47, "proteinPer100g": 0.4, "carbsPer100g": 12.1, "fatPer100g": 0.2,
+    "portionGrams": 120,
+    "note": "3-4 nespole sbucciate"
+  },
+  {
+    "name": "Papaya",
+    "aliases": ["papaia"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 43, "proteinPer100g": 0.5, "carbsPer100g": 11.0, "fatPer100g": 0.3,
+    "portionGrams": 150,
+    "note": "solo polpa"
+  },
+  {
+    "name": "Cocco fresco",
+    "aliases": ["noce di cocco", "cocco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 354, "proteinPer100g": 3.3, "carbsPer100g": 15.2, "fatPer100g": 33.5,
+    "portionGrams": 50,
+    "note": "polpa fresca, tipo pezzo da bancarella"
+  },
+  {
+    "name": "Castagne bollite",
+    "aliases": ["castagne lesse", "ballotte"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 120, "proteinPer100g": 2.4, "carbsPer100g": 26.0, "fatPer100g": 1.4,
+    "portionGrams": 100,
+    "note": "valori da cotte, sbucciate"
+  },
+  {
+    "name": "Caldarroste",
+    "aliases": ["castagne arrosto", "castagne al forno"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 193, "proteinPer100g": 3.7, "carbsPer100g": 41.8, "fatPer100g": 2.4,
+    "portionGrams": 100,
+    "note": "valori da arrostite, sbucciate (circa 8-10 castagne)"
+  },
+  {
+    "name": "Mela cotta al forno",
+    "aliases": ["mela cotta", "mele cotte"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 70, "proteinPer100g": 0.3, "carbsPer100g": 17.0, "fatPer100g": 0.2,
+    "portionGrams": 150,
+    "note": "con poco zucchero e cannella"
+  },
+  {
+    "name": "Macedonia di frutta fresca",
+    "aliases": ["macedonia", "frutta mista tagliata"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 55, "proteinPer100g": 0.7, "carbsPer100g": 13.0, "fatPer100g": 0.2,
+    "portionGrams": 200,
+    "note": "senza zucchero aggiunto, con succo di limone o arancia"
+  },
+  {
+    "name": "Macedonia con zucchero",
+    "aliases": ["macedonia zuccherata", "macedonia del bar"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 70, "proteinPer100g": 0.6, "carbsPer100g": 17.0, "fatPer100g": 0.2,
+    "portionGrams": 200,
+    "note": "con zucchero aggiunto, tipo bar o trattoria"
+  },
+  {
+    "name": "Frutta sciroppata",
+    "aliases": ["macedonia sciroppata", "frutta in scatola"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 80, "proteinPer100g": 0.4, "carbsPer100g": 19.5, "fatPer100g": 0.1,
+    "portionGrams": 140,
+    "note": "frutta sgocciolata con parte dello sciroppo"
+  },
+  {
+    "name": "Pesche sciroppate",
+    "aliases": ["pesche in scatola", "pesche allo sciroppo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 74, "proteinPer100g": 0.4, "carbsPer100g": 18.2, "fatPer100g": 0.1,
+    "portionGrams": 140,
+    "note": "2 mezze pesche con poco sciroppo"
+  },
+  {
+    "name": "Noci",
+    "aliases": ["noci sgusciate", "gherigli di noce", "noce"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 660, "proteinPer100g": 14.3, "carbsPer100g": 5.1, "fatPer100g": 63.7,
+    "portionGrams": 30,
+    "note": "circa 6-7 noci sgusciate"
+  },
+  {
+    "name": "Mandorle",
+    "aliases": ["mandorle sgusciate", "mandorla"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 600, "proteinPer100g": 22.0, "carbsPer100g": 4.6, "fatPer100g": 55.3,
+    "portionGrams": 30,
+    "note": "circa 20-25 mandorle"
+  },
+  {
+    "name": "Nocciole",
+    "aliases": ["nocciole sgusciate", "nocciole tostate", "nocciola"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 655, "proteinPer100g": 13.8, "carbsPer100g": 6.1, "fatPer100g": 64.1,
+    "portionGrams": 30,
+    "note": "circa 25-30 nocciole"
+  },
+  {
+    "name": "Pistacchi",
+    "aliases": ["pistacchi tostati salati", "pistacchio"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 570, "proteinPer100g": 21.0, "carbsPer100g": 18.0, "fatPer100g": 46.0,
+    "portionGrams": 30,
+    "note": "peso sgusciato, tostati e salati"
+  },
+  {
+    "name": "Anacardi",
+    "aliases": ["anacardi tostati", "anacardo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 553, "proteinPer100g": 18.2, "carbsPer100g": 30.2, "fatPer100g": 43.9,
+    "portionGrams": 30,
+    "note": ""
+  },
+  {
+    "name": "Arachidi tostate",
+    "aliases": ["noccioline", "noccioline americane", "arachidi salate"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 598, "proteinPer100g": 25.8, "carbsPer100g": 16.1, "fatPer100g": 49.7,
+    "portionGrams": 30,
+    "note": "sgusciate, tostate e salate"
+  },
+  {
+    "name": "Pinoli",
+    "aliases": ["pinolo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 673, "proteinPer100g": 13.7, "carbsPer100g": 13.1, "fatPer100g": 68.4,
+    "portionGrams": 15,
+    "note": "1 cucchiaio abbondante"
+  },
+  {
+    "name": "Noci pecan",
+    "aliases": ["pecan"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 691, "proteinPer100g": 9.2, "carbsPer100g": 13.9, "fatPer100g": 72.0,
+    "portionGrams": 30,
+    "note": ""
+  },
+  {
+    "name": "Noci del Brasile",
+    "aliases": ["noci brasiliane", "noce amazzonica"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 659, "proteinPer100g": 14.3, "carbsPer100g": 12.3, "fatPer100g": 67.1,
+    "portionGrams": 20,
+    "note": "4-5 noci"
+  },
+  {
+    "name": "Noci macadamia",
+    "aliases": ["macadamia"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 718, "proteinPer100g": 7.9, "carbsPer100g": 13.8, "fatPer100g": 75.8,
+    "portionGrams": 20,
+    "note": ""
+  },
+  {
+    "name": "Frutta secca mista",
+    "aliases": ["mix frutta secca", "misto di noci", "frutta secca assortita"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 620, "proteinPer100g": 17.0, "carbsPer100g": 12.0, "fatPer100g": 55.0,
+    "portionGrams": 30,
+    "note": "mix a guscio non salato (noci, mandorle, nocciole, anacardi)"
+  },
+  {
+    "name": "Semi di zucca",
+    "aliases": ["semi di zucca tostati"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 559, "proteinPer100g": 30.2, "carbsPer100g": 10.7, "fatPer100g": 49.0,
+    "portionGrams": 20,
+    "note": "sgusciati"
+  },
+  {
+    "name": "Semi di girasole",
+    "aliases": ["semi di girasole sgusciati"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 584, "proteinPer100g": 20.8, "carbsPer100g": 20.0, "fatPer100g": 51.5,
+    "portionGrams": 20,
+    "note": "sgusciati"
+  },
+  {
+    "name": "Semi di chia",
+    "aliases": ["chia"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 486, "proteinPer100g": 16.5, "carbsPer100g": 42.1, "fatPer100g": 30.7,
+    "portionGrams": 15,
+    "note": "1 cucchiaio colmo; carboidrati in gran parte fibra"
+  },
+  {
+    "name": "Semi di lino",
+    "aliases": ["lino", "semi di lino macinati"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 534, "proteinPer100g": 18.3, "carbsPer100g": 28.9, "fatPer100g": 42.2,
+    "portionGrams": 15,
+    "note": "1 cucchiaio colmo"
+  },
+  {
+    "name": "Semi di sesamo",
+    "aliases": ["sesamo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 573, "proteinPer100g": 17.7, "carbsPer100g": 23.4, "fatPer100g": 49.7,
+    "portionGrams": 15,
+    "note": "1 cucchiaio colmo"
+  },
+  {
+    "name": "Burro di arachidi",
+    "aliases": ["crema di arachidi", "crema 100% arachidi"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 588, "proteinPer100g": 25.0, "carbsPer100g": 20.0, "fatPer100g": 50.0,
+    "portionGrams": 30,
+    "note": "1 cucchiaio colmo"
+  },
+  {
+    "name": "Uvetta",
+    "aliases": ["uva passa", "uva sultanina", "uvetta sultanina"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 299, "proteinPer100g": 3.1, "carbsPer100g": 79.2, "fatPer100g": 0.5,
+    "portionGrams": 30,
+    "note": "1 manciata"
+  },
+  {
+    "name": "Datteri",
+    "aliases": ["dattero", "datteri secchi"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 282, "proteinPer100g": 2.5, "carbsPer100g": 75.0, "fatPer100g": 0.4,
+    "portionGrams": 40,
+    "note": "4-5 datteri denocciolati"
+  },
+  {
+    "name": "Fichi secchi",
+    "aliases": ["fico secco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 249, "proteinPer100g": 3.3, "carbsPer100g": 63.9, "fatPer100g": 0.9,
+    "portionGrams": 40,
+    "note": "3 fichi secchi"
+  },
+  {
+    "name": "Albicocche secche",
+    "aliases": ["albicocche disidratate"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 241, "proteinPer100g": 3.4, "carbsPer100g": 62.6, "fatPer100g": 0.5,
+    "portionGrams": 40,
+    "note": "5-6 albicocche"
+  },
+  {
+    "name": "Prugne secche",
+    "aliases": ["prugne denocciolate", "prugna secca"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 240, "proteinPer100g": 2.2, "carbsPer100g": 63.9, "fatPer100g": 0.4,
+    "portionGrams": 40,
+    "note": "4-5 prugne denocciolate"
+  },
+  {
+    "name": "Mirtilli rossi essiccati",
+    "aliases": ["cranberries", "mirtilli rossi disidratati"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 308, "proteinPer100g": 0.2, "carbsPer100g": 82.0, "fatPer100g": 1.1,
+    "portionGrams": 30,
+    "note": "zuccherati, come da busta del supermercato"
+  },
+  {
+    "name": "Banana chips",
+    "aliases": ["chips di banana", "banane essiccate fritte"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 519, "proteinPer100g": 2.3, "carbsPer100g": 58.4, "fatPer100g": 33.6,
+    "portionGrams": 30,
+    "note": "fritte in olio di cocco"
+  },
+  {
+    "name": "Cocco essiccato",
+    "aliases": ["cocco rapé", "farina di cocco", "cocco disidratato"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 660, "proteinPer100g": 6.9, "carbsPer100g": 23.7, "fatPer100g": 64.5,
+    "portionGrams": 20,
+    "note": ""
+  },
+  {
+    "name": "Mango essiccato",
+    "aliases": ["mango disidratato"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 319, "proteinPer100g": 2.5, "carbsPer100g": 78.6, "fatPer100g": 1.2,
+    "portionGrams": 30,
+    "note": ""
+  },
+  {
+    "name": "Castagne secche",
+    "aliases": ["castagne essiccate"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 287, "proteinPer100g": 5.9, "carbsPer100g": 62.0, "fatPer100g": 2.7,
+    "portionGrams": 50,
+    "note": "da sgranocchiare, non reidratate"
+  },
+  {
+    "name": "Chips di mela",
+    "aliases": ["mele essiccate", "mela disidratata"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 243, "proteinPer100g": 0.9, "carbsPer100g": 65.9, "fatPer100g": 0.3,
+    "portionGrams": 25,
+    "note": "essiccate, non fritte"
+  },
+  {
+    "name": "Bacche di goji essiccate",
+    "aliases": ["goji", "bacche di goji"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 349, "proteinPer100g": 14.3, "carbsPer100g": 77.1, "fatPer100g": 0.4,
+    "portionGrams": 20,
+    "note": ""
+  },
+  {
+    "name": "Spremuta d'arancia",
+    "aliases": ["spremuta", "succo d'arancia fresco", "spremuta di arance rosse"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 45, "proteinPer100g": 0.7, "carbsPer100g": 10.4, "fatPer100g": 0.2,
+    "portionGrams": 200,
+    "note": "1 bicchiere grande, senza zucchero"
+  },
+  {
+    "name": "Spremuta di pompelmo",
+    "aliases": ["succo di pompelmo fresco"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 39, "proteinPer100g": 0.5, "carbsPer100g": 9.2, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "1 bicchiere grande, senza zucchero"
+  },
+  {
+    "name": "Succo di frutta alla pesca",
+    "aliases": ["succo di pesca", "nettare di pesca", "succo albicocca"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 56, "proteinPer100g": 0.3, "carbsPer100g": 13.8, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "nettare confezionato, vale anche per albicocca e pera"
+  },
+  {
+    "name": "Succo d'ananas",
+    "aliases": ["succo di ananas"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 53, "proteinPer100g": 0.4, "carbsPer100g": 12.9, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "100% frutta, confezionato"
+  },
+  {
+    "name": "Succo di mela",
+    "aliases": ["succo di mela 100%"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 46, "proteinPer100g": 0.1, "carbsPer100g": 11.3, "fatPer100g": 0.1,
+    "portionGrams": 200,
+    "note": "100% frutta, confezionato"
+  },
+  {
+    "name": "Centrifugato di frutta",
+    "aliases": ["centrifuga", "estratto di frutta", "succo estratto a freddo"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 45, "proteinPer100g": 0.6, "carbsPer100g": 10.5, "fatPer100g": 0.2,
+    "portionGrams": 250,
+    "note": "misto frutta, senza zucchero aggiunto"
+  },
+  {
+    "name": "Smoothie di frutta",
+    "aliases": ["frullato di frutta", "frappè di frutta"],
+    "category": "Frutta e frutta secca",
+    "kcalPer100g": 60, "proteinPer100g": 1.5, "carbsPer100g": 12.5, "fatPer100g": 0.8,
+    "portionGrams": 250,
+    "note": "frutta frullata con un po' di latte o yogurt"
+  }
+]

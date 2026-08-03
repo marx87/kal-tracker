@@ -1,0 +1,682 @@
+[
+  {
+    "name": "Pizza margherita",
+    "aliases": ["margherita", "pizza tonda margherita", "pizza pomodoro e mozzarella"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 10.5, "carbsPer100g": 33, "fatPer100g": 10,
+    "portionGrams": 300,
+    "note": "intera da pizzeria, valori medi"
+  },
+  {
+    "name": "Pizza marinara",
+    "aliases": ["marinara", "pizza rossa con aglio e origano"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 5.5, "carbsPer100g": 38, "fatPer100g": 7,
+    "portionGrams": 280,
+    "note": "senza mozzarella"
+  },
+  {
+    "name": "Pizza diavola",
+    "aliases": ["pizza al salamino", "pizza salame piccante", "diavola"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 12, "carbsPer100g": 32, "fatPer100g": 13,
+    "portionGrams": 320,
+    "note": ""
+  },
+  {
+    "name": "Pizza capricciosa",
+    "aliases": ["capricciosa"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 255, "proteinPer100g": 11, "carbsPer100g": 28, "fatPer100g": 11,
+    "portionGrams": 350,
+    "note": "prosciutto, funghi, carciofini, olive"
+  },
+  {
+    "name": "Pizza quattro formaggi",
+    "aliases": ["4 formaggi", "quattro formaggi"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 13, "carbsPer100g": 28, "fatPer100g": 15.5,
+    "portionGrams": 320,
+    "note": ""
+  },
+  {
+    "name": "Pizza quattro stagioni",
+    "aliases": ["4 stagioni", "quattro stagioni"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 11, "carbsPer100g": 28, "fatPer100g": 10.5,
+    "portionGrams": 350,
+    "note": ""
+  },
+  {
+    "name": "Pizza prosciutto e funghi",
+    "aliases": ["prosciutto e funghi"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 11, "carbsPer100g": 29, "fatPer100g": 10,
+    "portionGrams": 340,
+    "note": ""
+  },
+  {
+    "name": "Pizza crudo e rucola",
+    "aliases": ["pizza con prosciutto crudo", "crudo e rucola"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 265, "proteinPer100g": 12.5, "carbsPer100g": 30, "fatPer100g": 11,
+    "portionGrams": 330,
+    "note": ""
+  },
+  {
+    "name": "Pizza wurstel e patatine",
+    "aliases": ["pizza con le patatine", "wurstel e patatine"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 9, "carbsPer100g": 34, "fatPer100g": 13.5,
+    "portionGrams": 350,
+    "note": ""
+  },
+  {
+    "name": "Pizza con mozzarella di bufala",
+    "aliases": ["pizza bufalina", "margherita con bufala"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 275, "proteinPer100g": 11.5, "carbsPer100g": 30, "fatPer100g": 12,
+    "portionGrams": 320,
+    "note": ""
+  },
+  {
+    "name": "Pizza boscaiola",
+    "aliases": ["boscaiola", "pizza salsiccia e funghi"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 12, "carbsPer100g": 30, "fatPer100g": 12.5,
+    "portionGrams": 350,
+    "note": ""
+  },
+  {
+    "name": "Pizza tonno e cipolla",
+    "aliases": ["tonno e cipolla"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 265, "proteinPer100g": 12, "carbsPer100g": 30, "fatPer100g": 11,
+    "portionGrams": 330,
+    "note": ""
+  },
+  {
+    "name": "Pizza napoletana con alici",
+    "aliases": ["pizza napoli", "pizza con le alici"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 255, "proteinPer100g": 11, "carbsPer100g": 31, "fatPer100g": 10,
+    "portionGrams": 300,
+    "note": "alici e capperi"
+  },
+  {
+    "name": "Pizza ortolana",
+    "aliases": ["pizza alle verdure", "ortolana", "pizza vegetariana"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 230, "proteinPer100g": 8, "carbsPer100g": 30, "fatPer100g": 9,
+    "portionGrams": 330,
+    "note": ""
+  },
+  {
+    "name": "Pizza salsiccia e friarielli",
+    "aliases": ["salsiccia e friarielli", "pizza con broccoletti e salsiccia"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 285, "proteinPer100g": 12, "carbsPer100g": 29, "fatPer100g": 13.5,
+    "portionGrams": 350,
+    "note": ""
+  },
+  {
+    "name": "Calzone prosciutto e mozzarella",
+    "aliases": ["calzone", "calzone ripieno", "calzone al forno"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 12, "carbsPer100g": 30, "fatPer100g": 13.5,
+    "portionGrams": 350,
+    "note": ""
+  },
+  {
+    "name": "Pizza fritta",
+    "aliases": ["montanara", "pizza fritta napoletana"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 330, "proteinPer100g": 8, "carbsPer100g": 35, "fatPer100g": 17.5,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Pinsa margherita",
+    "aliases": ["pinsa", "pinsa romana"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 9, "carbsPer100g": 32, "fatPer100g": 9.5,
+    "portionGrams": 300,
+    "note": "impasto più leggero della pizza tonda"
+  },
+  {
+    "name": "Pizza margherita surgelata",
+    "aliases": ["pizza surgelata", "pizza del supermercato"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 245, "proteinPer100g": 9.5, "carbsPer100g": 31, "fatPer100g": 9.5,
+    "portionGrams": 350,
+    "note": "cotta al forno, valori medi da surgelata"
+  },
+  {
+    "name": "Pizza al taglio margherita",
+    "aliases": ["trancio di pizza margherita", "pizza in teglia margherita"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 9, "carbsPer100g": 34, "fatPer100g": 11,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Pizza al taglio rossa",
+    "aliases": ["pizza rossa", "trancio di pizza rossa"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 245, "proteinPer100g": 6, "carbsPer100g": 37, "fatPer100g": 8,
+    "portionGrams": 180,
+    "note": "solo pomodoro, senza mozzarella"
+  },
+  {
+    "name": "Pizza bianca romana",
+    "aliases": ["pizza bianca", "pizza bianca del forno"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 8, "carbsPer100g": 44, "fatPer100g": 10.5,
+    "portionGrams": 150,
+    "note": "olio e sale, da forno"
+  },
+  {
+    "name": "Pizza al taglio con patate",
+    "aliases": ["pizza e patate", "pizza con le patate"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 265, "proteinPer100g": 6, "carbsPer100g": 38, "fatPer100g": 10,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Pizza bianca con mortadella",
+    "aliases": ["pizza e mortazza", "pizza con la mortadella"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 330, "proteinPer100g": 12, "carbsPer100g": 36, "fatPer100g": 15.5,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Pizza al taglio con verdure grigliate",
+    "aliases": ["trancio con verdure", "pizza zucchine e melanzane"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 235, "proteinPer100g": 7, "carbsPer100g": 32, "fatPer100g": 9,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Pizzetta rossa da bar",
+    "aliases": ["pizzetta", "pizzetta del bar"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 275, "proteinPer100g": 7, "carbsPer100g": 36, "fatPer100g": 11,
+    "portionGrams": 80,
+    "note": ""
+  },
+  {
+    "name": "Pizzette di sfoglia",
+    "aliases": ["pizzette da aperitivo", "pizzette di pasta sfoglia"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 380, "proteinPer100g": 7, "carbsPer100g": 33, "fatPer100g": 24.5,
+    "portionGrams": 60,
+    "note": ""
+  },
+  {
+    "name": "Focaccia genovese",
+    "aliases": ["focaccia all'olio", "focaccia classica"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 320, "proteinPer100g": 7, "carbsPer100g": 42, "fatPer100g": 14,
+    "portionGrams": 150,
+    "note": ""
+  },
+  {
+    "name": "Focaccia di Recco",
+    "aliases": ["focaccia al formaggio", "focaccia col formaggio"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 320, "proteinPer100g": 10, "carbsPer100g": 30, "fatPer100g": 18,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Focaccia pugliese",
+    "aliases": ["focaccia barese", "focaccia con pomodorini"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 6, "carbsPer100g": 38, "fatPer100g": 11.5,
+    "portionGrams": 150,
+    "note": ""
+  },
+  {
+    "name": "Focaccia farcita con crudo e mozzarella",
+    "aliases": ["focaccia ripiena", "focaccia farcita"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 12.5, "carbsPer100g": 33, "fatPer100g": 13.5,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Farinata di ceci",
+    "aliases": ["cecina", "torta di ceci"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 195, "proteinPer100g": 7, "carbsPer100g": 16, "fatPer100g": 11.5,
+    "portionGrams": 150,
+    "note": ""
+  },
+  {
+    "name": "Panino con prosciutto crudo",
+    "aliases": ["panino al crudo", "panino crudo e mozzarella"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 15, "carbsPer100g": 34, "fatPer100g": 9.5,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Panino con prosciutto cotto e formaggio",
+    "aliases": ["panino cotto e formaggio", "panino cotto e fontina"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 285, "proteinPer100g": 14, "carbsPer100g": 32, "fatPer100g": 11.5,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Panino con salame",
+    "aliases": ["panino al salame"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 320, "proteinPer100g": 14, "carbsPer100g": 33, "fatPer100g": 14.5,
+    "portionGrams": 160,
+    "note": ""
+  },
+  {
+    "name": "Panino con porchetta",
+    "aliases": ["porchetta nel panino", "panino porchetta"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 310, "proteinPer100g": 15, "carbsPer100g": 30, "fatPer100g": 14.5,
+    "portionGrams": 220,
+    "note": ""
+  },
+  {
+    "name": "Panino con mortadella",
+    "aliases": ["panino alla mortadella", "panino con la mortazza"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 315, "proteinPer100g": 13, "carbsPer100g": 33, "fatPer100g": 14.5,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Panino bresaola rucola e grana",
+    "aliases": ["panino con bresaola"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 17, "carbsPer100g": 30, "fatPer100g": 5.5,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Panino con cotoletta",
+    "aliases": ["panino cotoletta e insalata", "panino con la milanese"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 13, "carbsPer100g": 30, "fatPer100g": 13,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Panino con salsiccia",
+    "aliases": ["panino salsiccia", "salsiccia nel panino"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 13, "carbsPer100g": 28, "fatPer100g": 15,
+    "portionGrams": 250,
+    "note": "salsiccia alla piastra, da street food"
+  },
+  {
+    "name": "Panino tonno e pomodoro",
+    "aliases": ["panino al tonno"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 12, "carbsPer100g": 28, "fatPer100g": 10,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Panino con polpette al sugo",
+    "aliases": ["panino con le polpette"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 12, "carbsPer100g": 25, "fatPer100g": 10.5,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Panino con frittata",
+    "aliases": ["panino e frittata", "pane e frittata"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 12, "carbsPer100g": 27, "fatPer100g": 11.5,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Panino verdure grigliate e mozzarella",
+    "aliases": ["panino vegetariano", "panino con le verdure"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 230, "proteinPer100g": 9, "carbsPer100g": 28, "fatPer100g": 9,
+    "portionGrams": 220,
+    "note": ""
+  },
+  {
+    "name": "Panino speck e brie",
+    "aliases": ["panino speck e formaggio"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 14, "carbsPer100g": 30, "fatPer100g": 14,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Panino con lampredotto",
+    "aliases": ["lampredotto", "panino al lampredotto"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 215, "proteinPer100g": 16, "carbsPer100g": 22, "fatPer100g": 7.5,
+    "portionGrams": 250,
+    "note": "street food fiorentino"
+  },
+  {
+    "name": "Pane e panelle",
+    "aliases": ["panelle", "panino con panelle"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 8, "carbsPer100g": 32, "fatPer100g": 13,
+    "portionGrams": 200,
+    "note": "street food palermitano, frittelle di ceci"
+  },
+  {
+    "name": "Tramezzino tonno e maionese",
+    "aliases": ["tramezzino al tonno"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 10, "carbsPer100g": 26, "fatPer100g": 13,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Tramezzino prosciutto e formaggio",
+    "aliases": ["tramezzino cotto e formaggio", "tramezzino classico"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 11, "carbsPer100g": 27, "fatPer100g": 11,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Tramezzino pomodoro e mozzarella",
+    "aliases": ["tramezzino caprese"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 220, "proteinPer100g": 9, "carbsPer100g": 26, "fatPer100g": 9,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Tramezzino pollo e maionese",
+    "aliases": ["tramezzino al pollo"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 12, "carbsPer100g": 25, "fatPer100g": 12.5,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Piadina vuota",
+    "aliases": ["piada", "piadina romagnola"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 320, "proteinPer100g": 7, "carbsPer100g": 46, "fatPer100g": 12,
+    "portionGrams": 120,
+    "note": "solo la piadina, senza farcitura"
+  },
+  {
+    "name": "Piadina crudo e squacquerone",
+    "aliases": ["piadina crudo squacquerone e rucola", "piadina romagnola farcita"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 12, "carbsPer100g": 32, "fatPer100g": 13,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Piadina cotto e mozzarella",
+    "aliases": ["piadina prosciutto e formaggio"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 12, "carbsPer100g": 30, "fatPer100g": 11.5,
+    "portionGrams": 250,
+    "note": ""
+  },
+  {
+    "name": "Piadina salsiccia e cipolla",
+    "aliases": ["piadina con salsiccia"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 12, "carbsPer100g": 28, "fatPer100g": 15,
+    "portionGrams": 260,
+    "note": ""
+  },
+  {
+    "name": "Cassone romagnolo alle verdure",
+    "aliases": ["crescione", "cassone alle erbe", "piadina chiusa"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 7, "carbsPer100g": 32, "fatPer100g": 11.5,
+    "portionGrams": 220,
+    "note": ""
+  },
+  {
+    "name": "Toast prosciutto e formaggio",
+    "aliases": ["toast", "toast classico"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 13, "carbsPer100g": 30, "fatPer100g": 12,
+    "portionGrams": 130,
+    "note": ""
+  },
+  {
+    "name": "Toast al formaggio",
+    "aliases": ["toast doppio formaggio"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 14, "carbsPer100g": 29, "fatPer100g": 14.5,
+    "portionGrams": 130,
+    "note": ""
+  },
+  {
+    "name": "Toast integrale con tacchino",
+    "aliases": ["toast al tacchino", "toast fesa di tacchino"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 14, "carbsPer100g": 28, "fatPer100g": 8,
+    "portionGrams": 130,
+    "note": ""
+  },
+  {
+    "name": "Hot dog",
+    "aliases": ["panino con wurstel", "hot dog con senape"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 11, "carbsPer100g": 26, "fatPer100g": 16,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Hamburger semplice",
+    "aliases": ["panino con hamburger", "burger classico"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 13, "carbsPer100g": 29, "fatPer100g": 9.5,
+    "portionGrams": 200,
+    "note": "panino completo, tipo fast food"
+  },
+  {
+    "name": "Cheeseburger",
+    "aliases": ["hamburger con formaggio"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 265, "proteinPer100g": 14, "carbsPer100g": 26, "fatPer100g": 12,
+    "portionGrams": 220,
+    "note": "panino completo, tipo fast food"
+  },
+  {
+    "name": "Hamburger doppio con bacon",
+    "aliases": ["doppio hamburger", "burger doppio bacon"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 285, "proteinPer100g": 16, "carbsPer100g": 20, "fatPer100g": 16.5,
+    "portionGrams": 300,
+    "note": ""
+  },
+  {
+    "name": "Hamburger di pollo",
+    "aliases": ["chicken burger", "panino col pollo"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 15, "carbsPer100g": 27, "fatPer100g": 10.5,
+    "portionGrams": 220,
+    "note": "panino completo con pollo impanato"
+  },
+  {
+    "name": "Fish burger",
+    "aliases": ["panino col pesce", "burger di pesce"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 11, "carbsPer100g": 30, "fatPer100g": 12,
+    "portionGrams": 180,
+    "note": "panino con filetto di pesce impanato"
+  },
+  {
+    "name": "Burger vegetale",
+    "aliases": ["veggie burger", "hamburger vegetariano"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 10, "carbsPer100g": 30, "fatPer100g": 9,
+    "portionGrams": 220,
+    "note": "panino completo con burger di legumi"
+  },
+  {
+    "name": "Kebab nel panino",
+    "aliases": ["kebab", "panino kebab", "kebap"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 13, "carbsPer100g": 25, "fatPer100g": 11,
+    "portionGrams": 350,
+    "note": "con salse e verdure"
+  },
+  {
+    "name": "Kebab in piadina",
+    "aliases": ["durum", "kebab arrotolato", "rollo kebab"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 240, "proteinPer100g": 13, "carbsPer100g": 24, "fatPer100g": 10.5,
+    "portionGrams": 400,
+    "note": "con salse e verdure"
+  },
+  {
+    "name": "Piatto kebab con patatine",
+    "aliases": ["kebab piatto", "kebab box"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 230, "proteinPer100g": 12, "carbsPer100g": 20, "fatPer100g": 12,
+    "portionGrams": 450,
+    "note": "carne, patatine e salse"
+  },
+  {
+    "name": "Falafel",
+    "aliases": ["polpette di ceci", "falafel fritti"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 330, "proteinPer100g": 13, "carbsPer100g": 32, "fatPer100g": 17,
+    "portionGrams": 150,
+    "note": "valori da fritto"
+  },
+  {
+    "name": "Supplì al telefono",
+    "aliases": ["supplì", "supplì di riso", "supplì classico"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 8, "carbsPer100g": 36, "fatPer100g": 11.5,
+    "portionGrams": 120,
+    "note": "riso al ragù con mozzarella, fritto"
+  },
+  {
+    "name": "Supplì cacio e pepe",
+    "aliases": ["supplì bianco"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 9, "carbsPer100g": 35, "fatPer100g": 12.5,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Arancino al ragù",
+    "aliases": ["arancina alla carne", "arancino siciliano", "arancino"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 260, "proteinPer100g": 8, "carbsPer100g": 33, "fatPer100g": 10.5,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Arancino al burro",
+    "aliases": ["arancina al burro", "arancino prosciutto e mozzarella"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 9, "carbsPer100g": 32, "fatPer100g": 12,
+    "portionGrams": 200,
+    "note": ""
+  },
+  {
+    "name": "Crocchette di patate",
+    "aliases": ["crocchè", "crocchette fritte"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 5, "carbsPer100g": 30, "fatPer100g": 14.5,
+    "portionGrams": 100,
+    "note": "valori da fritto"
+  },
+  {
+    "name": "Mozzarella in carrozza",
+    "aliases": ["mozzarella fritta in carrozza"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 13, "carbsPer100g": 26, "fatPer100g": 16,
+    "portionGrams": 150,
+    "note": ""
+  },
+  {
+    "name": "Fiori di zucca in pastella",
+    "aliases": ["fiori di zucca fritti", "fiore di zucca ripieno"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 9, "carbsPer100g": 21, "fatPer100g": 14.5,
+    "portionGrams": 100,
+    "note": "ripieni di mozzarella e alici, fritti"
+  },
+  {
+    "name": "Filetto di baccalà fritto",
+    "aliases": ["baccalà fritto", "filetti di baccalà"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 250, "proteinPer100g": 13, "carbsPer100g": 15, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "in pastella, da friggitoria"
+  },
+  {
+    "name": "Olive ascolane",
+    "aliases": ["olive all'ascolana", "olive ripiene fritte"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 310, "proteinPer100g": 10, "carbsPer100g": 26, "fatPer100g": 18.5,
+    "portionGrams": 100,
+    "note": ""
+  },
+  {
+    "name": "Panzerotto fritto",
+    "aliases": ["panzerotto", "panzerotto pomodoro e mozzarella"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 320, "proteinPer100g": 9, "carbsPer100g": 34, "fatPer100g": 16.5,
+    "portionGrams": 180,
+    "note": ""
+  },
+  {
+    "name": "Frittatina di pasta",
+    "aliases": ["frittatina napoletana", "frittatina di maccheroni"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 280, "proteinPer100g": 9, "carbsPer100g": 26, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "fritta, con besciamella"
+  },
+  {
+    "name": "Anelli di cipolla fritti",
+    "aliases": ["onion rings", "anelli di cipolla"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 310, "proteinPer100g": 4, "carbsPer100g": 34, "fatPer100g": 17.5,
+    "portionGrams": 120,
+    "note": ""
+  },
+  {
+    "name": "Pollo fritto",
+    "aliases": ["pollo fritto croccante", "alette di pollo fritte"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 270, "proteinPer100g": 17, "carbsPer100g": 12, "fatPer100g": 17,
+    "portionGrams": 200,
+    "note": "con pelle e panatura"
+  },
+  {
+    "name": "Bocconcini di pollo fritti",
+    "aliases": ["nuggets di pollo", "crocchette di pollo"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 290, "proteinPer100g": 15, "carbsPer100g": 16, "fatPer100g": 18,
+    "portionGrams": 150,
+    "note": ""
+  },
+  {
+    "name": "Patatine fritte",
+    "aliases": ["patatine", "patate fritte", "chips fritte"],
+    "category": "Pizza e street food",
+    "kcalPer100g": 300, "proteinPer100g": 3.5, "carbsPer100g": 36, "fatPer100g": 15.5,
+    "portionGrams": 150,
+    "note": "porzione da friggitoria o fast food"
+  }
+]

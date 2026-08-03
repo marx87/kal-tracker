@@ -1,0 +1,546 @@
+[
+  {
+    "name": "Latte intero",
+    "aliases": ["latte", "bicchiere di latte", "latte fresco"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 64, "proteinPer100g": 3.3, "carbsPer100g": 4.9, "fatPer100g": 3.6,
+    "portionGrams": 200,
+    "note": "un bicchiere ~200 g"
+  },
+  {
+    "name": "Latte parzialmente scremato",
+    "aliases": ["latte ps", "latte mezzo scremato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 46, "proteinPer100g": 3.5, "carbsPer100g": 5.0, "fatPer100g": 1.5,
+    "portionGrams": 200
+  },
+  {
+    "name": "Latte scremato",
+    "aliases": ["latte magro", "latte totalmente scremato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 36, "proteinPer100g": 3.6, "carbsPer100g": 5.3, "fatPer100g": 0.2,
+    "portionGrams": 200
+  },
+  {
+    "name": "Latte senza lattosio",
+    "aliases": ["latte delattosato", "latte alta digeribilita"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 46, "proteinPer100g": 3.3, "carbsPer100g": 4.9, "fatPer100g": 1.6,
+    "portionGrams": 200,
+    "note": "parzialmente scremato delattosato"
+  },
+  {
+    "name": "Latte di capra",
+    "aliases": ["latte caprino"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 72, "proteinPer100g": 3.9, "carbsPer100g": 4.7, "fatPer100g": 4.3,
+    "portionGrams": 200
+  },
+  {
+    "name": "Latte condensato zuccherato",
+    "aliases": ["latte condensato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 321, "proteinPer100g": 7.9, "carbsPer100g": 54.4, "fatPer100g": 8.7,
+    "portionGrams": 30
+  },
+  {
+    "name": "Latte di soia",
+    "aliases": ["bevanda di soia", "soia da bere"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 40, "proteinPer100g": 3.0, "carbsPer100g": 2.5, "fatPer100g": 2.0,
+    "portionGrams": 200,
+    "note": "bevanda vegetale non zuccherata"
+  },
+  {
+    "name": "Latte di avena",
+    "aliases": ["bevanda di avena"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 46, "proteinPer100g": 1.0, "carbsPer100g": 7.5, "fatPer100g": 1.4,
+    "portionGrams": 200,
+    "note": "bevanda vegetale"
+  },
+  {
+    "name": "Latte di mandorla",
+    "aliases": ["bevanda di mandorla"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 27, "proteinPer100g": 0.5, "carbsPer100g": 3.0, "fatPer100g": 1.2,
+    "portionGrams": 200,
+    "note": "bevanda vegetale poco zuccherata"
+  },
+  {
+    "name": "Yogurt bianco intero",
+    "aliases": ["yogurt", "yogurt naturale", "vasetto di yogurt"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 66, "proteinPer100g": 3.8, "carbsPer100g": 4.3, "fatPer100g": 3.9,
+    "portionGrams": 125,
+    "note": "un vasetto = 125 g"
+  },
+  {
+    "name": "Yogurt bianco magro",
+    "aliases": ["yogurt magro", "yogurt 0 grassi"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 36, "proteinPer100g": 3.3, "carbsPer100g": 4.0, "fatPer100g": 0.9,
+    "portionGrams": 125
+  },
+  {
+    "name": "Yogurt greco intero",
+    "aliases": ["yogurt greco", "greco intero"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 93, "proteinPer100g": 8.7, "carbsPer100g": 3.0, "fatPer100g": 5.0,
+    "portionGrams": 170,
+    "note": "un vasetto greco = 170 g"
+  },
+  {
+    "name": "Yogurt greco 2%",
+    "aliases": ["greco 2 per cento", "yogurt greco light"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 70, "proteinPer100g": 9.5, "carbsPer100g": 3.5, "fatPer100g": 2.0,
+    "portionGrams": 170
+  },
+  {
+    "name": "Yogurt greco 0%",
+    "aliases": ["greco 0", "yogurt greco magro", "yogurt proteico"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 54, "proteinPer100g": 10.3, "carbsPer100g": 3.0, "fatPer100g": 0.2,
+    "portionGrams": 170
+  },
+  {
+    "name": "Yogurt alla frutta",
+    "aliases": ["yogurt frutta", "yogurt alla fragola", "yogurt all'albicocca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 88, "proteinPer100g": 3.1, "carbsPer100g": 13.9, "fatPer100g": 2.4,
+    "portionGrams": 125
+  },
+  {
+    "name": "Yogurt alla frutta magro",
+    "aliases": ["yogurt frutta magro", "yogurt frutta 0 grassi"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 45, "proteinPer100g": 3.9, "carbsPer100g": 6.9, "fatPer100g": 0.1,
+    "portionGrams": 125
+  },
+  {
+    "name": "Yogurt alla vaniglia",
+    "aliases": ["yogurt vaniglia"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 90, "proteinPer100g": 3.2, "carbsPer100g": 14.0, "fatPer100g": 2.5,
+    "portionGrams": 125
+  },
+  {
+    "name": "Yogurt da bere",
+    "aliases": ["yogurt drink", "yogurt liquido"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 70, "proteinPer100g": 2.8, "carbsPer100g": 12.0, "fatPer100g": 1.3,
+    "portionGrams": 200,
+    "note": "alla frutta, una bottiglietta"
+  },
+  {
+    "name": "Yogurt di capra",
+    "aliases": ["yogurt caprino"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 72, "proteinPer100g": 3.6, "carbsPer100g": 4.5, "fatPer100g": 4.5,
+    "portionGrams": 125
+  },
+  {
+    "name": "Yogurt di soia bianco",
+    "aliases": ["yogurt vegetale", "yogurt soia"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 47, "proteinPer100g": 4.0, "carbsPer100g": 2.5, "fatPer100g": 2.3,
+    "portionGrams": 125,
+    "note": "non zuccherato"
+  },
+  {
+    "name": "Kefir",
+    "aliases": ["kefir di latte"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 55, "proteinPer100g": 3.3, "carbsPer100g": 4.5, "fatPer100g": 2.5,
+    "portionGrams": 200
+  },
+  {
+    "name": "Skyr",
+    "aliases": ["skyr naturale"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 63, "proteinPer100g": 11.0, "carbsPer100g": 4.0, "fatPer100g": 0.2,
+    "portionGrams": 150
+  },
+  {
+    "name": "Mozzarella di bufala",
+    "aliases": ["bufala", "mozzarella bufala campana"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 288, "proteinPer100g": 16.7, "carbsPer100g": 0.4, "fatPer100g": 24.4,
+    "portionGrams": 125,
+    "note": "una mozzarella = 125 g"
+  },
+  {
+    "name": "Mozzarella fiordilatte",
+    "aliases": ["mozzarella", "fiordilatte", "bocconcini di mozzarella"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 253, "proteinPer100g": 18.7, "carbsPer100g": 0.7, "fatPer100g": 19.5,
+    "portionGrams": 125,
+    "note": "una mozzarella = 125 g"
+  },
+  {
+    "name": "Mozzarella light",
+    "aliases": ["mozzarella magra"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 163, "proteinPer100g": 20.0, "carbsPer100g": 1.5, "fatPer100g": 8.5,
+    "portionGrams": 125
+  },
+  {
+    "name": "Mozzarella per pizza",
+    "aliases": ["mozzarella cucina", "mozzarella a panetto", "filone per pizza"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 281, "proteinPer100g": 21.0, "carbsPer100g": 2.0, "fatPer100g": 21.0,
+    "portionGrams": 100,
+    "note": "pasta piu asciutta, da cucina"
+  },
+  {
+    "name": "Burrata",
+    "aliases": ["burratina"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 320, "proteinPer100g": 13.0, "carbsPer100g": 2.0, "fatPer100g": 28.5,
+    "portionGrams": 125,
+    "note": "una burrata = 125 g"
+  },
+  {
+    "name": "Stracciatella di burrata",
+    "aliases": ["stracciatella pugliese"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 275, "proteinPer100g": 10.0, "carbsPer100g": 2.0, "fatPer100g": 25.0,
+    "portionGrams": 100
+  },
+  {
+    "name": "Stracchino",
+    "aliases": ["crescenza", "stracchino crescenza"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 281, "proteinPer100g": 16.1, "carbsPer100g": 1.9, "fatPer100g": 23.3,
+    "portionGrams": 100
+  },
+  {
+    "name": "Squacquerone",
+    "aliases": ["squacquerone di Romagna"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 265, "proteinPer100g": 14.0, "carbsPer100g": 2.5, "fatPer100g": 22.0,
+    "portionGrams": 80,
+    "note": "classico con la piadina"
+  },
+  {
+    "name": "Ricotta vaccina",
+    "aliases": ["ricotta", "ricotta fresca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 146, "proteinPer100g": 8.8, "carbsPer100g": 3.5, "fatPer100g": 10.9,
+    "portionGrams": 100
+  },
+  {
+    "name": "Ricotta di pecora",
+    "aliases": ["ricotta romana", "ricotta pecora"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 157, "proteinPer100g": 9.5, "carbsPer100g": 4.2, "fatPer100g": 11.5,
+    "portionGrams": 100
+  },
+  {
+    "name": "Ricotta salata",
+    "aliases": ["ricotta stagionata", "ricotta da grattugia"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 250, "proteinPer100g": 18.0, "carbsPer100g": 3.0, "fatPer100g": 18.0,
+    "portionGrams": 30,
+    "note": "grattugiata o a scaglie"
+  },
+  {
+    "name": "Primo sale",
+    "aliases": ["primosale", "formaggio primo sale"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 280, "proteinPer100g": 18.0, "carbsPer100g": 2.0, "fatPer100g": 22.0,
+    "portionGrams": 80
+  },
+  {
+    "name": "Robiola",
+    "aliases": ["robiola fresca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 310, "proteinPer100g": 12.0, "carbsPer100g": 2.5, "fatPer100g": 28.0,
+    "portionGrams": 60
+  },
+  {
+    "name": "Formaggio spalmabile",
+    "aliases": ["crema di formaggio", "formaggio cremoso", "crema spalmabile"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 250, "proteinPer100g": 5.5, "carbsPer100g": 4.0, "fatPer100g": 23.5,
+    "portionGrams": 30
+  },
+  {
+    "name": "Fiocchi di latte",
+    "aliases": ["cottage cheese", "fiocchi"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 98, "proteinPer100g": 11.0, "carbsPer100g": 3.5, "fatPer100g": 4.5,
+    "portionGrams": 100
+  },
+  {
+    "name": "Mascarpone",
+    "aliases": ["mascarpone fresco"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 455, "proteinPer100g": 7.6, "carbsPer100g": 0.3, "fatPer100g": 47.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Caprino fresco",
+    "aliases": ["caprino", "formaggio di capra fresco"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 268, "proteinPer100g": 13.5, "carbsPer100g": 2.0, "fatPer100g": 23.0,
+    "portionGrams": 60
+  },
+  {
+    "name": "Tomino",
+    "aliases": ["tomino alla piastra", "tomini"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 300, "proteinPer100g": 15.0, "carbsPer100g": 1.5, "fatPer100g": 26.0,
+    "portionGrams": 90,
+    "note": "un tomino = 90 g, ottimo alla piastra"
+  },
+  {
+    "name": "Feta",
+    "aliases": ["feta greca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 264, "proteinPer100g": 14.2, "carbsPer100g": 4.1, "fatPer100g": 21.3,
+    "portionGrams": 50
+  },
+  {
+    "name": "Quartirolo lombardo",
+    "aliases": ["quartirolo"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 275, "proteinPer100g": 18.0, "carbsPer100g": 1.5, "fatPer100g": 22.0,
+    "portionGrams": 60
+  },
+  {
+    "name": "Parmigiano Reggiano",
+    "aliases": ["parmigiano", "parmigiano grattugiato", "parmigiano a scaglie"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 387, "proteinPer100g": 33.5, "carbsPer100g": 0.0, "fatPer100g": 28.1,
+    "portionGrams": 30,
+    "note": "un cucchiaio grattugiato = 10 g"
+  },
+  {
+    "name": "Grana Padano",
+    "aliases": ["grana", "grana grattugiato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 384, "proteinPer100g": 33.0, "carbsPer100g": 0.0, "fatPer100g": 28.0,
+    "portionGrams": 30,
+    "note": "un cucchiaio grattugiato = 10 g"
+  },
+  {
+    "name": "Pecorino Romano",
+    "aliases": ["pecorino", "pecorino grattugiato", "cacio"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 384, "proteinPer100g": 26.0, "carbsPer100g": 0.2, "fatPer100g": 31.0,
+    "portionGrams": 30,
+    "note": "quello della cacio e pepe"
+  },
+  {
+    "name": "Pecorino sardo",
+    "aliases": ["pecorino sardo stagionato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 389, "proteinPer100g": 27.0, "carbsPer100g": 0.5, "fatPer100g": 31.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Pecorino toscano",
+    "aliases": ["pecorino toscano stagionato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 400, "proteinPer100g": 25.5, "carbsPer100g": 0.5, "fatPer100g": 33.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Pecorino semistagionato",
+    "aliases": ["pecorino fresco", "pecorino da tavola", "pecorino giovane"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 353, "proteinPer100g": 22.0, "carbsPer100g": 1.0, "fatPer100g": 29.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Gorgonzola dolce",
+    "aliases": ["gorgonzola", "zola"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 324, "proteinPer100g": 19.1, "carbsPer100g": 1.0, "fatPer100g": 27.1,
+    "portionGrams": 50
+  },
+  {
+    "name": "Gorgonzola piccante",
+    "aliases": ["zola piccante"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 330, "proteinPer100g": 20.0, "carbsPer100g": 0.5, "fatPer100g": 28.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Taleggio",
+    "aliases": ["taleggio dop"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 312, "proteinPer100g": 19.0, "carbsPer100g": 0.9, "fatPer100g": 26.2,
+    "portionGrams": 50
+  },
+  {
+    "name": "Fontina",
+    "aliases": ["fontina valdostana"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 343, "proteinPer100g": 24.5, "carbsPer100g": 0.8, "fatPer100g": 26.9,
+    "portionGrams": 50
+  },
+  {
+    "name": "Asiago",
+    "aliases": ["asiago pressato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 356, "proteinPer100g": 24.5, "carbsPer100g": 1.0, "fatPer100g": 28.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Montasio",
+    "aliases": ["montasio stagionato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 395, "proteinPer100g": 26.0, "carbsPer100g": 1.0, "fatPer100g": 32.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Toma piemontese",
+    "aliases": ["toma"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 340, "proteinPer100g": 22.0, "carbsPer100g": 1.0, "fatPer100g": 27.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Caciocavallo",
+    "aliases": ["caciocavallo silano"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 370, "proteinPer100g": 25.0, "carbsPer100g": 1.0, "fatPer100g": 30.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Caciotta mista",
+    "aliases": ["caciotta", "caciottina"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 340, "proteinPer100g": 21.5, "carbsPer100g": 1.5, "fatPer100g": 28.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Provolone dolce",
+    "aliases": ["provolone"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 366, "proteinPer100g": 25.0, "carbsPer100g": 2.0, "fatPer100g": 29.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Provolone piccante",
+    "aliases": ["provolone stagionato"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 375, "proteinPer100g": 26.0, "carbsPer100g": 1.0, "fatPer100g": 30.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Provola",
+    "aliases": ["provola fresca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 305, "proteinPer100g": 21.0, "carbsPer100g": 1.5, "fatPer100g": 24.0,
+    "portionGrams": 80
+  },
+  {
+    "name": "Provola affumicata",
+    "aliases": ["provola fume"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 300, "proteinPer100g": 20.5, "carbsPer100g": 1.5, "fatPer100g": 23.5,
+    "portionGrams": 80
+  },
+  {
+    "name": "Scamorza",
+    "aliases": ["scamorza bianca"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 334, "proteinPer100g": 24.0, "carbsPer100g": 1.5, "fatPer100g": 26.0,
+    "portionGrams": 80
+  },
+  {
+    "name": "Scamorza affumicata",
+    "aliases": ["scamorza fume", "scamorza alla piastra"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 330, "proteinPer100g": 24.0, "carbsPer100g": 1.0, "fatPer100g": 25.5,
+    "portionGrams": 80,
+    "note": "buona anche alla piastra"
+  },
+  {
+    "name": "Emmental",
+    "aliases": ["emmenthal", "formaggio coi buchi", "svizzero"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 385, "proteinPer100g": 28.5, "carbsPer100g": 0.5, "fatPer100g": 30.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Brie",
+    "aliases": ["formaggio brie"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 320, "proteinPer100g": 20.0, "carbsPer100g": 0.5, "fatPer100g": 26.5,
+    "portionGrams": 50
+  },
+  {
+    "name": "Cheddar",
+    "aliases": ["formaggio cheddar"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 405, "proteinPer100g": 25.0, "carbsPer100g": 1.3, "fatPer100g": 33.5,
+    "portionGrams": 30,
+    "note": "una fetta da hamburger = 20-30 g"
+  },
+  {
+    "name": "Formaggio fuso a fette",
+    "aliases": ["sottiletta", "fetta per toast", "formaggio per toast"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 265, "proteinPer100g": 14.0, "carbsPer100g": 6.0, "fatPer100g": 20.5,
+    "portionGrams": 20,
+    "note": "una fetta = 20 g"
+  },
+  {
+    "name": "Formaggino fuso",
+    "aliases": ["formaggino"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 250, "proteinPer100g": 11.0, "carbsPer100g": 6.0, "fatPer100g": 20.0,
+    "portionGrams": 22,
+    "note": "un formaggino = 22 g"
+  },
+  {
+    "name": "Burro",
+    "aliases": ["noce di burro"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 758, "proteinPer100g": 0.8, "carbsPer100g": 1.1, "fatPer100g": 83.4,
+    "portionGrams": 10,
+    "note": "una noce = 10 g"
+  },
+  {
+    "name": "Burro chiarificato",
+    "aliases": ["ghee", "burro ghee"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 897, "proteinPer100g": 0.3, "carbsPer100g": 0.0, "fatPer100g": 99.5,
+    "portionGrams": 10
+  },
+  {
+    "name": "Panna fresca da montare",
+    "aliases": ["panna da montare", "panna fresca liquida"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 337, "proteinPer100g": 2.1, "carbsPer100g": 3.2, "fatPer100g": 35.0,
+    "portionGrams": 50,
+    "note": "non montata, 35% di grassi"
+  },
+  {
+    "name": "Panna da cucina",
+    "aliases": ["panna per cucinare"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 215, "proteinPer100g": 2.5, "carbsPer100g": 4.0, "fatPer100g": 21.0,
+    "portionGrams": 50
+  },
+  {
+    "name": "Panna montata zuccherata",
+    "aliases": ["panna montata", "ciuffo di panna"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 310, "proteinPer100g": 2.0, "carbsPer100g": 12.0, "fatPer100g": 28.0,
+    "portionGrams": 30,
+    "note": "un ciuffo abbondante = 30 g"
+  },
+  {
+    "name": "Panna acida",
+    "aliases": ["sour cream", "creme fraiche"],
+    "category": "Latticini e formaggi",
+    "kcalPer100g": 193, "proteinPer100g": 2.5, "carbsPer100g": 3.5, "fatPer100g": 19.0,
+    "portionGrams": 30
+  }
+]

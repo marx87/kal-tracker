@@ -14,11 +14,24 @@ class FoodCatalogRepository {
   final AppDatabase _database;
   final Uuid _uuid;
 
+  /// [aliasMatchIds]: id (dall'indice del catalogo) da considerare comunque
+  /// un match della query, così «matriciana» trova «Pasta all'amatriciana».
+  /// [restrictToIds]: se presente limita il risultato a quegli id
+  /// (filtro per categoria, che vive solo nell'asset del catalogo);
+  /// gli alimenti del profilo restano comunque visibili.
   Stream<List<FoodCatalogItem>> watchCatalog({
     required String profileId,
     String query = '',
     int limit = 50,
-  }) => _watch(profileId: profileId, query: query, limit: limit);
+    Iterable<String> aliasMatchIds = const [],
+    Set<String>? restrictToIds,
+  }) => _watch(
+    profileId: profileId,
+    query: query,
+    limit: limit,
+    aliasMatchIds: aliasMatchIds,
+    restrictToIds: restrictToIds,
+  );
 
   Stream<List<FoodCatalogItem>> watchFavorites({
     required String profileId,
@@ -34,8 +47,16 @@ class FoodCatalogRepository {
     required String profileId,
     String query = '',
     int limit = 50,
-  }) =>
-      _watch(profileId: profileId, query: query, onlyMine: true, limit: limit);
+    Iterable<String> aliasMatchIds = const [],
+    Set<String>? restrictToIds,
+  }) => _watch(
+    profileId: profileId,
+    query: query,
+    onlyMine: true,
+    limit: limit,
+    aliasMatchIds: aliasMatchIds,
+    restrictToIds: restrictToIds,
+  );
 
   Future<FoodCatalogItem?> getFood({
     required String profileId,
@@ -87,7 +108,9 @@ class FoodCatalogRepository {
               stored.ownerProfileId != profileId)) {
         throw StateError('Alimento non trovato.');
       }
-      if (stored.source == FoodSource.seed || stored.ownerProfileId == null) {
+      if (stored.source == FoodSource.seed ||
+          stored.source == FoodSource.catalog ||
+          stored.ownerProfileId == null) {
         final copyId = _uuid.v4();
         await _insertFood(
           id: copyId,
@@ -146,7 +169,9 @@ class FoodCatalogRepository {
       if (stored == null || stored.deletedAt != null) {
         return;
       }
-      if (stored.source == FoodSource.seed || stored.ownerProfileId == null) {
+      if (stored.source == FoodSource.seed ||
+          stored.source == FoodSource.catalog ||
+          stored.ownerProfileId == null) {
         throw const FoodCatalogException(
           'Gli alimenti di base non si possono eliminare.',
         );
@@ -337,6 +362,8 @@ class FoodCatalogRepository {
     bool onlyFavorites = false,
     bool onlyRecent = false,
     bool onlyMine = false,
+    Iterable<String> aliasMatchIds = const [],
+    Set<String>? restrictToIds,
     required int limit,
   }) {
     if (limit <= 0 || limit > 200) {
@@ -345,9 +372,23 @@ class FoodCatalogRepository {
     final statement = _baseQuery(profileId);
     final cleanQuery = query.trim().toLowerCase();
     if (cleanQuery.isNotEmpty) {
+      var matchesQuery =
+          _database.foods.name.lower().contains(cleanQuery) |
+          _database.foods.brand.lower().contains(cleanQuery);
+      final aliasIds = aliasMatchIds.toList(growable: false);
+      if (aliasIds.isNotEmpty) {
+        matchesQuery = matchesQuery | _database.foods.id.isIn(aliasIds);
+      }
+      statement.where(matchesQuery);
+    }
+    if (restrictToIds != null) {
+      // Le copie personali e gli alimenti custom hanno id nuovi che non
+      // compaiono mai nell'indice dell'asset: il filtro per categoria non
+      // deve nasconderli, altrimenti in «Solo i miei» la lista sarebbe
+      // sempre vuota e le personalizzazioni sparirebbero.
       statement.where(
-        _database.foods.name.lower().contains(cleanQuery) |
-            _database.foods.brand.lower().contains(cleanQuery),
+        _database.foods.id.isIn(restrictToIds.toList(growable: false)) |
+            _database.foods.ownerProfileId.equals(profileId),
       );
     }
     if (onlyFavorites) {

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
@@ -287,6 +288,164 @@ void main() {
         await repository.getFood(profileId: profileId, foodId: 'seed-banana'),
         isNotNull,
       );
+    },
+  );
+
+  Future<void> insertCatalogFood({
+    required String id,
+    required String name,
+    double calories = 150,
+  }) async {
+    final now = AppTime.nowUtc();
+    await database
+        .into(database.foods)
+        .insert(
+          FoodsCompanion.insert(
+            id: id,
+            name: name,
+            caloriesPer100g: calories,
+            proteinPer100g: 7,
+            carbsPer100g: 20,
+            fatPer100g: 4.5,
+            defaultServingGrams: const Value(350),
+            source: const Value(FoodSource.catalog),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+  }
+
+  test(
+    'i piatti del catalogo si personalizzano con una copia e non si eliminano',
+    () async {
+      await insertCatalogFood(id: 'cat-pasta-al-ragu', name: 'Pasta al ragù');
+
+      final copyId = await repository.updateFood(
+        profileId: profileId,
+        foodId: 'cat-pasta-al-ragu',
+        draft: const FoodDraft(
+          name: 'Ragù di casa',
+          per100g: Nutrients(calories: 140, protein: 8, carbs: 18, fat: 4),
+          defaultServingGrams: 400,
+        ),
+      );
+
+      expect(copyId, isNot('cat-pasta-al-ragu'));
+      final original = await repository.getFood(
+        profileId: profileId,
+        foodId: 'cat-pasta-al-ragu',
+      );
+      expect(original?.name, 'Pasta al ragù');
+      expect(original?.isCatalog, isTrue);
+      expect(original?.isBuiltIn, isTrue);
+      expect(original?.defaultServingGrams, 350);
+
+      final copy = await repository.getFood(
+        profileId: profileId,
+        foodId: copyId,
+      );
+      expect(copy?.name, 'Ragù di casa');
+      expect(copy?.source, FoodSource.custom);
+
+      // In outbox finisce solo la copia: il catalogo resta fuori dal push.
+      final outbox = (await database.select(database.syncOutbox).get())
+          .where((row) => row.entityType == 'food')
+          .map((row) => row.entityId);
+      expect(outbox, [copyId]);
+
+      await expectLater(
+        repository.deleteFood(
+          profileId: profileId,
+          foodId: 'cat-pasta-al-ragu',
+        ),
+        throwsA(isA<FoodCatalogException>()),
+      );
+      expect(
+        await repository.getFood(
+          profileId: profileId,
+          foodId: 'cat-pasta-al-ragu',
+        ),
+        isNotNull,
+      );
+    },
+  );
+
+  test('la ricerca trova i piatti del catalogo tramite gli alias', () async {
+    await insertCatalogFood(id: 'cat-pasta-al-ragu', name: 'Pasta al ragù');
+
+    // «bolognese» non compare in nome o marca: senza alias non esce nulla.
+    expect(
+      await repository
+          .watchCatalog(profileId: profileId, query: 'bolognese')
+          .first,
+      isEmpty,
+    );
+
+    final matches = await repository
+        .watchCatalog(
+          profileId: profileId,
+          query: 'bolognese',
+          aliasMatchIds: const ['cat-pasta-al-ragu'],
+        )
+        .first;
+    expect(matches.single.name, 'Pasta al ragù');
+  });
+
+  test('restrictToIds limita il catalogo a una categoria', () async {
+    await insertCatalogFood(id: 'cat-pasta-al-ragu', name: 'Pasta al ragù');
+    await insertCatalogFood(id: 'cat-tiramisu', name: 'Tiramisù');
+
+    final primi = await repository
+        .watchCatalog(
+          profileId: profileId,
+          restrictToIds: const {'cat-pasta-al-ragu'},
+        )
+        .first;
+    expect(primi.map((food) => food.id), ['cat-pasta-al-ragu']);
+
+    expect(
+      await repository
+          .watchCatalog(profileId: profileId, restrictToIds: const {})
+          .first,
+      isEmpty,
+    );
+  });
+
+  test(
+    'il filtro categoria non nasconde copie personali e alimenti custom',
+    () async {
+      await insertCatalogFood(id: 'cat-pasta-al-ragu', name: 'Pasta al ragù');
+      final copyId = await repository.updateFood(
+        profileId: profileId,
+        foodId: 'cat-pasta-al-ragu',
+        draft: const FoodDraft(
+          name: 'Pasta al ragù di casa',
+          per100g: Nutrients(calories: 140, protein: 8, carbs: 18, fat: 4),
+          defaultServingGrams: 400,
+        ),
+      );
+
+      // La copia ha un id nuovo che non è mai nell'indice dell'asset:
+      // con la categoria attiva deve restare accanto all'originale.
+      final all = await repository
+          .watchCatalog(
+            profileId: profileId,
+            restrictToIds: const {'cat-pasta-al-ragu'},
+          )
+          .first;
+      expect(all.map((food) => food.id).toSet(), {
+        'cat-pasta-al-ragu',
+        copyId,
+      });
+
+      // «Solo i miei» + categoria non deve più dare una lista vuota.
+      final mine = await repository
+          .watchMine(
+            profileId: profileId,
+            restrictToIds: const {'cat-pasta-al-ragu'},
+          )
+          .first;
+      expect(mine.map((food) => food.id), [copyId]);
     },
   );
 

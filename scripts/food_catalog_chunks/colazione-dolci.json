@@ -1,0 +1,657 @@
+[
+  {
+    "name": "Cornetto semplice",
+    "aliases": ["cornetto vuoto", "croissant", "brioche vuota", "cornetto del bar"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 410, "proteinPer100g": 8, "carbsPer100g": 55, "fatPer100g": 18,
+    "portionGrams": 45,
+    "note": "cornetto da bar, senza farcitura"
+  },
+  {
+    "name": "Cornetto alla crema",
+    "aliases": ["croissant alla crema", "brioche alla crema", "cornetto crema pasticcera"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 370, "proteinPer100g": 7, "carbsPer100g": 48, "fatPer100g": 16,
+    "portionGrams": 85
+  },
+  {
+    "name": "Cornetto alla marmellata",
+    "aliases": ["croissant alla marmellata", "cornetto albicocca", "brioche alla marmellata"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 6.5, "carbsPer100g": 55, "fatPer100g": 14.5,
+    "portionGrams": 85
+  },
+  {
+    "name": "Cornetto al cioccolato",
+    "aliases": ["croissant al cioccolato", "cornetto nutella", "brioche al cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 405, "proteinPer100g": 7, "carbsPer100g": 52, "fatPer100g": 18.5,
+    "portionGrams": 85
+  },
+  {
+    "name": "Cornetto integrale al miele",
+    "aliases": ["cornetto integrale", "croissant integrale", "brioche integrale"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 390, "proteinPer100g": 7.5, "carbsPer100g": 54, "fatPer100g": 16,
+    "portionGrams": 80
+  },
+  {
+    "name": "Brioche col tuppo",
+    "aliases": ["brioche siciliana", "brioscia", "brioche per granita"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 360, "proteinPer100g": 8, "carbsPer100g": 50, "fatPer100g": 14,
+    "portionGrams": 90
+  },
+  {
+    "name": "Saccottino al cioccolato",
+    "aliases": ["pain au chocolat", "fagottino al cioccolato", "saccottino"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 425, "proteinPer100g": 7, "carbsPer100g": 46, "fatPer100g": 23.5,
+    "portionGrams": 65
+  },
+  {
+    "name": "Bombolone con zucchero",
+    "aliases": ["bombolone", "krapfen vuoto", "graffa", "ciambella fritta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 400, "proteinPer100g": 7, "carbsPer100g": 50, "fatPer100g": 19,
+    "portionGrams": 80,
+    "note": "fritto, con zucchero semolato"
+  },
+  {
+    "name": "Krapfen alla crema",
+    "aliases": ["bombolone alla crema", "bomba alla crema", "krapfen"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 350, "proteinPer100g": 6, "carbsPer100g": 45, "fatPer100g": 16,
+    "portionGrams": 100
+  },
+  {
+    "name": "Biscotti secchi",
+    "aliases": ["biscotti da colazione", "biscotti classici", "biscotti tipo oro"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 420, "proteinPer100g": 7, "carbsPer100g": 80, "fatPer100g": 8,
+    "portionGrams": 30,
+    "note": "circa 4 biscotti"
+  },
+  {
+    "name": "Biscotti frollini",
+    "aliases": ["frollini", "biscotti al burro", "biscotti di pasta frolla"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 480, "proteinPer100g": 6.5, "carbsPer100g": 70, "fatPer100g": 19,
+    "portionGrams": 30,
+    "note": "circa 3-4 biscotti"
+  },
+  {
+    "name": "Biscotti con gocce di cioccolato",
+    "aliases": ["frollini con gocce", "biscotti gocce cioccolato", "cookies"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 490, "proteinPer100g": 6.5, "carbsPer100g": 66, "fatPer100g": 22,
+    "portionGrams": 30
+  },
+  {
+    "name": "Biscotti integrali",
+    "aliases": ["frollini integrali", "biscotti alla crusca", "biscotti fibra"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 450, "proteinPer100g": 8, "carbsPer100g": 66, "fatPer100g": 16,
+    "portionGrams": 30
+  },
+  {
+    "name": "Biscotti al cacao",
+    "aliases": ["frollini al cacao", "biscotti al cioccolato", "biscotti neri"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 460, "proteinPer100g": 7, "carbsPer100g": 70, "fatPer100g": 17,
+    "portionGrams": 30
+  },
+  {
+    "name": "Biscotti tipo digestive",
+    "aliases": ["digestive", "biscotti inglesi", "biscotti al grano"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 480, "proteinPer100g": 7, "carbsPer100g": 62, "fatPer100g": 21,
+    "portionGrams": 30
+  },
+  {
+    "name": "Biscotti farciti alla nocciola",
+    "aliases": ["biscotti ripieni", "biscotti con crema di nocciole", "biscotti farciti"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 490, "proteinPer100g": 7, "carbsPer100g": 65, "fatPer100g": 22,
+    "portionGrams": 30
+  },
+  {
+    "name": "Savoiardi",
+    "aliases": ["biscotti savoiardi", "biscotti da tiramisù"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 390, "proteinPer100g": 9, "carbsPer100g": 75, "fatPer100g": 6,
+    "portionGrams": 25,
+    "note": "circa 2 savoiardi"
+  },
+  {
+    "name": "Amaretti",
+    "aliases": ["amaretti secchi", "biscotti alle mandorle amare"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 440, "proteinPer100g": 8, "carbsPer100g": 65, "fatPer100g": 16,
+    "portionGrams": 20
+  },
+  {
+    "name": "Cantucci alle mandorle",
+    "aliases": ["cantuccini", "biscotti di Prato", "tozzetti"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 470, "proteinPer100g": 10, "carbsPer100g": 65, "fatPer100g": 18,
+    "portionGrams": 30
+  },
+  {
+    "name": "Wafer alla nocciola",
+    "aliases": ["wafer", "wafers", "wafer al cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 520, "proteinPer100g": 6, "carbsPer100g": 62, "fatPer100g": 27,
+    "portionGrams": 25
+  },
+  {
+    "name": "Corn flakes",
+    "aliases": ["fiocchi di mais", "cereali colazione", "cornflakes"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 370, "proteinPer100g": 7, "carbsPer100g": 84, "fatPer100g": 1,
+    "portionGrams": 30,
+    "note": "senza latte"
+  },
+  {
+    "name": "Muesli con frutta secca",
+    "aliases": ["muesli", "musli", "cereali con frutta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 400, "proteinPer100g": 9, "carbsPer100g": 62, "fatPer100g": 12,
+    "portionGrams": 40
+  },
+  {
+    "name": "Muesli croccante",
+    "aliases": ["granola", "crunchy", "muesli al forno"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 450, "proteinPer100g": 8, "carbsPer100g": 62, "fatPer100g": 18,
+    "portionGrams": 40
+  },
+  {
+    "name": "Fiocchi d'avena",
+    "aliases": ["avena", "oats", "porridge crudo"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 375, "proteinPer100g": 13, "carbsPer100g": 60, "fatPer100g": 7,
+    "portionGrams": 40,
+    "note": "valori a secco"
+  },
+  {
+    "name": "Cereali al cioccolato",
+    "aliases": ["riso soffiato al cioccolato", "palline al cacao", "cereali cacao"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 390, "proteinPer100g": 8, "carbsPer100g": 75, "fatPer100g": 5,
+    "portionGrams": 30,
+    "note": "senza latte"
+  },
+  {
+    "name": "Riso soffiato",
+    "aliases": ["cereali di riso", "riso soffiato colazione"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 6, "carbsPer100g": 87, "fatPer100g": 1,
+    "portionGrams": 30
+  },
+  {
+    "name": "Fette biscottate",
+    "aliases": ["fette", "fette dorate", "biscotte"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 410, "proteinPer100g": 11, "carbsPer100g": 75, "fatPer100g": 6,
+    "portionGrams": 25,
+    "note": "circa 3 fette"
+  },
+  {
+    "name": "Fette biscottate integrali",
+    "aliases": ["fette integrali", "fette biscottate crusca"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 395, "proteinPer100g": 13, "carbsPer100g": 68, "fatPer100g": 7,
+    "portionGrams": 25,
+    "note": "circa 3 fette"
+  },
+  {
+    "name": "Marmellata di albicocche",
+    "aliases": ["marmellata", "confettura di albicocche", "marmellata albicocca"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 240, "proteinPer100g": 0.5, "carbsPer100g": 58, "fatPer100g": 0.2,
+    "portionGrams": 25,
+    "note": "un cucchiaio abbondante"
+  },
+  {
+    "name": "Confettura di frutti di bosco",
+    "aliases": ["marmellata frutti di bosco", "marmellata di fragole", "confettura"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 230, "proteinPer100g": 0.5, "carbsPer100g": 56, "fatPer100g": 0.2,
+    "portionGrams": 25
+  },
+  {
+    "name": "Miele",
+    "aliases": ["miele millefiori", "miele di acacia"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 305, "proteinPer100g": 0.4, "carbsPer100g": 80, "fatPer100g": 0,
+    "portionGrams": 20,
+    "note": "un cucchiaio"
+  },
+  {
+    "name": "Crema spalmabile alle nocciole e cacao",
+    "aliases": ["nutella", "crema di nocciole", "cioccolata spalmabile", "gianduia spalmabile"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 540, "proteinPer100g": 6, "carbsPer100g": 57, "fatPer100g": 31,
+    "portionGrams": 30,
+    "note": "due cucchiaini abbondanti"
+  },
+  {
+    "name": "Burro di arachidi",
+    "aliases": ["crema di arachidi", "peanut butter"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 600, "proteinPer100g": 25, "carbsPer100g": 12, "fatPer100g": 50,
+    "portionGrams": 30
+  },
+  {
+    "name": "Crema spalmabile al pistacchio",
+    "aliases": ["crema di pistacchio", "pistacchio spalmabile"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 560, "proteinPer100g": 8, "carbsPer100g": 52, "fatPer100g": 36,
+    "portionGrams": 30
+  },
+  {
+    "name": "Crema di marroni",
+    "aliases": ["marmellata di castagne", "crema di castagne"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 260, "proteinPer100g": 1, "carbsPer100g": 62, "fatPer100g": 0.5,
+    "portionGrams": 25
+  },
+  {
+    "name": "Merendina farcita al latte",
+    "aliases": ["merendina al latte", "tortina al latte", "pan di spagna al latte"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 420, "proteinPer100g": 8, "carbsPer100g": 47, "fatPer100g": 22,
+    "portionGrams": 35
+  },
+  {
+    "name": "Merendina farcita al cacao",
+    "aliases": ["merendina al cioccolato", "tortina al cacao", "merendina cacao e crema"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 410, "proteinPer100g": 6, "carbsPer100g": 52, "fatPer100g": 20,
+    "portionGrams": 35
+  },
+  {
+    "name": "Plumcake allo yogurt",
+    "aliases": ["plumcake", "plum cake", "merendina plumcake"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 400, "proteinPer100g": 6, "carbsPer100g": 52, "fatPer100g": 18.5,
+    "portionGrams": 35,
+    "note": "monoporzione confezionata"
+  },
+  {
+    "name": "Crostatina alla marmellata",
+    "aliases": ["crostatina", "crostatina albicocca", "tortina alla marmellata"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 400, "proteinPer100g": 5, "carbsPer100g": 62, "fatPer100g": 15,
+    "portionGrams": 40
+  },
+  {
+    "name": "Croissant confezionato",
+    "aliases": ["cornetto confezionato", "croissant da supermercato", "brioche confezionata"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 430, "proteinPer100g": 7, "carbsPer100g": 50, "fatPer100g": 22,
+    "portionGrams": 45
+  },
+  {
+    "name": "Panino dolce con gocce di cioccolato",
+    "aliases": ["pangoccioli", "panino al latte con gocce", "pane dolce gocce cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 385, "proteinPer100g": 8, "carbsPer100g": 55, "fatPer100g": 14,
+    "portionGrams": 45
+  },
+  {
+    "name": "Crostata alla marmellata",
+    "aliases": ["crostata", "crostata di albicocche", "crostata di ciliegie"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 5.5, "carbsPer100g": 60, "fatPer100g": 13,
+    "portionGrams": 100,
+    "note": "una fetta"
+  },
+  {
+    "name": "Crostata alla crema di nocciole",
+    "aliases": ["crostata alla nutella", "crostata al cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 430, "proteinPer100g": 6, "carbsPer100g": 55, "fatPer100g": 20,
+    "portionGrams": 100,
+    "note": "una fetta"
+  },
+  {
+    "name": "Torta margherita",
+    "aliases": ["torta paradiso", "pan di spagna", "torta semplice"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 8, "carbsPer100g": 55, "fatPer100g": 14,
+    "portionGrams": 80,
+    "note": "una fetta"
+  },
+  {
+    "name": "Ciambellone",
+    "aliases": ["ciambella della nonna", "ciambellone casereccio", "torta ciambella"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 390, "proteinPer100g": 6.5, "carbsPer100g": 55, "fatPer100g": 16,
+    "portionGrams": 90,
+    "note": "una fetta"
+  },
+  {
+    "name": "Torta di mele",
+    "aliases": ["torta alle mele", "torta di mele della nonna"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 280, "proteinPer100g": 4, "carbsPer100g": 45, "fatPer100g": 9,
+    "portionGrams": 120,
+    "note": "una fetta"
+  },
+  {
+    "name": "Torta al cioccolato",
+    "aliases": ["torta tenerina", "torta cacao", "dolce al cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 410, "proteinPer100g": 6, "carbsPer100g": 48, "fatPer100g": 21,
+    "portionGrams": 90,
+    "note": "una fetta"
+  },
+  {
+    "name": "Tiramisù",
+    "aliases": ["tiramisu", "tiramisù classico", "mascarpone e savoiardi"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 300, "proteinPer100g": 6, "carbsPer100g": 32, "fatPer100g": 16.5,
+    "portionGrams": 150,
+    "note": "porzione da trattoria"
+  },
+  {
+    "name": "Pastiera napoletana",
+    "aliases": ["pastiera", "torta di grano e ricotta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 330, "proteinPer100g": 7, "carbsPer100g": 48, "fatPer100g": 12,
+    "portionGrams": 120,
+    "note": "una fetta"
+  },
+  {
+    "name": "Cheesecake",
+    "aliases": ["torta al formaggio", "cheesecake ai frutti di bosco"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 320, "proteinPer100g": 6, "carbsPer100g": 30, "fatPer100g": 20,
+    "portionGrams": 120,
+    "note": "una fetta"
+  },
+  {
+    "name": "Strudel di mele",
+    "aliases": ["strudel", "strudel trentino"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 270, "proteinPer100g": 4, "carbsPer100g": 40, "fatPer100g": 10,
+    "portionGrams": 120,
+    "note": "una fetta"
+  },
+  {
+    "name": "Panettone",
+    "aliases": ["panettone classico", "panettone con uvetta e canditi"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 360, "proteinPer100g": 7, "carbsPer100g": 52, "fatPer100g": 14,
+    "portionGrams": 100,
+    "note": "una fetta"
+  },
+  {
+    "name": "Pandoro",
+    "aliases": ["pandoro classico", "pandoro con zucchero a velo"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 410, "proteinPer100g": 7, "carbsPer100g": 48, "fatPer100g": 21,
+    "portionGrams": 100,
+    "note": "una fetta"
+  },
+  {
+    "name": "Torta della nonna",
+    "aliases": ["torta crema e pinoli", "crostata di crema"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 350, "proteinPer100g": 7, "carbsPer100g": 42, "fatPer100g": 17,
+    "portionGrams": 100,
+    "note": "una fetta"
+  },
+  {
+    "name": "Millefoglie alla crema",
+    "aliases": ["millefoglie", "diplomatico", "sfoglia con crema"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 5, "carbsPer100g": 40, "fatPer100g": 22,
+    "portionGrams": 100
+  },
+  {
+    "name": "Profiteroles",
+    "aliases": ["profitterol", "bignè al cioccolato con panna"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 330, "proteinPer100g": 5.5, "carbsPer100g": 30, "fatPer100g": 21,
+    "portionGrams": 120
+  },
+  {
+    "name": "Cannolo siciliano",
+    "aliases": ["cannolo", "cannolo alla ricotta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 7, "carbsPer100g": 42, "fatPer100g": 20,
+    "portionGrams": 90,
+    "note": "un cannolo medio"
+  },
+  {
+    "name": "Maritozzo con la panna",
+    "aliases": ["maritozzo", "maritozzo romano", "brioche con panna"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 340, "proteinPer100g": 5.5, "carbsPer100g": 38, "fatPer100g": 18.5,
+    "portionGrams": 120
+  },
+  {
+    "name": "Bignè alla crema",
+    "aliases": ["bignè", "pasticcino alla crema", "bignè di San Giuseppe"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 330, "proteinPer100g": 6, "carbsPer100g": 32, "fatPer100g": 20,
+    "portionGrams": 60,
+    "note": "circa 2 bignè"
+  },
+  {
+    "name": "Sfogliatella riccia",
+    "aliases": ["sfogliatella", "sfogliatella napoletana"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 400, "proteinPer100g": 6, "carbsPer100g": 48, "fatPer100g": 20,
+    "portionGrams": 100
+  },
+  {
+    "name": "Gelato fiordilatte",
+    "aliases": ["gelato alla crema", "gelato alla panna", "fior di latte"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 220, "proteinPer100g": 4, "carbsPer100g": 25, "fatPer100g": 11,
+    "portionGrams": 100,
+    "note": "coppetta media, 2 palline"
+  },
+  {
+    "name": "Gelato al cioccolato",
+    "aliases": ["gelato cioccolato fondente", "gelato al cacao"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 240, "proteinPer100g": 4.5, "carbsPer100g": 28, "fatPer100g": 12,
+    "portionGrams": 100
+  },
+  {
+    "name": "Gelato alla nocciola",
+    "aliases": ["gelato nocciola", "gelato gusto nocciola"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 250, "proteinPer100g": 5, "carbsPer100g": 26, "fatPer100g": 14,
+    "portionGrams": 100
+  },
+  {
+    "name": "Gelato al pistacchio",
+    "aliases": ["gelato pistacchio", "gelato gusto pistacchio"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 250, "proteinPer100g": 5.5, "carbsPer100g": 25, "fatPer100g": 14,
+    "portionGrams": 100
+  },
+  {
+    "name": "Gelato alla stracciatella",
+    "aliases": ["stracciatella", "gelato con scaglie di cioccolato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 235, "proteinPer100g": 4, "carbsPer100g": 27, "fatPer100g": 12,
+    "portionGrams": 100
+  },
+  {
+    "name": "Gelato alla frutta",
+    "aliases": ["gelato alla fragola", "gelato al limone cremoso", "gelato frutta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 160, "proteinPer100g": 2, "carbsPer100g": 30, "fatPer100g": 3.5,
+    "portionGrams": 100
+  },
+  {
+    "name": "Sorbetto al limone",
+    "aliases": ["sorbetto", "sorbetto limone", "gelato sorbetto"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 130, "proteinPer100g": 0.5, "carbsPer100g": 32, "fatPer100g": 0.2,
+    "portionGrams": 100
+  },
+  {
+    "name": "Cono gelato ricoperto confezionato",
+    "aliases": ["cornetto gelato", "cono gelato", "cono con cioccolato e granella"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 320, "proteinPer100g": 5, "carbsPer100g": 35, "fatPer100g": 18,
+    "portionGrams": 75,
+    "note": "un cono"
+  },
+  {
+    "name": "Ghiacciolo",
+    "aliases": ["ghiacciolo alla frutta", "ghiacciolo alla menta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 80, "proteinPer100g": 0, "carbsPer100g": 20, "fatPer100g": 0,
+    "portionGrams": 70,
+    "note": "un ghiacciolo"
+  },
+  {
+    "name": "Cioccolato fondente",
+    "aliases": ["cioccolata fondente", "tavoletta fondente", "fondente 70%"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 530, "proteinPer100g": 6, "carbsPer100g": 47, "fatPer100g": 34,
+    "portionGrams": 20,
+    "note": "2 quadretti"
+  },
+  {
+    "name": "Cioccolato al latte",
+    "aliases": ["cioccolata al latte", "tavoletta al latte"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 545, "proteinPer100g": 7.5, "carbsPer100g": 57, "fatPer100g": 31,
+    "portionGrams": 20,
+    "note": "2 quadretti"
+  },
+  {
+    "name": "Cioccolato bianco",
+    "aliases": ["cioccolata bianca", "tavoletta bianca"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 560, "proteinPer100g": 7, "carbsPer100g": 58, "fatPer100g": 33,
+    "portionGrams": 20
+  },
+  {
+    "name": "Cioccolato fondente extra 85%",
+    "aliases": ["fondente 85", "cioccolato amaro", "extra fondente"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 590, "proteinPer100g": 9, "carbsPer100g": 25, "fatPer100g": 48,
+    "portionGrams": 20
+  },
+  {
+    "name": "Cioccolatini gianduia",
+    "aliases": ["gianduiotti", "gianduiotto", "cioccolatini alla nocciola"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 560, "proteinPer100g": 8, "carbsPer100g": 50, "fatPer100g": 36,
+    "portionGrams": 20,
+    "note": "circa 2 cioccolatini"
+  },
+  {
+    "name": "Cioccolato al latte con nocciole intere",
+    "aliases": ["cioccolato con nocciole", "tavoletta con nocciole"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 560, "proteinPer100g": 9, "carbsPer100g": 45, "fatPer100g": 38,
+    "portionGrams": 25
+  },
+  {
+    "name": "Barretta di cereali",
+    "aliases": ["barretta ai cereali", "barretta cereali e frutta", "barretta colazione"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 420, "proteinPer100g": 6, "carbsPer100g": 68, "fatPer100g": 13,
+    "portionGrams": 25,
+    "note": "una barretta"
+  },
+  {
+    "name": "Barretta ai cereali e cioccolato",
+    "aliases": ["barretta cereali cioccolato", "barretta ricoperta"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 440, "proteinPer100g": 6.5, "carbsPer100g": 65, "fatPer100g": 17,
+    "portionGrams": 25,
+    "note": "una barretta"
+  },
+  {
+    "name": "Barretta proteica",
+    "aliases": ["barretta proteine", "protein bar", "barretta palestra"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 380, "proteinPer100g": 32, "carbsPer100g": 32, "fatPer100g": 12,
+    "portionGrams": 50,
+    "note": "una barretta"
+  },
+  {
+    "name": "Barretta al cocco ricoperta di cioccolato",
+    "aliases": ["barretta cocco", "snack al cocco"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 480, "proteinPer100g": 4, "carbsPer100g": 57, "fatPer100g": 26,
+    "portionGrams": 50,
+    "note": "una barretta"
+  },
+  {
+    "name": "Barretta con caramello e arachidi",
+    "aliases": ["snack caramello arachidi", "barretta cioccolato e caramello"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 490, "proteinPer100g": 9, "carbsPer100g": 57, "fatPer100g": 24,
+    "portionGrams": 50,
+    "note": "una barretta"
+  },
+  {
+    "name": "Crackers salati",
+    "aliases": ["crackers", "cracker", "crackers classici"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 430, "proteinPer100g": 9.5, "carbsPer100g": 68, "fatPer100g": 12,
+    "portionGrams": 25,
+    "note": "un pacchetto"
+  },
+  {
+    "name": "Crackers integrali",
+    "aliases": ["cracker integrali", "crackers alla crusca"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 420, "proteinPer100g": 10, "carbsPer100g": 62, "fatPer100g": 13,
+    "portionGrams": 25,
+    "note": "un pacchetto"
+  },
+  {
+    "name": "Taralli",
+    "aliases": ["taralli pugliesi", "tarallini", "taralli all'olio"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 470, "proteinPer100g": 9, "carbsPer100g": 60, "fatPer100g": 20,
+    "portionGrams": 40,
+    "note": "una manciata abbondante"
+  },
+  {
+    "name": "Taralli al finocchio",
+    "aliases": ["tarallini al finocchietto", "taralli con semi di finocchio"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 460, "proteinPer100g": 9, "carbsPer100g": 58, "fatPer100g": 20,
+    "portionGrams": 40
+  },
+  {
+    "name": "Gallette di riso",
+    "aliases": ["gallette", "gallette di mais", "galletta riso soffiato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 390, "proteinPer100g": 8, "carbsPer100g": 82, "fatPer100g": 3,
+    "portionGrams": 20,
+    "note": "circa 3 gallette"
+  },
+  {
+    "name": "Popcorn",
+    "aliases": ["pop corn", "mais scoppiato"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 480, "proteinPer100g": 9, "carbsPer100g": 55, "fatPer100g": 24,
+    "portionGrams": 50,
+    "note": "preparati con olio"
+  },
+  {
+    "name": "Patatine in busta",
+    "aliases": ["patatine", "chips", "patatine fritte in sacchetto"],
+    "category": "Colazione, dolci e snack",
+    "kcalPer100g": 530, "proteinPer100g": 6, "carbsPer100g": 52, "fatPer100g": 33,
+    "portionGrams": 50,
+    "note": "mezza busta media"
+  }
+]
