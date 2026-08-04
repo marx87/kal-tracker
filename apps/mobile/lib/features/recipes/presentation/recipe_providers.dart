@@ -68,9 +68,25 @@ final visibleRecipesProvider =
 final recipeTagCloudProvider = Provider<List<String>>((ref) {
   final recipes =
       ref.watch(recipesProvider).valueOrNull ?? const <FitRecipeSummary>[];
-  final tags = <String>{for (final recipe in recipes) ...recipe.tags}.toList()
-    ..sort();
-  return tags;
+  // Prima i pasti nell'ordine della giornata, poi gli altri tag per
+  // frequenza: con 150+ ricette i tag utili devono stare a inizio riga.
+  const mealOrder = ['colazione', 'pranzo', 'cena', 'spuntino', 'dolce'];
+  final counts = <String, int>{};
+  for (final recipe in recipes) {
+    for (final tag in recipe.tags) {
+      counts[tag] = (counts[tag] ?? 0) + 1;
+    }
+  }
+  final meals = [
+    for (final tag in mealOrder)
+      if (counts.containsKey(tag)) tag,
+  ];
+  final others = counts.keys.where((tag) => !mealOrder.contains(tag)).toList()
+    ..sort((a, b) {
+      final byCount = counts[b]!.compareTo(counts[a]!);
+      return byCount != 0 ? byCount : a.compareTo(b);
+    });
+  return [...meals, ...others];
 });
 
 final remainingMacrosProvider = Provider<RemainingMacros>((ref) {

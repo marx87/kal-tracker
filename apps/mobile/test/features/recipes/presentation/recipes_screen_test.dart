@@ -162,8 +162,9 @@ void main() {
     expect(ids, hasLength(asset.recipes.length + 6));
 
     // Il vocabolario controllato dei tag resta piccolo: un chip per tag,
-    // più «Solo preferite», anche con il ricettario pieno.
-    expect(find.byType(FilterChip), findsNWidgets(11));
+    // più «Solo preferite» e «Tutti i filtri», anche col ricettario pieno.
+    expect(find.byType(FilterChip), findsNWidgets(12));
+    expect(find.byKey(const Key('recipe_filters_toggle')), findsOneWidget);
     expect(
       find.byKey(const Key('recipe_tag_filter_meal prep')),
       findsOneWidget,

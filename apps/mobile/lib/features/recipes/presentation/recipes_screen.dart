@@ -152,6 +152,7 @@ class _RecipeFilters extends ConsumerStatefulWidget {
 
 class _RecipeFiltersState extends ConsumerState<_RecipeFilters> {
   final _search = TextEditingController();
+  var _expanded = false;
 
   @override
   void dispose() {
@@ -184,37 +185,69 @@ class _RecipeFiltersState extends ConsumerState<_RecipeFilters> {
           ),
         ),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            FilterChip(
-              key: const Key('recipes_only_favorites_chip'),
-              label: const Text('Solo preferite'),
-              avatar: Icon(
-                onlyFavorites
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                size: 18,
-                color: AppPalette.coral,
-              ),
-              selected: onlyFavorites,
-              selectedColor: AppPalette.coralSoft,
-              onSelected: (value) =>
-                  ref.read(recipeOnlyFavoritesProvider.notifier).state = value,
-            ),
-            for (final tag in tags)
+        // Con 150+ ricette i tag sono decine: di default una sola riga
+        // scorrevole, il chip col filtro apre la griglia completa.
+        Builder(
+          builder: (context) {
+            final chips = <Widget>[
               FilterChip(
-                key: Key('recipe_tag_filter_$tag'),
-                label: Text(tag),
-                selected: selectedTag == tag,
-                selectedColor: AppPalette.mint,
+                key: const Key('recipes_only_favorites_chip'),
+                label: const Text('Solo preferite'),
+                avatar: Icon(
+                  onlyFavorites
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  size: 18,
+                  color: AppPalette.coral,
+                ),
+                selected: onlyFavorites,
+                selectedColor: AppPalette.coralSoft,
                 onSelected: (value) =>
-                    ref.read(recipeTagFilterProvider.notifier).state = value
-                    ? tag
-                    : null,
+                    ref.read(recipeOnlyFavoritesProvider.notifier).state =
+                        value,
               ),
-          ],
+              for (final tag in tags)
+                FilterChip(
+                  key: Key('recipe_tag_filter_$tag'),
+                  label: Text(tag),
+                  selected: selectedTag == tag,
+                  selectedColor: AppPalette.mint,
+                  onSelected: (value) =>
+                      ref.read(recipeTagFilterProvider.notifier).state = value
+                      ? tag
+                      : null,
+                ),
+            ];
+            final toggle = FilterChip(
+              key: const Key('recipe_filters_toggle'),
+              label: Text(_expanded ? 'Comprimi' : 'Tutti i filtri'),
+              avatar: Icon(
+                _expanded
+                    ? Icons.unfold_less_rounded
+                    : Icons.unfold_more_rounded,
+                size: 18,
+              ),
+              selected: _expanded,
+              selectedColor: AppPalette.paper,
+              onSelected: (value) => setState(() => _expanded = value),
+            );
+            if (_expanded) {
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [...chips, toggle],
+              );
+            }
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final chip in chips) ...[chip, const SizedBox(width: 8)],
+                  toggle,
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
