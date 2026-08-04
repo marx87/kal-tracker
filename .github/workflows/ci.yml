@@ -82,6 +82,9 @@ jobs:
           retention-days: 14
 
   ios-simulator:
+    # I runner macOS costano 10x i minuti Linux: questo job gira solo su
+    # richiesta manuale, non a ogni PR/push (il 3/08 ha esaurito il piano).
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     timeout-minutes: 30
     defaults:
