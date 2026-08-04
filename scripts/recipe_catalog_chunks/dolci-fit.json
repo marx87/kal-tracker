@@ -1,0 +1,262 @@
+[
+  {
+    "name": "Torta proteica al cacao",
+    "tags": ["dolce", "proteico", "comfort"],
+    "description": "Una torta al cacao morbida che tiene in piedi la settimana: una fetta dopo cena o nello zaino per la pausa in cantiere, senza sensi di colpa.",
+    "instructions": "1. Accendi il forno a 180 gradi e fodera uno stampo da 20 cm con carta forno.\n2. In una ciotola mescola farina d'avena, proteine, cacao e lievito.\n3. In un'altra ciotola sbatti le uova con miele, yogurt e latte fino a ottenere un composto liscio.\n4. Unisci le polveri ai liquidi poco alla volta, mescolando finche' l'impasto e' omogeneo.\n5. Versa nello stampo e cuoci 30-35 minuti: fai la prova stecchino prima di sfornare.\n6. Lascia raffreddare completamente prima di tagliare in 6 fette.",
+    "servings": 6,
+    "prepMinutes": 50,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 150, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Proteine in polvere al cacao", "grams": 80, "per100g": { "calories": 380, "protein": 78, "carbs": 8, "fat": 5 } },
+      { "name": "Cacao amaro in polvere", "grams": 25, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Yogurt greco 0%", "grams": 200, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Miele", "grams": 40, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Latte parzialmente scremato", "grams": 80, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Lievito per dolci", "grams": 8, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Cheesecake fredda allo yogurt greco e fragole",
+    "tags": ["dolce", "leggero", "comfort"],
+    "description": "La cheesecake senza forno che prepari la sera e trovi pronta il giorno dopo: base croccante, crema allo yogurt e fragole fresche sopra.",
+    "instructions": "1. Trita i biscotti, impastali con l'olio di cocco fuso e pressali sul fondo di uno stampo a cerniera da 20 cm. Metti in frigo.\n2. Ammolla la gelatina in acqua fredda per 10 minuti, poi sciogliela in due cucchiai di succo di limone scaldato.\n3. Mescola yogurt greco, formaggio spalmabile e miele, poi incorpora la gelatina sciolta.\n4. Versa la crema sulla base e livella. Lascia in frigo almeno 4 ore.\n5. Prima di servire copri con le fragole a fettine.",
+    "servings": 6,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Biscotti secchi integrali", "grams": 100, "per100g": { "calories": 430, "protein": 7, "carbs": 70, "fat": 12 } },
+      { "name": "Olio di cocco", "grams": 25, "per100g": { "calories": 900, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Yogurt greco 0%", "grams": 400, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Formaggio spalmabile light", "grams": 150, "per100g": { "calories": 155, "protein": 8, "carbs": 4.5, "fat": 11 } },
+      { "name": "Miele", "grams": 50, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Gelatina in fogli", "grams": 10, "per100g": { "calories": 340, "protein": 84, "carbs": 0, "fat": 0 } },
+      { "name": "Fragole", "grams": 250, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } },
+      { "name": "Succo di limone", "grams": 20, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Mousse al cioccolato e ricotta",
+    "tags": ["dolce", "veloce", "comfort"],
+    "description": "Cioccolato vero e ricotta frullata: una mousse densa pronta in un quarto d'ora, per quando la voglia di dolce arriva sul serio.",
+    "instructions": "1. Sciogli il cioccolato fondente a bagnomaria o al microonde a bassa potenza.\n2. Frulla la ricotta con miele, cacao e latte finche' diventa una crema liscia.\n3. Aggiungi il cioccolato fuso a filo continuando a frullare.\n4. Dividi in due coppette e lascia rassodare in frigo almeno un'ora.",
+    "servings": 2,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Ricotta vaccina", "grams": 200, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Cioccolato fondente 85%", "grams": 30, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } },
+      { "name": "Cacao amaro in polvere", "grams": 10, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Miele", "grams": 15, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Latte parzialmente scremato", "grams": 30, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } }
+    ]
+  },
+  {
+    "name": "Banana bread fit avena e noci",
+    "tags": ["dolce", "colazione", "comfort"],
+    "description": "Il modo migliore per usare le banane troppo mature: un dolce da tagliare a fette che regge benissimo un paio di giorni fuori frigo.",
+    "instructions": "1. Accendi il forno a 180 gradi. Schiaccia le banane con una forchetta fino a farne una purea.\n2. Aggiungi uova, yogurt e miele e mescola bene.\n3. Incorpora la farina d'avena e il lievito, poi le noci spezzettate grossolanamente.\n4. Versa in uno stampo da plumcake rivestito di carta forno.\n5. Cuoci 45-50 minuti; se la superficie scurisce troppo copri con un foglio di alluminio.\n6. Fai raffreddare nello stampo prima di affettare.",
+    "servings": 6,
+    "prepMinutes": 65,
+    "ingredients": [
+      { "name": "Banane mature", "grams": 300, "per100g": { "calories": 89, "protein": 1.1, "carbs": 23, "fat": 0.3 } },
+      { "name": "Farina d'avena", "grams": 180, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Yogurt greco 0%", "grams": 100, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Noci sgusciate", "grams": 40, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Lievito per dolci", "grams": 8, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Cookie proteici avena e cioccolato",
+    "tags": ["dolce", "spuntino", "proteico"],
+    "description": "Otto biscotti rustici con avena e gocce di cioccolato: due a porzione e lo spuntino del pomeriggio e' sistemato per meta' settimana.",
+    "instructions": "1. Accendi il forno a 180 gradi. Schiaccia la banana in una ciotola.\n2. Aggiungi burro d'arachidi e latte e mescola fino a ottenere una crema.\n3. Unisci fiocchi d'avena, proteine in polvere e gocce di cioccolato: deve venire un impasto sodo.\n4. Forma 8 mucchietti su una teglia con carta forno e appiattiscili con il palmo.\n5. Cuoci 12-14 minuti finche' i bordi sono dorati. Falli raffreddare: rassodano fuori dal forno.",
+    "servings": 4,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 120, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Burro d'arachidi 100%", "grams": 40, "per100g": { "calories": 590, "protein": 26, "carbs": 12, "fat": 50 } },
+      { "name": "Proteine in polvere alla vaniglia", "grams": 70, "per100g": { "calories": 380, "protein": 78, "carbs": 8, "fat": 5 } },
+      { "name": "Banana matura", "grams": 100, "per100g": { "calories": 89, "protein": 1.1, "carbs": 23, "fat": 0.3 } },
+      { "name": "Gocce di cioccolato fondente", "grams": 30, "per100g": { "calories": 520, "protein": 6, "carbs": 48, "fat": 33 } },
+      { "name": "Latte parzialmente scremato", "grams": 30, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } }
+    ]
+  },
+  {
+    "name": "Gelato allo skyr ai frutti di bosco",
+    "tags": ["dolce", "veloce", "leggero"],
+    "description": "Frutti di bosco ancora congelati piu' skyr nel frullatore: in cinque minuti hai un gelato cremoso con un carico di proteine vero.",
+    "instructions": "1. Metti nel frullatore i frutti di bosco ancora congelati e la banana a pezzi.\n2. Aggiungi skyr e miele.\n3. Frulla a impulsi, fermandoti a spatolare i bordi, finche' la crema e' liscia e compatta.\n4. Servi subito in due coppette; se lo vuoi piu' sodo, mezz'ora in freezer e via.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Skyr naturale", "grams": 250, "per100g": { "calories": 63, "protein": 11, "carbs": 4, "fat": 0.2 } },
+      { "name": "Frutti di bosco surgelati", "grams": 200, "per100g": { "calories": 40, "protein": 1, "carbs": 9, "fat": 0.4 } },
+      { "name": "Banana", "grams": 50, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Nice cream banana e cacao",
+    "tags": ["dolce", "veloce", "leggero"],
+    "description": "Solo banane congelate, cacao e un cucchiaio di burro d'arachidi: sembra gelato al cioccolato, ma la base e' tutta frutta.",
+    "instructions": "1. Taglia le banane a rondelle e congelale almeno 4 ore (meglio se le tieni gia' pronte in freezer).\n2. Mettile nel frullatore con cacao, burro d'arachidi e latte di mandorla.\n3. Frulla a impulsi spatolando i bordi finche' ottieni una crema densa tipo gelato soft.\n4. Servi subito in due coppette con una spolverata di cacao.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Banane congelate a rondelle", "grams": 300, "per100g": { "calories": 89, "protein": 1.1, "carbs": 23, "fat": 0.3 } },
+      { "name": "Cacao amaro in polvere", "grams": 15, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Burro d'arachidi 100%", "grams": 20, "per100g": { "calories": 590, "protein": 26, "carbs": 12, "fat": 50 } },
+      { "name": "Latte di mandorla senza zucchero", "grams": 50, "per100g": { "calories": 15, "protein": 0.5, "carbs": 0.5, "fat": 1.2 } }
+    ]
+  },
+  {
+    "name": "Tiramisù proteico in coppa",
+    "tags": ["dolce", "proteico", "comfort"],
+    "description": "Il tiramisù del dopocena rifatto con yogurt greco e ricotta al posto del mascarpone: stesso rito del caffe' e del cacao, meta' delle calorie.",
+    "instructions": "1. Prepara il caffe' e lascialo raffreddare in un piatto fondo.\n2. Frulla yogurt greco, ricotta, proteine e miele fino a ottenere una crema liscia.\n3. Bagna velocemente i savoiardi nel caffe', senza inzupparli del tutto.\n4. In due coppe alterna savoiardi e crema in due strati.\n5. Spolvera con cacao amaro e lascia in frigo almeno un'ora prima di servire.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Yogurt greco 0%", "grams": 250, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Ricotta vaccina", "grams": 100, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Proteine in polvere alla vaniglia", "grams": 20, "per100g": { "calories": 380, "protein": 78, "carbs": 8, "fat": 5 } },
+      { "name": "Savoiardi", "grams": 40, "per100g": { "calories": 390, "protein": 8, "carbs": 75, "fat": 5 } },
+      { "name": "Caffè espresso", "grams": 60, "per100g": { "calories": 4, "protein": 0.2, "carbs": 0.6, "fat": 0.1 } },
+      { "name": "Miele", "grams": 15, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Cacao amaro in polvere", "grams": 5, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } }
+    ]
+  },
+  {
+    "name": "Muffin proteici al cacao",
+    "tags": ["dolce", "spuntino", "proteico"],
+    "description": "Sei muffin al cacao da preparare la domenica: uno al giorno nello zaino e lo spuntino di meta' mattina e' risolto senza passare dal bar.",
+    "instructions": "1. Accendi il forno a 180 gradi e prepara 6 pirottini.\n2. Mescola in una ciotola farina d'avena, proteine, cacao e lievito.\n3. A parte sbatti gli albumi con yogurt e miele, poi unisci le polveri.\n4. Aggiungi le gocce di cioccolato e distribuisci l'impasto nei pirottini.\n5. Cuoci 18-20 minuti, prova stecchino e lascia raffreddare su una gratella.",
+    "servings": 6,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 120, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Proteine in polvere al cacao", "grams": 90, "per100g": { "calories": 380, "protein": 78, "carbs": 8, "fat": 5 } },
+      { "name": "Cacao amaro in polvere", "grams": 15, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Albumi", "grams": 150, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Yogurt greco 0%", "grams": 150, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Miele", "grams": 40, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Gocce di cioccolato fondente", "grams": 25, "per100g": { "calories": 520, "protein": 6, "carbs": 48, "fat": 33 } },
+      { "name": "Lievito per dolci", "grams": 6, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Plumcake allo yogurt e limone",
+    "tags": ["dolce", "colazione", "leggero"],
+    "description": "Un plumcake profumato al limone, umido grazie allo yogurt: la fetta da inzuppare nel caffe' la mattina senza appesantirti.",
+    "instructions": "1. Accendi il forno a 180 gradi e rivesti uno stampo da plumcake.\n2. Sbatti le uova con miele e olio, poi aggiungi yogurt e succo di limone (grattugia anche la scorza se il limone non e' trattato).\n3. Incorpora farina d'avena e lievito mescolando dal basso verso l'alto.\n4. Versa nello stampo e cuoci 40-45 minuti, prova stecchino.\n5. Sforma tiepido e lascia raffreddare prima di tagliare in 6 fette.",
+    "servings": 6,
+    "prepMinutes": 55,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 180, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Yogurt greco 0%", "grams": 170, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Miele", "grams": 60, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Succo di limone", "grams": 30, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Olio di semi di girasole", "grams": 20, "per100g": { "calories": 900, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Lievito per dolci", "grams": 8, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Budino di chia al cacao",
+    "tags": ["dolce", "spuntino", "leggero"],
+    "description": "Lo prepari in cinque minuti la sera, la chia fa il lavoro di notte e al mattino trovi due vasetti di budino al cacao pronti in frigo.",
+    "instructions": "1. In una ciotola sciogli cacao e miele nel latte, mescolando bene con una frusta.\n2. Aggiungi i semi di chia e mescola per un minuto pieno, cosi' non si formano grumi.\n3. Dividi in due vasetti, mescola ancora dopo 10 minuti e metti in frigo tutta la notte.\n4. Al momento di mangiarlo completa con la banana a rondelle.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Semi di chia", "grams": 40, "per100g": { "calories": 486, "protein": 16.5, "carbs": 42, "fat": 30.7 } },
+      { "name": "Latte parzialmente scremato", "grams": 300, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Cacao amaro in polvere", "grams": 10, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Banana", "grams": 80, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } }
+    ]
+  },
+  {
+    "name": "Mugcake al burro d'arachidi",
+    "tags": ["dolce", "veloce", "comfort"],
+    "description": "La tortina in tazza per quando torni a casa distrutto e vuoi un dolce caldo subito: due minuti di microonde e sei a posto.",
+    "instructions": "1. In una tazza grande sbatti l'uovo con miele, latte e burro d'arachidi.\n2. Aggiungi farina d'avena e lievito e mescola finche' non ci sono grumi.\n3. Cuoci al microonde a 800 watt per 90 secondi: deve gonfiarsi e restare appena umido al centro.\n4. Lascia riposare un minuto e mangiala direttamente dalla tazza.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 30, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Uovo", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Burro d'arachidi 100%", "grams": 15, "per100g": { "calories": 590, "protein": 26, "carbs": 12, "fat": 50 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Latte parzialmente scremato", "grams": 30, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Lievito per dolci", "grams": 2, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Torta di mele light all'avena",
+    "tags": ["dolce", "comfort", "leggero"],
+    "description": "La torta di mele della domenica, ma con avena e yogurt al posto di burro e zucchero: tanta frutta dentro e profumo di casa.",
+    "instructions": "1. Accendi il forno a 180 gradi. Sbuccia le mele e tagliane tre quarti a dadini e il resto a fettine sottili.\n2. Sbatti le uova con miele e yogurt, poi aggiungi il succo di limone.\n3. Incorpora farina d'avena e lievito, poi i dadini di mela e l'uvetta.\n4. Versa in uno stampo da 22 cm e disponi le fettine di mela a raggiera sulla superficie.\n5. Cuoci 40-45 minuti finche' la superficie e' dorata. Fredda si taglia meglio.",
+    "servings": 6,
+    "prepMinutes": 60,
+    "ingredients": [
+      { "name": "Mele", "grams": 400, "per100g": { "calories": 52, "protein": 0.3, "carbs": 14, "fat": 0.2 } },
+      { "name": "Farina d'avena", "grams": 160, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Yogurt greco 0%", "grams": 120, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Miele", "grams": 50, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Uvetta", "grams": 30, "per100g": { "calories": 299, "protein": 2.5, "carbs": 69, "fat": 0.5 } },
+      { "name": "Succo di limone", "grams": 15, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Lievito per dolci", "grams": 8, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Coppa al caffè con skyr",
+    "tags": ["dolce", "veloce", "leggero"],
+    "description": "Skyr montato con caffe' e miele, scaglie di fondente sopra: il dolce al cucchiaio da fine cena che si prepara in dieci minuti.",
+    "instructions": "1. Prepara il caffe' e lascialo intiepidire.\n2. Sbatti lo skyr con caffe' e miele usando una frusta, finche' la crema e' gonfia e uniforme.\n3. Dividi in due coppe e metti in frigo mezz'ora.\n4. Prima di servire spolvera con cacao e completa con il cioccolato a scaglie.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Skyr naturale", "grams": 300, "per100g": { "calories": 63, "protein": 11, "carbs": 4, "fat": 0.2 } },
+      { "name": "Caffè espresso", "grams": 50, "per100g": { "calories": 4, "protein": 0.2, "carbs": 0.6, "fat": 0.1 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Cacao amaro in polvere", "grams": 5, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Cioccolato fondente 85%", "grams": 15, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } }
+    ]
+  },
+  {
+    "name": "Brownie fit avena e cacao",
+    "tags": ["dolce", "comfort"],
+    "description": "Quadrotti al cioccolato umidi al punto giusto: cacao vero e fondente 85%, con yogurt greco al posto di quintali di burro.",
+    "instructions": "1. Accendi il forno a 180 gradi e fodera una teglia quadrata da 20 cm.\n2. Sciogli il cioccolato fondente e lascialo intiepidire.\n3. Sbatti le uova con il miele, aggiungi yogurt e cioccolato fuso.\n4. Incorpora farina d'avena, cacao e lievito, poi le noci spezzettate.\n5. Versa in teglia e cuoci 20-22 minuti: il centro deve restare leggermente umido.\n6. Fai raffreddare del tutto e taglia 6 quadrotti.",
+    "servings": 6,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 100, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Cacao amaro in polvere", "grams": 30, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Cioccolato fondente 85%", "grams": 50, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Yogurt greco 0%", "grams": 150, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Miele", "grams": 60, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Noci sgusciate", "grams": 30, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } },
+      { "name": "Lievito per dolci", "grams": 4, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Pere al forno con crema di ricotta",
+    "tags": ["dolce", "leggero", "comfort"],
+    "description": "Pere caramellate in forno col loro zucchero, servite su ricotta lavorata col miele: un dolce caldo d'inverno che non pesa.",
+    "instructions": "1. Accendi il forno a 190 gradi. Taglia le pere a meta', togli il torsolo e incidile leggermente.\n2. Disponile in una pirofila con un dito d'acqua sul fondo e mezzo cucchiaino di miele su ogni meta'.\n3. Inforna 25-30 minuti finche' sono morbide e dorate.\n4. Nel frattempo lavora la ricotta con il miele rimasto fino a renderla cremosa.\n5. Servi le pere calde sulla crema di ricotta con le noci spezzettate sopra e, se ti piace, una spolverata di cannella.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Pere", "grams": 400, "per100g": { "calories": 57, "protein": 0.4, "carbs": 15, "fat": 0.1 } },
+      { "name": "Ricotta vaccina", "grams": 150, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Noci sgusciate", "grams": 20, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } }
+    ]
+  }
+]

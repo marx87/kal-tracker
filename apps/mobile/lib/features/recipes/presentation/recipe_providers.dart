@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/recipes/data/recipe_catalog_importer.dart';
 import 'package:kal_tracker/features/recipes/data/recipe_repository.dart';
 import 'package:kal_tracker/features/recipes/domain/recipe_models.dart';
 import 'package:kal_tracker/features/recipes/domain/recipe_suggestions.dart';
@@ -9,6 +10,14 @@ import 'package:kal_tracker/features/targets/presentation/target_providers.dart'
 
 final recipeRepositoryProvider = Provider<RecipeRepository>(
   (ref) => RecipeRepository(ref.watch(databaseProvider)),
+);
+
+/// L'import del ricettario NON è atteso dai provider delle ricette: parte
+/// fire-and-forget da main.dart e la lista, reattiva, si riempie quando la
+/// transazione batch va a segno. Così un asset rotto non blocca mai la
+/// schermata Ricette (le starter viaggiano su un binario separato).
+final recipeCatalogImporterProvider = Provider<RecipeCatalogImporter>(
+  (ref) => RecipeCatalogImporter(ref.watch(recipeRepositoryProvider)),
 );
 
 final starterRecipesProvider = FutureProvider<void>((ref) async {

@@ -1,0 +1,225 @@
+[
+  {
+    "name": "Schiscetta pollo, riso basmati e zucchine",
+    "tags": ["pranzo", "proteico", "meal prep"],
+    "description": "Il pranzo da portare via per eccellenza: riso che non scuoce, pollo al limone e zucchine che restano buone anche fredde. Preparalo la sera e la schiscetta è pronta per due giorni.",
+    "instructions": "1. Cuoci il riso basmati in acqua salata per 10-12 minuti, scolalo e allargalo su un piatto a raffreddare.\n2. Taglia il petto di pollo a bocconcini e le zucchine a rondelle spesse mezzo centimetro.\n3. Scalda metà dell'olio in padella e fai saltare le zucchine 5-6 minuti a fuoco vivo, poi mettile da parte.\n4. Nella stessa padella cuoci il pollo con il resto dell'olio 6-7 minuti, sfumando con il succo di limone a fine cottura.\n5. Dividi riso, pollo e zucchine in due contenitori: si conservano in frigo due giorni.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Riso basmati", "grams": 140, "per100g": { "calories": 350, "protein": 8, "carbs": 78, "fat": 1 } },
+      { "name": "Petto di pollo", "grams": 300, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Zucchine", "grams": 300, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 30, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Insalata di farro, feta e pomodorini",
+    "tags": ["pranzo", "meal prep"],
+    "description": "Il farro tiene la cottura e non si ammappazza mai: perfetto per l'insalata da contenitore. Feta e olive danno sapore senza bisogno di condire troppo.",
+    "instructions": "1. Sciacqua il farro perlato e cuocilo in acqua salata per 25-30 minuti, poi scolalo e fallo intiepidire.\n2. Taglia i pomodorini a metà e il cetriolo a mezzelune sottili.\n3. Sbriciola la feta grossolanamente e taglia le olive a rondelle.\n4. Unisci tutto in una ciotola con olio e basilico spezzettato a mano, mescolando bene.\n5. Meglio dopo mezz'ora di frigo: i sapori si amalgamano e dura tranquillamente due giorni.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Farro perlato", "grams": 140, "per100g": { "calories": 340, "protein": 13, "carbs": 67, "fat": 2 } },
+      { "name": "Feta", "grams": 100, "per100g": { "calories": 265, "protein": 14, "carbs": 4, "fat": 21 } },
+      { "name": "Pomodorini", "grams": 250, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Cetriolo", "grams": 150, "per100g": { "calories": 14, "protein": 0.7, "carbs": 2.2, "fat": 0.1 } },
+      { "name": "Olive nere denocciolate", "grams": 40, "per100g": { "calories": 235, "protein": 1.5, "carbs": 4, "fat": 24 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Basilico fresco", "grams": 10, "per100g": { "calories": 26, "protein": 3.2, "carbs": 2.6, "fat": 0.6 } }
+    ]
+  },
+  {
+    "name": "Buddha bowl di quinoa e ceci al forno",
+    "tags": ["pranzo", "meal prep"],
+    "description": "Ceci croccanti dal forno, quinoa e zucca arrosto: una ciotola vegetale che riempie davvero. I ceci tostati sono la parte che ti frega, finiscono prima di arrivare nel piatto.",
+    "instructions": "1. Scalda il forno a 200 gradi. Taglia la zucca a cubetti e mettila su una teglia con metà olio.\n2. Scola e asciuga bene i ceci, condiscili con il resto dell'olio e una spolverata di paprika, poi aggiungili alla teglia.\n3. Inforna per 25 minuti, girando a metà: i ceci devono diventare croccanti.\n4. Intanto sciacqua la quinoa e cuocila 15 minuti in acqua salata, poi scolala.\n5. Componi la ciotola con quinoa, zucca, ceci e spinaci freschi; completa con i semi di sesamo.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Quinoa", "grams": 120, "per100g": { "calories": 368, "protein": 14, "carbs": 64, "fat": 6 } },
+      { "name": "Ceci lessati", "grams": 240, "per100g": { "calories": 120, "protein": 7, "carbs": 17, "fat": 2.5 } },
+      { "name": "Zucca", "grams": 300, "per100g": { "calories": 26, "protein": 1, "carbs": 6.5, "fat": 0.1 } },
+      { "name": "Spinaci freschi", "grams": 100, "per100g": { "calories": 25, "protein": 2.9, "carbs": 2.5, "fat": 0.4 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Semi di sesamo", "grams": 15, "per100g": { "calories": 570, "protein": 18, "carbs": 12, "fat": 50 } }
+    ]
+  },
+  {
+    "name": "Insalata di riso venere, tonno e edamame",
+    "tags": ["pranzo", "proteico", "meal prep"],
+    "description": "Riso nero, tonno e edamame: fredda è ancora meglio che calda, quindi è nata per la schiscetta. Si prepara la sera in dieci minuti più la cottura del riso.",
+    "instructions": "1. Cuoci il riso venere in acqua salata per 35-40 minuti, scolalo e fallo raffreddare allargato su un vassoio.\n2. Sbollenta gli edamame per 3 minuti e passali sotto l'acqua fredda.\n3. Taglia i pomodorini a metà e sgocciola bene il tonno.\n4. Mescola tutto con olio e succo di limone, aggiustando di sale.\n5. Dividi in due contenitori: in frigo regge due giorni senza problemi.",
+    "servings": 2,
+    "prepMinutes": 50,
+    "ingredients": [
+      { "name": "Riso venere", "grams": 140, "per100g": { "calories": 340, "protein": 8, "carbs": 70, "fat": 2.5 } },
+      { "name": "Tonno al naturale sgocciolato", "grams": 160, "per100g": { "calories": 105, "protein": 24, "carbs": 0, "fat": 1 } },
+      { "name": "Edamame sgranati", "grams": 150, "per100g": { "calories": 120, "protein": 11, "carbs": 9, "fat": 5 } },
+      { "name": "Pomodorini", "grams": 200, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 20, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Pasta integrale tonno, olive e pomodorini",
+    "tags": ["pranzo", "veloce", "proteico"],
+    "description": "La pasta della dispensa: tonno, olive e pomodorini freschi saltati due minuti. Pronta nel tempo di cottura della pasta e buona anche a temperatura ambiente.",
+    "instructions": "1. Butta la pasta integrale in acqua bollente salata e cuocila al dente.\n2. Intanto scalda l'olio in padella con i pomodorini tagliati a metà: 4-5 minuti a fuoco vivo finché iniziano a cedere.\n3. Aggiungi le olive a rondelle e il tonno sgocciolato, spezzettandolo grossolanamente.\n4. Scola la pasta tenendo un mestolo di acqua di cottura e saltala in padella un minuto con quell'acqua.\n5. Servi subito oppure lascia raffreddare e invasa per il giorno dopo.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Pasta integrale", "grams": 160, "per100g": { "calories": 350, "protein": 13, "carbs": 67, "fat": 2.5 } },
+      { "name": "Tonno al naturale sgocciolato", "grams": 160, "per100g": { "calories": 105, "protein": 24, "carbs": 0, "fat": 1 } },
+      { "name": "Pomodorini", "grams": 250, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olive nere denocciolate", "grams": 30, "per100g": { "calories": 235, "protein": 1.5, "carbs": 4, "fat": 24 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Pasta di lenticchie con crema di zucchine e ricotta",
+    "tags": ["pranzo", "proteico", "comfort"],
+    "description": "La pasta di lenticchie rosse porta le proteine, la crema di zucchine e ricotta la rende un piatto vero e non una punizione. Chi la assaggia non indovina mai di cosa è fatta.",
+    "instructions": "1. Taglia le zucchine a rondelle e cuocile in padella con l'olio e un dito d'acqua per 8-10 minuti, finché sono morbide.\n2. Frullale con la ricotta e il basilico fino ad avere una crema liscia; regola di sale.\n3. Cuoci la pasta di lenticchie un minuto in meno di quanto dice la confezione: scuoce facilmente.\n4. Scolala e mescolala alla crema direttamente nella pentola, con un goccio di acqua di cottura.\n5. Completa con il parmigiano grattugiato e servi.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Pasta di lenticchie rosse", "grams": 160, "per100g": { "calories": 340, "protein": 25, "carbs": 50, "fat": 2 } },
+      { "name": "Zucchine", "grams": 400, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Ricotta vaccina", "grams": 100, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Basilico fresco", "grams": 10, "per100g": { "calories": 26, "protein": 3.2, "carbs": 2.6, "fat": 0.6 } }
+    ]
+  },
+  {
+    "name": "Pasta di ceci al pesto di rucola",
+    "tags": ["pranzo", "proteico", "veloce"],
+    "description": "Pesto fatto al volo con rucola, mandorle e parmigiano: più sprint del classico e pronto mentre bolle l'acqua. Con la pasta di ceci diventa un piatto completo.",
+    "instructions": "1. Frulla rucola, mandorle, parmigiano, olio e succo di limone con un cucchiaio d'acqua fredda fino ad avere un pesto grezzo.\n2. Cuoci la pasta di ceci al dente in acqua salata.\n3. Taglia i pomodorini a metà.\n4. Scola la pasta tenendo mezzo bicchiere di acqua di cottura.\n5. Condisci con pesto e pomodorini, allungando con l'acqua tenuta da parte fino alla cremosità giusta.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Pasta di ceci", "grams": 160, "per100g": { "calories": 340, "protein": 21, "carbs": 55, "fat": 3.5 } },
+      { "name": "Rucola", "grams": 60, "per100g": { "calories": 28, "protein": 2.6, "carbs": 3.7, "fat": 0.7 } },
+      { "name": "Mandorle", "grams": 20, "per100g": { "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 25, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 15, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Pomodorini", "grams": 150, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Wrap integrale pollo, yogurt e avocado",
+    "tags": ["pranzo", "proteico", "veloce"],
+    "description": "Il wrap che non si affloscia: pollo saltato, salsa allo yogurt greco al posto della maionese e avocado. Avvolto nella carta stagnola viaggia benissimo fino a pranzo.",
+    "instructions": "1. Taglia il pollo a striscioline e cuocilo in padella antiaderente 6-7 minuti con sale e paprika.\n2. Mescola lo yogurt greco con un pizzico di sale e, se ti piace, una punta di senape.\n3. Scalda la tortilla 30 secondi per lato in padella.\n4. Spalma lo yogurt, poi distribuisci lattuga, pomodorini a metà, pollo e avocado a fette in una striscia centrale.\n5. Piega i bordi corti e arrotola stretto; taglia a metà o avvolgi in stagnola per il trasporto.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Tortilla integrale", "grams": 70, "per100g": { "calories": 300, "protein": 9, "carbs": 48, "fat": 8 } },
+      { "name": "Petto di pollo", "grams": 130, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Yogurt greco 0%", "grams": 60, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Lattuga", "grams": 40, "per100g": { "calories": 17, "protein": 1.2, "carbs": 2.8, "fat": 0.2 } },
+      { "name": "Pomodorini", "grams": 80, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Avocado", "grams": 40, "per100g": { "calories": 160, "protein": 2, "carbs": 8.5, "fat": 15 } }
+    ]
+  },
+  {
+    "name": "Piadina fit tacchino, formaggio fresco e rucola",
+    "tags": ["pranzo", "veloce", "leggero"],
+    "description": "Cinque minuti e via: piadina integrale, fesa di tacchino, formaggio spalmabile light e rucola. Il pranzo veloce che non ti lascia il mattone sullo stomaco.",
+    "instructions": "1. Scalda la piadina integrale in padella un minuto per lato.\n2. Spalma il formaggio fresco light su tutta la superficie.\n3. Distribuisci la fesa di tacchino, la rucola e i pomodorini tagliati a fette.\n4. Chiudi a metà, ripassa 30 secondi in padella se la mangi subito, oppure avvolgila per portarla via.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Piadina integrale", "grams": 80, "per100g": { "calories": 290, "protein": 8, "carbs": 48, "fat": 7 } },
+      { "name": "Fesa di tacchino affettata", "grams": 90, "per100g": { "calories": 104, "protein": 22, "carbs": 0.5, "fat": 1.5 } },
+      { "name": "Formaggio spalmabile light", "grams": 40, "per100g": { "calories": 155, "protein": 8, "carbs": 4.5, "fat": 11 } },
+      { "name": "Rucola", "grams": 30, "per100g": { "calories": 28, "protein": 2.6, "carbs": 3.7, "fat": 0.7 } },
+      { "name": "Pomodorini", "grams": 80, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Insalatona pollo, avocado e mais",
+    "tags": ["pranzo", "proteico", "leggero"],
+    "description": "Un'insalatona vera, di quelle che dopo non hai fame alle quattro: pollo, avocado, mais e tanta verdura. Il condimento al limone tiene tutto fresco.",
+    "instructions": "1. Cuoci il petto di pollo alla piastra 5-6 minuti per lato, fallo riposare qualche minuto e taglialo a fette.\n2. Lava la lattuga e spezzettala in una ciotola capiente.\n3. Aggiungi pomodorini a metà, mais sgocciolato e avocado a cubetti.\n4. Emulsiona olio e succo di limone con un pizzico di sale e condisci.\n5. Completa con il pollo a fette e mescola solo al momento di mangiare.",
+    "servings": 1,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 150, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Lattuga", "grams": 80, "per100g": { "calories": 17, "protein": 1.2, "carbs": 2.8, "fat": 0.2 } },
+      { "name": "Avocado", "grams": 70, "per100g": { "calories": 160, "protein": 2, "carbs": 8.5, "fat": 15 } },
+      { "name": "Mais dolce sgocciolato", "grams": 80, "per100g": { "calories": 90, "protein": 3, "carbs": 17, "fat": 1.2 } },
+      { "name": "Pomodorini", "grams": 100, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 15, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Straccetti di pollo al limone con patate al forno",
+    "tags": ["pranzo", "proteico", "comfort", "meal prep"],
+    "description": "Pollo e patate, il pranzo che non tradisce: straccetti veloci in padella col limone e patate arrosto vere. Regge benissimo il riscaldo del giorno dopo.",
+    "instructions": "1. Scalda il forno a 200 gradi. Taglia le patate a spicchi, condiscile con metà olio, sale e rosmarino e inforna per 35 minuti.\n2. Taglia il petto di pollo a straccetti sottili e asciugali con carta da cucina: rosolano meglio.\n3. Scalda il resto dell'olio in padella e cuoci gli straccetti a fuoco vivo 4-5 minuti.\n4. Versa il succo di limone, fai restringere un minuto e spegni.\n5. Servi con le patate appena sfornate o dividi in due contenitori.",
+    "servings": 2,
+    "prepMinutes": 45,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 320, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Patate", "grams": 400, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Succo di limone", "grams": 40, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Tacchino all'arancia con riso basmati e spinaci",
+    "tags": ["pranzo", "proteico", "leggero"],
+    "description": "Fettine di tacchino glassate al succo d'arancia: sembra un piatto elaborato, è una padella da dieci minuti. Riso e spinaci completano la schiscetta.",
+    "instructions": "1. Cuoci il riso basmati in acqua salata 10-12 minuti e scolalo.\n2. Rosola le fettine di tacchino in padella con l'olio, 2-3 minuti per lato.\n3. Versa il succo d'arancia e fai restringere a fuoco medio finché diventa una glassa leggera.\n4. In un'altra padella (o nella stessa, dopo) fai appassire gli spinaci 2-3 minuti con un pizzico di sale.\n5. Componi il piatto: riso, tacchino con la sua glassa e spinaci a lato.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Fettine di tacchino", "grams": 300, "per100g": { "calories": 105, "protein": 24, "carbs": 0, "fat": 1 } },
+      { "name": "Riso basmati", "grams": 130, "per100g": { "calories": 350, "protein": 8, "carbs": 78, "fat": 1 } },
+      { "name": "Succo di arancia", "grams": 100, "per100g": { "calories": 45, "protein": 0.7, "carbs": 10, "fat": 0.2 } },
+      { "name": "Spinaci freschi", "grams": 200, "per100g": { "calories": 25, "protein": 2.9, "carbs": 2.5, "fat": 0.4 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Burger di lenticchie e carote in piadina",
+    "tags": ["pranzo", "comfort"],
+    "description": "Burger vegetali fatti in casa con lenticchie già lessate: si impastano in cinque minuti e cuociono in padella. Dentro la piadina con l'insalata diventano un pranzo che si tiene in mano.",
+    "instructions": "1. Schiaccia le lenticchie con una forchetta lasciando qualche pezzo intero.\n2. Unisci carota grattugiata, uovo, pangrattato e sale; impasta e forma due burger spessi un dito.\n3. Cuocili in padella antiaderente con l'olio, 4-5 minuti per lato, senza muoverli troppo.\n4. Scalda le piadine un minuto in padella.\n5. Farcisci ogni piadina con insalata e un burger, piega e mangia.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Lenticchie lessate", "grams": 240, "per100g": { "calories": 115, "protein": 9, "carbs": 17, "fat": 0.8 } },
+      { "name": "Carote", "grams": 100, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Pangrattato", "grams": 50, "per100g": { "calories": 360, "protein": 12, "carbs": 72, "fat": 2.5 } },
+      { "name": "Uova", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Piadina integrale", "grams": 160, "per100g": { "calories": 290, "protein": 8, "carbs": 48, "fat": 7 } },
+      { "name": "Lattuga", "grams": 40, "per100g": { "calories": 17, "protein": 1.2, "carbs": 2.8, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Chili di lenticchie e tacchino",
+    "tags": ["pranzo", "proteico", "comfort", "meal prep"],
+    "description": "Un pentolone che ti sistema tre pranzi: macinato di tacchino, lenticchie, peperoni e mais in un sugo speziato. Il giorno dopo è ancora più buono.",
+    "instructions": "1. Trita la cipolla e falla appassire con l'olio in una pentola capiente per 3-4 minuti.\n2. Aggiungi il macinato di tacchino e rosolalo a fuoco vivo finché non è più rosa.\n3. Unisci i peperoni a dadini, la passata, un bicchiere d'acqua, paprika e cumino se li hai.\n4. Fai sobbollire coperto 20 minuti, poi aggiungi lenticchie e mais e cuoci altri 10 minuti.\n5. Regola di sale e dividi in tre contenitori: in frigo dura tre giorni, in freezer un mese.",
+    "servings": 3,
+    "prepMinutes": 50,
+    "ingredients": [
+      { "name": "Macinato di tacchino", "grams": 350, "per100g": { "calories": 120, "protein": 21, "carbs": 0, "fat": 4 } },
+      { "name": "Lenticchie lessate", "grams": 350, "per100g": { "calories": 115, "protein": 9, "carbs": 17, "fat": 0.8 } },
+      { "name": "Passata di pomodoro", "grams": 400, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Peperoni", "grams": 200, "per100g": { "calories": 31, "protein": 1, "carbs": 6, "fat": 0.3 } },
+      { "name": "Mais dolce sgocciolato", "grams": 100, "per100g": { "calories": 90, "protein": 3, "carbs": 17, "fat": 1.2 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  }
+]

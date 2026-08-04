@@ -1,0 +1,319 @@
+[
+  {
+    "name": "Porridge cacao e banana",
+    "tags": ["colazione", "comfort"],
+    "description": "Un porridge cremoso al cacao con la banana che addolcisce quasi tutto da sola. Scalda e riempie, perfetto prima di una giornata pesante.",
+    "instructions": "1. Versa l'avena e il latte in un pentolino e accendi a fuoco medio.\n2. Aggiungi il cacao setacciato e mescola finche' non si scioglie del tutto.\n3. Cuoci 5-6 minuti mescolando spesso, finche' il porridge non si addensa.\n4. Taglia la banana a rondelle e mettine meta' nel pentolino a fine cottura.\n5. Versa in una ciotola, completa con il resto della banana e un filo di miele.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Latte parzialmente scremato", "grams": 200, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Cacao amaro in polvere", "grams": 8, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Banana", "grams": 80, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Miele", "grams": 5, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Porridge mela, cannella e noci",
+    "tags": ["colazione", "comfort"],
+    "description": "Sa di torta di mele ma si prepara in un pentolino in dieci minuti. Le noci danno la parte croccante che al porridge di solito manca.",
+    "instructions": "1. Sbuccia la mela e tagliala a dadini piccoli.\n2. Metti avena, latte e mela in un pentolino a fuoco medio.\n3. Aggiungi la cannella e l'uvetta e cuoci 6-7 minuti mescolando, finche' la mela non si ammorbidisce.\n4. Versa in una ciotola e completa con le noci spezzettate grossolanamente.",
+    "servings": 1,
+    "prepMinutes": 12,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Latte parzialmente scremato", "grams": 200, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Mela", "grams": 100, "per100g": { "calories": 52, "protein": 0.3, "carbs": 13.8, "fat": 0.2 } },
+      { "name": "Cannella in polvere", "grams": 2, "per100g": { "calories": 247, "protein": 4, "carbs": 55, "fat": 1.2 } },
+      { "name": "Uvetta", "grams": 10, "per100g": { "calories": 299, "protein": 2.5, "carbs": 69, "fat": 0.5 } },
+      { "name": "Noci sgusciate", "grams": 10, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } }
+    ]
+  },
+  {
+    "name": "Overnight oats chia e fragole",
+    "tags": ["colazione", "veloce", "proteico"],
+    "description": "Si prepara la sera in due minuti e la mattina trovi la colazione pronta in frigo. Lo yogurt greco la rende densa e ben proteica.",
+    "instructions": "1. La sera, in un barattolo, mescola avena, semi di chia, yogurt e latte.\n2. Aggiungi il miele, chiudi il barattolo e agita bene.\n3. Lascia in frigo tutta la notte.\n4. La mattina taglia le fragole a pezzi e mettile sopra prima di mangiare.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 150, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Semi di chia", "grams": 10, "per100g": { "calories": 486, "protein": 16.5, "carbs": 42, "fat": 30.7 } },
+      { "name": "Fragole", "grams": 100, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } },
+      { "name": "Miele", "grams": 8, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Overnight oats cocco e cioccolato fondente",
+    "tags": ["colazione", "comfort", "veloce"],
+    "description": "La versione golosa degli overnight oats: cocco e scaglie di fondente, ma con le dosi sotto controllo. Sembra un dessert, e' una colazione onesta.",
+    "instructions": "1. La sera mescola in un barattolo avena, yogurt e latte.\n2. Aggiungi il cocco rape' e il miele e mescola ancora.\n3. Chiudi e lascia in frigo fino alla mattina.\n4. Prima di mangiare, trita il cioccolato al coltello e spargilo sopra.",
+    "servings": 1,
+    "prepMinutes": 8,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 100, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Latte parzialmente scremato", "grams": 100, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Cocco rape'", "grams": 10, "per100g": { "calories": 660, "protein": 6.9, "carbs": 23.7, "fat": 64.5 } },
+      { "name": "Cioccolato fondente 85%", "grams": 10, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } },
+      { "name": "Miele", "grams": 5, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Overnight oats al caffe' e mandorle",
+    "tags": ["colazione", "veloce", "proteico"],
+    "description": "Colazione e caffe' nello stesso barattolo: la prepari la sera e la mattina la prendi dal frigo mentre esci. Ideale quando alle sette devi gia' essere in cantiere.",
+    "instructions": "1. Prepara un espresso e lascialo raffreddare qualche minuto.\n2. In un barattolo mescola avena, yogurt, latte, caffe' e cacao.\n3. Aggiungi il miele, chiudi e agita bene.\n4. Lascia in frigo tutta la notte e la mattina completa con le mandorle a pezzi.",
+    "servings": 1,
+    "prepMinutes": 8,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 125, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Latte parzialmente scremato", "grams": 60, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Caffe' espresso", "grams": 30, "per100g": { "calories": 2, "protein": 0.12, "carbs": 0.3, "fat": 0.02 } },
+      { "name": "Cacao amaro in polvere", "grams": 5, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Miele", "grams": 8, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Mandorle", "grams": 10, "per100g": { "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9 } }
+    ]
+  },
+  {
+    "name": "Pancake di albumi e avena",
+    "tags": ["colazione", "proteico", "comfort"],
+    "description": "I pancake fit piu' semplici che esistano: albumi, farina d'avena e mezza banana per dolcificare. Vengono bene anche se non sei un asso in cucina.",
+    "instructions": "1. Schiaccia la banana in una ciotola con una forchetta.\n2. Aggiungi albumi, farina d'avena e lievito e mescola fino ad avere una pastella liscia.\n3. Scalda una padella antiaderente con poco olio distribuito con un pezzo di carta.\n4. Versa la pastella a mestolini e cuoci 2 minuti per lato a fuoco medio-basso.\n5. Gira i pancake quando in superficie compaiono le bollicine e impila.",
+    "servings": 1,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Albume d'uovo", "grams": 150, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Farina d'avena", "grams": 50, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Banana", "grams": 50, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Lievito per dolci", "grams": 3, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } },
+      { "name": "Olio extravergine d'oliva", "grams": 3, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Pancake allo yogurt greco con mirtilli",
+    "tags": ["colazione", "comfort"],
+    "description": "Pancake soffici grazie allo yogurt greco, con i mirtilli che scoppiano in cottura. Dose per due: o li dividi o te li porti dietro per lo spuntino.",
+    "instructions": "1. In una ciotola sbatti l'uovo con lo yogurt e il latte.\n2. Unisci farina d'avena e lievito e mescola fino a togliere i grumi.\n3. Incorpora i mirtilli delicatamente nella pastella.\n4. Cuoci a mestolini in padella antiaderente ben calda, 2-3 minuti per lato.\n5. Servi con il miele versato sopra la pila di pancake.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Farina d'avena", "grams": 100, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 150, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Uovo intero", "grams": 60, "per100g": { "calories": 143, "protein": 12.4, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Mirtilli", "grams": 100, "per100g": { "calories": 57, "protein": 0.7, "carbs": 14.5, "fat": 0.3 } },
+      { "name": "Lievito per dolci", "grams": 6, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Yogurt bowl con granola fatta in padella",
+    "tags": ["colazione", "proteico", "veloce"],
+    "description": "Niente granola comprata piena di zuccheri: avena, miele e noci tostate cinque minuti in padella. Sotto, una base abbondante di yogurt greco.",
+    "instructions": "1. Scalda una padella antiaderente e versa avena, noci spezzettate e miele.\n2. Tosta 4-5 minuti a fuoco medio mescolando, finche' l'avena non profuma e si compatta.\n3. Lascia raffreddare la granola nel piatto perche' diventi croccante.\n4. Versa lo yogurt in una ciotola, aggiungi i mirtilli e completa con la granola.",
+    "servings": 1,
+    "prepMinutes": 12,
+    "ingredients": [
+      { "name": "Yogurt greco 0% grassi", "grams": 200, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Fiocchi d'avena", "grams": 30, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Noci sgusciate", "grams": 15, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } },
+      { "name": "Mirtilli", "grams": 80, "per100g": { "calories": 57, "protein": 0.7, "carbs": 14.5, "fat": 0.3 } }
+    ]
+  },
+  {
+    "name": "Crema di ricotta ai frutti di bosco",
+    "tags": ["colazione", "comfort", "leggero"],
+    "description": "Ricotta montata con un cucchiaio di yogurt fino a farla diventare una crema, poi frutti di bosco e mandorle. Colazione da bar, fatta a casa in cinque minuti.",
+    "instructions": "1. Lavora ricotta, yogurt e miele con una frusta o una forchetta per 1-2 minuti, finche' la crema non e' liscia.\n2. Versa la crema in una ciotola.\n3. Aggiungi i frutti di bosco, freschi o scongelati.\n4. Completa con le mandorle a lamelle.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Ricotta vaccina", "grams": 150, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 50, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Frutti di bosco misti", "grams": 100, "per100g": { "calories": 45, "protein": 1, "carbs": 10, "fat": 0.3 } },
+      { "name": "Mandorle a lamelle", "grams": 10, "per100g": { "calories": 603, "protein": 21, "carbs": 9.5, "fat": 52 } }
+    ]
+  },
+  {
+    "name": "Toast integrale con ricotta e pera",
+    "tags": ["colazione", "veloce", "leggero"],
+    "description": "Pane tostato, ricotta spalmata e pera a fettine sottili con una spolverata di cannella. Dolce senza zucchero, pronto in cinque minuti.",
+    "instructions": "1. Tosta le fette di pane integrale finche' non sono dorate.\n2. Spalma la ricotta su entrambe le fette.\n3. Taglia la pera a fettine sottili e disponile sopra la ricotta.\n4. Completa con il miele e una spolverata di cannella.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Ricotta vaccina", "grams": 80, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Pera", "grams": 100, "per100g": { "calories": 57, "protein": 0.4, "carbs": 15.2, "fat": 0.1 } },
+      { "name": "Miele", "grams": 5, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Cannella in polvere", "grams": 1, "per100g": { "calories": 247, "protein": 4, "carbs": 55, "fat": 1.2 } }
+    ]
+  },
+  {
+    "name": "Avocado toast con uovo e pomodorini",
+    "tags": ["colazione", "comfort"],
+    "description": "Il toast salato che ti tiene pieno fino a pranzo: avocado schiacciato, uovo e pomodorini. Grassi buoni e proteine sulla stessa fetta.",
+    "instructions": "1. Tosta il pane integrale.\n2. Schiaccia l'avocado con una forchetta direttamente sulla fetta, con un pizzico di sale e pepe.\n3. Cuoci l'uovo in padella antiaderente, all'occhio di bue o strapazzato come preferisci.\n4. Appoggia l'uovo sull'avocado e finisci con i pomodorini tagliati a meta'.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Avocado", "grams": 70, "per100g": { "calories": 160, "protein": 2, "carbs": 8.5, "fat": 15 } },
+      { "name": "Uovo intero", "grams": 60, "per100g": { "calories": 143, "protein": 12.4, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Pomodorini ciliegino", "grams": 50, "per100g": { "calories": 18, "protein": 0.9, "carbs": 2.8, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Toast tacchino, spalmabile light e rucola",
+    "tags": ["colazione", "proteico", "veloce"],
+    "description": "Un toast salato che funziona anche come colazione da portare via: tacchino, formaggio spalmabile leggero e rucola per dare carattere.",
+    "instructions": "1. Tosta le due fette di pane integrale.\n2. Spalma il formaggio su una fetta.\n3. Aggiungi la fesa di tacchino, la rucola e i pomodorini a fettine.\n4. Chiudi con l'altra fetta, premi leggermente e taglia a meta'.",
+    "servings": 1,
+    "prepMinutes": 7,
+    "ingredients": [
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Fesa di tacchino affettata", "grams": 60, "per100g": { "calories": 104, "protein": 22, "carbs": 0.5, "fat": 1.5 } },
+      { "name": "Formaggio spalmabile light", "grams": 30, "per100g": { "calories": 155, "protein": 8, "carbs": 4.5, "fat": 11 } },
+      { "name": "Rucola", "grams": 15, "per100g": { "calories": 28, "protein": 2.6, "carbs": 3.7, "fat": 0.7 } },
+      { "name": "Pomodorini ciliegino", "grams": 50, "per100g": { "calories": 18, "protein": 0.9, "carbs": 2.8, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Uova strapazzate con salmone affumicato",
+    "tags": ["colazione", "proteico", "veloce"],
+    "description": "Colazione salata da giorni di allenamento pesante: uova morbide e salmone affumicato su pane tostato. Dieci minuti e sei a posto di proteine.",
+    "instructions": "1. Sbatti le uova in una ciotola con una presa di pepe.\n2. Versale in padella antiaderente a fuoco basso e mescola con una spatola finche' non sono cremose, non asciutte.\n3. Tosta il pane nel frattempo.\n4. Impiatta le uova sul pane, aggiungi il salmone a pezzi e l'erba cipollina tagliuzzata.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Uovo intero", "grams": 120, "per100g": { "calories": 143, "protein": 12.4, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Salmone affumicato", "grams": 50, "per100g": { "calories": 147, "protein": 22, "carbs": 0, "fat": 6.5 } },
+      { "name": "Pane integrale", "grams": 40, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Erba cipollina", "grams": 3, "per100g": { "calories": 30, "protein": 3, "carbs": 4, "fat": 0.7 } }
+    ]
+  },
+  {
+    "name": "Frittata di albumi e zucchine",
+    "tags": ["colazione", "proteico", "leggero"],
+    "description": "La frittata leggera per chi vuole tante proteine e pochi grassi: solo albumi, zucchine e una grattata di grana per non farla sembrare triste.",
+    "instructions": "1. Grattugia le zucchine con la grattugia a fori larghi e strizzale bene con le mani.\n2. Mescola gli albumi con le zucchine e il grana.\n3. Scalda l'olio in una padella antiaderente e versa il composto.\n4. Cuoci 4-5 minuti a fuoco basso con il coperchio, poi gira la frittata con l'aiuto di un piatto e finisci altri 3 minuti.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Albume d'uovo", "grams": 200, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Zucchine", "grams": 100, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Grana Padano grattugiato", "grams": 15, "per100g": { "calories": 398, "protein": 33, "carbs": 0, "fat": 29 } },
+      { "name": "Olio extravergine d'oliva", "grams": 5, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "French toast proteico con fragole",
+    "tags": ["colazione", "proteico", "comfort"],
+    "description": "Pane integrale passato negli albumi con cannella e dorato in padella: il french toast versione fit, con fragole e miele a chiudere.",
+    "instructions": "1. In un piatto fondo sbatti albumi, latte e cannella.\n2. Immergi le fette di pane nel composto, lasciandole assorbire bene su entrambi i lati.\n3. Cuocile in padella antiaderente calda 2-3 minuti per lato, finche' non sono dorate.\n4. Servi con le fragole a pezzi e il miele sopra.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Albume d'uovo", "grams": 100, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Cannella in polvere", "grams": 2, "per100g": { "calories": 247, "protein": 4, "carbs": 55, "fat": 1.2 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Fragole", "grams": 80, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } }
+    ]
+  },
+  {
+    "name": "Crepes di albumi con composta di frutta",
+    "tags": ["colazione", "proteico", "leggero"],
+    "description": "Crepes sottili di albumi e farina d'avena, farcite con marmellata senza zuccheri aggiunti. Leggere ma con una bella quota di proteine.",
+    "instructions": "1. Sbatti albumi, farina d'avena e latte fino ad avere una pastella liquida e senza grumi.\n2. Ungi appena una padella antiaderente con l'olio e un pezzo di carta da cucina.\n3. Versa meta' pastella, ruota la padella per stenderla e cuoci 1-2 minuti per lato; ripeti con il resto.\n4. Spalma la marmellata sulle crepes, arrotolale e servile.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Albume d'uovo", "grams": 150, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Farina d'avena", "grams": 30, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Marmellata senza zuccheri aggiunti", "grams": 30, "per100g": { "calories": 120, "protein": 0.5, "carbs": 28, "fat": 0.2 } },
+      { "name": "Olio extravergine d'oliva", "grams": 3, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Budino di chia al latte di mandorla e kiwi",
+    "tags": ["colazione", "leggero", "veloce"],
+    "description": "I semi di chia gonfiano nel latte di mandorla e la mattina trovi un budino pronto. Kiwi e mandorle sopra per freschezza e croccantezza.",
+    "instructions": "1. La sera mescola in un barattolo i semi di chia, il latte di mandorla e il miele.\n2. Aspetta 5 minuti e mescola di nuovo per evitare i grumi sul fondo.\n3. Chiudi e lascia in frigo tutta la notte.\n4. La mattina completa con il kiwi a fettine e le mandorle tritate.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Semi di chia", "grams": 25, "per100g": { "calories": 486, "protein": 16.5, "carbs": 42, "fat": 30.7 } },
+      { "name": "Latte di mandorla senza zucchero", "grams": 200, "per100g": { "calories": 15, "protein": 0.5, "carbs": 0.5, "fat": 1.2 } },
+      { "name": "Miele", "grams": 8, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Kiwi", "grams": 100, "per100g": { "calories": 61, "protein": 1.1, "carbs": 14.7, "fat": 0.5 } },
+      { "name": "Mandorle", "grams": 10, "per100g": { "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9 } }
+    ]
+  },
+  {
+    "name": "Smoothie banana, avena e burro d'arachidi",
+    "tags": ["colazione", "veloce"],
+    "description": "Un frullato che e' una colazione completa: banana, avena, burro d'arachidi e un cucchiaino di cacao. Cinque minuti, bicchiere, via.",
+    "instructions": "1. Metti nel frullatore la banana a pezzi, l'avena e il burro d'arachidi.\n2. Aggiungi il latte freddo e il cacao.\n3. Frulla 30-40 secondi finche' non e' liscio e cremoso.\n4. Versa nel bicchiere e bevi subito, oppure porta in un thermos.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Banana", "grams": 100, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Latte parzialmente scremato", "grams": 200, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Fiocchi d'avena", "grams": 20, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Burro d'arachidi", "grams": 15, "per100g": { "calories": 588, "protein": 25, "carbs": 20, "fat": 50 } },
+      { "name": "Cacao amaro in polvere", "grams": 5, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } }
+    ]
+  },
+  {
+    "name": "Frullato fragole e yogurt greco",
+    "tags": ["colazione", "leggero", "veloce"],
+    "description": "Fresco e leggero ma non acquoso: lo yogurt greco da' corpo e proteine, l'avena lo rende una colazione vera e non solo una bevanda.",
+    "instructions": "1. Lava le fragole e togli il picciolo.\n2. Mettile nel frullatore con yogurt, latte, avena e miele.\n3. Frulla fino ad avere una crema omogenea.\n4. Versa in un bicchiere grande e servi subito, ben freddo.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Fragole", "grams": 130, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } },
+      { "name": "Yogurt greco 0% grassi", "grams": 150, "per100g": { "calories": 57, "protein": 10, "carbs": 3.6, "fat": 0.2 } },
+      { "name": "Latte parzialmente scremato", "grams": 80, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Fiocchi d'avena", "grams": 20, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Skyr bowl con kiwi e semi di zucca",
+    "tags": ["colazione", "proteico", "veloce", "leggero"],
+    "description": "Lo skyr e' ancora piu' proteico dello yogurt greco: qui fa da base a una ciotola con kiwi, semi di zucca e un giro di miele. Tre minuti di lavoro.",
+    "instructions": "1. Versa lo skyr in una ciotola e mescolalo per renderlo cremoso.\n2. Sbuccia il kiwi e taglialo a fettine.\n3. Disponi il kiwi sullo skyr e aggiungi i semi di zucca.\n4. Completa con il miele a filo.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Skyr naturale", "grams": 200, "per100g": { "calories": 63, "protein": 11, "carbs": 4, "fat": 0.2 } },
+      { "name": "Kiwi", "grams": 100, "per100g": { "calories": 61, "protein": 1.1, "carbs": 14.7, "fat": 0.5 } },
+      { "name": "Semi di zucca", "grams": 15, "per100g": { "calories": 559, "protein": 30.2, "carbs": 10.7, "fat": 49 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Uova alla coque con crostini integrali",
+    "tags": ["colazione", "proteico", "veloce"],
+    "description": "Due uova alla coque con i crostini da intingere nel tuorlo e una porzione di fiocchi di latte a fianco. Colazione salata vecchia scuola, macro moderne.",
+    "instructions": "1. Porta a bollore un pentolino d'acqua e immergi le uova con un cucchiaio.\n2. Cuoci esattamente 5 minuti dal bollore, poi passale sotto l'acqua fredda.\n3. Tosta il pane e taglialo a bastoncini.\n4. Apri le uova nel portauovo o in una tazzina e intingi i crostini; servi i fiocchi di latte a fianco.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Uovo intero", "grams": 120, "per100g": { "calories": 143, "protein": 12.4, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Pane integrale", "grams": 60, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Fiocchi di latte", "grams": 50, "per100g": { "calories": 98, "protein": 11.5, "carbs": 3.5, "fat": 4.5 } }
+    ]
+  }
+]

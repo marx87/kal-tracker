@@ -1,0 +1,208 @@
+[
+  {
+    "name": "Energy ball datteri, cacao e arachidi",
+    "tags": ["spuntino", "dolce", "veloce"],
+    "description": "Palline energetiche da tenere in frigo e infilare nello zaino: dolci dei datteri, con la spinta delle arachidi. Perfette prima o dopo l'allenamento.",
+    "instructions": "1. Metti i datteri in ammollo in acqua tiepida per 5 minuti, poi scolali bene.\n2. Frulla datteri, arachidi, cacao e fiocchi d'avena finche' l'impasto sta insieme pizzicandolo tra le dita.\n3. Con le mani leggermente umide forma 8 palline della stessa misura.\n4. Passale nel cacao se le vuoi meno appiccicose e mettile in frigo almeno 30 minuti.\n5. Si conservano in un barattolo chiuso in frigo per 5 giorni.",
+    "servings": 4,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Datteri denocciolati", "grams": 160, "per100g": { "calories": 282, "protein": 2.5, "carbs": 70, "fat": 0.4 } },
+      { "name": "Arachidi tostate non salate", "grams": 60, "per100g": { "calories": 590, "protein": 26, "carbs": 11, "fat": 49 } },
+      { "name": "Cacao amaro in polvere", "grams": 15, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Fiocchi d'avena", "grams": 40, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } }
+    ]
+  },
+  {
+    "name": "Barrette avena e burro d'arachidi senza cottura",
+    "tags": ["spuntino", "dolce", "comfort"],
+    "description": "Barrette fatte in casa senza accendere il forno: le prepari la domenica e hai lo spuntino pronto per tutta la settimana di cantiere.",
+    "instructions": "1. Scalda burro d'arachidi e miele in un pentolino a fuoco basso finche' diventano fluidi.\n2. Versa il composto sui fiocchi d'avena in una ciotola, aggiungi il latte e mescola finche' tutto e' ben legato.\n3. Trita il cioccolato al coltello e uniscilo quando il composto e' tiepido.\n4. Pressa bene il tutto in una teglia piccola foderata di carta forno, spessore circa 2 cm.\n5. Lascia in frigo almeno 2 ore, poi taglia 6 barrette e avvolgile una a una nella carta forno.",
+    "servings": 6,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Fiocchi d'avena", "grams": 160, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Burro d'arachidi 100% arachidi", "grams": 80, "per100g": { "calories": 588, "protein": 25, "carbs": 12, "fat": 50 } },
+      { "name": "Miele", "grams": 70, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Cioccolato fondente 85%", "grams": 30, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } },
+      { "name": "Latte parzialmente scremato", "grams": 40, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } }
+    ]
+  },
+  {
+    "name": "Muffin salati zucchine e parmigiano",
+    "tags": ["spuntino", "comfort"],
+    "description": "La versione salata del muffin: zucchine e parmigiano in un impasto integrale. Ottimi tiepidi ma anche freddi, il giorno dopo, direttamente dalla borsa frigo.",
+    "instructions": "1. Accendi il forno a 180 gradi. Grattugia le zucchine con la grattugia a fori larghi e strizzale forte in un canovaccio pulito.\n2. Sbatti le uova con latte e olio, poi unisci farina integrale, il lievito istantaneo per torte salate, sale e pepe.\n3. Aggiungi zucchine strizzate e parmigiano e mescola quel tanto che basta.\n4. Riempi 6 stampini da muffin per tre quarti.\n5. Cuoci 25 minuti finche' sono gonfi e dorati; falli intiepidire prima di sformarli.",
+    "servings": 6,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Farina integrale", "grams": 150, "per100g": { "calories": 340, "protein": 12, "carbs": 68, "fat": 2 } },
+      { "name": "Lievito istantaneo per torte salate", "grams": 8, "per100g": { "calories": 90, "protein": 0.5, "carbs": 22, "fat": 0 } },
+      { "name": "Zucchine", "grams": 200, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Parmigiano Reggiano grattugiato", "grams": 40, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Latte parzialmente scremato", "grams": 80, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Olio extravergine d'oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Hummus di ceci con verdure in pinzimonio",
+    "tags": ["spuntino", "leggero"],
+    "description": "Hummus fatto in casa in 10 minuti con verdure croccanti da intingere: uno spuntino che riempie senza sensi di colpa, buono anche da mettere in tavola quando arriva gente.",
+    "instructions": "1. Frulla i ceci scolati con tahina, succo di limone, olio, uno spicchio d'aglio piccolo e un pizzico di sale.\n2. Aggiungi 2-3 cucchiai di acqua fredda mentre frulli, finche' la crema diventa liscia e soffice.\n3. Assaggia e regola di limone e sale; se ti piace, spolvera con paprika.\n4. Taglia carote, finocchio e sedano a bastoncini.\n5. Servi l'hummus in una ciotola con le verdure intorno; in frigo si tiene 3 giorni coperto.",
+    "servings": 4,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Ceci lessati sgocciolati", "grams": 240, "per100g": { "calories": 120, "protein": 7, "carbs": 17, "fat": 2.5 } },
+      { "name": "Tahina", "grams": 30, "per100g": { "calories": 595, "protein": 17, "carbs": 12, "fat": 54 } },
+      { "name": "Succo di limone", "grams": 30, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Olio extravergine d'oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Carote", "grams": 200, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Finocchio", "grams": 200, "per100g": { "calories": 31, "protein": 1.2, "carbs": 7.3, "fat": 0.2 } },
+      { "name": "Sedano", "grams": 100, "per100g": { "calories": 16, "protein": 0.7, "carbs": 3, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Ciotola di yogurt greco con avena tostata e noci",
+    "tags": ["spuntino", "proteico", "veloce"],
+    "description": "Yogurt greco con una granola veloce fatta in padella: cinque minuti di tostatura e lo spuntino diventa una coccola croccante.",
+    "instructions": "1. Tosta i fiocchi d'avena in una padella antiaderente a fuoco medio per 4-5 minuti, girando spesso, finche' profumano.\n2. Aggiungi le noci spezzettate nell'ultimo minuto di tostatura.\n3. Versa lo yogurt greco in una ciotola e condiscilo con il miele.\n4. Copri con avena e noci ancora calde e mangia subito per il contrasto caldo-freddo.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Yogurt greco 0%", "grams": 170, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Fiocchi d'avena", "grams": 30, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Noci sgusciate", "grams": 15, "per100g": { "calories": 654, "protein": 15.2, "carbs": 13.7, "fat": 65.2 } },
+      { "name": "Miele", "grams": 12, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Skyr goloso con fragole e mandorle",
+    "tags": ["spuntino", "proteico", "leggero"],
+    "description": "Skyr, fragole fresche e mandorle: tre ingredienti, cinque minuti, un pieno di proteine che sa di dessert.",
+    "instructions": "1. Lava le fragole e tagliale a pezzi in una ciotola.\n2. Schiacciane un paio con la forchetta per fare un sughetto naturale.\n3. Versa lo skyr, dolcifica con il miele e mescola appena, lasciando le striature.\n4. Completa con le mandorle tritate grossolanamente al coltello.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Skyr naturale", "grams": 150, "per100g": { "calories": 63, "protein": 11, "carbs": 4, "fat": 0.2 } },
+      { "name": "Fragole", "grams": 120, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } },
+      { "name": "Mandorle", "grams": 15, "per100g": { "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Nice cream banana e burro d'arachidi",
+    "tags": ["spuntino", "dolce", "comfort"],
+    "description": "Gelato cremoso fatto solo di banana congelata frullata con burro d'arachidi e cacao: la voglia di dolce dopo cena risolta senza zuccheri aggiunti.",
+    "instructions": "1. Taglia le banane mature a rondelle e congelale in un sacchetto per almeno 4 ore (fallo in anticipo).\n2. Frulla le rondelle congelate con il latte, raschiando i bordi ogni tanto, finche' diventa una crema da gelato.\n3. Aggiungi burro d'arachidi e cacao e frulla ancora qualche secondo.\n4. Servi subito in due coppette; se aspetti si scioglie come un gelato vero.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Banana", "grams": 250, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Burro d'arachidi 100% arachidi", "grams": 25, "per100g": { "calories": 588, "protein": 25, "carbs": 12, "fat": 50 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Cacao amaro in polvere", "grams": 8, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } }
+    ]
+  },
+  {
+    "name": "Rotolini di bresaola con ricotta e rucola",
+    "tags": ["spuntino", "leggero"],
+    "description": "Fettine di bresaola arrotolate su una crema di ricotta al limone: lo spuntino salato che si prepara in 10 minuti e si mangia anche con le mani.",
+    "instructions": "1. Lavora la ricotta con succo di limone, olio, sale e pepe fino ad avere una crema liscia.\n2. Stendi le fette di bresaola su un tagliere.\n3. Distribuisci un cucchiaino di crema su ogni fetta e aggiungi qualche foglia di rucola.\n4. Arrotola le fette e fermale con uno stecchino se serve.\n5. Servili subito o tienili in frigo coperti fino a un giorno.",
+    "servings": 2,
+    "prepMinutes": 10,
+    "ingredients": [
+      { "name": "Bresaola", "grams": 80, "per100g": { "calories": 151, "protein": 32, "carbs": 0.5, "fat": 2 } },
+      { "name": "Ricotta vaccina", "grams": 100, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Rucola", "grams": 30, "per100g": { "calories": 28, "protein": 2.6, "carbs": 3.7, "fat": 0.7 } },
+      { "name": "Succo di limone", "grams": 10, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Olio extravergine d'oliva", "grams": 5, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Ceci croccanti alla paprika",
+    "tags": ["spuntino", "leggero"],
+    "description": "Ceci tostati al forno finche' scrocchiano: l'alternativa fit alle patatine davanti alla partita, con fibre e proteine al posto della frittura.",
+    "instructions": "1. Accendi il forno a 200 gradi. Scola i ceci, sciacquali e asciugali molto bene con un canovaccio: piu' sono asciutti, piu' vengono croccanti.\n2. Condiscili in una ciotola con olio, paprika e sale.\n3. Stendili su una teglia con carta forno in un solo strato.\n4. Cuoci 35-40 minuti scuotendo la teglia ogni 15 minuti.\n5. Spegni il forno e lasciali dentro altri 10 minuti a sportello socchiuso: e' il trucco per la croccantezza.",
+    "servings": 3,
+    "prepMinutes": 50,
+    "ingredients": [
+      { "name": "Ceci lessati sgocciolati", "grams": 240, "per100g": { "calories": 120, "protein": 7, "carbs": 17, "fat": 2.5 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Paprika dolce", "grams": 4, "per100g": { "calories": 282, "protein": 14, "carbs": 34, "fat": 13 } }
+    ]
+  },
+  {
+    "name": "Tzatziki light con bastoncini di verdure",
+    "tags": ["spuntino", "leggero", "veloce"],
+    "description": "Salsa fresca di yogurt greco e cetriolo con verdure croccanti da intingere: lo spuntino d'estate che disseta e riempie con pochissime calorie.",
+    "instructions": "1. Grattugia il cetriolo con la buccia e strizzalo forte in un colino per togliere l'acqua.\n2. Mescolalo con yogurt greco, olio, succo di limone, mezzo spicchio d'aglio grattugiato e sale.\n3. Lascia riposare in frigo 15 minuti perche' i sapori si leghino.\n4. Taglia carote e peperone a bastoncini.\n5. Servi la salsa fredda con le verdure intorno.",
+    "servings": 3,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Yogurt greco 0%", "grams": 200, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Cetriolo", "grams": 150, "per100g": { "calories": 14, "protein": 0.7, "carbs": 2.2, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 10, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Carote", "grams": 150, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Peperone rosso", "grams": 150, "per100g": { "calories": 26, "protein": 1, "carbs": 5.3, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Frullato banana, avena e cacao",
+    "tags": ["spuntino", "veloce", "comfort"],
+    "description": "Uno spuntino da bere: banana, latte, avena e cacao frullati insieme. Pronto in cinque minuti, si porta anche in borraccia termica.",
+    "instructions": "1. Metti nel frullatore la banana a pezzi, il latte freddo, i fiocchi d'avena e il cacao.\n2. Frulla un minuto abbondante, finche' l'avena e' completamente sciolta.\n3. Se lo vuoi piu' fresco aggiungi 3-4 cubetti di ghiaccio e frulla ancora.\n4. Bevilo subito o versalo in borraccia termica: si mantiene bene 3-4 ore.",
+    "servings": 1,
+    "prepMinutes": 5,
+    "ingredients": [
+      { "name": "Banana", "grams": 120, "per100g": { "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3 } },
+      { "name": "Latte parzialmente scremato", "grams": 200, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Fiocchi d'avena", "grams": 25, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Cacao amaro in polvere", "grams": 5, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } }
+    ]
+  },
+  {
+    "name": "Crema di ricotta al cacao con nocciole",
+    "tags": ["spuntino", "dolce", "comfort"],
+    "description": "Ricotta montata con cacao e miele, chiusa dalle nocciole tostate: sembra una mousse di pasticceria ma sono quattro ingredienti sbattuti con la frusta.",
+    "instructions": "1. Tosta le nocciole in padella 3-4 minuti e tritale grossolanamente.\n2. Monta la ricotta con cacao e miele usando le fruste elettriche per 2 minuti, finche' e' gonfia e liscia.\n3. Dividi la crema in due coppette e lasciala in frigo 15 minuti.\n4. Completa con le nocciole tostate al momento di servire.",
+    "servings": 2,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Ricotta vaccina", "grams": 200, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Cacao amaro in polvere", "grams": 12, "per100g": { "calories": 355, "protein": 20.4, "carbs": 11.5, "fat": 25.6 } },
+      { "name": "Miele", "grams": 20, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Nocciole", "grams": 20, "per100g": { "calories": 646, "protein": 14, "carbs": 7, "fat": 63 } }
+    ]
+  },
+  {
+    "name": "Gallette con crema di avocado e uovo sodo",
+    "tags": ["spuntino", "veloce"],
+    "description": "Gallette di riso croccanti con avocado schiacciato al limone e uovo sodo: la versione furba dell'avocado toast, senza accendere niente tranne il fornello per le uova.",
+    "instructions": "1. Metti le uova in acqua fredda, porta a bollore e cuoci 9 minuti; poi passale sotto l'acqua fredda e sgusciale.\n2. Schiaccia l'avocado con succo di limone, sale e pepe fino ad avere una crema rustica.\n3. Spalma la crema sulle gallette.\n4. Completa con le uova a fettine e i pomodorini tagliati a meta'.\n5. Componi solo all'ultimo: le gallette devono restare croccanti.",
+    "servings": 2,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Gallette di riso", "grams": 30, "per100g": { "calories": 387, "protein": 8, "carbs": 81, "fat": 2.8 } },
+      { "name": "Avocado", "grams": 100, "per100g": { "calories": 160, "protein": 2, "carbs": 8.5, "fat": 15 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Succo di limone", "grams": 8, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } },
+      { "name": "Pomodorini", "grams": 80, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Tartufini cocco e cioccolato fondente",
+    "tags": ["spuntino", "dolce", "veloce"],
+    "description": "Palline di datteri e cocco avvolte dal fondente: sanno di cioccolatino ripieno ma dentro c'e' solo frutta, cocco e avena.",
+    "instructions": "1. Frulla datteri, cocco rape' e fiocchi d'avena finche' l'impasto si compatta.\n2. Forma 8 palline con le mani leggermente umide.\n3. Sciogli il cioccolato a bagnomaria o al microonde a colpi di 20 secondi.\n4. Passa meta' di ogni pallina nel cioccolato fuso e appoggiale su carta forno.\n5. Falle rassodare in frigo 30 minuti; si conservano una settimana in barattolo chiuso.",
+    "servings": 4,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Datteri denocciolati", "grams": 140, "per100g": { "calories": 282, "protein": 2.5, "carbs": 70, "fat": 0.4 } },
+      { "name": "Cocco rape'", "grams": 50, "per100g": { "calories": 660, "protein": 6.9, "carbs": 23.7, "fat": 64.5 } },
+      { "name": "Fiocchi d'avena", "grams": 30, "per100g": { "calories": 372, "protein": 13.5, "carbs": 58.7, "fat": 7 } },
+      { "name": "Cioccolato fondente 85%", "grams": 25, "per100g": { "calories": 590, "protein": 9, "carbs": 22, "fat": 50 } }
+    ]
+  }
+]

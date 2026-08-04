@@ -1,0 +1,365 @@
+[
+  {
+    "name": "Straccetti di pollo al limone e rosmarino con zucchine",
+    "tags": ["cena", "proteico", "veloce", "leggero"],
+    "description": "Straccetti tenerissimi in padella con zucchine saltate: la cena da venti minuti per quando torni tardi e vuoi comunque mangiare bene.",
+    "instructions": "1. Taglia il petto di pollo a striscioline sottili e le zucchine a mezzelune.\n2. Scalda metà dell'olio in una padella ampia e salta le zucchine a fuoco vivo per 6-7 minuti con un pizzico di sale, poi mettile da parte.\n3. Nella stessa padella versa l'olio rimasto, aggiungi il pollo e un rametto di rosmarino e cuoci 5-6 minuti finché gli straccetti sono dorati.\n4. Sfuma con il succo di limone, rimetti dentro le zucchine, regola di sale e pepe e servi subito.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 400, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Zucchine", "grams": 400, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 30, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Salmone al forno con broccoli e patate",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Una teglia sola per tutto: il salmone cuoce sopra le verdure e tu nel frattempo fai altro. Cena completa e quasi zero piatti da lavare.",
+    "instructions": "1. Scalda il forno a 200 °C. Taglia le patate a cubetti da 2 cm e dividi i broccoli in cimette.\n2. Condisci patate e broccoli con olio e sale su una teglia foderata di carta forno e inforna per 15 minuti.\n3. Sposta le verdure ai lati, appoggia i filetti di salmone al centro, sala e bagna con il succo di limone.\n4. Rimetti in forno per altri 12-15 minuti, finché il salmone si sfalda con la forchetta. Porta in tavola ben caldo.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Filetto di salmone", "grams": 350, "per100g": { "calories": 200, "protein": 20, "carbs": 0, "fat": 13 } },
+      { "name": "Broccoli", "grams": 300, "per100g": { "calories": 34, "protein": 2.8, "carbs": 6.6, "fat": 0.4 } },
+      { "name": "Patate", "grams": 300, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 20, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Frittata al forno con spinaci e feta",
+    "tags": ["cena", "proteico", "leggero"],
+    "description": "Una frittata alta che si cuoce da sola in forno, senza girarla: dentro spinaci e cubetti di feta che si sciolgono appena.",
+    "instructions": "1. Scalda il forno a 180 °C. Fai appassire la cipolla affettata con l'olio in padella, aggiungi gli spinaci e cuoci finché perdono l'acqua.\n2. In una ciotola sbatti uova e albumi con sale e pepe.\n3. Unisci gli spinaci intiepiditi e la feta a cubetti al composto di uova.\n4. Versa tutto in una teglia da 20 cm con carta forno e cuoci per 20-25 minuti, finché il centro è sodo.\n5. Lascia riposare 5 minuti prima di tagliare a fette.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Uova", "grams": 200, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Albume d'uovo", "grams": 100, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Spinaci freschi", "grams": 250, "per100g": { "calories": 25, "protein": 2.9, "carbs": 2.5, "fat": 0.4 } },
+      { "name": "Feta", "grams": 80, "per100g": { "calories": 265, "protein": 14, "carbs": 4, "fat": 21 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Polpette di tacchino e zucchine al forno",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Polpette morbide grazie alla zucchina grattugiata nell'impasto, cotte al forno e ripassate nel sugo di pomodoro. Piacciono anche a chi 'il tacchino no'.",
+    "instructions": "1. Grattugia le zucchine, strizzale bene in un canovaccio e mescolale con il macinato di tacchino, l'uovo, il pangrattato, il parmigiano, sale e pepe.\n2. Forma 12-14 polpette e disponile su una teglia con carta forno.\n3. Cuoci a 200 °C per 18-20 minuti, girandole a metà cottura.\n4. Scalda la passata in una padella ampia con un filo d'olio e un pizzico di sale, tuffaci le polpette e falle insaporire 5 minuti.\n5. Servi con una macinata di pepe e, se vuoi, basilico fresco.",
+    "servings": 2,
+    "prepMinutes": 45,
+    "ingredients": [
+      { "name": "Macinato di tacchino", "grams": 400, "per100g": { "calories": 120, "protein": 21, "carbs": 0, "fat": 4 } },
+      { "name": "Zucchine", "grams": 200, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Uova", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Pangrattato integrale", "grams": 40, "per100g": { "calories": 360, "protein": 12, "carbs": 70, "fat": 3 } },
+      { "name": "Parmigiano Reggiano", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Passata di pomodoro", "grams": 300, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Merluzzo al pomodoro e olive con crostini",
+    "tags": ["cena", "leggero", "proteico"],
+    "description": "Filetti di merluzzo che cuociono direttamente nel sugo con le olive: leggero ma saporito, e con il pane tostato fai la scarpetta senza sensi di colpa.",
+    "instructions": "1. Fai appassire la cipolla tritata con l'olio in una padella ampia, poi versa la passata e cuoci 10 minuti con un pizzico di sale.\n2. Aggiungi le olive e adagia i filetti di merluzzo nel sugo.\n3. Copri e cuoci a fuoco dolce per 10-12 minuti, senza girare il pesce: basta bagnarlo ogni tanto con il sugo.\n4. Tosta il pane a fette in padella o nel tostapane.\n5. Servi il merluzzo con il suo sugo e i crostini a fianco.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Filetto di merluzzo", "grams": 400, "per100g": { "calories": 82, "protein": 18, "carbs": 0, "fat": 0.7 } },
+      { "name": "Passata di pomodoro", "grams": 300, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Olive nere denocciolate", "grams": 40, "per100g": { "calories": 235, "protein": 1.5, "carbs": 4, "fat": 24 } },
+      { "name": "Cipolla", "grams": 60, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } }
+    ]
+  },
+  {
+    "name": "Straccetti di tacchino all'arancia con finocchi",
+    "tags": ["cena", "proteico", "veloce", "leggero"],
+    "description": "Fettine di fesa sfumate con succo d'arancia e un velo di miele, insieme ai finocchi che restano croccanti. Sa di piatto elaborato ma è pronto in mezz'ora scarsa.",
+    "instructions": "1. Affetta i finocchi sottili e falli saltare in padella con metà olio e un pizzico di sale per 8-10 minuti: devono ammorbidirsi restando croccanti. Tienili da parte.\n2. Taglia la fesa a straccetti e rosolala nella stessa padella con l'olio rimasto, 4-5 minuti a fuoco vivo.\n3. Versa il succo d'arancia e il miele, alza la fiamma e fai restringere finché la salsa vela la carne.\n4. Rimetti i finocchi in padella, mescola un minuto e servi con pepe macinato al momento.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Fesa di tacchino", "grams": 350, "per100g": { "calories": 105, "protein": 24, "carbs": 0, "fat": 1 } },
+      { "name": "Finocchi", "grams": 400, "per100g": { "calories": 31, "protein": 1.2, "carbs": 7.3, "fat": 0.2 } },
+      { "name": "Succo d'arancia", "grams": 100, "per100g": { "calories": 45, "protein": 0.9, "carbs": 10.4, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Miele", "grams": 10, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  },
+  {
+    "name": "Vellutata di zucca con ceci croccanti",
+    "tags": ["cena", "leggero", "comfort"],
+    "description": "Vellutata densa di zucca e patata con sopra i ceci tostati al forno che fanno da 'crostini' proteici. La cena calda delle sere in cui sei stanco morto.",
+    "instructions": "1. Scalda il forno a 200 °C. Asciuga bene i ceci, condiscili con metà olio e sale e tostali in forno per 20-25 minuti finché sono croccanti.\n2. Intanto fai appassire la cipolla con l'olio rimasto in una pentola, aggiungi zucca e patate a pezzi e copri a filo con acqua calda.\n3. Cuoci 20 minuti con sale, poi frulla tutto con il frullatore a immersione fino a ottenere una crema liscia.\n4. Servi la vellutata nelle ciotole con i ceci croccanti sopra e il parmigiano grattugiato.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Zucca", "grams": 600, "per100g": { "calories": 26, "protein": 1, "carbs": 6.5, "fat": 0.1 } },
+      { "name": "Patate", "grams": 150, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Ceci lessati", "grams": 240, "per100g": { "calories": 120, "protein": 7, "carbs": 17, "fat": 2.5 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Parmigiano Reggiano", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } }
+    ]
+  },
+  {
+    "name": "Tofu alla mediterranea con pomodorini e olive",
+    "tags": ["cena", "leggero", "veloce"],
+    "description": "Tofu rosolato bene finché fa la crosticina, poi mantecato con pomodorini, olive e origano: la versione mediterranea che riconcilia col tofu.",
+    "instructions": "1. Taglia il tofu a cubetti e asciugalo bene con carta da cucina: più è asciutto, più diventa croccante.\n2. Rosolalo in padella con l'olio a fuoco medio-alto per 6-8 minuti, girando finché è dorato su più lati.\n3. Aggiungi i pomodorini tagliati a metà e le olive, sala poco e cuoci altri 5 minuti finché i pomodorini si sfaldano.\n4. Spolvera con abbondante origano, spegni e servi con il pane tostato.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Tofu al naturale", "grams": 250, "per100g": { "calories": 125, "protein": 12, "carbs": 2, "fat": 7.5 } },
+      { "name": "Pomodorini", "grams": 300, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olive nere denocciolate", "grams": 30, "per100g": { "calories": 235, "protein": 1.5, "carbs": 4, "fat": 24 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Pane integrale", "grams": 70, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } }
+    ]
+  },
+  {
+    "name": "Omelette ai funghi e parmigiano",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "Un'omelette morbida farcita con funghi trifolati e parmigiano: cena da single in un quarto d'ora, padella unica e via.",
+    "instructions": "1. Affetta i funghi e falli saltare in padella con metà olio a fuoco vivo per 5-6 minuti, finché l'acqua è evaporata. Sala e tieni da parte.\n2. Sbatti uova e albumi con un pizzico di sale e il parmigiano.\n3. Scalda l'olio rimasto in una padella antiaderente, versa le uova e cuoci a fuoco medio-basso muovendo i bordi con la spatola.\n4. Quando la superficie è quasi rappresa, distribuisci i funghi su metà omelette, chiudi a mezzaluna e cuoci ancora un minuto.\n5. Fai scivolare nel piatto e completa con pepe.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      { "name": "Uova", "grams": 165, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Albume d'uovo", "grams": 100, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Funghi champignon", "grams": 250, "per100g": { "calories": 22, "protein": 3.1, "carbs": 2.6, "fat": 0.3 } },
+      { "name": "Parmigiano Reggiano", "grams": 15, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Pollo alla pizzaiola light",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Fettine di petto nel sugo all'origano con mozzarella light filante sopra: il sapore della pizzaiola di casa, con macro da cena di allenamento.",
+    "instructions": "1. Batti leggermente le fettine di pollo per uniformarle e rosolale 2 minuti per lato in padella con l'olio.\n2. Versa la passata, sala, aggiungi abbondante origano e cuoci coperto a fuoco dolce per 10 minuti.\n3. Distribuisci la mozzarella light a fettine sopra il pollo, rimetti il coperchio e spegni: si scioglie col calore residuo in 2-3 minuti.\n4. Servi con il sugo della padella e altro origano.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 350, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Passata di pomodoro", "grams": 300, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Mozzarella light", "grams": 100, "per100g": { "calories": 163, "protein": 20, "carbs": 1.5, "fat": 9 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Petto di pollo in crosta di mandorle con fagiolini",
+    "tags": ["cena", "proteico", "leggero"],
+    "description": "Il petto di pollo spennellato di senape e impanato con mandorle tritate: croccante fuori, succoso dentro, e i fagiolini al vapore chiudono il piatto.",
+    "instructions": "1. Scalda il forno a 200 °C. Trita grossolanamente le mandorle e mescolale con il pangrattato.\n2. Spennella le fette di pollo con la senape su entrambi i lati, poi premile nel mix di mandorle in modo che si attacchi bene.\n3. Disponi il pollo su una teglia con carta forno, completa con un filo d'olio e cuoci 18-20 minuti.\n4. Intanto lessa i fagiolini in acqua salata per 8-10 minuti e condiscili con l'olio rimasto.\n5. Servi il pollo appena sfornato con i fagiolini a fianco.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 350, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Mandorle", "grams": 40, "per100g": { "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9 } },
+      { "name": "Pangrattato integrale", "grams": 20, "per100g": { "calories": 360, "protein": 12, "carbs": 70, "fat": 3 } },
+      { "name": "Senape", "grams": 20, "per100g": { "calories": 66, "protein": 4.4, "carbs": 5.8, "fat": 4 } },
+      { "name": "Fagiolini", "grams": 350, "per100g": { "calories": 31, "protein": 1.8, "carbs": 7, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Orata al cartoccio con verdure",
+    "tags": ["cena", "leggero", "proteico"],
+    "description": "Filetti di orata chiusi nel cartoccio con patate, zucchine e pomodorini: il forno fa tutto lui e il pesce resta morbidissimo.",
+    "instructions": "1. Scalda il forno a 200 °C. Affetta le patate sottili (mezzo centimetro) e le zucchine a rondelle.\n2. Prepara due fogli grandi di carta forno: distribuisci patate e zucchine, sala e condisci con metà olio.\n3. Appoggia sopra i filetti di orata, aggiungi i pomodorini a metà, il succo di limone, l'olio rimasto e ancora un pizzico di sale.\n4. Chiudi i cartocci arrotolando bene i bordi e cuoci su una teglia per 25 minuti.\n5. Apri i cartocci direttamente nel piatto, facendo attenzione al vapore.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Filetto di orata", "grams": 320, "per100g": { "calories": 121, "protein": 20, "carbs": 0, "fat": 4.5 } },
+      { "name": "Patate", "grams": 250, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Zucchine", "grams": 200, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Pomodorini", "grams": 150, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 20, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Burger di lenticchie e carote con salsa allo yogurt",
+    "tags": ["cena", "leggero", "comfort"],
+    "description": "Burger vegetali che stanno insieme davvero, dorati in forno e serviti con una salsa fresca di yogurt greco. Cena senza carne che sazia sul serio.",
+    "instructions": "1. Schiaccia le lenticchie lessate con una forchetta lasciando qualche pezzo intero, poi uniscile alle carote grattugiate, all'uovo, al pangrattato, sale e pepe.\n2. Compatta bene e forma 4 burger; se l'impasto è morbido, lascialo 10 minuti in frigo.\n3. Disponili su una teglia con carta forno, spennellali con l'olio e cuoci a 200 °C per 20 minuti, girandoli a metà.\n4. Mescola lo yogurt greco con sale, pepe e le erbe che hai (prezzemolo o erba cipollina).\n5. Servi i burger con la salsa e l'insalata condita a parte.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Lenticchie lessate", "grams": 300, "per100g": { "calories": 115, "protein": 9, "carbs": 17, "fat": 0.8 } },
+      { "name": "Carote", "grams": 150, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Pangrattato integrale", "grams": 50, "per100g": { "calories": 360, "protein": 12, "carbs": 70, "fat": 3 } },
+      { "name": "Uova", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Yogurt greco 0%", "grams": 100, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Insalata mista", "grams": 100, "per100g": { "calories": 17, "protein": 1.2, "carbs": 2.9, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Tonno scottato al sesamo con cavolo croccante",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "Trancio di tonno in crosta di sesamo, scottato un minuto per lato, su un letto di cavolo cappuccio condito con soia e limone. Sembra un piatto da ristorante, si fa in venti minuti.",
+    "instructions": "1. Affetta il cavolo cappuccio finissimo e condiscilo con salsa di soia, succo di limone e un cucchiaino d'olio: massaggialo un minuto con le mani perché si ammorbidisca.\n2. Asciuga i tranci di tonno e premili nel sesamo su entrambi i lati.\n3. Scalda bene l'olio rimasto in padella e scotta il tonno 1-2 minuti per lato: fuori dorato, dentro rosato.\n4. Taglia il tonno a fette spesse e servilo sopra il cavolo.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Trancio di tonno fresco", "grams": 300, "per100g": { "calories": 130, "protein": 23, "carbs": 0, "fat": 4 } },
+      { "name": "Semi di sesamo", "grams": 20, "per100g": { "calories": 570, "protein": 18, "carbs": 12, "fat": 50 } },
+      { "name": "Cavolo cappuccio", "grams": 300, "per100g": { "calories": 25, "protein": 1.3, "carbs": 5.8, "fat": 0.1 } },
+      { "name": "Salsa di soia", "grams": 20, "per100g": { "calories": 53, "protein": 8, "carbs": 5, "fat": 0 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 15, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Crema di lenticchie rosse con crostini integrali",
+    "tags": ["cena", "comfort", "proteico"],
+    "description": "Le lenticchie rosse si sfaldano da sole in cottura e diventano una crema densa senza nemmeno frullarla troppo. Con i crostini è una cena completa che scalda.",
+    "instructions": "1. Fai soffriggere cipolla, carota e sedano tritati con metà olio in una pentola per 5 minuti.\n2. Aggiungi le lenticchie rosse sciacquate e coprile con circa il triplo del loro volume di acqua calda.\n3. Cuoci 20-25 minuti mescolando ogni tanto: si disfano da sole. Sala verso fine cottura.\n4. Dai un colpo di frullatore a immersione per la cremosità che preferisci.\n5. Servi con i crostini di pane tostato, il parmigiano e l'olio rimasto a crudo.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Lenticchie rosse secche", "grams": 200, "per100g": { "calories": 325, "protein": 24, "carbs": 51, "fat": 1.5 } },
+      { "name": "Carote", "grams": 100, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Sedano", "grams": 60, "per100g": { "calories": 16, "protein": 0.7, "carbs": 3, "fat": 0.2 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Pane integrale", "grams": 80, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Parmigiano Reggiano", "grams": 15, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } }
+    ]
+  },
+  {
+    "name": "Tagliata di manzo con rucola, grana e pomodorini",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "Controfiletto magro scottato e affettato su rucola e pomodorini, con le scaglie di grana sopra. La cena 'premio' dopo una giornata pesante, senza esagerare.",
+    "instructions": "1. Tira fuori la carne dal frigo 20 minuti prima, così cuoce in modo uniforme.\n2. Scalda benissimo una padella o una griglia e cuoci il controfiletto 3-4 minuti per lato, secondo lo spessore, senza bucarlo.\n3. Lascia riposare la carne 5 minuti su un tagliere coperta con un foglio di alluminio.\n4. Intanto sistema nel piatto rucola e pomodorini conditi con metà olio e sale.\n5. Affetta la carne controfibra, adagiala sull'insalata e completa con grana a scaglie, l'olio rimasto, sale, pepe e una spruzzata di limone.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Controfiletto di manzo magro", "grams": 350, "per100g": { "calories": 127, "protein": 22, "carbs": 0, "fat": 4 } },
+      { "name": "Rucola", "grams": 80, "per100g": { "calories": 28, "protein": 2.6, "carbs": 3.7, "fat": 0.7 } },
+      { "name": "Grana Padano a scaglie", "grams": 30, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28 } },
+      { "name": "Pomodorini", "grams": 150, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 10, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Pollo e peperoni in padella unica",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Il classico romano in versione asciutta e veloce: bocconcini di petto e peperoni che si insaporiscono insieme in una sola padella.",
+    "instructions": "1. Taglia i peperoni a falde e la cipolla a fette, poi falli stufare in padella con metà olio e un pizzico di sale per 12-15 minuti, finché sono morbidi.\n2. Spingi le verdure ai bordi, alza la fiamma e rosola i bocconcini di pollo con l'olio rimasto per 5-6 minuti.\n3. Aggiungi la passata, mescola tutto e cuoci ancora 8-10 minuti a fuoco medio.\n4. Regola di sale e pepe e servi direttamente dalla padella, con una foglia di basilico se ce l'hai.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 350, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Peperoni", "grams": 400, "per100g": { "calories": 31, "protein": 1, "carbs": 6, "fat": 0.3 } },
+      { "name": "Cipolla", "grams": 100, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Passata di pomodoro", "grams": 150, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Frittatona di albumi e zucchine con pane integrale",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "Tanti albumi, un uovo intero per il gusto e zucchine a rondelle: una frittata gigante che riempie il piatto e sazia a lungo. Ideale dopo l'allenamento serale.",
+    "instructions": "1. Salta le zucchine a rondelle in padella con metà olio e un pizzico di sale per 6-7 minuti.\n2. Sbatti gli albumi con l'uovo intero, il parmigiano, sale e pepe.\n3. Versa il composto sulle zucchine nella padella con l'olio rimasto e cuoci a fuoco basso con il coperchio per 6-8 minuti.\n4. Quando la superficie è rappresa, girala aiutandoti con un piatto e finisci la cottura 2 minuti.\n5. Servi con il pane integrale tostato.",
+    "servings": 1,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Albume d'uovo", "grams": 300, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Uova", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Zucchine", "grams": 250, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Parmigiano Reggiano", "grams": 15, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Pane integrale", "grams": 50, "per100g": { "calories": 247, "protein": 13, "carbs": 41, "fat": 3.4 } }
+    ]
+  },
+  {
+    "name": "Pesce spada al salmoriglio con verdure grigliate",
+    "tags": ["cena", "proteico", "leggero"],
+    "description": "Trancio di spada alla griglia condito con l'emulsione di olio, limone e origano, insieme a zucchine e melanzane grigliate. Estate nel piatto, anche a gennaio.",
+    "instructions": "1. Prepara il salmoriglio: emulsiona olio, succo di limone, origano, sale, pepe e un cucchiaio di acqua calda sbattendo con la forchetta.\n2. Affetta zucchine e melanzane per lungo (mezzo centimetro) e grigliale su una piastra ben calda, qualche minuto per lato. Salale e tienile in caldo.\n3. Griglia i tranci di pesce spada 2-3 minuti per lato sulla stessa piastra: cuoce in fretta, non farlo asciugare.\n4. Impiatta pesce e verdure e condisci tutto con il salmoriglio al momento di servire.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Trancio di pesce spada", "grams": 320, "per100g": { "calories": 144, "protein": 20, "carbs": 0, "fat": 7 } },
+      { "name": "Zucchine", "grams": 200, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Melanzane", "grams": 200, "per100g": { "calories": 25, "protein": 1.1, "carbs": 4.7, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 30, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Bocconcini di pollo al curry con yogurt e riso basmati",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Pollo al curry cremoso grazie allo yogurt greco aggiunto a fuoco spento, con il basmati che assorbe il sughetto. Comfort food da schiscetta promosso anche a cena.",
+    "instructions": "1. Metti a cuocere il riso basmati in acqua salata secondo i tempi della confezione.\n2. Fai appassire la cipolla tritata con l'olio in padella, poi rosola i bocconcini di pollo a fuoco vivo per 5 minuti.\n3. Spolvera con il curry, mescola bene e sfuma con mezzo bicchiere d'acqua; cuoci coperto 8-10 minuti.\n4. Spegni il fuoco, aspetta un minuto e manteca con lo yogurt greco: fuori dal fuoco non impazzisce e resta cremoso.\n5. Servi il pollo sopra il riso.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 350, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Yogurt greco 0%", "grams": 150, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Riso basmati", "grams": 120, "per100g": { "calories": 350, "protein": 8, "carbs": 78, "fat": 1 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Curry in polvere", "grams": 8, "per100g": { "calories": 325, "protein": 13, "carbs": 30, "fat": 14 } },
+      { "name": "Olio extravergine di oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Polpette di ceci al forno con salsa allo yogurt",
+    "tags": ["cena", "comfort"],
+    "description": "Polpette di ceci dorate al forno, fuori croccanti e dentro morbide, con una salsa allo yogurt e limone che le fa sparire dal piatto.",
+    "instructions": "1. Frulla i ceci scolati con l'uovo, il parmigiano, sale, pepe e, se ti piace, un pizzico di cumino: deve restare un impasto grossolano, non una crema.\n2. Unisci il pangrattato, mescola e forma 12 polpette; se l'impasto è appiccicoso, bagnati le mani.\n3. Disponile su una teglia con carta forno, spennellale con l'olio e cuoci a 200 °C per 20-25 minuti girandole a metà.\n4. Mescola lo yogurt con il succo di limone, sale e pepe.\n5. Servi le polpette calde con la salsa fredda accanto.",
+    "servings": 2,
+    "prepMinutes": 45,
+    "ingredients": [
+      { "name": "Ceci lessati", "grams": 400, "per100g": { "calories": 120, "protein": 7, "carbs": 17, "fat": 2.5 } },
+      { "name": "Pangrattato integrale", "grams": 40, "per100g": { "calories": 360, "protein": 12, "carbs": 70, "fat": 3 } },
+      { "name": "Uova", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Parmigiano Reggiano", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Yogurt greco 0%", "grams": 150, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 10, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Vellutata di broccoli e patate con uovo morbido",
+    "tags": ["cena", "leggero", "comfort"],
+    "description": "Crema verde di broccoli e patate con un uovo dal tuorlo morbido appoggiato sopra: quando lo rompi condisce tutta la vellutata.",
+    "instructions": "1. Fai appassire la cipolla con l'olio in una pentola, aggiungi patate a pezzi e cimette di broccoli e copri a filo con acqua calda.\n2. Sala e cuoci 20 minuti, poi frulla fino a ottenere una crema liscia.\n3. Intanto cuoci le uova partendo da acqua bollente: 7 minuti esatti per il tuorlo morbido, poi passale in acqua fredda e sgusciale.\n4. Versa la vellutata nelle ciotole, appoggia sopra l'uovo tagliato a metà e completa con parmigiano e pepe.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Broccoli", "grams": 500, "per100g": { "calories": 34, "protein": 2.8, "carbs": 6.6, "fat": 0.4 } },
+      { "name": "Patate", "grams": 250, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Uova", "grams": 110, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.5 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Parmigiano Reggiano", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Tempeh all'arancia con cavolo e carote",
+    "tags": ["cena", "proteico", "leggero"],
+    "description": "Tempeh rosolato e glassato con arancia, soia e un filo di miele, su verdure croccanti saltate in padella. Proteine vegetali che non sanno di rinuncia.",
+    "instructions": "1. Taglia il tempeh a fette spesse mezzo centimetro e rosolalo in padella con metà olio, 3-4 minuti per lato, finché è dorato.\n2. Versa succo d'arancia, salsa di soia e miele: fai restringere a fuoco medio finché la salsa diventa lucida e avvolge il tempeh. Tienilo da parte.\n3. Nella stessa padella salta cavolo cappuccio a striscioline e carote a bastoncini con l'olio rimasto per 5-6 minuti: devono restare croccanti.\n4. Rimetti il tempeh sopra le verdure, scalda un minuto e servi.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Tempeh", "grams": 200, "per100g": { "calories": 193, "protein": 19, "carbs": 9, "fat": 9 } },
+      { "name": "Succo d'arancia", "grams": 100, "per100g": { "calories": 45, "protein": 0.9, "carbs": 10.4, "fat": 0.2 } },
+      { "name": "Salsa di soia", "grams": 20, "per100g": { "calories": 53, "protein": 8, "carbs": 5, "fat": 0 } },
+      { "name": "Cavolo cappuccio", "grams": 250, "per100g": { "calories": 25, "protein": 1.3, "carbs": 5.8, "fat": 0.1 } },
+      { "name": "Carote", "grams": 100, "per100g": { "calories": 35, "protein": 0.8, "carbs": 7.5, "fat": 0.2 } },
+      { "name": "Olio extravergine di oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Miele", "grams": 5, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } }
+    ]
+  }
+]
