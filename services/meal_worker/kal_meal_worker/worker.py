@@ -6,11 +6,11 @@ import tempfile
 import threading
 import time
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Protocol, TypeVar
+from typing import Generic, Protocol, TypeVar
 
 from .analyzer_errors import AnalyzerError
 from .contract import AnalysisResult
@@ -30,6 +30,7 @@ from .transport import (
 
 _LOGGER = logging.getLogger("kal_meal_worker")
 _T = TypeVar("_T")
+_JobT = TypeVar("_JobT")
 
 
 class Analyzer(Protocol):
@@ -42,17 +43,13 @@ class Analyzer(Protocol):
     ) -> AnalysisResult: ...
 
 
-class MealGateway(Protocol):
-    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedJob | None: ...
+class JobGateway(Protocol):
+    """Il minimo che serve al ciclo di vita comune a tutte le code."""
+
+    def claim(self, mutation_id: str, lease_seconds: int) -> object | None: ...
 
     def heartbeat(
         self, job_id: str, mutation_id: str, lease_seconds: int
-    ) -> Mapping[str, object]: ...
-
-    def download_photo(self, job: ClaimedJob) -> DownloadedPhoto: ...
-
-    def complete(
-        self, job_id: str, mutation_id: str, result: AnalysisResult
     ) -> Mapping[str, object]: ...
 
     def fail(
@@ -61,6 +58,16 @@ class MealGateway(Protocol):
         mutation_id: str,
         error_code: str,
         retryable: bool,
+    ) -> Mapping[str, object]: ...
+
+
+class MealGateway(JobGateway, Protocol):
+    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedJob | None: ...
+
+    def download_photo(self, job: ClaimedJob) -> DownloadedPhoto: ...
+
+    def complete(
+        self, job_id: str, mutation_id: str, result: AnalysisResult
     ) -> Mapping[str, object]: ...
 
 
@@ -131,13 +138,14 @@ class LeaseHeartbeat:
     def __init__(
         self,
         *,
-        gateway: MealGateway,
+        gateway: JobGateway,
         job_id: str,
         lease_seconds: int,
         interval_seconds: float,
         retry_policy: RetryPolicy,
         uuid_factory: Callable[[], str],
         random_value: Callable[[], float],
+        thread_name: str = "kal-worker-heartbeat",
     ) -> None:
         self._gateway = gateway
         self._job_id = job_id
@@ -149,7 +157,7 @@ class LeaseHeartbeat:
         self._stop = threading.Event()
         self._thread = threading.Thread(
             target=self._run,
-            name="kal-meal-heartbeat",
+            name=thread_name,
             daemon=True,
         )
         self.error: BaseException | None = None
@@ -186,12 +194,62 @@ class LeaseHeartbeat:
                 return
 
 
-class MealWorker:
+def run_serve_loop(
+    run_cycle: Callable[[], CycleOutcome],
+    *,
+    stop: threading.Event,
+    poll_interval_seconds: float,
+    retry_policy: RetryPolicy,
+    random_value: Callable[[], float],
+    maximum_cycles: int | None = None,
+) -> None:
+    """Loop di servizio: un ciclo per volta, con backoff sugli errori."""
+    cycles = 0
+    consecutive_failures = 0
+    while not stop.is_set():
+        if maximum_cycles is not None and cycles >= maximum_cycles:
+            return
+        cycles += 1
+        try:
+            outcome = run_cycle()
+        except KeyboardInterrupt:
+            return
+        except Exception as error:
+            consecutive_failures += 1
+            _LOGGER.warning("Ciclo worker fallito (%s)", _safe_cycle_code(error))
+            if stop.wait(retry_policy.delay(consecutive_failures, random_value())):
+                return
+            continue
+
+        if outcome is CycleOutcome.COMPLETED:
+            consecutive_failures = 0
+            continue
+        if outcome is CycleOutcome.FAILED:
+            consecutive_failures += 1
+            if stop.wait(retry_policy.delay(consecutive_failures, random_value())):
+                return
+            continue
+
+        consecutive_failures = 0
+        if stop.wait(poll_interval_seconds):
+            return
+
+
+class BaseJobWorker(Generic[_JobT]):
+    """Ciclo di vita comune: claim, lease, heartbeat, esito, backoff.
+
+    Le due code (foto e piano) condividono tutto tranne il lavoro vero e
+    proprio, che vive in ``_process_job``: e' un template method, non un `if`,
+    perche' i passi e i codici errore delle due code non hanno nulla in comune
+    (una scarica un'immagine, l'altra legge una richiesta gia' in memoria).
+    """
+
+    heartbeat_thread_name = "kal-worker-heartbeat"
+
     def __init__(
         self,
         *,
-        gateway: MealGateway,
-        analyzer: Analyzer,
+        gateway: JobGateway,
         lease_seconds: int = 180,
         heartbeat_interval_seconds: float | None = None,
         poll_interval_seconds: float = 5,
@@ -210,7 +268,6 @@ class MealWorker:
         if poll_interval_seconds < 0:
             raise ValueError("Intervallo poll non valido")
         self._gateway = gateway
-        self._analyzer = analyzer
         self._lease_seconds = lease_seconds
         self._heartbeat_interval_seconds = heartbeat_interval
         self._poll_interval_seconds = poll_interval_seconds
@@ -234,84 +291,119 @@ class MealWorker:
         stop_event: threading.Event | None = None,
         maximum_cycles: int | None = None,
     ) -> None:
-        stop = stop_event or threading.Event()
-        cycles = 0
-        consecutive_failures = 0
-        while not stop.is_set():
-            if maximum_cycles is not None and cycles >= maximum_cycles:
-                return
-            cycles += 1
-            try:
-                outcome = self.run_once()
-            except KeyboardInterrupt:
-                return
-            except Exception as error:
-                consecutive_failures += 1
-                _LOGGER.warning("Ciclo worker fallito (%s)", _safe_cycle_code(error))
-                delay = self._retry_policy.delay(
-                    consecutive_failures, self._random_value()
-                )
-                if stop.wait(delay):
-                    return
-                continue
+        run_serve_loop(
+            self.run_once,
+            stop=stop_event or threading.Event(),
+            poll_interval_seconds=self._poll_interval_seconds,
+            retry_policy=self._retry_policy,
+            random_value=self._random_value,
+            maximum_cycles=maximum_cycles,
+        )
 
-            if outcome is CycleOutcome.COMPLETED:
-                consecutive_failures = 0
-                continue
-            if outcome is CycleOutcome.FAILED:
-                consecutive_failures += 1
-                delay = self._retry_policy.delay(
-                    consecutive_failures, self._random_value()
-                )
-                if stop.wait(delay):
-                    return
-                continue
+    def _process_job(self, job: _JobT) -> CycleOutcome:
+        raise NotImplementedError
 
-            consecutive_failures = 0
-            if stop.wait(self._poll_interval_seconds):
-                return
+    def _send_initial_heartbeat(self, job_id: str) -> None:
+        mutation_id = self._uuid_factory()
+        try:
+            self._retry(
+                lambda: self._gateway.heartbeat(
+                    job_id,
+                    mutation_id,
+                    self._lease_seconds,
+                )
+            )
+        except Exception as error:
+            raise WorkerCycleError("INITIAL_HEARTBEAT_FAILED") from error
+
+    def _start_heartbeat(self, job_id: str) -> LeaseHeartbeat:
+        heartbeat = LeaseHeartbeat(
+            gateway=self._gateway,
+            job_id=job_id,
+            lease_seconds=self._lease_seconds,
+            interval_seconds=self._heartbeat_interval_seconds,
+            retry_policy=self._retry_policy,
+            uuid_factory=self._uuid_factory,
+            random_value=self._random_value,
+            thread_name=self.heartbeat_thread_name,
+        )
+        heartbeat.start()
+        return heartbeat
+
+    def _report_failure(self, job_id: str, error_code: str, retryable: bool) -> None:
+        mutation_id = self._uuid_factory()
+        try:
+            self._retry(
+                lambda: self._gateway.fail(
+                    job_id,
+                    mutation_id,
+                    error_code,
+                    retryable,
+                )
+            )
+        except Exception as error:
+            raise WorkerCycleError("FAIL_RPC_FAILED") from error
+        _LOGGER.warning("Job %s non riuscito (%s)", job_id, error_code)
+
+    def _retry(self, operation: Callable[[], _T]) -> _T:
+        return _run_with_retry(
+            operation,
+            policy=self._retry_policy,
+            sleep=self._sleep,
+            random_value=self._random_value,
+        )
+
+
+class MealWorker(BaseJobWorker[ClaimedJob]):
+    heartbeat_thread_name = "kal-meal-heartbeat"
+
+    def __init__(
+        self,
+        *,
+        gateway: MealGateway,
+        analyzer: Analyzer,
+        lease_seconds: int = 180,
+        heartbeat_interval_seconds: float | None = None,
+        poll_interval_seconds: float = 5,
+        retry_policy: RetryPolicy = RetryPolicy(),
+        sleep: Callable[[float], object] = time.sleep,
+        random_value: Callable[[], float] = random.random,
+        uuid_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
+    ) -> None:
+        super().__init__(
+            gateway=gateway,
+            lease_seconds=lease_seconds,
+            heartbeat_interval_seconds=heartbeat_interval_seconds,
+            poll_interval_seconds=poll_interval_seconds,
+            retry_policy=retry_policy,
+            sleep=sleep,
+            random_value=random_value,
+            uuid_factory=uuid_factory,
+        )
+        self._meal_gateway = gateway
+        self._analyzer = analyzer
 
     def _process_job(self, job: ClaimedJob) -> CycleOutcome:
         _LOGGER.info("Job %s acquisito (tentativo %s)", job.job_id, job.attempt_count)
         with tempfile.TemporaryDirectory(prefix="kal-meal-job-") as temporary:
             directory = Path(temporary)
             try:
-                photo = self._retry(lambda: self._gateway.download_photo(job))
+                photo = self._retry(lambda: self._meal_gateway.download_photo(job))
             except Exception as error:
                 if isinstance(error, HttpStatusError) and error.status in {401, 403}:
                     raise WorkerCycleError("LEASE_OR_AUTH_REJECTED") from error
                 code, retryable = _download_failure(error)
-                self._report_failure(job, code, retryable)
+                self._report_failure(job.job_id, code, retryable)
                 return CycleOutcome.FAILED
 
             try:
                 image = verify_and_write_photo(photo, job, directory)
             except ImageIntegrityError as error:
-                self._report_failure(job, error.error_code, retryable=False)
+                self._report_failure(job.job_id, error.error_code, retryable=False)
                 return CycleOutcome.FAILED
 
-            heartbeat_mutation = self._uuid_factory()
-            try:
-                self._retry(
-                    lambda: self._gateway.heartbeat(
-                        job.job_id,
-                        heartbeat_mutation,
-                        self._lease_seconds,
-                    )
-                )
-            except Exception as error:
-                raise WorkerCycleError("INITIAL_HEARTBEAT_FAILED") from error
-
-            heartbeat = LeaseHeartbeat(
-                gateway=self._gateway,
-                job_id=job.job_id,
-                lease_seconds=self._lease_seconds,
-                interval_seconds=self._heartbeat_interval_seconds,
-                retry_policy=self._retry_policy,
-                uuid_factory=self._uuid_factory,
-                random_value=self._random_value,
-            )
-            heartbeat.start()
+            self._send_initial_heartbeat(job.job_id)
+            heartbeat = self._start_heartbeat(job.job_id)
             analysis_error: BaseException | None = None
             result: AnalysisResult | None = None
             try:
@@ -329,7 +421,7 @@ class MealWorker:
                 raise WorkerCycleError("LEASE_HEARTBEAT_FAILED") from heartbeat.error
             if analysis_error is not None:
                 code, retryable = _analysis_failure(analysis_error)
-                self._report_failure(job, code, retryable)
+                self._report_failure(job.job_id, code, retryable)
                 return CycleOutcome.FAILED
             if result is None:
                 raise WorkerCycleError("ANALYZER_EMPTY_RESULT")
@@ -337,7 +429,7 @@ class MealWorker:
             complete_mutation = self._uuid_factory()
             try:
                 self._retry(
-                    lambda: self._gateway.complete(
+                    lambda: self._meal_gateway.complete(
                         job.job_id,
                         complete_mutation,
                         result,
@@ -349,29 +441,64 @@ class MealWorker:
         _LOGGER.info("Job %s completato; attende revisione", job.job_id)
         return CycleOutcome.COMPLETED
 
-    def _report_failure(
-        self, job: ClaimedJob, error_code: str, retryable: bool
-    ) -> None:
-        mutation_id = self._uuid_factory()
-        try:
-            self._retry(
-                lambda: self._gateway.fail(
-                    job.job_id,
-                    mutation_id,
-                    error_code,
-                    retryable,
-                )
-            )
-        except Exception as error:
-            raise WorkerCycleError("FAIL_RPC_FAILED") from error
-        _LOGGER.warning("Job %s non riuscito (%s)", job.job_id, error_code)
 
-    def _retry(self, operation: Callable[[], _T]) -> _T:
-        return _run_with_retry(
-            operation,
-            policy=self._retry_policy,
-            sleep=self._sleep,
+class SingleQueueWorker(Protocol):
+    def run_once(self) -> CycleOutcome: ...
+
+
+class AlternatingWorker:
+    """Serve piu' code a turno, una sola lavorazione alla volta.
+
+    Il turno avanza dopo ogni ciclo, anche quando un worker solleva: cosi' una
+    coda che fallisce di continuo (o che ha sempre lavoro) non affama l'altra.
+    """
+
+    def __init__(
+        self,
+        *,
+        workers: Sequence[SingleQueueWorker],
+        poll_interval_seconds: float = 5,
+        retry_policy: RetryPolicy = RetryPolicy(),
+        random_value: Callable[[], float] = random.random,
+    ) -> None:
+        if not workers:
+            raise ValueError("Serve almeno un worker da servire")
+        if poll_interval_seconds < 0:
+            raise ValueError("Intervallo poll non valido")
+        self._workers = tuple(workers)
+        self._poll_interval_seconds = poll_interval_seconds
+        self._retry_policy = retry_policy
+        self._random_value = random_value
+        self._next_index = 0
+
+    def run_once(self) -> CycleOutcome:
+        count = len(self._workers)
+        for offset in range(count):
+            index = (self._next_index + offset) % count
+            try:
+                outcome = self._workers[index].run_once()
+            except BaseException:
+                self._next_index = (index + 1) % count
+                raise
+            if outcome is not CycleOutcome.IDLE:
+                self._next_index = (index + 1) % count
+                return outcome
+        self._next_index = (self._next_index + 1) % count
+        return CycleOutcome.IDLE
+
+    def serve(
+        self,
+        *,
+        stop_event: threading.Event | None = None,
+        maximum_cycles: int | None = None,
+    ) -> None:
+        run_serve_loop(
+            self.run_once,
+            stop=stop_event or threading.Event(),
+            poll_interval_seconds=self._poll_interval_seconds,
+            retry_policy=self._retry_policy,
             random_value=self._random_value,
+            maximum_cycles=maximum_cycles,
         )
 
 

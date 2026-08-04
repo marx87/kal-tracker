@@ -13,6 +13,7 @@ from urllib.parse import quote, urlsplit
 from uuid import UUID
 
 from .contract import AnalysisResult
+from .plan_contract import WeeklyPlanResult
 from .transport import (
     HttpResponse,
     HttpStatusError,
@@ -124,13 +125,7 @@ class ClaimedJob:
         if not 1 <= attempt_count <= 10 or row_version <= 0:
             raise SupabaseProtocolError("Versione o tentativo claim non valido")
 
-        lease = _required_string(value["lease_expires_at"], "lease_expires_at", 64)
-        try:
-            parsed_lease = datetime.fromisoformat(lease.replace("Z", "+00:00"))
-        except ValueError as error:
-            raise SupabaseProtocolError("Scadenza lease non valida") from error
-        if parsed_lease.tzinfo is None:
-            raise SupabaseProtocolError("Scadenza lease senza fuso orario")
+        lease = _lease_timestamp(value["lease_expires_at"])
 
         return cls(
             job_id=job_id,
@@ -146,6 +141,63 @@ class ClaimedJob:
             attempt_count=attempt_count,
             row_version=row_version,
             lease_expires_at=lease,
+        )
+
+
+@dataclass(frozen=True)
+class ClaimedPlanJob:
+    """Job della coda del piano settimanale.
+
+    Le chiavi ammesse sono 8 e nessuna riguarda le foto: la RPC del piano ha
+    una risposta sua, proprio per non far crescere quella delle foto (un campo
+    in piu' li' romperebbe subito ``ClaimedJob.from_json``).
+    """
+
+    job_id: str
+    owner_id: str
+    profile_id: str
+    request: Mapping[str, object]
+    attempt_count: int
+    row_version: int
+    lease_expires_at: str
+
+    @classmethod
+    def from_json(cls, value: object) -> "ClaimedPlanJob | None":
+        if not isinstance(value, dict):
+            raise SupabaseProtocolError("Risposta claim non valida")
+        if value == {"claimed": False}:
+            return None
+
+        expected = {
+            "claimed",
+            "job_id",
+            "owner_id",
+            "profile_id",
+            "request",
+            "attempt_count",
+            "row_version",
+            "lease_expires_at",
+        }
+        if set(value) != expected or value.get("claimed") is not True:
+            raise SupabaseProtocolError("Campi claim mancanti o inattesi")
+
+        request = value["request"]
+        if not isinstance(request, dict):
+            raise SupabaseProtocolError("Richiesta del piano non valida")
+
+        attempt_count = _integer(value["attempt_count"], "attempt_count")
+        row_version = _integer(value["row_version"], "row_version")
+        if not 1 <= attempt_count <= 10 or row_version <= 0:
+            raise SupabaseProtocolError("Versione o tentativo claim non valido")
+
+        return cls(
+            job_id=_uuid_string(value["job_id"], "job_id"),
+            owner_id=_uuid_string(value["owner_id"], "owner_id"),
+            profile_id=_uuid_string(value["profile_id"], "profile_id"),
+            request=request,
+            attempt_count=attempt_count,
+            row_version=row_version,
+            lease_expires_at=_lease_timestamp(value["lease_expires_at"]),
         )
 
 
@@ -173,6 +225,29 @@ def _integer(value: object, field: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise SupabaseProtocolError(f"{field} non e intero")
     return value
+
+
+def _lease_timestamp(value: object) -> str:
+    lease = _required_string(value, "lease_expires_at", 64)
+    try:
+        parsed = datetime.fromisoformat(lease.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise SupabaseProtocolError("Scadenza lease non valida") from error
+    if parsed.tzinfo is None:
+        raise SupabaseProtocolError("Scadenza lease senza fuso orario")
+    return lease
+
+
+def _validated_error_code(error_code: str) -> str:
+    if (
+        not error_code
+        or len(error_code) > 80
+        or not all(
+            character.isalnum() or character == "_" for character in error_code
+        )
+    ):
+        raise ValueError("Codice errore worker non valido")
+    return error_code
 
 
 def _validate_storage_object(storage_object: str, owner_id: str, job_id: str) -> None:
@@ -351,8 +426,13 @@ class SupabaseAuth:
         return AuthSession(access, refresh, float(expires_at))
 
 
-class SupabaseMealGateway:
-    """Accesso esclusivo alle RPC worker e all'oggetto Storage assegnato."""
+class _SupabaseRpcClient:
+    """Chiamate RPC autenticate come utente worker, e nient'altro.
+
+    Le due code (foto e piano) condividono soltanto questo: sessione, header
+    di schema e gestione del 401. Ogni coda ha poi le sue RPC, con i loro
+    campi attesi e i loro stati ammessi.
+    """
 
     def __init__(
         self,
@@ -364,116 +444,6 @@ class SupabaseMealGateway:
         self._auth = auth
         self._transport = transport
         self._request_timeout = request_timeout
-
-    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedJob | None:
-        value = self._rpc(
-            "claim_meal_analysis_job",
-            {
-                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
-                "p_lease_seconds": lease_seconds,
-            },
-        )
-        return ClaimedJob.from_json(value)
-
-    def heartbeat(
-        self, job_id: str, mutation_id: str, lease_seconds: int
-    ) -> Mapping[str, object]:
-        normalized_job_id = _uuid_string(job_id, "job_id")
-        value = self._rpc(
-            "heartbeat_meal_analysis_job",
-            {
-                "p_job_id": normalized_job_id,
-                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
-                "p_lease_seconds": lease_seconds,
-            },
-        )
-        _validate_rpc_result(
-            value,
-            expected_fields={"job_id", "status", "row_version", "lease_expires_at"},
-            job_id=normalized_job_id,
-            allowed_statuses={"processing"},
-        )
-        return value
-
-    def complete(
-        self, job_id: str, mutation_id: str, result: AnalysisResult
-    ) -> Mapping[str, object]:
-        normalized_job_id = _uuid_string(job_id, "job_id")
-        value = self._rpc(
-            "complete_meal_analysis_job",
-            {
-                "p_job_id": normalized_job_id,
-                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
-                "p_analysis_result": result.to_json(),
-            },
-        )
-        _validate_rpc_result(
-            value,
-            expected_fields={"job_id", "status", "row_version", "completed_at"},
-            job_id=normalized_job_id,
-            allowed_statuses={"needs_review"},
-        )
-        return value
-
-    def fail(
-        self,
-        job_id: str,
-        mutation_id: str,
-        error_code: str,
-        retryable: bool,
-    ) -> Mapping[str, object]:
-        if (
-            not error_code
-            or len(error_code) > 80
-            or not all(
-                character.isalnum() or character == "_" for character in error_code
-            )
-        ):
-            raise ValueError("Codice errore worker non valido")
-        normalized_job_id = _uuid_string(job_id, "job_id")
-        value = self._rpc(
-            "fail_meal_analysis_job",
-            {
-                "p_job_id": normalized_job_id,
-                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
-                "p_error_code": error_code,
-                "p_retryable": retryable,
-            },
-        )
-        _validate_rpc_result(
-            value,
-            expected_fields={
-                "job_id",
-                "status",
-                "retryable",
-                "attempt_count",
-                "row_version",
-                "completed_at",
-            },
-            job_id=normalized_job_id,
-            allowed_statuses={"queued", "failed"},
-        )
-        if not isinstance(value["retryable"], bool):
-            raise SupabaseProtocolError("Flag retry RPC non valido")
-        return value
-
-    def download_photo(self, job: ClaimedJob) -> DownloadedPhoto:
-        encoded_path = "/".join(
-            quote(component, safe="") for component in job.storage_object.split("/")
-        )
-        encoded_bucket = quote(job.storage_bucket, safe="")
-        response = self._authorized_request(
-            "GET",
-            f"{self._auth.base_url}/storage/v1/object/authenticated/"
-            f"{encoded_bucket}/{encoded_path}",
-            headers={"Accept": job.image_mime_type},
-            body=None,
-            max_response_bytes=_MAX_PHOTO_BYTES,
-        )
-        content_type = response.headers.get("content-type")
-        if content_type:
-            content_type = content_type.split(";", 1)[0].strip().lower()
-        return DownloadedPhoto(response.body, content_type)
 
     def _rpc(
         self, function_name: str, payload: Mapping[str, object]
@@ -551,6 +521,205 @@ class SupabaseMealGateway:
             timeout=self._request_timeout,
             max_response_bytes=max_response_bytes,
         )
+
+
+class SupabaseMealGateway(_SupabaseRpcClient):
+    """Accesso esclusivo alle RPC worker e all'oggetto Storage assegnato."""
+
+    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedJob | None:
+        value = self._rpc(
+            "claim_meal_analysis_job",
+            {
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        return ClaimedJob.from_json(value)
+
+    def heartbeat(
+        self, job_id: str, mutation_id: str, lease_seconds: int
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "heartbeat_meal_analysis_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "lease_expires_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"processing"},
+        )
+        return value
+
+    def complete(
+        self, job_id: str, mutation_id: str, result: AnalysisResult
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "complete_meal_analysis_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_analysis_result": result.to_json(),
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "completed_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"needs_review"},
+        )
+        return value
+
+    def fail(
+        self,
+        job_id: str,
+        mutation_id: str,
+        error_code: str,
+        retryable: bool,
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "fail_meal_analysis_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_error_code": _validated_error_code(error_code),
+                "p_retryable": retryable,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={
+                "job_id",
+                "status",
+                "retryable",
+                "attempt_count",
+                "row_version",
+                "completed_at",
+            },
+            job_id=normalized_job_id,
+            allowed_statuses={"queued", "failed"},
+        )
+        if not isinstance(value["retryable"], bool):
+            raise SupabaseProtocolError("Flag retry RPC non valido")
+        return value
+
+    def download_photo(self, job: ClaimedJob) -> DownloadedPhoto:
+        encoded_path = "/".join(
+            quote(component, safe="") for component in job.storage_object.split("/")
+        )
+        encoded_bucket = quote(job.storage_bucket, safe="")
+        response = self._authorized_request(
+            "GET",
+            f"{self._auth.base_url}/storage/v1/object/authenticated/"
+            f"{encoded_bucket}/{encoded_path}",
+            headers={"Accept": job.image_mime_type},
+            body=None,
+            max_response_bytes=_MAX_PHOTO_BYTES,
+        )
+        content_type = response.headers.get("content-type")
+        if content_type:
+            content_type = content_type.split(";", 1)[0].strip().lower()
+        return DownloadedPhoto(response.body, content_type)
+
+
+class SupabasePlanGateway(_SupabaseRpcClient):
+    """Le sole quattro RPC della coda del piano settimanale.
+
+    Nessuno Storage e nessun accesso diretto a ``weekly_plan_jobs``: come per
+    le foto, il worker non e' il proprietario e le policy lo escludono.
+    """
+
+    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedPlanJob | None:
+        value = self._rpc(
+            "claim_weekly_plan_job",
+            {
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        return ClaimedPlanJob.from_json(value)
+
+    def heartbeat(
+        self, job_id: str, mutation_id: str, lease_seconds: int
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "heartbeat_weekly_plan_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "lease_expires_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"processing"},
+        )
+        return value
+
+    def complete(
+        self, job_id: str, mutation_id: str, result: WeeklyPlanResult
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "complete_weekly_plan_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                # Forma canonica: solo scelte, mai numeri nutrizionali.
+                "p_result": result.to_json(),
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "completed_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"needs_review"},
+        )
+        return value
+
+    def fail(
+        self,
+        job_id: str,
+        mutation_id: str,
+        error_code: str,
+        retryable: bool,
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "fail_weekly_plan_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_error_code": _validated_error_code(error_code),
+                "p_retryable": retryable,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={
+                "job_id",
+                "status",
+                "retryable",
+                "attempt_count",
+                "row_version",
+                "completed_at",
+            },
+            job_id=normalized_job_id,
+            allowed_statuses={"queued", "failed"},
+        )
+        if not isinstance(value["retryable"], bool):
+            raise SupabaseProtocolError("Flag retry RPC non valido")
+        return value
 
 
 def safe_remote_error_code(error: BaseException) -> str:

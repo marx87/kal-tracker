@@ -86,6 +86,16 @@ Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento no
 - [x] scelta del numero di porzioni all'inserimento nel diario, con totali esatti da `NutritionCalculator`; *(fase 4)*
 - [ ] immagini per le ricette.
 
+### M4-bis — Piano settimanale AI e lista della spesa *(fase 10, v0.9.0-b9)*
+
+- [x] quinta voce «Piano» nella barra; schema Drift **v4** (`weekly_plans`, `weekly_plan_slots`) e coda Supabase `weekly_plan_jobs` con RPC a privilegi minimi;
+- [x] generazione via Claude CLI sul Mac: l'app invia il catalogo REALE delle ricette con i macro per porzione e i target, il modello può solo scegliere `recipeId` esistenti e porzioni (0,5-4); un id inventato invalida il risultato;
+- [x] nessun numero dal modello: kcal e macro sempre da `NutritionCalculator`; anche il testo libero (`why`, `notes`) viene ripulito da eventuali cifre su entrambi i lati;
+- [x] il piano non scrive nel diario: «Fatto» per slot (con Annulla), «Sostituisci», apertura ricetta;
+- [x] lista della spesa: aggregazione scalata sulle porzioni, reparti del supermercato, quantità arrotondate «da spesa», spunte persistenti, copia come testo;
+- [x] Mac spento = messaggio onesto con timeout (8 min in coda / 25 min in lavorazione) e piani precedenti sempre leggibili offline; **nessun generatore locale di riserva** (scelta di Marco);
+- [ ] follow-up noti: il piano non entra in backup/sync; niente foglio di condivisione di sistema per la lista (solo copia negli appunti, servirebbe `share_plus`).
+
 ### M5 — Collegamento Gym Tracker
 
 - bridge idempotente Firestore → Supabase;
@@ -154,4 +164,4 @@ Scelte fatte e cose da sapere prima di continuare. Fonte: sviluppo + revisione a
 **Piccole cose rimaste aperte**
 - Nelle sezioni Preferiti e Recenti il filtro categoria è un post-filtro sui soli id `cat-*`: un preferito personalizzato sparisce con un chip categoria attivo in quelle due sezioni (stessa classe del difetto 5 di fase 7, corretto altrove).
 - L'app non ha ancora un'icona propria né splash screen personalizzata.
-- Versione corrente `0.8.0+8` (…, v0.7.0-b7 quick-add+acqua, v0.8.0-b8 ricettario 152 ricette + fix snackbar con azione che su questo Flutter/M3 non si chiudono MAI da sole: helper showAutoClosingSnackBar obbligatorio per ogni snackbar con azione); l'OTA rifiuta regressioni di build number.
+- Versione corrente `0.9.0+9` (…, v0.7.0-b7 quick-add+acqua, v0.8.0-b8 ricettario 152 ricette + fix snackbar con azione che su questo Flutter/M3 non si chiudono MAI da sole: helper showAutoClosingSnackBar obbligatorio per ogni snackbar con azione); l'OTA rifiuta regressioni di build number.

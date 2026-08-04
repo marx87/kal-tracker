@@ -13,6 +13,8 @@ import 'package:kal_tracker/features/recipes/presentation/recipe_detail_screen.d
 import 'package:kal_tracker/features/recipes/presentation/recipe_editor_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
 import 'package:kal_tracker/features/sync/presentation/sync_screen.dart';
+import 'package:kal_tracker/features/weekly_plan/presentation/shopping_list_screen.dart';
+import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_screen.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/progress_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -84,6 +86,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => RecipeDetailScreen(
                       recipeId: state.pathParameters['recipeId']!,
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Quarto branch: deve restare allineato alla quarta destinazione
+          // ('nav_plan') della barra in app_shell.dart. La lista della spesa
+          // è una sottorotta, quindi conserva la barra in basso.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/plan',
+                name: 'plan',
+                builder: (context, state) => const WeeklyPlanScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'shopping',
+                    name: 'plan-shopping',
+                    builder: (context, state) => const ShoppingListScreen(),
                   ),
                 ],
               ),

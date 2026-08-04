@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .analyzer_errors import AnalyzerError
+from .cli_output import CliOutputError, CliReportedError, extract_cli_payload
 from .contract import AnalysisResult, ContractError
 
 
@@ -209,9 +210,14 @@ class ClaudeAnalyzer:
 
         try:
             document: Any = json.loads(stdout)
-            payload = _extract_payload(document)
+            payload = extract_cli_payload(document, payload_key="foods")
             return AnalysisResult.from_json(payload)
-        except (json.JSONDecodeError, ContractError) as error:
+        except CliReportedError as error:
+            raise ClaudeAnalyzerError(
+                "Claude ha segnalato un errore",
+                error_code="CLAUDE_REPORTED_ERROR",
+            ) from error
+        except (json.JSONDecodeError, CliOutputError, ContractError) as error:
             raise ClaudeAnalyzerError(
                 "Risultato Claude non valido",
                 error_code="CLAUDE_INVALID_RESULT",
@@ -238,36 +244,3 @@ class ClaudeAnalyzer:
                 error_code="IMAGE_SIZE_INVALID",
                 retryable=False,
             )
-
-
-def _extract_payload(document: Any) -> Any:
-    """Accetta sia il wrapper della CLI Claude sia il payload puro."""
-    if not isinstance(document, dict):
-        raise ContractError("Il risultato deve essere un oggetto JSON")
-    if "foods" in document:
-        return document
-    if not ("result" in document or "structured_output" in document):
-        raise ContractError("Risultato Claude non riconosciuto")
-    if document.get("is_error") is True:
-        raise ClaudeAnalyzerError(
-            "Claude ha segnalato un errore",
-            error_code="CLAUDE_REPORTED_ERROR",
-        )
-    structured = document.get("structured_output")
-    if isinstance(structured, dict):
-        return structured
-    result = document.get("result")
-    if isinstance(result, dict):
-        return result
-    if isinstance(result, str):
-        return json.loads(_strip_markdown_fence(result))
-    raise ContractError("Wrapper Claude senza risultato utilizzabile")
-
-
-def _strip_markdown_fence(text: str) -> str:
-    stripped = text.strip()
-    if stripped.startswith("```") and stripped.endswith("```"):
-        first_newline = stripped.find("\n")
-        if first_newline != -1:
-            return stripped[first_newline + 1 : -3].strip()
-    return stripped

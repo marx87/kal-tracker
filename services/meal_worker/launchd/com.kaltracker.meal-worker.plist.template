@@ -31,12 +31,20 @@
     <string>__WORKER_EMAIL__</string>
     <key>KAL_MEAL_WORKER_KEYCHAIN_SERVICE</key>
     <string>com.kaltracker.meal-worker.supabase</string>
+    <!-- Un solo processo serve entrambe le code a turno (foto e piano
+         settimanale): una sola password nel Portachiavi e una sola
+         lavorazione alla volta. Con "meal_analysis" o "meal_planning" si
+         serve una coda sola. -->
+    <key>KAL_MEAL_WORKER_SCOPE</key>
+    <string>all</string>
     <key>KAL_MEAL_ANALYZER_PROVIDER</key>
     <string>claude</string>
     <key>KAL_CLAUDE_EXECUTABLE</key>
     <string>__CLAUDE_EXECUTABLE_ABSOLUTE_PATH__</string>
-    <!-- Per tornare a Codex: KAL_MEAL_ANALYZER_PROVIDER=codex e
-         KAL_CODEX_EXECUTABLE=/percorso/assoluto/codex -->
+    <!-- Per tornare a Codex: KAL_MEAL_ANALYZER_PROVIDER=codex,
+         KAL_CODEX_EXECUTABLE=/percorso/assoluto/codex e
+         KAL_MEAL_WORKER_SCOPE=meal_analysis (il piano lo genera solo
+         Claude). -->
   </dict>
 
   <key>RunAtLoad</key>

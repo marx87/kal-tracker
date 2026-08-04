@@ -29,6 +29,8 @@ jobs:
         run: supabase/tests/meal_worker_rpc_static_test.sh
       - name: Test meal-templates database safeguards
         run: supabase/tests/meal_templates_static_test.sh
+      - name: Test weekly-plan queue database safeguards
+        run: supabase/tests/weekly_plan_jobs_static_test.sh
 
   meal-worker:
     runs-on: ubuntu-latest

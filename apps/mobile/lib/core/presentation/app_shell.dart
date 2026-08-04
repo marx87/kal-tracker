@@ -48,6 +48,14 @@ class AppShell extends StatelessWidget {
                 selectedIcon: Icon(Icons.menu_book_rounded),
                 label: 'Ricette',
               ),
+              // Nuova voce: l'ordine di queste destinazioni deve restare
+              // identico a quello dei branch in app_router.dart.
+              NavigationDestination(
+                key: Key('nav_plan'),
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month_rounded),
+                label: 'Piano',
+              ),
               NavigationDestination(
                 key: Key('nav_progress'),
                 icon: Icon(Icons.insights_outlined),

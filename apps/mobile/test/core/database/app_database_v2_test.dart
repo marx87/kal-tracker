@@ -115,7 +115,7 @@ void main() {
     expect(diary.entries.single.foodName, 'Pane v1');
     expect(diary.totals.calories, 125);
     expect(foods, hasLength(12));
-    expect(version, 3);
+    expect(version, 4);
 
     await TargetRepository(database).upsertTarget(
       profileId: 'marco-v1',

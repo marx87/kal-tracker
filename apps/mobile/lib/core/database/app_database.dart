@@ -320,6 +320,74 @@ class MealTemplateItems extends Table {
   ];
 }
 
+/// Piano settimanale generato dall'AI sul Mac. La riga vive SOLO in locale
+/// (nessun outbox, nessun tipo entità nel sync): la coda remota è
+/// `weekly_plan_jobs` e qui ne resta solo il riferimento [remoteJobId].
+/// [requestJson] è la richiesta esatta inviata al pianificatore: serve a
+/// rileggere il piano con gli stessi vincoli con cui è stato generato.
+@DataClassName('LocalWeeklyPlan')
+@TableIndex(
+  name: 'idx_weekly_plans_profile_start',
+  columns: {#profileId, #startDate},
+)
+class WeeklyPlans extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get startDate => dateTime()();
+  IntColumn get days => integer()();
+  TextColumn get mealsCsv => text().withLength(min: 1, max: 80)();
+  TextColumn get status => text().withLength(min: 1, max: 16)();
+  TextColumn get remoteJobId => text().withLength(max: 64).nullable()();
+  TextColumn get notes => text().withLength(max: 400).nullable()();
+  TextColumn get requestJson => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (days >= 1 AND days <= 14)',
+    "CHECK (status IN ('generating', 'ready', 'failed'))",
+  ];
+}
+
+/// Una casella del piano: un pasto di un giorno con la ricetta scelta.
+/// [recipeId] diventa NULL se la ricetta viene cancellata, ma
+/// [recipeNameSnapshot] resta: lo slot si mostra come "non più disponibile",
+/// mai come errore. Il piano è una previsione: finché [doneAt] è NULL non
+/// esiste nulla nel diario, e [diaryEntryIds] è la CSV delle voci create
+/// quando Marco tocca "Fatto".
+@DataClassName('LocalWeeklyPlanSlot')
+@TableIndex(name: 'idx_weekly_plan_slots_plan_date', columns: {#planId, #date})
+class WeeklyPlanSlots extends Table {
+  TextColumn get id => text()();
+  TextColumn get planId =>
+      text().references(WeeklyPlans, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get meal => text().withLength(min: 1, max: 16)();
+  TextColumn get recipeId => text()
+      .references(FitRecipes, #id, onDelete: KeyAction.setNull)
+      .nullable()();
+  TextColumn get recipeNameSnapshot => text().withLength(min: 1, max: 160)();
+  RealColumn get servings => real()();
+  TextColumn get why => text().withLength(max: 200).nullable()();
+  DateTimeColumn get doneAt => dateTime().nullable()();
+  TextColumn get diaryEntryIds => text().withLength(max: 400).nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (servings > 0)',
+    'UNIQUE (plan_id, date, meal)',
+  ];
+}
+
 @DriftDatabase(
   tables: [
     AppProfiles,
@@ -335,6 +403,8 @@ class MealTemplateItems extends Table {
     RecipeIngredients,
     MealTemplates,
     MealTemplateItems,
+    WeeklyPlans,
+    WeeklyPlanSlots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -351,7 +421,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -376,6 +446,12 @@ class AppDatabase extends _$AppDatabase {
         if (from >= 2) {
           await migrator.addColumn(fitRecipes, fitRecipes.tags);
         }
+      }
+      // I rami sono cumulativi: nessuno dei precedenti crea le tabelle del
+      // piano, quindi qui non serve nessuna guardia come quella dei tag.
+      if (from < 4) {
+        await migrator.createTable(weeklyPlans);
+        await migrator.createTable(weeklyPlanSlots);
       }
     },
     beforeOpen: (details) async {
