@@ -90,6 +90,24 @@ class ProvisionScriptGuardTest(unittest.TestCase):
         self.assertNotIn("PUT ", log)
         self.assertNotIn("POST ", log)
 
+    def test_dry_run_prevede_entrambi_gli_ambiti(self) -> None:
+        # Senza il binding meal_planning ogni RPC del piano risponde 42501 e
+        # il doctor non se ne accorge: il piano d'azione deve nominarlo.
+        result = self._run(
+            "--owner-id",
+            OWNER_UUID,
+            "--worker-email",
+            "kal-meal-worker@example.com",
+            "--keychain-service",
+            "com.kaltracker.test-inesistente",
+            "--dry-run",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("meal_analysis", result.stdout)
+        self.assertIn("meal_planning", result.stdout)
+        self.assertFalse(self.curl_log.exists())
+
     def test_email_uguali_a_maiuscole_diverse_sono_rifiutate(self) -> None:
         # py_find_user_id normalizza in minuscolo: il confronto tra le
         # email deve fare lo stesso, senza nemmeno toccare la rete.

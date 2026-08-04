@@ -1,33 +1,52 @@
-# Protocollo worker per l'analisi dei pasti
+# Protocollo worker: foto dei pasti e piano settimanale
 
 Il worker del Mac mini usa un utente **Supabase Auth dedicato** e non l'utente
 Marco. Sul Mac non va mai salvata la chiave `service_role`: sono sufficienti
 l'URL pubblico Supabase, la chiave anon/publishable e le credenziali del solo
 utente worker, conservate nel Portachiavi.
 
+Le code servite sono due e indipendenti:
+
+| Coda | Tabella | Ambito binding | Cosa produce |
+| --- | --- | --- | --- |
+| Foto dei pasti | `kal_tracker.meal_analysis_jobs` | `meal_analysis` | alimenti, grammi e valori per 100 g da confermare |
+| Piano settimanale | `kal_tracker.weekly_plan_jobs` | `meal_planning` | solo scelte: quale ricetta e quante porzioni |
+
+Un solo processo le serve **a turno** (`--scope all`, il default): una sola
+lavorazione alla volta, una sola password nel Portachiavi, un solo servizio
+launchd. Il turno avanza dopo ogni ciclo, anche quando una coda fallisce, così
+nessuna delle due resta senza servizio.
+
 ## Provisioning una tantum
 
 1. Un amministratore crea l'utente worker da Supabase Auth con registrazione
    pubblica disabilitata.
-2. Dal SQL editor amministrativo collega il worker al proprietario:
+2. Dal SQL editor amministrativo collega il worker al proprietario, **una riga
+   per ogni ambito**:
 
    ```sql
    insert into kal_tracker.automation_bindings (
      worker_user_id,
      owner_id,
      scope
-   ) values (
-     'WORKER_AUTH_USER_UUID',
-     'MARCO_AUTH_USER_UUID',
-     'meal_analysis'
-   );
+   ) values
+     ('WORKER_AUTH_USER_UUID', 'MARCO_AUTH_USER_UUID', 'meal_analysis'),
+     ('WORKER_AUTH_USER_UUID', 'MARCO_AUTH_USER_UUID', 'meal_planning')
+   on conflict (worker_user_id, owner_id, scope) do nothing;
    ```
 
-3. Per revocarlo immediatamente imposta `is_active = false`. La revoca blocca
-   nuovi claim, retry RPC e lettura delle foto anche se un lease non è scaduto.
+   Senza la riga `meal_planning` le RPC del piano rispondono `42501`
+   (`meal_planning binding is missing or inactive`) e il `doctor` **non** lo
+   intercetta: il suo controllo verifica solo che le RPC esistano.
+3. Per revocarlo immediatamente imposta `is_active = false` sulla riga
+   dell'ambito da fermare. La revoca blocca nuovi claim, retry RPC e lettura
+   delle foto anche se un lease non è scaduto.
 
-`automation_bindings` e il ledger di idempotenza non hanno policy RLS né grant
-diretti per utenti autenticati: si usano soltanto attraverso le RPC.
+`automation_bindings` e i due ledger di idempotenza (`automation_rpc_mutations`
+per le foto, `automation_plan_rpc_mutations` per il piano) non hanno policy RLS
+né grant diretti per utenti autenticati: si usano soltanto attraverso le RPC. I
+ledger sono separati perché la chiave esterna `job_id` punta a due tabelle
+diverse.
 
 Anche `meal_analysis_jobs` è separata per capacità: l'app può leggere i propri
 job e inserire soltanto le colonne necessarie a una richiesta `queued`; non ha
@@ -35,7 +54,7 @@ un `UPDATE` diretto e non può valorizzare claim, risultato o stato. Le future
 azioni proprietario (`cancel`, `confirm` e pulizia/tombstone) richiederanno RPC
 dedicate con transizioni di stato esplicite. La v0.2 non le usa ancora.
 
-## Ciclo di un job
+## Ciclo di un job foto
 
 1. L'app carica una foto immutabile nel bucket privato con percorso
    `owner_id/job_id/nomefile`, poi crea il job `queued` con hash SHA-256, MIME e
@@ -68,6 +87,81 @@ non coincide con `owner_id`, quindi le policy esistenti lo escludono. Le RPC
 `SECURITY DEFINER` verificano a ogni passaggio identità, binding attivo, scope,
 proprietario, assegnatario, stato e scadenza del lease.
 
+## Ciclo di un job del piano settimanale
+
+Stessa meccanica, senza Storage e senza immagini: la richiesta viaggia dentro
+il job.
+
+1. L'app accoda un job `queued` in `kal_tracker.weekly_plan_jobs` con la
+   richiesta completa in `request`: giorni, pasti scelti da Marco, obiettivi
+   giornalieri, note libere e il **catalogo reale delle ricette** (id, nome,
+   tag, minuti di preparazione e valori per porzione già calcolati dall'app).
+2. `claim_weekly_plan_job(mutation_id, lease_seconds)` assegna il job più
+   vecchio dei proprietari legati allo scope `meal_planning`
+   (`FOR UPDATE SKIP LOCKED`). La risposta ha otto campi e nessuno riguarda le
+   foto: `claimed`, `job_id`, `owner_id`, `profile_id`, `request`,
+   `attempt_count`, `row_version`, `lease_expires_at`.
+3. `heartbeat_weekly_plan_job(job_id, mutation_id, lease_seconds)` porta lo
+   stato a `processing` e rinnova il lease mentre il modello compone il piano.
+4. `complete_weekly_plan_job(job_id, mutation_id, result)` salva il piano e
+   porta il job a `needs_review`: il piano è una **previsione**, non entra nel
+   diario finché Marco non tocca "Fatto" su uno slot.
+5. `fail_weekly_plan_job(job_id, mutation_id, error_code, retryable)` rimette
+   in coda o chiude come `failed`, con le stesse regole delle foto.
+
+Il client può soltanto leggere i propri job e inserire le cinque colonne di una
+richiesta (`id`, `owner_id`, `profile_id`, `request`, `last_mutation_id`): non
+ha `UPDATE`, quindi non può fingersi il worker né confermare un piano. Come per
+le foto, la chiusura di uno slot resta locale e la riga remota rimane a
+`needs_review`.
+
+### Contratto del piano
+
+La richiesta e il risultato hanno `"schema": 1`. Il risultato contiene **solo
+scelte**:
+
+```json
+{
+  "schema": 1,
+  "days": [
+    {
+      "date": "2026-08-05",
+      "slots": [
+        {
+          "meal": "cena",
+          "recipeId": "<id preso dal catalogo della richiesta>",
+          "servings": 1.5,
+          "why": "una riga in italiano"
+        }
+      ]
+    }
+  ],
+  "notes": "commento generale, massimo 400 caratteri"
+}
+```
+
+Il worker rifiuta il piano intero (nessun piano a metà) con codici errore
+stabili, che sono l'unica cosa che l'app vede:
+
+| Codice | Quando |
+| --- | --- |
+| `PLAN_UNKNOWN_RECIPE` | un `recipeId` non è nel catalogo inviato: l'AI sceglie, non inventa |
+| `PLAN_BAD_SERVINGS` | porzioni fuori da 0.5–4 o non multiple di mezza porzione |
+| `PLAN_BAD_DATES` | giorni mancanti, ripetuti o fuori dal periodo richiesto |
+| `PLAN_DUPLICATE_SLOT` | due volte lo stesso pasto nello stesso giorno |
+| `PLAN_BAD_MEAL` | un pasto che Marco non aveva selezionato |
+| `PLAN_BAD_REQUEST` | la richiesta nel job è incoerente (fallimento **non** ritentabile) |
+| `PLAN_BAD_RESULT` | forma del piano fuori contratto (note o motivazioni troppo lunghe, ecc.) |
+
+**Nessun numero nutrizionale attraversa questa coda nel verso worker → app.**
+Lo schema JSON passato alla CLI non ha alcun campo di calorie o macronutrienti,
+il prompt lo vieta esplicitamente e il contratto Python ignora (non rifiuta)
+qualunque chiave in più che il modello aggiungesse: un `kcal` inventato non
+arriva mai al risultato salvato. I totali li calcola sempre l'app dalle ricette
+reali con `NutritionCalculator`. La stessa validazione va rifatta dall'app in
+lettura, perché il piano transita in un `jsonb` libero e una ricetta può essere
+stata cancellata dopo la generazione.
+
 ## Provider di analisi
 
 L'analisi della foto è delegata a una CLI AI locale, senza API key. Il worker
@@ -91,7 +185,22 @@ di avviare la CLI, filtrano l'ambiente figlio con una allowlist (niente
 codici errore stabili (`CLAUDE_*` / `CODEX_*`) senza mai includere l'output
 grezzo del modello. Il contratto del risultato è identico per i due provider.
 
-### Contratto del risultato
+Il **piano settimanale** lo genera solo Claude (`ClaudePlanner`), con gli
+stessi limiti dell'analisi foto e due differenze volute:
+
+- **nessuno strumento**: la CLI parte con `--tools ""`, la sua forma per
+  disabilitare tutti gli strumenti. Il piano non deve leggere né scrivere
+  niente: dati e catalogo stanno nel prompt, la directory di lavoro è una
+  cartella temporanea vuota;
+- **timeout più generoso** (`--plan-timeout`, 170 s di default): comporre una
+  settimana costa più che leggere una foto. Deve restare entro
+  `--lease-seconds` (il worker rifiuta l'avvio se lo supera), che nel frattempo
+  l'heartbeat rinnova.
+
+Con `--provider codex` la coda del piano non parte: usare
+`--scope meal_analysis`.
+
+### Contratto del risultato foto
 
 Ogni risultato contiene al massimo 12 alimenti; per ogni voce il modello
 propone fascia di grammi, confidenza, preparazione, ingredienti nascosti e
@@ -171,9 +280,11 @@ Lo script, in modo idempotente:
    rigenera e riallinea Supabase Auth;
 3. salva la password nel Portachiavi macOS con i nomi attesi dal worker
    (servizio `com.kaltracker.meal-worker.supabase`, account = email worker);
-4. registra il binding `meal_analysis` via REST quando i permessi lo
-   consentono; altrimenti stampa l'SQL idempotente pronto da incollare nel SQL
-   editor (la tabella è riservata, quindi il fallback manuale è normale).
+4. registra i binding `meal_analysis` **e** `meal_planning` via REST quando i
+   permessi lo consentono; altrimenti stampa, per ogni ambito mancante, l'SQL
+   idempotente pronto da incollare nel SQL editor (la tabella è riservata,
+   quindi il fallback manuale è normale). Il riepilogo finale elenca i binding
+   attivi e quelli ancora da completare.
 
 La registrazione pubblica degli utenti deve restare disabilitata; la revoca del
 binding resta un'azione manuale dal SQL editor (`is_active = false`).
@@ -191,13 +302,17 @@ export KAL_CLAUDE_EXECUTABLE="$(command -v claude)"
 .venv/bin/kal-meal-worker doctor
 ```
 
-Il comando verifica, con un esito leggibile per riga: password nel Portachiavi,
-CLI del provider presente e autenticata, raggiungibilità del progetto Supabase,
-login dell'utente worker, esposizione dello schema `kal_tracker`/RPC e schema
-del bucket foto (privato, 10 MiB, JPEG/PNG/WebP; se i metadati sono riservati
-al worker ripiega su un oggetto di prova che deve essere negato). Il controllo
-non esegue mai un claim, quindi non può rubare job in coda: la prova completa
-del binding è il passo successivo.
+Il comando verifica, con un esito leggibile per riga (sette controlli):
+password nel Portachiavi, CLI del provider presente e autenticata,
+raggiungibilità del progetto Supabase, login dell'utente worker, esposizione
+delle RPC foto, esposizione delle RPC del piano e schema del bucket foto
+(privato, 10 MiB, JPEG/PNG/WebP; se i metadati sono riservati al worker ripiega
+su un oggetto di prova che deve essere negato).
+
+I due controlli RPC usano un `heartbeat` su un UUID casuale, che le RPC
+rifiutano con `P0002` senza toccare dati né ledger: non rubano job in coda ma
+**non provano il binding**, perché il job inesistente viene scartato prima del
+controllo di `automation_bindings`. La prova completa è il passo successivo.
 
 ### 4. Prova in foreground (sblocca il Portachiavi)
 
@@ -205,10 +320,13 @@ Nella sessione grafica, così macOS può chiedere l'autorizzazione per
 `/usr/bin/security` una sola volta:
 
 ```bash
-.venv/bin/kal-meal-worker serve --once
+.venv/bin/kal-meal-worker serve --once                          # entrambe le code
+.venv/bin/kal-meal-worker serve --scope meal_planning --once    # solo il piano
 ```
 
-Con un binding attivo e nessun job in coda l'esito atteso è un poll vuoto.
+Con i binding attivi e nessun job in coda l'esito atteso è un poll vuoto. Se
+manca il binding dell'ambito provato, il log riporta un ciclo fallito con
+`SUPABASE_HTTP_403`/`42501`: è lì che si scopre un `meal_planning` dimenticato.
 
 ### 5. Servizio launchd
 
@@ -231,15 +349,26 @@ Per fermarlo: `launchctl bootout "gui/$(id -u)/com.kaltracker.meal-worker"`.
 La publishable key nel plist non è un segreto; password Supabase e credenziali
 Claude/Codex non vanno mai copiate nel plist.
 
+Il plist avvia **un solo** `serve`, con `KAL_MEAL_WORKER_SCOPE=all`: un unico
+processo serve le due code a turno. Servirle con due processi richiederebbe un
+secondo plist, un secondo utente Auth e una seconda password nel Portachiavi.
+
 ## Verifica locale
 
-La migrazione richiede un PostgreSQL/Supabase reale per i test dinamici. Quando
-la Supabase CLI non è installata, eseguire almeno il controllo statico:
+Le migrazioni richiedono un PostgreSQL/Supabase reale per i test dinamici.
+Quando la Supabase CLI non è installata, eseguire almeno i controlli statici:
 
 ```bash
 supabase/tests/meal_worker_rpc_static_test.sh
+supabase/tests/weekly_plan_jobs_static_test.sh
+```
+
+e la suite del worker:
+
+```bash
+cd services/meal_worker && python3 -m unittest discover -s tests
 ```
 
 Prima dell'uso reale vanno poi provati con due utenti di test: claim concorrenti,
-lease scaduto, binding revocato, replay identico, replay alterato e accesso
-Storage fuori lease.
+lease scaduto, binding revocato (per entrambi gli ambiti), replay identico,
+replay alterato e accesso Storage fuori lease.

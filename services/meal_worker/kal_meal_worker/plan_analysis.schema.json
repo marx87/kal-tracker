@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Piano settimanale: SOLO scelte (quale ricetta, quante porzioni). Nessun campo di calorie o macronutrienti esiste in questo schema: i totali li calcola sempre l'app dalle ricette reali.",
+  "additionalProperties": false,
+  "required": ["schema", "days", "notes"],
+  "properties": {
+    "schema": {"type": "integer", "enum": [1]},
+    "days": {
+      "type": "array",
+      "description": "Un elemento per ogni giorno richiesto, nello stesso ordine delle date fornite.",
+      "minItems": 1,
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "slots"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Giorno in formato AAAA-MM-GG, copiato esattamente da una delle date richieste.",
+            "minLength": 10,
+            "maxLength": 10
+          },
+          "slots": {
+            "type": "array",
+            "description": "Un pasto per ogni tipo richiesto, senza ripetizioni nello stesso giorno.",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["meal", "recipeId", "servings", "why"],
+              "properties": {
+                "meal": {
+                  "type": "string",
+                  "enum": ["colazione", "pranzo", "cena", "spuntino"]
+                },
+                "recipeId": {
+                  "type": "string",
+                  "description": "id ESATTO di una ricetta del catalogo fornito: inventarne uno rende invalido tutto il piano.",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                "servings": {
+                  "type": "number",
+                  "description": "Porzioni da mezza a quattro, a passi di mezza porzione (0.5, 1, 1.5, ...).",
+                  "minimum": 0.5,
+                  "maximum": 4
+                },
+                "why": {
+                  "type": "string",
+                  "description": "Una riga in italiano sul perche di questa scelta, senza numeri di calorie o macronutrienti e senza alcuna cifra: un testo con cifre viene scartato.",
+                  "minLength": 1,
+                  "maxLength": 140
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Commento generale sul piano, in italiano, senza alcun numero di calorie o macronutrienti e senza alcuna cifra: un testo con cifre viene scartato.",
+      "maxLength": 400
+    }
+  }
+}

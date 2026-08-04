@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-# Provisioning una tantum dell'utente worker per l'analisi dei pasti.
+# Provisioning una tantum dell'utente worker (foto dei pasti e piano
+# settimanale).
 #
 # Lo script legge PROJECT_REF e service_role key SOLO da variabili d'ambiente
 # (mai da argomenti, mai stampate), crea l'utente Supabase Auth dedicato con
-# una password generata, prova a registrare il binding meal_analysis e salva
-# le credenziali nel Portachiavi macOS con i nomi attesi da keychain.py
-# (servizio com.kaltracker.meal-worker.supabase, account = email worker).
+# una password generata, prova a registrare i binding meal_analysis e
+# meal_planning e salva le credenziali nel Portachiavi macOS con i nomi attesi
+# da keychain.py (servizio com.kaltracker.meal-worker.supabase, account =
+# email worker).
 #
 # La service_role key serve soltanto durante questa esecuzione amministrativa:
 # non viene salvata su disco, nel Portachiavi o nei log.
@@ -17,7 +19,9 @@ umask 077
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly DEFAULT_KEYCHAIN_SERVICE="com.kaltracker.meal-worker.supabase"
-readonly BINDING_SCOPE="meal_analysis"
+# Un binding per ogni coda servita dal worker: senza la riga meal_planning
+# ogni RPC del piano fallisce con 42501 e il doctor non lo intercetta.
+readonly BINDING_SCOPES=("meal_analysis" "meal_planning")
 readonly SECURITY_BIN="/usr/bin/security"
 readonly MAX_USER_PAGES=10
 readonly USERS_PER_PAGE=200
@@ -222,7 +226,7 @@ if [[ "$MODE" == "dry-run" ]]; then
   else
     step "usa il proprietario indicato: $OWNER_ID"
   fi
-  step "registra il binding $BINDING_SCOPE (o stampa l'SQL da incollare nel SQL editor se il REST non e ammesso)"
+  step "registra i binding ${BINDING_SCOPES[*]} (o stampa l'SQL da incollare nel SQL editor se il REST non e ammesso)"
   exit 0
 fi
 
@@ -366,11 +370,62 @@ store_worker_password_in_keychain() {
 }
 
 binding_sql_hint() {
-  local worker_id="$1" owner_id="$2"
+  local worker_id="$1" owner_id="$2" scope="$3"
   printf 'SQL da incollare nel SQL editor di Supabase (idempotente):\n'
   printf '  insert into kal_tracker.automation_bindings (worker_user_id, owner_id, scope)\n'
-  printf "  values ('%s', '%s', '%s')\n" "$worker_id" "$owner_id" "$BINDING_SCOPE"
+  printf "  values ('%s', '%s', '%s')\n" "$worker_id" "$owner_id" "$scope"
   printf '  on conflict (worker_user_id, owner_id, scope) do nothing;\n'
+}
+
+# ensure_binding SCOPE -> 0 se il binding e attivo, 1 se resta da completare.
+ensure_binding() {
+  local scope="$1" state=""
+  step "Controllo il binding $scope worker -> proprietario"
+  http_call GET \
+    "/rest/v1/automation_bindings?select=is_active&worker_user_id=eq.${WORKER_ID}&owner_id=eq.${OWNER_ID}&scope=eq.${scope}" \
+    "" \
+    "Accept-Profile: kal_tracker"
+
+  if [[ "$HTTP_STATUS" != "200" ]]; then
+    step "Lettura binding $scope via REST non ammessa (HTTP $HTTP_STATUS): la tabella e riservata, completare dal SQL editor"
+    binding_sql_hint "$WORKER_ID" "$OWNER_ID" "$scope"
+    return 1
+  fi
+
+  state="$(py_binding_state "$HTTP_BODY")"
+  case "$state" in
+    attivo)
+      step "Binding $scope gia presente e attivo: nulla da fare"
+      return 0
+      ;;
+    disattivato)
+      step "Binding $scope presente ma disattivato (is_active=false): la riattivazione e una scelta amministrativa"
+      printf 'Per riattivarlo, dal SQL editor:\n'
+      printf "  update kal_tracker.automation_bindings set is_active = true\n"
+      printf "  where worker_user_id = '%s' and owner_id = '%s' and scope = '%s';\n" \
+        "$WORKER_ID" "$OWNER_ID" "$scope"
+      return 1
+      ;;
+    assente)
+      step "Binding $scope assente: provo l'inserimento via REST"
+      http_call POST "/rest/v1/automation_bindings" \
+        "{\"worker_user_id\":\"${WORKER_ID}\",\"owner_id\":\"${OWNER_ID}\",\"scope\":\"${scope}\"}" \
+        "Content-Profile: kal_tracker" \
+        "Prefer: return=minimal"
+      if [[ "$HTTP_STATUS" == "201" ]]; then
+        step "Binding $scope creato e attivo"
+        return 0
+      fi
+      step "Inserimento REST non ammesso (HTTP $HTTP_STATUS): completare a mano"
+      binding_sql_hint "$WORKER_ID" "$OWNER_ID" "$scope"
+      return 1
+      ;;
+    *)
+      step "Risposta binding $scope non interpretabile: completare a mano"
+      binding_sql_hint "$WORKER_ID" "$OWNER_ID" "$scope"
+      return 1
+      ;;
+  esac
 }
 
 printf 'Provisioning meal worker su %s\n' "$SUPABASE_URL"
@@ -456,51 +511,16 @@ fi
 [[ "$WORKER_ID" != "$OWNER_ID" ]] ||
   fail "worker e proprietario coincidono: il binding richiede utenti distinti"
 
-# 3. Binding meal_analysis -----------------------------------------------------
-step "Controllo il binding $BINDING_SCOPE worker -> proprietario"
-http_call GET \
-  "/rest/v1/automation_bindings?select=is_active&worker_user_id=eq.${WORKER_ID}&owner_id=eq.${OWNER_ID}&scope=eq.${BINDING_SCOPE}" \
-  "" \
-  "Accept-Profile: kal_tracker"
-
-BINDING_DONE=0
-if [[ "$HTTP_STATUS" == "200" ]]; then
-  BINDING_STATE="$(py_binding_state "$HTTP_BODY")"
-  case "$BINDING_STATE" in
-    attivo)
-      step "Binding gia presente e attivo: nulla da fare"
-      BINDING_DONE=1
-      ;;
-    disattivato)
-      step "Binding presente ma disattivato (is_active=false): la riattivazione e una scelta amministrativa"
-      printf 'Per riattivarlo, dal SQL editor:\n'
-      printf "  update kal_tracker.automation_bindings set is_active = true\n"
-      printf "  where worker_user_id = '%s' and owner_id = '%s' and scope = '%s';\n" \
-        "$WORKER_ID" "$OWNER_ID" "$BINDING_SCOPE"
-      ;;
-    assente)
-      step "Binding assente: provo l'inserimento via REST"
-      http_call POST "/rest/v1/automation_bindings" \
-        "{\"worker_user_id\":\"${WORKER_ID}\",\"owner_id\":\"${OWNER_ID}\",\"scope\":\"${BINDING_SCOPE}\"}" \
-        "Content-Profile: kal_tracker" \
-        "Prefer: return=minimal"
-      if [[ "$HTTP_STATUS" == "201" ]]; then
-        step "Binding creato e attivo"
-        BINDING_DONE=1
-      else
-        step "Inserimento REST non ammesso (HTTP $HTTP_STATUS): completare a mano"
-        binding_sql_hint "$WORKER_ID" "$OWNER_ID"
-      fi
-      ;;
-    *)
-      step "Risposta binding non interpretabile: completare a mano"
-      binding_sql_hint "$WORKER_ID" "$OWNER_ID"
-      ;;
-  esac
-else
-  step "Lettura binding via REST non ammessa (HTTP $HTTP_STATUS): la tabella e riservata, completare dal SQL editor"
-  binding_sql_hint "$WORKER_ID" "$OWNER_ID"
-fi
+# 3. Binding meal_analysis e meal_planning -------------------------------------
+BINDINGS_ACTIVE=()
+BINDINGS_PENDING=()
+for scope in "${BINDING_SCOPES[@]}"; do
+  if ensure_binding "$scope"; then
+    BINDINGS_ACTIVE+=("$scope")
+  else
+    BINDINGS_PENDING+=("$scope")
+  fi
+done
 
 # 4. Riepilogo -----------------------------------------------------------------
 printf 'Provisioning completato.\n'
@@ -508,10 +528,11 @@ printf 'Riepilogo (nessun segreto mostrato):\n'
 step "worker:       $WORKER_EMAIL ($WORKER_ID)"
 step "proprietario: $OWNER_ID"
 step "Portachiavi:  servizio $KEYCHAIN_SERVICE, account $WORKER_EMAIL"
-if ((BINDING_DONE == 1)); then
-  step "binding $BINDING_SCOPE: attivo"
-else
-  step "binding $BINDING_SCOPE: DA COMPLETARE dal SQL editor (vedi sopra)"
+if ((${#BINDINGS_ACTIVE[@]} > 0)); then
+  step "binding attivi:      ${BINDINGS_ACTIVE[*]}"
+fi
+if ((${#BINDINGS_PENDING[@]} > 0)); then
+  step "binding DA COMPLETARE dal SQL editor (vedi sopra): ${BINDINGS_PENDING[*]}"
 fi
 printf 'Prossimi passi:\n'
 step "verifica: .venv/bin/kal-meal-worker doctor (con KAL_SUPABASE_URL, KAL_SUPABASE_PUBLISHABLE_KEY, KAL_MEAL_WORKER_EMAIL, KAL_CLAUDE_EXECUTABLE)"

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "kal-meal-worker"
 version = "0.1.0"
-description = "Worker locale Codex per le foto dei pasti di Kal Tracker"
+description = "Worker locale Kal Tracker: foto dei pasti e piano settimanale"
 requires-python = ">=3.11"
 dependencies = []
 
@@ -17,4 +17,4 @@ kal-meal-worker = "kal_meal_worker.service_cli:main"
 packages = ["kal_meal_worker"]
 
 [tool.setuptools.package-data]
-kal_meal_worker = ["meal_analysis.schema.json"]
+kal_meal_worker = ["meal_analysis.schema.json", "plan_analysis.schema.json"]

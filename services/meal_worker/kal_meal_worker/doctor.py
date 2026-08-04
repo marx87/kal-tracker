@@ -11,6 +11,7 @@ from .keychain import KeychainError
 from .supabase_gateway import (
     SupabaseAuth,
     SupabaseMealGateway,
+    SupabasePlanGateway,
     SupabaseProtocolError,
 )
 from .transport import (
@@ -228,7 +229,40 @@ def check_worker_rpc(gateway: SupabaseMealGateway) -> CheckResult:
     dati ne ledger. Il binding attivo si dimostra davvero solo con un claim
     reale (`serve --once`), che qui evitiamo per non rubare job in coda.
     """
-    name = "RPC kal_tracker"
+    return _probe_heartbeat_rpc(
+        gateway,
+        name="RPC kal_tracker",
+        missing_hint=(
+            "schema kal_tracker non esposto o RPC heartbeat assente: "
+            "verificare Exposed schemas e la migrazione 003"
+        ),
+    )
+
+
+def check_plan_rpc(gateway: SupabasePlanGateway) -> CheckResult:
+    """Come `check_worker_rpc`, ma sulle RPC della coda del piano.
+
+    Anche qui il binding non viene provato: `heartbeat_weekly_plan_job` scarta
+    il job inesistente (P0002) prima ancora di guardare `automation_bindings`,
+    quindi un'installazione con il solo scope foto NON diventa rossa. La prova
+    vera del binding `meal_planning` resta `serve --scope meal_planning --once`.
+    """
+    return _probe_heartbeat_rpc(
+        gateway,
+        name="RPC piano settimanale",
+        missing_hint=(
+            "RPC del piano assenti: applicare la migrazione "
+            "202608040005_weekly_plan_jobs.sql e ricaricare lo schema"
+        ),
+    )
+
+
+def _probe_heartbeat_rpc(
+    gateway: SupabaseMealGateway | SupabasePlanGateway,
+    *,
+    name: str,
+    missing_hint: str,
+) -> CheckResult:
     try:
         gateway.heartbeat(str(uuid.uuid4()), str(uuid.uuid4()), 60)
     except HttpStatusError as error:
@@ -247,12 +281,7 @@ def check_worker_rpc(gateway: SupabaseMealGateway) -> CheckResult:
                 "permessi RPC mancanti",
             )
         if error.status == 404:
-            return CheckResult(
-                name,
-                CheckStatus.FAILED,
-                "schema kal_tracker non esposto o RPC heartbeat assente: "
-                "verificare Exposed schemas e la migrazione 003",
-            )
+            return CheckResult(name, CheckStatus.FAILED, missing_hint)
         return CheckResult(
             name,
             CheckStatus.FAILED,
@@ -313,6 +342,7 @@ def run_doctor(
     password_provider: Callable[[], str],
     auth: SupabaseAuth,
     gateway: SupabaseMealGateway,
+    plan_gateway: SupabasePlanGateway,
     transport: HttpTransport,
     request_timeout: float = 30,
     cli_timeout_seconds: float = 30,
@@ -358,6 +388,7 @@ def run_doctor(
 
     if login_result.passed:
         results.append(check_worker_rpc(gateway))
+        results.append(check_plan_rpc(plan_gateway))
         results.append(
             check_photo_bucket(
                 transport=transport,
@@ -368,6 +399,9 @@ def run_doctor(
     else:
         reason = "richiede il login del worker"
         results.append(CheckResult("RPC kal_tracker", CheckStatus.SKIPPED, reason))
+        results.append(
+            CheckResult("RPC piano settimanale", CheckStatus.SKIPPED, reason)
+        )
         results.append(
             CheckResult(f"Bucket {_PHOTO_BUCKET}", CheckStatus.SKIPPED, reason)
         )

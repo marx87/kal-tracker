@@ -6,7 +6,11 @@ import unittest
 from kal_meal_worker import doctor, service_cli
 from kal_meal_worker.doctor import CheckStatus
 from kal_meal_worker.keychain import KeychainError
-from kal_meal_worker.supabase_gateway import SupabaseAuth, SupabaseMealGateway
+from kal_meal_worker.supabase_gateway import (
+    SupabaseAuth,
+    SupabaseMealGateway,
+    SupabasePlanGateway,
+)
 from kal_meal_worker.transport import HttpResponse, HttpStatusError, NetworkError
 
 
@@ -291,6 +295,45 @@ class WorkerRpcCheckTest(unittest.TestCase):
         self.assertIn("kal_tracker", result.detail)
 
 
+class PlanRpcCheckTest(unittest.TestCase):
+    def _gateway(self, transport):
+        auth = _auth(transport)
+        return SupabasePlanGateway(auth=auth, transport=transport)
+
+    def test_probe_job_not_found_means_plan_rpc_exposed(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpStatusError(400, "P0002")]
+        )
+
+        result = doctor.check_plan_rpc(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.OK)
+        method, url, headers = transport.calls[1]
+        self.assertEqual(method, "POST")
+        self.assertIn("/rest/v1/rpc/heartbeat_weekly_plan_job", url)
+        self.assertEqual(headers["Accept-Profile"], "kal_tracker")
+
+    def test_missing_migration_fails_with_hint(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpStatusError(404, "PGRST202")]
+        )
+
+        result = doctor.check_plan_rpc(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("202608040005_weekly_plan_jobs.sql", result.detail)
+
+    def test_permission_denied_fails(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpStatusError(403, "42501")]
+        )
+
+        result = doctor.check_plan_rpc(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("42501", result.detail)
+
+
 class PhotoBucketCheckTest(unittest.TestCase):
     def test_metadata_matching_schema_is_ok(self) -> None:
         transport = ScriptedTransport([_TOKEN_RESPONSE, _bucket_response()])
@@ -397,11 +440,13 @@ class RunDoctorTest(unittest.TestCase):
                 HttpResponse(200, {}, b"{}"),
                 _TOKEN_RESPONSE,
                 HttpStatusError(400, "P0002"),
+                HttpStatusError(400, "P0002"),
                 _bucket_response(),
             ]
         )
         auth = _auth(transport)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
+        plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -412,6 +457,7 @@ class RunDoctorTest(unittest.TestCase):
             password_provider=lambda: "password",
             auth=auth,
             gateway=gateway,
+            plan_gateway=plan_gateway,
             transport=transport,
             runner=self._ok_runner,
             emit=lines.append,
@@ -419,7 +465,8 @@ class RunDoctorTest(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         report = "\n".join(lines)
-        self.assertIn("Esito: 6/6 controlli superati", report)
+        self.assertIn("Esito: 7/7 controlli superati", report)
+        self.assertIn("RPC piano settimanale", report)
         self.assertNotIn("ERRORE", report)
         self.assertNotIn("password", report.replace("password del worker", ""))
 
@@ -430,6 +477,7 @@ class RunDoctorTest(unittest.TestCase):
         transport = ScriptedTransport([HttpResponse(200, {}, b"{}")])
         auth = _auth(transport, provider)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
+        plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -440,6 +488,7 @@ class RunDoctorTest(unittest.TestCase):
             password_provider=provider,
             auth=auth,
             gateway=gateway,
+            plan_gateway=plan_gateway,
             transport=transport,
             runner=self._ok_runner,
             emit=lines.append,
@@ -450,6 +499,7 @@ class RunDoctorTest(unittest.TestCase):
         self.assertIn("[ERRORE ] Portachiavi", report)
         self.assertIn("[SALTATO] Login worker", report)
         self.assertIn("[SALTATO] RPC kal_tracker", report)
+        self.assertIn("[SALTATO] RPC piano settimanale", report)
         self.assertIn("[SALTATO] Bucket kal-tracker-meal-photos", report)
 
     def test_logged_out_cli_fails_overall_run(self) -> None:
@@ -462,11 +512,13 @@ class RunDoctorTest(unittest.TestCase):
                 HttpResponse(200, {}, b"{}"),
                 _TOKEN_RESPONSE,
                 HttpStatusError(400, "P0002"),
+                HttpStatusError(400, "P0002"),
                 _bucket_response(),
             ]
         )
         auth = _auth(transport)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
+        plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -477,6 +529,7 @@ class RunDoctorTest(unittest.TestCase):
             password_provider=lambda: "password",
             auth=auth,
             gateway=gateway,
+            plan_gateway=plan_gateway,
             transport=transport,
             runner=runner,
             emit=lines.append,
