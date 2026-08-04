@@ -217,6 +217,10 @@ void main() {
 }
 
 Future<void> _disposeApp(WidgetTester tester, AppDatabase database) async {
+  // Smaltisce il timer di chiusura forzata delle snackbar con azione
+  // (showAutoClosingSnackBar), altrimenti il teardown fallisce.
+  await tester.pump(const Duration(seconds: 9));
+  await tester.pumpAndSettle();
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump(const Duration(milliseconds: 1));
   await tester.runAsync(database.close);

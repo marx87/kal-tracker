@@ -3,14 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/presentation/snackbars.dart';
 
 void main() {
-  Widget host({required bool accessibleNavigation}) {
+  var undone = false;
+
+  Widget host() {
     return MaterialApp(
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(accessibleNavigation: accessibleNavigation),
-        child: child!,
-      ),
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -19,7 +15,10 @@ void main() {
               ScaffoldMessenger.of(context),
               SnackBar(
                 content: const Text('Fatto!'),
-                action: SnackBarAction(label: 'Annulla', onPressed: () {}),
+                action: SnackBarAction(
+                  label: 'Annulla',
+                  onPressed: () => undone = true,
+                ),
               ),
             ),
             child: const Text('mostra'),
@@ -30,11 +29,12 @@ void main() {
   }
 
   testWidgets(
-    'con la navigazione accessibile la snackbar con azione si chiude da sola',
+    'la snackbar con azione si chiude da sola (su M3 non lo farebbe mai)',
     (tester) async {
-      await tester.pumpWidget(host(accessibleNavigation: true));
+      await tester.pumpWidget(host());
       await tester.tap(find.byKey(const Key('show_snackbar')));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Fatto!'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 6));
@@ -43,16 +43,16 @@ void main() {
     },
   );
 
-  testWidgets('senza navigazione accessibile resta il timeout di sistema', (
-    tester,
-  ) async {
-    await tester.pumpWidget(host(accessibleNavigation: false));
+  testWidgets('«Annulla» resta toccabile prima della chiusura', (tester) async {
+    undone = false;
+    await tester.pumpWidget(host());
     await tester.tap(find.byKey(const Key('show_snackbar')));
     await tester.pump();
-    expect(find.text('Fatto!'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
 
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Annulla'));
+    await tester.pumpAndSettle(const Duration(seconds: 6));
+    expect(undone, isTrue);
     expect(find.text('Fatto!'), findsNothing);
   });
 }
