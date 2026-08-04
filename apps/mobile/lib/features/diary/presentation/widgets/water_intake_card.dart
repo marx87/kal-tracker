@@ -11,6 +11,7 @@ import 'package:kal_tracker/features/wellbeing/domain/wellbeing_models.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/water_day_sheet.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/water_palette.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/wellbeing_providers.dart';
+import 'package:kal_tracker/core/presentation/snackbars.dart';
 
 /// L'acqua del giorno, in evidenza nel diario: bicchiere che si riempie,
 /// pulsanti rapidi con annulla, e tap sul widget per storico, obiettivo
@@ -194,7 +195,8 @@ class WaterIntakeCard extends ConsumerWidget {
       // Tap veloci in fila: ogni feedback sostituisce il precedente,
       // così «Annulla» toglie sempre l'ultimo bicchiere.
       messenger.removeCurrentSnackBar();
-      messenger.showSnackBar(
+      showAutoClosingSnackBar(
+        messenger,
         SnackBar(
           content: Text('+$milliliters ml: continua così!'),
           action: SnackBarAction(

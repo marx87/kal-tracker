@@ -26,6 +26,7 @@ import 'package:kal_tracker/features/quick_add/photo_meal_launcher.dart';
 import 'package:kal_tracker/features/quick_add/quick_add_menu.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
+import 'package:kal_tracker/core/presentation/snackbars.dart';
 
 export 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
 
@@ -328,7 +329,8 @@ class _DiaryBody extends ConsumerWidget {
     }
     try {
       await ref.read(diaryRepositoryProvider).deleteEntry(entry.id);
-      messenger.showSnackBar(
+      showAutoClosingSnackBar(
+        messenger,
         SnackBar(
           content: Text('${entry.foodName} eliminato dal diario.'),
           action: SnackBarAction(
@@ -369,7 +371,8 @@ class _DiaryBody extends ConsumerWidget {
       final newId = await ref
           .read(diaryRepositoryProvider)
           .duplicateEntry(entry.id);
-      messenger.showSnackBar(
+      showAutoClosingSnackBar(
+        messenger,
         SnackBar(
           content: Text('${entry.foodName} duplicato.'),
           action: SnackBarAction(
@@ -426,7 +429,8 @@ class _DiaryBody extends ConsumerWidget {
         );
         return;
       }
-      messenger.showSnackBar(
+      showAutoClosingSnackBar(
+        messenger,
         SnackBar(
           content: Text(
             '${ids.length} ${ids.length == 1 ? 'voce copiata' : 'voci copiate'}.',
@@ -515,7 +519,8 @@ class _DiaryBody extends ConsumerWidget {
             day: day,
             mealType: mealType,
           );
-      messenger.showSnackBar(
+      showAutoClosingSnackBar(
+        messenger,
         SnackBar(
           content: Text(
             'Modello applicato: ${ids.length} '

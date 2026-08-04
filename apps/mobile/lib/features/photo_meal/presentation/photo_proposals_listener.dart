@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_meal_job.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_review_providers.dart';
+import 'package:kal_tracker/core/presentation/snackbars.dart';
 
 /// Avvolge la shell dell'app: tiene aggiornato [photoForegroundProvider]
 /// con il ciclo di vita (il polling tace in background) e mostra la
@@ -61,7 +62,9 @@ class _PhotoProposalsListenerState
     if (messenger == null) {
       return;
     }
-    messenger.showSnackBar(
+    showAutoClosingSnackBar(
+      messenger,
+      closeAfter: const Duration(seconds: 8),
       SnackBar(
         key: Key('photo_proposal_ready_${job.id}'),
         duration: const Duration(seconds: 8),
