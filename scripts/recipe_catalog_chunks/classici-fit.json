@@ -1,0 +1,335 @@
+[
+  {
+    "name": "Carbonara light allo yogurt greco",
+    "tags": ["pranzo", "proteico", "comfort"],
+    "description": "La cremosità della carbonara senza la valanga di grassi: lo yogurt greco lega tuorli e pecorino in una crema che avvolge la pasta. La pancetta va rosolata bene, così ne basta la metà.",
+    "instructions": "1. Rosola la pancetta in padella senza grassi aggiunti finché è croccante, poi spegni e tienila da parte con il suo fondo.\n2. In una ciotola sbatti i tuorli con lo yogurt greco, il pecorino e una macinata abbondante di pepe fino ad avere una crema liscia.\n3. Cuoci gli spaghetti in acqua poco salata e tieni da parte una tazza di acqua di cottura.\n4. Scola la pasta al dente, versala nella padella con la pancetta a fuoco spento e aggiungi la crema di yogurt.\n5. Manteca un minuto allungando con l'acqua di cottura poco alla volta finché la crema vela la pasta; servi subito con altro pepe.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Spaghetti", "grams": 160, "per100g": { "calories": 355, "protein": 13, "carbs": 71, "fat": 1.5 } },
+      { "name": "Yogurt greco 0%", "grams": 120, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Tuorlo d'uovo", "grams": 36, "per100g": { "calories": 322, "protein": 16, "carbs": 0.6, "fat": 27 } },
+      { "name": "Pancetta affumicata a cubetti", "grams": 50, "per100g": { "calories": 380, "protein": 14, "carbs": 0.5, "fat": 36 } },
+      { "name": "Pecorino romano", "grams": 30, "per100g": { "calories": 390, "protein": 26, "carbs": 0.2, "fat": 32 } },
+      { "name": "Pepe nero", "grams": 2, "per100g": { "calories": 255, "protein": 10.4, "carbs": 44, "fat": 3.3 } }
+    ]
+  },
+  {
+    "name": "Lasagne fit con ragù di tacchino e zucchine",
+    "tags": ["cena", "comfort", "proteico"],
+    "description": "Una teglia di lasagne da domenica, ma con ragù di tacchino e una crema di ricotta al posto della besciamella. Scaldata il giorno dopo è ancora meglio.",
+    "instructions": "1. Fai appassire la cipolla tritata con l'olio, unisci il macinato di tacchino e rosolalo bene, poi versa la passata e cuoci 20 minuti con sale e pepe.\n2. Taglia le zucchine a rondelle sottili e passale 5 minuti in padella antiaderente perché perdano acqua.\n3. Frulla la ricotta con il latte e un pizzico di sale fino ad avere una crema fluida tipo besciamella.\n4. In una teglia alterna sfoglie, ragù, zucchine e crema di ricotta per 4 strati, chiudendo con crema e parmigiano.\n5. Copri con la stagnola e inforna a 180 °C per 30 minuti, poi scopri e gratina altri 10 minuti.\n6. Fai riposare 10 minuti prima di tagliare, così le porzioni restano compatte.",
+    "servings": 4,
+    "prepMinutes": 75,
+    "ingredients": [
+      { "name": "Sfoglie di lasagna secche", "grams": 200, "per100g": { "calories": 360, "protein": 12.5, "carbs": 72, "fat": 2 } },
+      { "name": "Macinato di tacchino", "grams": 400, "per100g": { "calories": 120, "protein": 21, "carbs": 0, "fat": 4 } },
+      { "name": "Passata di pomodoro", "grams": 500, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Zucchine", "grams": 300, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Ricotta vaccina", "grams": 250, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Latte parzialmente scremato", "grams": 200, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Parmigiano grattugiato", "grams": 40, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Cipolla", "grams": 80, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Parmigiana di melanzane light al forno",
+    "tags": ["cena", "leggero", "comfort"],
+    "description": "Melanzane grigliate invece che fritte: la parmigiana resta succosa e saporita, ma con un terzo delle calorie di quella classica.",
+    "instructions": "1. Taglia le melanzane a fette da mezzo centimetro e grigliale su una piastra ben calda finché sono morbide e segnate.\n2. Prepara un sugo veloce: cipolla tritata con l'olio, passata, sale e qualche foglia di basilico, 15 minuti a fuoco medio.\n3. In una pirofila alterna melanzane, sugo, mozzarella light ben scolata e parmigiano, per 3-4 strati.\n4. Chiudi con sugo e parmigiano e inforna a 200 °C per 25-30 minuti finché la superficie è gratinata.\n5. Lasciala assestare 15 minuti: si taglia meglio ed è più buona tiepida.",
+    "servings": 4,
+    "prepMinutes": 60,
+    "ingredients": [
+      { "name": "Melanzane", "grams": 800, "per100g": { "calories": 25, "protein": 1.1, "carbs": 4.7, "fat": 0.2 } },
+      { "name": "Passata di pomodoro", "grams": 500, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Mozzarella light", "grams": 200, "per100g": { "calories": 163, "protein": 20, "carbs": 1.5, "fat": 9 } },
+      { "name": "Parmigiano grattugiato", "grams": 50, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Basilico fresco", "grams": 10, "per100g": { "calories": 26, "protein": 3.2, "carbs": 2.6, "fat": 0.6 } },
+      { "name": "Olio extravergine d'oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Cipolla", "grams": 60, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } }
+    ]
+  },
+  {
+    "name": "Pizza proteica in padella",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "La voglia di pizza del martedì sera risolta in venti minuti: base di albumi e avena cotta in padella, condita e chiusa con il coperchio finché la mozzarella fila.",
+    "instructions": "1. Sbatti gli albumi con la farina d'avena e un pizzico di sale fino a una pastella liscia.\n2. Scalda una padella antiaderente con l'olio, versa la pastella e cuoci 3-4 minuti a fuoco medio finché la base si stacca.\n3. Girala, condisci con la passata salata, la mozzarella light a pezzetti e il prosciutto cotto.\n4. Copri con il coperchio e cuoci altri 4-5 minuti finché la mozzarella è fusa; finisci con una spolverata di origano.",
+    "servings": 1,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Albumi", "grams": 150, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Farina d'avena", "grams": 40, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Passata di pomodoro", "grams": 80, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Mozzarella light", "grams": 60, "per100g": { "calories": 163, "protein": 20, "carbs": 1.5, "fat": 9 } },
+      { "name": "Prosciutto cotto sgrassato", "grams": 50, "per100g": { "calories": 110, "protein": 20, "carbs": 0.9, "fat": 3 } },
+      { "name": "Olio extravergine d'oliva", "grams": 5, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Polpette magre al sugo",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Polpette di manzo magro cotte direttamente nel pomodoro: niente frittura, restano morbide e il sugo avanzato il giorno dopo condisce la pasta.",
+    "instructions": "1. Impasta il macinato con pangrattato, uovo, parmigiano, prezzemolo tritato, sale e pepe; forma polpette da 40 grammi circa.\n2. In un tegame largo fai appassire la cipolla tritata con l'olio, poi versa la passata con un pizzico di sale e portala a sobbollire.\n3. Adagia le polpette nel sugo senza rosolarle, copri e cuoci 25 minuti a fuoco basso girandole a metà.\n4. Scopri gli ultimi 5 minuti per far restringere il sugo e servi con pane integrale o verdure.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Macinato di manzo magro 5%", "grams": 300, "per100g": { "calories": 137, "protein": 21, "carbs": 0, "fat": 5 } },
+      { "name": "Pangrattato", "grams": 30, "per100g": { "calories": 360, "protein": 12, "carbs": 72, "fat": 2.5 } },
+      { "name": "Uovo", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Passata di pomodoro", "grams": 400, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Cipolla", "grams": 50, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Prezzemolo fresco", "grams": 5, "per100g": { "calories": 36, "protein": 3, "carbs": 6, "fat": 0.8 } }
+    ]
+  },
+  {
+    "name": "Risotto ai funghi mantecato con ricotta",
+    "tags": ["pranzo", "comfort", "leggero"],
+    "description": "Il risotto ai funghi di sempre, ma la mantecatura la fa la ricotta al posto del burro: cremoso uguale, molto più leggero.",
+    "instructions": "1. Trifola i funghi a fette in padella con metà olio e lo spicchio d'aglio finché hanno perso l'acqua; salali alla fine e togli l'aglio.\n2. In una casseruola fai appassire la cipolla tritata con l'olio restante, tosta il riso 2 minuti e portalo a cottura aggiungendo brodo caldo un mestolo alla volta.\n3. A metà cottura unisci i funghi e prosegui per 16-18 minuti totali.\n4. Spegni, manteca con ricotta e parmigiano e lascia riposare 2 minuti coperto.\n5. Servi con prezzemolo tritato e una macinata di pepe.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Riso Carnaroli", "grams": 140, "per100g": { "calories": 350, "protein": 7, "carbs": 78, "fat": 0.6 } },
+      { "name": "Funghi champignon", "grams": 300, "per100g": { "calories": 22, "protein": 3.1, "carbs": 2.6, "fat": 0.3 } },
+      { "name": "Brodo vegetale", "grams": 600, "per100g": { "calories": 4, "protein": 0.2, "carbs": 0.5, "fat": 0.1 } },
+      { "name": "Ricotta vaccina", "grams": 80, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Cipolla", "grams": 50, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Aglio", "grams": 5, "per100g": { "calories": 149, "protein": 6.4, "carbs": 33, "fat": 0.5 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Prezzemolo fresco", "grams": 5, "per100g": { "calories": 36, "protein": 3, "carbs": 6, "fat": 0.8 } }
+    ]
+  },
+  {
+    "name": "Cacio e pepe cremosa allo yogurt",
+    "tags": ["pranzo", "veloce", "comfort"],
+    "description": "La cacio e pepe che non impazzisce mai: lo yogurt greco stabilizza la crema di pecorino e alleggerisce il piatto senza tradirne il sapore.",
+    "instructions": "1. Tosta il pepe macinato un minuto in una padella larga a fuoco basso e spegni.\n2. Cuoci gli spaghetti in acqua poco salata (il pecorino è già sapido) e conserva una tazza di acqua di cottura.\n3. In una ciotola mescola pecorino grattugiato e yogurt greco con un mestolino di acqua di cottura fino a una crema densa.\n4. Scola la pasta al dente nella padella del pepe, spegni il fuoco e unisci la crema mescolando con energia.\n5. Regola con altra acqua di cottura finché la crema si aggrappa alla pasta e servi subito.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      { "name": "Spaghetti", "grams": 160, "per100g": { "calories": 355, "protein": 13, "carbs": 71, "fat": 1.5 } },
+      { "name": "Pecorino romano", "grams": 50, "per100g": { "calories": 390, "protein": 26, "carbs": 0.2, "fat": 32 } },
+      { "name": "Yogurt greco 0%", "grams": 100, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Pepe nero", "grams": 3, "per100g": { "calories": 255, "protein": 10.4, "carbs": 44, "fat": 3.3 } }
+    ]
+  },
+  {
+    "name": "Gnocchi di ricotta e spinaci al pomodoro",
+    "tags": ["cena", "comfort"],
+    "description": "Gnocchi morbidi di ricotta e spinaci, senza patate e con poca farina: si preparano in mezz'ora e cuociono in due minuti.",
+    "instructions": "1. Cuoci gli spinaci in padella, strizzali benissimo e tritali fini: devono restare quasi asciutti.\n2. Impastali con ricotta, uovo, metà parmigiano, farina, sale e una grattata di noce moscata fino a un composto morbido ma lavorabile.\n3. Con le mani infarinate forma dei cordoni e tagliali a tocchetti da 2 centimetri.\n4. Scalda la passata con l'olio e un pizzico di sale per 10 minuti.\n5. Tuffa gli gnocchi in acqua bollente salata: sono pronti quando vengono a galla. Ripassali un minuto nel sugo e chiudi con il parmigiano rimasto.",
+    "servings": 2,
+    "prepMinutes": 45,
+    "ingredients": [
+      { "name": "Ricotta vaccina", "grams": 250, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Spinaci surgelati", "grams": 200, "per100g": { "calories": 28, "protein": 3.2, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Farina 00", "grams": 80, "per100g": { "calories": 364, "protein": 11, "carbs": 76, "fat": 1 } },
+      { "name": "Uovo", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 30, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Passata di pomodoro", "grams": 300, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Pasta alla Norma con melanzane al forno",
+    "tags": ["pranzo", "leggero", "comfort"],
+    "description": "La Norma senza frittura: le melanzane vanno in forno con un filo d'olio e restano dolci e leggere. La ricotta salata alla fine non si tocca.",
+    "instructions": "1. Taglia le melanzane a cubetti, condiscile con due terzi dell'olio e un pizzico di sale e cuocile in forno a 220 °C per 20-25 minuti finché sono dorate.\n2. In padella scalda l'olio restante con l'aglio schiacciato, versa la passata e cuoci 10 minuti con sale e basilico.\n3. Cuoci la pasta integrale al dente e scolala direttamente nel sugo.\n4. Unisci le melanzane, salta un minuto e servi con la ricotta salata grattugiata e altro basilico fresco.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Pasta integrale", "grams": 160, "per100g": { "calories": 350, "protein": 13, "carbs": 67, "fat": 2.5 } },
+      { "name": "Melanzane", "grams": 400, "per100g": { "calories": 25, "protein": 1.1, "carbs": 4.7, "fat": 0.2 } },
+      { "name": "Passata di pomodoro", "grams": 300, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Ricotta salata", "grams": 30, "per100g": { "calories": 250, "protein": 18, "carbs": 3, "fat": 18.5 } },
+      { "name": "Aglio", "grams": 5, "per100g": { "calories": 149, "protein": 6.4, "carbs": 33, "fat": 0.5 } },
+      { "name": "Olio extravergine d'oliva", "grams": 15, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Basilico fresco", "grams": 8, "per100g": { "calories": 26, "protein": 3.2, "carbs": 2.6, "fat": 0.6 } }
+    ]
+  },
+  {
+    "name": "Amatriciana alleggerita",
+    "tags": ["pranzo", "comfort"],
+    "description": "L'amatriciana con la mano leggera sul guanciale: la rosolatura lenta tira fuori tutto il sapore, così trentacinque grammi bastano per due piatti veri.",
+    "instructions": "1. Taglia il guanciale a listarelle e rosolalo a fuoco basso in padella finché è croccante e ha rilasciato il grasso; toglilo e tienilo da parte.\n2. Nella stessa padella versa i pelati schiacciati con le mani e cuoci 15 minuti a fuoco vivo, regolando di sale e peperoncino.\n3. Cuoci i bucatini molto al dente e finisci la cottura nel sugo con un mestolo di acqua di cottura.\n4. Fuori dal fuoco unisci guanciale e pecorino, mescola bene e servi subito.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      { "name": "Bucatini", "grams": 160, "per100g": { "calories": 355, "protein": 13, "carbs": 71, "fat": 1.5 } },
+      { "name": "Guanciale", "grams": 35, "per100g": { "calories": 655, "protein": 13, "carbs": 0, "fat": 66 } },
+      { "name": "Pomodori pelati", "grams": 400, "per100g": { "calories": 25, "protein": 1.3, "carbs": 4, "fat": 0.2 } },
+      { "name": "Pecorino romano", "grams": 30, "per100g": { "calories": 390, "protein": 26, "carbs": 0.2, "fat": 32 } }
+    ]
+  },
+  {
+    "name": "Cotoletta di pollo croccante al forno",
+    "tags": ["cena", "proteico", "leggero"],
+    "description": "La cotoletta croccante senza la padella piena d'olio: panatura con parmigiano e passaggio in forno ventilato. Funziona sempre, anche fredda nella schiscetta.",
+    "instructions": "1. Taglia il petto di pollo a fette da un centimetro e battile leggermente.\n2. Passa le fette negli albumi sbattuti con un pizzico di sale, poi nel pangrattato mescolato al parmigiano, premendo bene.\n3. Disponile su una teglia con carta forno e irrorale con l'olio a filo.\n4. Cuoci in forno ventilato a 200 °C per 18-20 minuti girandole a metà, finché la panatura è dorata.\n5. Servi con il succo di limone e un contorno di verdure.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Petto di pollo", "grams": 300, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Pangrattato", "grams": 50, "per100g": { "calories": 360, "protein": 12, "carbs": 72, "fat": 2.5 } },
+      { "name": "Parmigiano grattugiato", "grams": 15, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Albumi", "grams": 70, "per100g": { "calories": 52, "protein": 10.9, "carbs": 0.7, "fat": 0.2 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Succo di limone", "grams": 20, "per100g": { "calories": 25, "protein": 0.4, "carbs": 6, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Tagliatelle al ragù magro",
+    "tags": ["pranzo", "comfort", "proteico"],
+    "description": "Un ragù vero, tirato piano con il latte come da tradizione, ma fatto con manzo al 5% di grassi: la domenica resta la domenica.",
+    "instructions": "1. Trita cipolla, carota e sedano e falli appassire 5 minuti con l'olio in una casseruola.\n2. Alza il fuoco, aggiungi il macinato e rosolalo finché è ben asciutto e inizia ad attaccare al fondo.\n3. Versa il latte e lascialo assorbire, poi unisci la passata, sala e cuoci coperto a fuoco minimo per almeno 45 minuti.\n4. Cuoci le tagliatelle al dente e condiscile nel tegame del ragù con un cucchiaio di acqua di cottura.",
+    "servings": 2,
+    "prepMinutes": 70,
+    "ingredients": [
+      { "name": "Tagliatelle all'uovo secche", "grams": 140, "per100g": { "calories": 365, "protein": 13, "carbs": 70, "fat": 3.5 } },
+      { "name": "Macinato di manzo magro 5%", "grams": 250, "per100g": { "calories": 137, "protein": 21, "carbs": 0, "fat": 5 } },
+      { "name": "Passata di pomodoro", "grams": 350, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Carota", "grams": 60, "per100g": { "calories": 41, "protein": 0.9, "carbs": 9.6, "fat": 0.2 } },
+      { "name": "Sedano", "grams": 40, "per100g": { "calories": 16, "protein": 0.7, "carbs": 3, "fat": 0.2 } },
+      { "name": "Cipolla", "grams": 60, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Risotto allo zafferano alleggerito",
+    "tags": ["pranzo", "leggero", "comfort"],
+    "description": "Il risotto giallo senza burro né midollo: la mantecatura con ricotta e parmigiano lo tiene cremoso, lo zafferano fa il resto.",
+    "instructions": "1. Fai appassire la cipolla tritata con l'olio in una casseruola, poi tosta il riso per 2 minuti.\n2. Porta a cottura con il brodo caldo, un mestolo alla volta, mescolando spesso.\n3. Sciogli lo zafferano in un mestolino di brodo e uniscilo a 5 minuti dalla fine.\n4. Spegni al dente, manteca con ricotta e parmigiano e lascia coperto 2 minuti prima di servire.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      { "name": "Riso Carnaroli", "grams": 140, "per100g": { "calories": 350, "protein": 7, "carbs": 78, "fat": 0.6 } },
+      { "name": "Brodo vegetale", "grams": 600, "per100g": { "calories": 4, "protein": 0.2, "carbs": 0.5, "fat": 0.1 } },
+      { "name": "Zafferano", "grams": 0.3, "per100g": { "calories": 310, "protein": 11, "carbs": 61, "fat": 6 } },
+      { "name": "Cipolla", "grams": 40, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Parmigiano grattugiato", "grams": 25, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Ricotta vaccina", "grams": 60, "per100g": { "calories": 146, "protein": 8.8, "carbs": 3.5, "fat": 10.9 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Polpettone di tacchino con patate al forno",
+    "tags": ["cena", "proteico", "comfort"],
+    "description": "Polpettone di tacchino con le zucchine grattugiate dentro che lo tengono umido, e le patate che cuociono intorno nella stessa teglia: una teglia sola, cena per due sere.",
+    "instructions": "1. Grattugia le zucchine e strizzale; impastale con macinato di tacchino, pangrattato, uovo, parmigiano, latte, sale e pepe.\n2. Forma un filone compatto su una teglia con carta forno e spennellalo con metà olio.\n3. Taglia le patate a spicchi, condiscile con l'olio restante, sale e rosmarino e sistemale intorno al polpettone.\n4. Inforna a 190 °C per 45-50 minuti, girando le patate a metà cottura.\n5. Fai riposare 10 minuti prima di affettare, così non si sbriciola.",
+    "servings": 4,
+    "prepMinutes": 60,
+    "ingredients": [
+      { "name": "Macinato di tacchino", "grams": 500, "per100g": { "calories": 120, "protein": 21, "carbs": 0, "fat": 4 } },
+      { "name": "Pangrattato", "grams": 60, "per100g": { "calories": 360, "protein": 12, "carbs": 72, "fat": 2.5 } },
+      { "name": "Uovo", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Parmigiano grattugiato", "grams": 30, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Latte parzialmente scremato", "grams": 50, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Zucchine", "grams": 150, "per100g": { "calories": 17, "protein": 1.2, "carbs": 3.1, "fat": 0.3 } },
+      { "name": "Patate", "grams": 400, "per100g": { "calories": 77, "protein": 2, "carbs": 17.5, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Peperoni ripieni di riso e tacchino",
+    "tags": ["cena", "leggero", "proteico"],
+    "description": "I peperoni ripieni della tradizione, con riso e macinato di tacchino: un piatto unico che prepari prima e inforni quando torni a casa.",
+    "instructions": "1. Lessa il riso per metà del tempo indicato sulla confezione e scolalo.\n2. Rosola la cipolla tritata con l'olio, unisci il macinato di tacchino, sala e cuoci 5 minuti; spegni e mescola con il riso, la passata (tienine da parte due cucchiai) e il parmigiano.\n3. Taglia i peperoni a metà per il lungo, svuotali e riempili con il composto.\n4. Sistemali in una teglia con un dito d'acqua sul fondo e la passata tenuta da parte sopra.\n5. Copri con la stagnola e cuoci a 190 °C per 35 minuti, poi scopri e prosegui 15 minuti finché i peperoni sono morbidi.",
+    "servings": 2,
+    "prepMinutes": 55,
+    "ingredients": [
+      { "name": "Peperoni", "grams": 400, "per100g": { "calories": 31, "protein": 1, "carbs": 6, "fat": 0.3 } },
+      { "name": "Riso basmati", "grams": 100, "per100g": { "calories": 350, "protein": 8, "carbs": 78, "fat": 1 } },
+      { "name": "Macinato di tacchino", "grams": 200, "per100g": { "calories": 120, "protein": 21, "carbs": 0, "fat": 4 } },
+      { "name": "Passata di pomodoro", "grams": 150, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Parmigiano grattugiato", "grams": 20, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Cipolla", "grams": 40, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Pasta e fagioli cremosa light",
+    "tags": ["cena", "comfort", "leggero"],
+    "description": "La pasta e fagioli densa come si deve: metà fagioli frullati fanno la crema, senza cotiche né soffritti pesanti.",
+    "instructions": "1. Trita sedano, carota e cipolla e falli appassire 5 minuti con l'olio in una pentola.\n2. Aggiungi i borlotti sciacquati, la passata e 600 ml di acqua calda; cuoci 15 minuti con sale e un rametto di rosmarino.\n3. Togli il rosmarino, preleva metà fagioli con un po' di liquido, frullali e rimettili in pentola.\n4. Butta i ditalini direttamente nella pentola e cuocili mescolando, aggiungendo acqua calda se serve.\n5. Spegni quando la pasta è al dente e lascia riposare 5 minuti: deve risultare cremosa, non brodosa.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      { "name": "Ditalini", "grams": 120, "per100g": { "calories": 355, "protein": 13, "carbs": 71, "fat": 1.5 } },
+      { "name": "Fagioli borlotti lessati", "grams": 240, "per100g": { "calories": 91, "protein": 6.3, "carbs": 14, "fat": 0.5 } },
+      { "name": "Passata di pomodoro", "grams": 150, "per100g": { "calories": 35, "protein": 1.5, "carbs": 6.5, "fat": 0.3 } },
+      { "name": "Sedano", "grams": 40, "per100g": { "calories": 16, "protein": 0.7, "carbs": 3, "fat": 0.2 } },
+      { "name": "Carota", "grams": 50, "per100g": { "calories": 41, "protein": 0.9, "carbs": 9.6, "fat": 0.2 } },
+      { "name": "Cipolla", "grams": 50, "per100g": { "calories": 40, "protein": 1.1, "carbs": 9.3, "fat": 0.1 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Saltimbocca di pollo con spinaci",
+    "tags": ["cena", "proteico", "veloce"],
+    "description": "I saltimbocca in versione pollo: prosciutto crudo e salvia sopra, cottura veloce, e gli spinaci saltati fanno da contorno nella stessa padella.",
+    "instructions": "1. Batti le fettine di pollo, appoggia su ognuna mezza fetta di prosciutto crudo e una foglia di salvia, fermando con uno stecchino.\n2. Infarina leggermente solo il lato senza prosciutto.\n3. Scalda l'olio in padella e cuoci i saltimbocca 3 minuti per lato partendo dal lato infarinato; sfuma con il brodo e fai restringere il fondo.\n4. Toglili e tienili al caldo; nella stessa padella salta gli spinaci 3-4 minuti con un pizzico di sale.\n5. Servi i saltimbocca con il loro fondo di cottura e gli spinaci accanto.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Petto di pollo a fettine", "grams": 300, "per100g": { "calories": 110, "protein": 23, "carbs": 0, "fat": 1.5 } },
+      { "name": "Prosciutto crudo", "grams": 50, "per100g": { "calories": 268, "protein": 26, "carbs": 0, "fat": 18 } },
+      { "name": "Salvia fresca", "grams": 3, "per100g": { "calories": 60, "protein": 3.5, "carbs": 8, "fat": 1.5 } },
+      { "name": "Farina 00", "grams": 15, "per100g": { "calories": 364, "protein": 11, "carbs": 76, "fat": 1 } },
+      { "name": "Brodo vegetale", "grams": 100, "per100g": { "calories": 4, "protein": 0.2, "carbs": 0.5, "fat": 0.1 } },
+      { "name": "Spinaci surgelati", "grams": 300, "per100g": { "calories": 28, "protein": 3.2, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  },
+  {
+    "name": "Panna cotta leggera allo yogurt e fragole",
+    "tags": ["dolce", "cena", "leggero"],
+    "description": "Una panna cotta senza panna: latte e yogurt greco addolciti con il miele, sopra le fragole fresche. Si prepara il giorno prima e in frigo aspetta la fine della cena.",
+    "instructions": "1. Metti la gelatina in acqua fredda per 10 minuti.\n2. Scalda il latte con il miele senza farlo bollire, spegni e sciogli dentro la gelatina ben strizzata.\n3. Fai intiepidire, poi incorpora lo yogurt greco con una frusta e versa in 4 bicchieri.\n4. Lascia rapprendere in frigo almeno 4 ore.\n5. Frulla metà fragole e taglia le altre a pezzetti; completa i bicchieri al momento di servire.",
+    "servings": 4,
+    "prepMinutes": 25,
+    "ingredients": [
+      { "name": "Latte parzialmente scremato", "grams": 300, "per100g": { "calories": 46, "protein": 3.3, "carbs": 4.9, "fat": 1.6 } },
+      { "name": "Yogurt greco 0%", "grams": 300, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Miele", "grams": 50, "per100g": { "calories": 304, "protein": 0.3, "carbs": 82.4, "fat": 0 } },
+      { "name": "Gelatina in fogli", "grams": 8, "per100g": { "calories": 340, "protein": 84, "carbs": 0, "fat": 0 } },
+      { "name": "Fragole", "grams": 250, "per100g": { "calories": 32, "protein": 0.7, "carbs": 7.7, "fat": 0.3 } }
+    ]
+  },
+  {
+    "name": "Focaccia fit allo yogurt greco",
+    "tags": ["cena", "comfort"],
+    "description": "Una focaccia morbida impastata con lo yogurt greco: meno olio nell'impasto, pomodorini sopra, e la cucina che profuma di forno.",
+    "instructions": "1. Sciogli il lievito in due cucchiai di acqua tiepida e impastalo con farina, yogurt greco e un cucchiaino di sale fino a un panetto liscio.\n2. Copri la ciotola e lascia lievitare un'ora abbondante in un posto tiepido, finché l'impasto raddoppia.\n3. Stendi l'impasto in una teglia unta con metà olio, affonda i pomodorini tagliati a metà, spennella con l'olio restante e sala la superficie.\n4. Lascia riposare 20 minuti, poi inforna a 220 °C per 18-20 minuti finché è dorata.",
+    "servings": 4,
+    "prepMinutes": 85,
+    "ingredients": [
+      { "name": "Farina 00", "grams": 250, "per100g": { "calories": 364, "protein": 11, "carbs": 76, "fat": 1 } },
+      { "name": "Yogurt greco 0%", "grams": 250, "per100g": { "calories": 59, "protein": 10.3, "carbs": 3.6, "fat": 0.4 } },
+      { "name": "Lievito di birra secco", "grams": 4, "per100g": { "calories": 325, "protein": 38, "carbs": 36, "fat": 6 } },
+      { "name": "Olio extravergine d'oliva", "grams": 20, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } },
+      { "name": "Pomodorini", "grams": 150, "per100g": { "calories": 20, "protein": 1, "carbs": 3.5, "fat": 0.2 } }
+    ]
+  },
+  {
+    "name": "Gnocchi di zucca e avena con salvia",
+    "tags": ["cena", "comfort", "leggero"],
+    "description": "Gnocchi di zucca con la farina d'avena al posto della 00: dolci, rustici, conditi solo con salvia, parmigiano e un filo d'olio scaldato in padella.",
+    "instructions": "1. Cuoci la zucca a tocchetti in forno a 200 °C per 25 minuti e schiacciala bene; se resta acquosa falla asciugare qualche minuto in padella.\n2. Impastala con farina d'avena, uovo, sale e metà parmigiano fino a un composto morbido.\n3. Forma dei cordoni su un piano infarinato e taglia gli gnocchi a tocchetti.\n4. Cuocili in acqua bollente salata e scolali appena salgono a galla.\n5. Scalda l'olio con la salvia in una padella, salta gli gnocchi un minuto e servi con il parmigiano restante.",
+    "servings": 2,
+    "prepMinutes": 50,
+    "ingredients": [
+      { "name": "Zucca (polpa)", "grams": 400, "per100g": { "calories": 28, "protein": 1.1, "carbs": 6.5, "fat": 0.1 } },
+      { "name": "Farina d'avena", "grams": 120, "per100g": { "calories": 370, "protein": 13, "carbs": 60, "fat": 7 } },
+      { "name": "Parmigiano grattugiato", "grams": 30, "per100g": { "calories": 392, "protein": 33, "carbs": 0, "fat": 28.5 } },
+      { "name": "Uovo", "grams": 55, "per100g": { "calories": 143, "protein": 12.5, "carbs": 0.7, "fat": 9.9 } },
+      { "name": "Salvia fresca", "grams": 4, "per100g": { "calories": 60, "protein": 3.5, "carbs": 8, "fat": 1.5 } },
+      { "name": "Olio extravergine d'oliva", "grams": 10, "per100g": { "calories": 884, "protein": 0, "carbs": 0, "fat": 100 } }
+    ]
+  }
+]

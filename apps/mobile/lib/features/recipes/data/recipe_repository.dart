@@ -189,27 +189,78 @@ class RecipeRepository {
   ///
   /// Stable recipe IDs make this safe to call at every app start. Deleting a
   /// starter recipe is respected because its tombstone keeps the same ID.
-  Future<void> ensureStarterRecipes(String profileId) async {
+  /// L'id dipende SOLO dallo slug, mai dal profileId locale (uuid v4 casuale
+  /// per installazione): reinstall e secondo device riproducono gli stessi
+  /// id e il sync riconcilia invece di duplicare. Le installazioni nate
+  /// prima di questa regola hanno le starter con il vecchio id per-profilo:
+  /// passa come legacy, così non vengono reinstallate una seconda volta.
+  Future<void> ensureStarterRecipes(String profileId) {
+    String stableId(String slug) => _uuid.v5(
+      Namespace.url.value,
+      'https://kal-tracker.local/starter/$slug',
+    );
+    return installMissingRecipes(
+      profileId: profileId,
+      entries: [
+        for (final starter in _starterRecipes)
+          (id: stableId(starter.slug), draft: starter.draft),
+      ],
+      legacyIds: {
+        for (final starter in _starterRecipes)
+          stableId(starter.slug): _uuid.v5(
+            Namespace.url.value,
+            'https://kal-tracker.local/starter/$profileId/${starter.slug}',
+          ),
+      },
+    );
+  }
+
+  /// Installa in blocco le ricette con id deterministico che questo profilo
+  /// non ha mai visto e ritorna quante ne ha inserite.
+  ///
+  /// Il confronto è per id in un'unica SELECT e NON filtra `deletedAt`: una
+  /// ricetta cancellata resta un tombstone e non risorge a nessun re-import,
+  /// mentre quelle già presenti non vengono mai toccate. Ogni ricetta nuova
+  /// passa da [_insertRecipe] come una creata a mano: validazione del draft,
+  /// totali ricalcolati dagli ingredienti e riga di outbox comprese. Tutto in
+  /// una transazione: o si installano tutte le mancanti o nessuna.
+  ///
+  /// [legacyIds] mappa id nuovo -> id storico della stessa ricetta: se una
+  /// riga esiste con uno dei due (anche tombstone), non si installa niente.
+  Future<int> installMissingRecipes({
+    required String profileId,
+    required List<({String id, FitRecipeDraft draft})> entries,
+    Map<String, String> legacyIds = const {},
+  }) async {
     final now = AppTime.nowUtc();
-    await _database.transaction(() async {
-      for (final starter in _starterRecipes) {
-        final id = _uuid.v5(
-          Namespace.url.value,
-          'https://kal-tracker.local/starter/$profileId/${starter.slug}',
-        );
-        final existing = await (_database.select(
-          _database.fitRecipes,
-        )..where((row) => row.id.equals(id))).getSingleOrNull();
-        if (existing != null) {
+    return _database.transaction(() async {
+      final idColumn = _database.fitRecipes.id;
+      final knownRows =
+          await (_database.selectOnly(_database.fitRecipes)
+                ..addColumns([idColumn])
+                ..where(
+                  idColumn.isIn([
+                    for (final entry in entries) entry.id,
+                    ...legacyIds.values,
+                  ]),
+                ))
+              .get();
+      final knownIds = {for (final row in knownRows) row.read(idColumn)};
+      var installed = 0;
+      for (final entry in entries) {
+        if (knownIds.contains(entry.id) ||
+            knownIds.contains(legacyIds[entry.id])) {
           continue;
         }
         await _insertRecipe(
-          id: id,
+          id: entry.id,
           profileId: profileId,
-          draft: starter.draft,
+          draft: entry.draft,
           now: now,
         );
+        installed++;
       }
+      return installed;
     });
   }
 

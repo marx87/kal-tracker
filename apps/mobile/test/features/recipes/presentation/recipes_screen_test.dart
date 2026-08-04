@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,9 @@ import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/profile/data/local_profile_repository.dart';
+import 'package:kal_tracker/features/recipes/data/recipe_catalog_importer.dart';
+import 'package:kal_tracker/features/recipes/data/recipe_repository.dart';
+import 'package:kal_tracker/features/recipes/domain/recipe_catalog_asset.dart';
 import 'package:kal_tracker/features/targets/data/target_repository.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 
@@ -130,6 +135,67 @@ void main() {
     final bowl = find.byKey(Key('recipe_card_${ids['Bowl pollo e riso']}'));
     await tester.scrollUntilVisible(bowl, 250, scrollable: _recipesScrollable);
     expect(bowl, findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('con il ricettario completo lista, ricerca e tag restano '
+      'corretti', (tester) async {
+    // Stesso percorso dell'importer al primo avvio: il ricettario intero
+    // installato in blocco prima di aprire la schermata.
+    final profile = await LocalProfileRepository(database).getOrCreateMarco();
+    final asset = RecipeCatalogAsset.fromJsonString(
+      File('assets/catalog/ricettario_fit_v1.json').readAsStringSync(),
+    );
+    await RecipeRepository(database).installMissingRecipes(
+      profileId: profile.id,
+      entries: [
+        for (final entry in asset.recipes)
+          (id: RecipeCatalogImporter.recipeId(entry.slug), draft: entry.draft),
+      ],
+    );
+
+    await _openRecipes(tester, database);
+    final ids = await _recipeIds(database);
+
+    // 152 del ricettario + 6 starter, nessun doppione di nome o id.
+    expect(ids, hasLength(asset.recipes.length + 6));
+
+    // Il vocabolario controllato dei tag resta piccolo: un chip per tag,
+    // più «Solo preferite», anche con il ricettario pieno.
+    expect(find.byType(FilterChip), findsNWidgets(11));
+    expect(
+      find.byKey(const Key('recipe_tag_filter_meal prep')),
+      findsOneWidget,
+    );
+
+    // La ricerca resta puntuale su 158 ricette.
+    await _search(tester, 'teriyaki di pollo');
+    final teriyaki = find.byKey(
+      Key('recipe_card_${ids['Bowl teriyaki di pollo e broccoli']}'),
+    );
+    await tester.scrollUntilVisible(
+      teriyaki,
+      250,
+      scrollable: _recipesScrollable,
+    );
+    expect(teriyaki, findsOneWidget);
+    expect(find.byIcon(Icons.ramen_dining_rounded), findsOneWidget);
+
+    // Il filtro tag è un match esatto e la lista lunga resta scorribile.
+    await _search(tester, '');
+    await tester.tap(find.byKey(const Key('recipe_tag_filter_dolce')));
+    await tester.pumpAndSettle();
+    final torta = find.byKey(
+      Key('recipe_card_${ids['Torta proteica al cacao']}'),
+    );
+    await tester.scrollUntilVisible(
+      torta,
+      400,
+      maxScrolls: 200,
+      scrollable: _recipesScrollable,
+    );
+    expect(torta, findsOneWidget);
 
     await _disposeApp(tester, database);
   });

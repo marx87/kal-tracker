@@ -1,0 +1,2462 @@
+[
+  {
+    "name": "Minestrone rustico con orzo e borlotti",
+    "tags": [
+      "cena",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Il minestrone della nonna con l'orzo che lo trasforma in un piatto che sazia davvero. Riscaldato il giorno dopo e' ancora piu' buono, quindi vale la pena farne una pentola intera.",
+    "instructions": "1. Trita cipolla, carote e sedano e falli appassire nell'olio in una pentola capiente per 5 minuti.\n2. Aggiungi le zucchine a dadini, la passata e il brodo e porta a bollore.\n3. Versa l'orzo e cuoci 25 minuti a fuoco medio, mescolando ogni tanto.\n4. Unisci i borlotti sciacquati e cuoci altri 5-6 minuti; regola di sale.\n5. Lascia riposare 5 minuti nel piatto: il minestrone da' il meglio tiepido.",
+    "servings": 3,
+    "prepMinutes": 45,
+    "ingredients": [
+      {
+        "name": "Orzo perlato",
+        "grams": 120,
+        "per100g": {
+          "calories": 320,
+          "protein": 9.5,
+          "carbs": 70,
+          "fat": 1.4
+        }
+      },
+      {
+        "name": "Fagioli borlotti lessati",
+        "grams": 240,
+        "per100g": {
+          "calories": 91,
+          "protein": 6.3,
+          "carbs": 14,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Carote",
+        "grams": 120,
+        "per100g": {
+          "calories": 35,
+          "protein": 0.8,
+          "carbs": 7.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Sedano",
+        "grams": 80,
+        "per100g": {
+          "calories": 16,
+          "protein": 0.7,
+          "carbs": 3,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 80,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Zucchine",
+        "grams": 200,
+        "per100g": {
+          "calories": 17,
+          "protein": 1.2,
+          "carbs": 3.1,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 200,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Brodo vegetale",
+        "grams": 900,
+        "per100g": {
+          "calories": 4,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Zuppa di ceci e cavolo nero con crostini",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Una zuppa toscana di carattere: ceci cremosi, cavolo nero e crostini di pane integrale. Da mangiare col cucchiaio e col morale alto anche a gennaio.",
+    "instructions": "1. Fai appassire la cipolla tritata nell'olio per 4-5 minuti in una pentola.\n2. Aggiungi le patate a dadini piccoli e il cavolo nero a striscioline, mescola un paio di minuti.\n3. Versa i ceci e il brodo e cuoci 20 minuti a fuoco medio.\n4. Schiaccia una parte dei ceci e delle patate con il cucchiaio per addensare; regola di sale.\n5. Tosta il pane a dadini in forno o in padella e servilo sopra la zuppa.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      {
+        "name": "Ceci lessati",
+        "grams": 320,
+        "per100g": {
+          "calories": 120,
+          "protein": 7,
+          "carbs": 17,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Cavolo nero",
+        "grams": 200,
+        "per100g": {
+          "calories": 35,
+          "protein": 2.9,
+          "carbs": 5.4,
+          "fat": 0.6
+        }
+      },
+      {
+        "name": "Patate",
+        "grams": 200,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 60,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Brodo vegetale",
+        "grams": 500,
+        "per100g": {
+          "calories": 4,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Pane integrale",
+        "grams": 60,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      }
+    ]
+  },
+  {
+    "name": "Vellutata di piselli e porri con yogurt",
+    "tags": [
+      "cena",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Verde brillante e pronta in venti minuti: i piselli surgelati fanno tutto il lavoro. Il cucchiaio di yogurt greco sopra la rende cremosa senza panna.",
+    "instructions": "1. Affetta i porri sottili e falli stufare nell'olio per 4-5 minuti senza farli colorire.\n2. Aggiungi le patate a dadini e i piselli ancora surgelati, copri con il brodo e cuoci 12 minuti.\n3. Frulla tutto con il frullatore a immersione fino a una crema liscia; regola di sale.\n4. Servi con un cucchiaio abbondante di yogurt greco al centro di ogni piatto.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Piselli surgelati",
+        "grams": 400,
+        "per100g": {
+          "calories": 81,
+          "protein": 5.4,
+          "carbs": 14,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Porri",
+        "grams": 150,
+        "per100g": {
+          "calories": 61,
+          "protein": 1.5,
+          "carbs": 14,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Patate",
+        "grams": 150,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Brodo vegetale",
+        "grams": 500,
+        "per100g": {
+          "calories": 4,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 10,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Yogurt greco 0%",
+        "grams": 80,
+        "per100g": {
+          "calories": 59,
+          "protein": 10.3,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      }
+    ]
+  },
+  {
+    "name": "Zuppa di pesce leggera con crostini",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero"
+    ],
+    "description": "Merluzzo, gamberi e cozze in un guazzetto di pomodoro profumato all'aglio: il sapore del cacciucco, ma con un decimo dell'olio. I crostini sono obbligatori per la scarpetta.",
+    "instructions": "1. Fai dorare l'aglio schiacciato nell'olio in una casseruola ampia, poi versa la passata e mezzo bicchiere d'acqua.\n2. Cuoci il sugo 10 minuti a fuoco medio con un pizzico di sale.\n3. Aggiungi il merluzzo a pezzi grossi e cuoci 5 minuti.\n4. Unisci gamberi e cozze sgusciate e cuoci altri 4-5 minuti, senza mescolare troppo per non rompere il pesce.\n5. Completa con il prezzemolo tritato e servi con il pane integrale tostato.",
+    "servings": 2,
+    "prepMinutes": 40,
+    "ingredients": [
+      {
+        "name": "Filetto di merluzzo",
+        "grams": 250,
+        "per100g": {
+          "calories": 82,
+          "protein": 18,
+          "carbs": 0,
+          "fat": 0.7
+        }
+      },
+      {
+        "name": "Gamberi sgusciati",
+        "grams": 150,
+        "per100g": {
+          "calories": 85,
+          "protein": 18,
+          "carbs": 0.5,
+          "fat": 1
+        }
+      },
+      {
+        "name": "Cozze sgusciate",
+        "grams": 150,
+        "per100g": {
+          "calories": 86,
+          "protein": 11.9,
+          "carbs": 3.7,
+          "fat": 2.2
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 300,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 5,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 10,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Pane integrale",
+        "grams": 60,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      }
+    ]
+  },
+  {
+    "name": "Pasta e ceci cremosa al rosmarino",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "comfort"
+    ],
+    "description": "Il piatto povero che non delude mai: meta' dei ceci frullati fanno la crema, l'altra meta' resta intera per la consistenza. Il rosmarino fa il resto.",
+    "instructions": "1. Fai insaporire nell'olio la cipolla tritata, l'aglio e il rosmarino per 4-5 minuti.\n2. Aggiungi meta' dei ceci e la passata, copri con acqua calda e cuoci 10 minuti, poi frulla tutto.\n3. Rimetti la crema nella pentola con i ceci interi rimasti, allunga con acqua e porta a bollore.\n4. Butta i ditalini direttamente nella crema e cuocili mescolando spesso, aggiungendo acqua calda se serve.\n5. Spegni, regola di sale e servi con il parmigiano grattugiato.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      {
+        "name": "Ditalini",
+        "grams": 140,
+        "per100g": {
+          "calories": 355,
+          "protein": 13,
+          "carbs": 71,
+          "fat": 1.5
+        }
+      },
+      {
+        "name": "Ceci lessati",
+        "grams": 320,
+        "per100g": {
+          "calories": 120,
+          "protein": 7,
+          "carbs": 17,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 150,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 50,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 5,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Rosmarino fresco",
+        "grams": 3,
+        "per100g": {
+          "calories": 131,
+          "protein": 3.3,
+          "carbs": 20.7,
+          "fat": 5.9
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 20,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      }
+    ]
+  },
+  {
+    "name": "Sovracosce di pollo al forno con patate e rosmarino",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Il pollo al forno della domenica, versione onesta: sovracosce senza pelle che restano succose e patate che rosolano nello stesso sugo. Una teglia sola, zero pentole extra.",
+    "instructions": "1. Accendi il forno a 200 gradi. Taglia le patate a spicchi e mettile in una teglia con meta' dell'olio, sale e il rosmarino.\n2. Massaggia le sovracosce con l'olio rimasto, l'aglio schiacciato, il succo di limone e il sale, poi appoggiale sopra le patate.\n3. Inforna 45-50 minuti, girando le patate a meta' cottura, finche' il pollo e' dorato e le patate croccanti.\n4. Lascia riposare 5 minuti prima di servire, irrorando con il fondo della teglia.",
+    "servings": 2,
+    "prepMinutes": 65,
+    "ingredients": [
+      {
+        "name": "Sovracosce di pollo senza pelle",
+        "grams": 400,
+        "per100g": {
+          "calories": 119,
+          "protein": 18.4,
+          "carbs": 0,
+          "fat": 4.9
+        }
+      },
+      {
+        "name": "Patate",
+        "grams": 400,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Rosmarino fresco",
+        "grams": 4,
+        "per100g": {
+          "calories": 131,
+          "protein": 3.3,
+          "carbs": 20.7,
+          "fat": 5.9
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 10,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 30,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Arista di maiale al forno con mele",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Arrosto della domenica senza sensi di colpa: la lonza e' magra e le mele in cottura fanno una salsina agrodolce che non ha bisogno di burro. Avanza? Perfetta fredda nei panini.",
+    "instructions": "1. Accendi il forno a 180 gradi. Massaggia la lonza con sale e rosmarino tritato e rosolala nell'olio in una casseruola, 2 minuti per lato.\n2. Trasferiscila in una teglia con la cipolla a spicchi e le mele a fette spesse.\n3. Versa il brodo sul fondo e inforna 50-55 minuti, girando l'arrosto a meta' cottura.\n4. Lascia riposare la carne 10 minuti coperta, poi affettala sottile.\n5. Schiaccia le mele nel fondo di cottura e servi la salsa sopra le fette.",
+    "servings": 4,
+    "prepMinutes": 80,
+    "ingredients": [
+      {
+        "name": "Lonza di maiale",
+        "grams": 600,
+        "per100g": {
+          "calories": 143,
+          "protein": 21.5,
+          "carbs": 0,
+          "fat": 6.3
+        }
+      },
+      {
+        "name": "Mele",
+        "grams": 300,
+        "per100g": {
+          "calories": 52,
+          "protein": 0.3,
+          "carbs": 14,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 100,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Rosmarino fresco",
+        "grams": 4,
+        "per100g": {
+          "calories": 131,
+          "protein": 3.3,
+          "carbs": 20.7,
+          "fat": 5.9
+        }
+      },
+      {
+        "name": "Brodo vegetale",
+        "grams": 200,
+        "per100g": {
+          "calories": 4,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0.1
+        }
+      }
+    ]
+  },
+  {
+    "name": "Cannelloni di ricotta e spinaci al forno",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "comfort"
+    ],
+    "description": "I cannelloni della festa fatti con le sfoglie di lasagna arrotolate: ripieno di ricotta e spinaci, pomodoro sopra e gratinatura di parmigiano. Sembrano laboriosi, sono solo assemblaggio.",
+    "instructions": "1. Cuoci gli spinaci in padella finche' l'acqua e' evaporata, strizzali e tritali.\n2. Mescolali con ricotta, uovo, meta' del parmigiano e un pizzico di sale.\n3. Sbollenta le sfoglie di lasagna 2 minuti in acqua salata, stendile su un canovaccio, distribuisci il ripieno e arrotolale.\n4. Versa meta' della passata allungata con il latte in una pirofila oliata, disponi i cannelloni con la chiusura sotto e copri con la passata rimasta.\n5. Completa con il parmigiano e inforna a 190 gradi per 25 minuti, finche' la superficie e' dorata.",
+    "servings": 3,
+    "prepMinutes": 60,
+    "ingredients": [
+      {
+        "name": "Sfoglie di lasagna secche",
+        "grams": 180,
+        "per100g": {
+          "calories": 360,
+          "protein": 12.5,
+          "carbs": 72,
+          "fat": 2
+        }
+      },
+      {
+        "name": "Ricotta vaccina",
+        "grams": 350,
+        "per100g": {
+          "calories": 146,
+          "protein": 8.8,
+          "carbs": 3.5,
+          "fat": 10.9
+        }
+      },
+      {
+        "name": "Spinaci surgelati",
+        "grams": 300,
+        "per100g": {
+          "calories": 28,
+          "protein": 3.2,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 300,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 40,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Uovo",
+        "grams": 55,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.9
+        }
+      },
+      {
+        "name": "Latte parzialmente scremato",
+        "grams": 100,
+        "per100g": {
+          "calories": 46,
+          "protein": 3.3,
+          "carbs": 4.9,
+          "fat": 1.6
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 10,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Gatto' di patate alleggerito",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Il gatto' napoletano con mozzarella light e prosciutto sgrassato: fuori la crosticina di pangrattato, dentro il cuore filante. Piatto unico della domenica sera che mette d'accordo tutti.",
+    "instructions": "1. Lessa le patate con la buccia 30 minuti, pelale e schiacciale ancora calde.\n2. Impasta con latte, uova, meta' del parmigiano e sale fino a un composto morbido.\n3. Stendi meta' del composto in una pirofila oliata, distribuisci prosciutto e mozzarella a dadini ben scolata, copri con il resto.\n4. Cospargi con pangrattato e il parmigiano rimasto e rifinisci con un filo d'olio.\n5. Inforna a 200 gradi per 25-30 minuti finche' la superficie e' dorata; fai riposare 10 minuti prima di tagliare.",
+    "servings": 4,
+    "prepMinutes": 75,
+    "ingredients": [
+      {
+        "name": "Patate",
+        "grams": 800,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Prosciutto cotto sgrassato",
+        "grams": 120,
+        "per100g": {
+          "calories": 110,
+          "protein": 20,
+          "carbs": 0.9,
+          "fat": 3
+        }
+      },
+      {
+        "name": "Mozzarella light",
+        "grams": 150,
+        "per100g": {
+          "calories": 163,
+          "protein": 20,
+          "carbs": 1.5,
+          "fat": 9
+        }
+      },
+      {
+        "name": "Latte parzialmente scremato",
+        "grams": 100,
+        "per100g": {
+          "calories": 46,
+          "protein": 3.3,
+          "carbs": 4.9,
+          "fat": 1.6
+        }
+      },
+      {
+        "name": "Uova",
+        "grams": 110,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.5
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 40,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Pangrattato",
+        "grams": 20,
+        "per100g": {
+          "calories": 360,
+          "protein": 12,
+          "carbs": 72,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 10,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Melanzane ripiene di tacchino e ricotta",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero"
+    ],
+    "description": "Barchette di melanzana con un ripieno umido di tacchino e ricotta che non sa di dietetico. Si preparano prima e si infornano all'ultimo: ideali quando hai ospiti in settimana.",
+    "instructions": "1. Taglia le melanzane a meta', incidi la polpa e cuocile 20 minuti in forno a 200 gradi con un filo d'olio.\n2. Scava la polpa con un cucchiaio, tritala e falla saltare in padella con la cipolla e l'olio rimasto.\n3. Aggiungi il macinato di tacchino e cuoci 6-7 minuti sbriciolandolo, poi spegni e incorpora ricotta, meta' del parmigiano e sale.\n4. Riempi le barchette, copri con la passata, il pangrattato e il parmigiano rimasto.\n5. Inforna 20 minuti a 190 gradi finche' la superficie e' gratinata.",
+    "servings": 2,
+    "prepMinutes": 55,
+    "ingredients": [
+      {
+        "name": "Melanzane",
+        "grams": 500,
+        "per100g": {
+          "calories": 25,
+          "protein": 1.1,
+          "carbs": 4.7,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Macinato di tacchino",
+        "grams": 250,
+        "per100g": {
+          "calories": 120,
+          "protein": 21,
+          "carbs": 0,
+          "fat": 4
+        }
+      },
+      {
+        "name": "Ricotta vaccina",
+        "grams": 100,
+        "per100g": {
+          "calories": 146,
+          "protein": 8.8,
+          "carbs": 3.5,
+          "fat": 10.9
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 20,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 150,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 50,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Pangrattato",
+        "grams": 20,
+        "per100g": {
+          "calories": 360,
+          "protein": 12,
+          "carbs": 72,
+          "fat": 2.5
+        }
+      }
+    ]
+  },
+  {
+    "name": "Alici gratinate al forno",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero"
+    ],
+    "description": "Pesce azzurro come si fa al sud: alici aperte a libro, pangrattato profumato e forno caldo. Costano poco, cuociono in dieci minuti e di omega-3 ne hanno da vendere.",
+    "instructions": "1. Accendi il forno a 200 gradi. Mescola pangrattato, prezzemolo tritato, aglio tritato fine e un pizzico di sale.\n2. Disponi le alici aperte a libro in una teglia leggermente oliata, con la pelle verso il basso.\n3. Cospargile con il pangrattato aromatico e irrora con l'olio rimasto e il succo di limone.\n4. Inforna 10-12 minuti finche' la panatura e' dorata; servile calde o a temperatura ambiente.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      {
+        "name": "Alici fresche pulite",
+        "grams": 400,
+        "per100g": {
+          "calories": 131,
+          "protein": 20.4,
+          "carbs": 1.5,
+          "fat": 4.8
+        }
+      },
+      {
+        "name": "Pangrattato",
+        "grams": 40,
+        "per100g": {
+          "calories": 360,
+          "protein": 12,
+          "carbs": 72,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 10,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 5,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 20,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Insalata di sgombro, patate e fagiolini",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Il pranzo freddo perfetto da portarsi dietro: patate, fagiolini e sgombro in scatola conditi con limone. Si prepara la sera prima e in frigo migliora.",
+    "instructions": "1. Lessa le patate a tocchetti in acqua salata per 10 minuti, aggiungi i fagiolini spuntati e cuoci altri 6-7 minuti; scola tutto.\n2. Affetta la cipolla sottilissima e mettila 5 minuti in acqua fredda per addolcirla.\n3. In una ciotola grande unisci patate e fagiolini tiepidi, lo sgombro sgocciolato a pezzi e la cipolla scolata.\n4. Condisci con olio, succo di limone, prezzemolo e sale, mescolando con delicatezza.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Sgombro al naturale sgocciolato",
+        "grams": 200,
+        "per100g": {
+          "calories": 150,
+          "protein": 24,
+          "carbs": 0,
+          "fat": 6
+        }
+      },
+      {
+        "name": "Patate",
+        "grams": 400,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Fagiolini",
+        "grams": 200,
+        "per100g": {
+          "calories": 31,
+          "protein": 1.8,
+          "carbs": 7,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 40,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 20,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 5,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      }
+    ]
+  },
+  {
+    "name": "Spaghetti con alici e pangrattato croccante",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce"
+    ],
+    "description": "La pasta c'anciova dei giorni feriali: alici fresche sciolte nell'olio con l'aglio e pangrattato tostato al posto del formaggio. Sapore enorme, dispensa minima.",
+    "instructions": "1. Tosta il pangrattato in padella a secco finche' e' dorato e mettilo da parte.\n2. Cuoci gli spaghetti in abbondante acqua salata.\n3. Nel frattempo scalda l'olio con l'aglio tritato, aggiungi le alici e falle sciogliere a fuoco basso per 3-4 minuti, aiutandoti con una forchetta.\n4. Scola la pasta al dente tenendo un mestolo di acqua di cottura e saltala nel condimento con l'acqua tenuta da parte.\n5. Servi con il pangrattato croccante e il prezzemolo tritato sopra.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Spaghetti",
+        "grams": 160,
+        "per100g": {
+          "calories": 355,
+          "protein": 13,
+          "carbs": 71,
+          "fat": 1.5
+        }
+      },
+      {
+        "name": "Alici fresche pulite",
+        "grams": 200,
+        "per100g": {
+          "calories": 131,
+          "protein": 20.4,
+          "carbs": 1.5,
+          "fat": 4.8
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 10,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Pangrattato",
+        "grams": 30,
+        "per100g": {
+          "calories": 360,
+          "protein": 12,
+          "carbs": 72,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 25,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 10,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      }
+    ]
+  },
+  {
+    "name": "Filetti di sgombro scottati su crema di ceci",
+    "tags": [
+      "cena",
+      "proteico",
+      "veloce"
+    ],
+    "description": "Sgombro fresco con la pelle croccante appoggiato su una crema di ceci al limone: piatto da bistrot fatto con due padelle e un frullatore. Il pesce azzurro merita piu' credito.",
+    "instructions": "1. Frulla i ceci con meta' dell'olio, il succo di limone, l'aglio e qualche cucchiaio di acqua calda fino a una crema liscia; regola di sale.\n2. Asciuga bene i filetti di sgombro e incidi la pelle con tre tagli.\n3. Scaldali in padella antiaderente con l'olio rimasto, pelle verso il basso, 4 minuti senza toccarli, poi girali per 1 minuto.\n4. Stendi la crema di ceci nei piatti, appoggia i filetti e completa con la rucola condita con un pizzico di sale.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Filetto di sgombro",
+        "grams": 300,
+        "per100g": {
+          "calories": 205,
+          "protein": 19,
+          "carbs": 0,
+          "fat": 14
+        }
+      },
+      {
+        "name": "Ceci lessati",
+        "grams": 240,
+        "per100g": {
+          "calories": 120,
+          "protein": 7,
+          "carbs": 17,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 5,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 20,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Rucola",
+        "grams": 40,
+        "per100g": {
+          "calories": 28,
+          "protein": 2.6,
+          "carbs": 3.7,
+          "fat": 0.7
+        }
+      }
+    ]
+  },
+  {
+    "name": "Farinata di ceci al rosmarino",
+    "tags": [
+      "spuntino",
+      "leggero"
+    ],
+    "description": "Tre ingredienti e un forno ben caldo: la farinata ligure e' lo spuntino salato piu' sottovalutato che ci sia. Croccante ai bordi, morbida al centro, naturalmente senza glutine.",
+    "instructions": "1. Mescola la farina di ceci con 450 ml di acqua e un pizzico di sale, sbattendo per eliminare i grumi.\n2. Lascia riposare la pastella almeno 30 minuti, poi elimina la schiuma in superficie e incorpora meta' dell'olio.\n3. Versa l'olio rimasto in una teglia larga, aggiungi la pastella e distribuisci gli aghi di rosmarino.\n4. Cuoci in forno a 250 gradi per 15-18 minuti finche' la superficie e' dorata; servi calda, tagliata a spicchi con una macinata di pepe.",
+    "servings": 2,
+    "prepMinutes": 60,
+    "ingredients": [
+      {
+        "name": "Farina di ceci",
+        "grams": 150,
+        "per100g": {
+          "calories": 350,
+          "protein": 20,
+          "carbs": 47,
+          "fat": 6
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Rosmarino fresco",
+        "grams": 3,
+        "per100g": {
+          "calories": 131,
+          "protein": 3.3,
+          "carbs": 20.7,
+          "fat": 5.9
+        }
+      }
+    ]
+  },
+  {
+    "name": "Fagioli all'uccelletto con crostini",
+    "tags": [
+      "cena",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Cannellini stufati con pomodoro, aglio e salvia come in trattoria a Firenze, ma con l'olio contato. Con i crostini diventa una cena completa che costa meno di un caffe'.",
+    "instructions": "1. Scalda l'olio con l'aglio schiacciato e le foglie di salvia in un tegame, finche' profuma.\n2. Aggiungi i cannellini sciacquati e falli insaporire 2 minuti.\n3. Versa la passata e mezzo bicchiere d'acqua, regola di sale e cuoci 15 minuti a fuoco basso, finche' il sugo si addensa.\n4. Tosta il pane integrale e servici sopra i fagioli ben caldi con una macinata di pepe.",
+    "servings": 2,
+    "prepMinutes": 30,
+    "ingredients": [
+      {
+        "name": "Fagioli cannellini lessati",
+        "grams": 400,
+        "per100g": {
+          "calories": 91,
+          "protein": 6.3,
+          "carbs": 14,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 200,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Aglio",
+        "grams": 10,
+        "per100g": {
+          "calories": 149,
+          "protein": 6.4,
+          "carbs": 33,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Salvia fresca",
+        "grams": 5,
+        "per100g": {
+          "calories": 60,
+          "protein": 3.5,
+          "carbs": 8,
+          "fat": 1.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Pane integrale",
+        "grams": 80,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      }
+    ]
+  },
+  {
+    "name": "Shakshuka leggera con uova e peperoni",
+    "tags": [
+      "colazione",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Uova cotte direttamente nel sugo di peperoni e paprika: la colazione salata mediorientale che funziona anche come cena dell'ultimo minuto. Il pane per la scarpetta non e' opzionale.",
+    "instructions": "1. Fai appassire cipolla e peperoni a striscioline nell'olio per 8 minuti a fuoco medio.\n2. Aggiungi la passata e la paprika, regola di sale e cuoci 5 minuti finche' il sugo si restringe.\n3. Crea quattro incavi con il cucchiaio e rompici dentro le uova.\n4. Copri con il coperchio e cuoci 5-6 minuti: l'albume deve rapprendersi, il tuorlo restare morbido.\n5. Porta la padella in tavola con il pane integrale tostato.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Uova",
+        "grams": 220,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.5
+        }
+      },
+      {
+        "name": "Peperoni",
+        "grams": 200,
+        "per100g": {
+          "calories": 31,
+          "protein": 1,
+          "carbs": 6,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Passata di pomodoro",
+        "grams": 250,
+        "per100g": {
+          "calories": 35,
+          "protein": 1.5,
+          "carbs": 6.5,
+          "fat": 0.3
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 50,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 10,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Paprika dolce",
+        "grams": 3,
+        "per100g": {
+          "calories": 282,
+          "protein": 14,
+          "carbs": 34,
+          "fat": 13
+        }
+      },
+      {
+        "name": "Pane integrale",
+        "grams": 60,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      }
+    ]
+  },
+  {
+    "name": "Panino della colazione con uovo e prosciutto cotto",
+    "tags": [
+      "colazione",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Il breakfast sandwich senza drive-through: uovo appena rappreso, prosciutto cotto e spalmabile light nel pane integrale tostato. Cinque minuti e ti tiene pieno fino a pranzo.",
+    "instructions": "1. Tosta il pane integrale.\n2. Cuoci l'uovo in padella antiaderente al tegamino, rompendo il tuorlo a meta' cottura se lo vuoi ben cotto, con un pizzico di sale.\n3. Spalma il formaggio light su una fetta di pane, appoggia il prosciutto cotto, l'uovo e i pomodorini a fette.\n4. Chiudi con l'altra fetta, premi leggermente e taglia a meta'.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      {
+        "name": "Pane integrale",
+        "grams": 80,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      },
+      {
+        "name": "Uovo",
+        "grams": 55,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.9
+        }
+      },
+      {
+        "name": "Prosciutto cotto sgrassato",
+        "grams": 60,
+        "per100g": {
+          "calories": 110,
+          "protein": 20,
+          "carbs": 0.9,
+          "fat": 3
+        }
+      },
+      {
+        "name": "Formaggio spalmabile light",
+        "grams": 20,
+        "per100g": {
+          "calories": 155,
+          "protein": 8,
+          "carbs": 4.5,
+          "fat": 11
+        }
+      },
+      {
+        "name": "Pomodorini",
+        "grams": 50,
+        "per100g": {
+          "calories": 20,
+          "protein": 1,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Porridge salato con parmigiano e uovo morbido",
+    "tags": [
+      "colazione",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "L'avena funziona anche senza zucchero: cotta nel brodo come un risotto, mantecata col parmigiano e coronata da un uovo morbido. La colazione salata per chi dei pancake non ne puo' piu'.",
+    "instructions": "1. Cuoci i fiocchi d'avena nel brodo per 5-6 minuti mescolando, finche' diventano cremosi.\n2. Fuori dal fuoco manteca con il parmigiano e gli spinaci, che appassiscono col calore.\n3. Nel frattempo cuoci l'uovo in acqua bollente per 6 minuti e mezzo, raffreddalo sotto l'acqua e sguscialo.\n4. Versa il porridge nella ciotola, appoggia l'uovo tagliato a meta' e completa con l'olio e una macinata di pepe.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      {
+        "name": "Fiocchi d'avena",
+        "grams": 40,
+        "per100g": {
+          "calories": 372,
+          "protein": 13.5,
+          "carbs": 58.7,
+          "fat": 7
+        }
+      },
+      {
+        "name": "Brodo vegetale",
+        "grams": 220,
+        "per100g": {
+          "calories": 4,
+          "protein": 0.2,
+          "carbs": 0.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 20,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Uovo",
+        "grams": 55,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.9
+        }
+      },
+      {
+        "name": "Spinaci freschi",
+        "grams": 50,
+        "per100g": {
+          "calories": 25,
+          "protein": 2.9,
+          "carbs": 2.5,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 5,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Bowl salata di fiocchi di latte e cetrioli",
+    "tags": [
+      "colazione",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Colazione salata senza fornelli: fiocchi di latte, verdure croccanti e gallette sbriciolate sopra. Fresca, pronta in cinque minuti, perfetta quando fuori fa gia' caldo alle otto.",
+    "instructions": "1. Versa i fiocchi di latte in una ciotola.\n2. Taglia il cetriolo a mezzelune sottili e i pomodorini a meta' e disponili intorno.\n3. Condisci con olio, sale e una macinata di pepe.\n4. Completa con i semi di zucca e le gallette di riso spezzate grossolanamente, da usare al posto del cucchiaio.",
+    "servings": 1,
+    "prepMinutes": 10,
+    "ingredients": [
+      {
+        "name": "Fiocchi di latte",
+        "grams": 200,
+        "per100g": {
+          "calories": 98,
+          "protein": 11.5,
+          "carbs": 3.5,
+          "fat": 4.5
+        }
+      },
+      {
+        "name": "Cetriolo",
+        "grams": 80,
+        "per100g": {
+          "calories": 14,
+          "protein": 0.7,
+          "carbs": 2.2,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Pomodorini",
+        "grams": 80,
+        "per100g": {
+          "calories": 20,
+          "protein": 1,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Gallette di riso",
+        "grams": 20,
+        "per100g": {
+          "calories": 387,
+          "protein": 8,
+          "carbs": 81,
+          "fat": 2.8
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 5,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Semi di zucca",
+        "grams": 10,
+        "per100g": {
+          "calories": 559,
+          "protein": 30.2,
+          "carbs": 10.7,
+          "fat": 49
+        }
+      }
+    ]
+  },
+  {
+    "name": "Burger di manzo fit con salsa allo yogurt",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce",
+      "comfort"
+    ],
+    "description": "Un hamburger vero, con carne al 5% di grassi e una salsa yogurt-senape che non fa rimpiangere la maionese. Da mangiare con le mani, senza scuse.",
+    "instructions": "1. Forma due burger con il macinato, sale e una macinata di pepe, senza lavorarli troppo.\n2. Cuocili in padella antiaderente ben calda 3-4 minuti per lato.\n3. Mescola yogurt e senape con un pizzico di sale.\n4. Tosta i panini aperti in padella.\n5. Componi: salsa sulla base, lattuga, burger, pomodoro e cipolla ad anelli sottili, altra salsa e chiudi.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      {
+        "name": "Pane integrale per burger",
+        "grams": 160,
+        "per100g": {
+          "calories": 265,
+          "protein": 9,
+          "carbs": 47,
+          "fat": 4
+        }
+      },
+      {
+        "name": "Macinato di manzo magro 5%",
+        "grams": 300,
+        "per100g": {
+          "calories": 137,
+          "protein": 21,
+          "carbs": 0,
+          "fat": 5
+        }
+      },
+      {
+        "name": "Yogurt greco 0%",
+        "grams": 80,
+        "per100g": {
+          "calories": 59,
+          "protein": 10.3,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Senape",
+        "grams": 10,
+        "per100g": {
+          "calories": 66,
+          "protein": 4.4,
+          "carbs": 5.8,
+          "fat": 4
+        }
+      },
+      {
+        "name": "Lattuga",
+        "grams": 40,
+        "per100g": {
+          "calories": 17,
+          "protein": 1.2,
+          "carbs": 2.8,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Pomodori ramati",
+        "grams": 100,
+        "per100g": {
+          "calories": 18,
+          "protein": 0.9,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 30,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      }
+    ]
+  },
+  {
+    "name": "Fish burger di merluzzo in panino integrale",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero"
+    ],
+    "description": "Il burger di pesce fatto sul serio: merluzzo tritato al coltello, panatura leggera e cottura al forno. Croccante fuori, morbido dentro, e il panino completo resta sotto le 500 calorie.",
+    "instructions": "1. Trita il merluzzo al coltello, mescolalo con uovo, meta' del pangrattato, sale e il succo di limone.\n2. Forma due burger, passali nel pangrattato rimasto e appoggiali su una teglia con carta forno.\n3. Cuoci in forno a 200 gradi per 18-20 minuti, girandoli a meta'.\n4. Tosta i panini, spalma lo yogurt salato leggermente, aggiungi lattuga e il burger caldo.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      {
+        "name": "Filetto di merluzzo",
+        "grams": 300,
+        "per100g": {
+          "calories": 82,
+          "protein": 18,
+          "carbs": 0,
+          "fat": 0.7
+        }
+      },
+      {
+        "name": "Pangrattato",
+        "grams": 40,
+        "per100g": {
+          "calories": 360,
+          "protein": 12,
+          "carbs": 72,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Uovo",
+        "grams": 55,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.9
+        }
+      },
+      {
+        "name": "Pane integrale per burger",
+        "grams": 160,
+        "per100g": {
+          "calories": 265,
+          "protein": 9,
+          "carbs": 47,
+          "fat": 4
+        }
+      },
+      {
+        "name": "Lattuga",
+        "grams": 40,
+        "per100g": {
+          "calories": 17,
+          "protein": 1.2,
+          "carbs": 2.8,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Yogurt greco 0%",
+        "grams": 60,
+        "per100g": {
+          "calories": 59,
+          "protein": 10.3,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 10,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Club sandwich fit al tacchino",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "Tre piani di pane integrale tostato, tacchino, uovo sodo e verdure croccanti: il club sandwich da ufficio che non ti addormenta alla scrivania.",
+    "instructions": "1. Cuoci l'uovo sodo per 9 minuti, raffreddalo e taglialo a fette.\n2. Tosta le tre fette di pane integrale.\n3. Mescola lo yogurt con un pizzico di sale e spalmalo sulle fette.\n4. Componi il primo piano con lattuga, fesa di tacchino e pomodoro; appoggia la seconda fetta e fai il secondo piano con uovo e altra lattuga.\n5. Chiudi con la terza fetta, fissa con due stecchini e taglia in diagonale.",
+    "servings": 1,
+    "prepMinutes": 15,
+    "ingredients": [
+      {
+        "name": "Pane integrale",
+        "grams": 90,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      },
+      {
+        "name": "Fesa di tacchino affettata",
+        "grams": 80,
+        "per100g": {
+          "calories": 104,
+          "protein": 22,
+          "carbs": 0.5,
+          "fat": 1.5
+        }
+      },
+      {
+        "name": "Uovo",
+        "grams": 55,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.9
+        }
+      },
+      {
+        "name": "Yogurt greco 0%",
+        "grams": 40,
+        "per100g": {
+          "calories": 59,
+          "protein": 10.3,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Lattuga",
+        "grams": 30,
+        "per100g": {
+          "calories": 17,
+          "protein": 1.2,
+          "carbs": 2.8,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Pomodori ramati",
+        "grams": 80,
+        "per100g": {
+          "calories": 18,
+          "protein": 0.9,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Kebab di pollo fatto in casa con salsa allo yogurt",
+    "tags": [
+      "cena",
+      "proteico",
+      "comfort"
+    ],
+    "description": "Il kebab del sabato sera senza il girarrosto: pollo marinato nello yogurt e paprika, ben rosolato e servito nella piadina integrale con verdure e salsa bianca. Da piegare e addentare.",
+    "instructions": "1. Taglia il pollo a striscioline e marinalo 15 minuti con meta' dello yogurt, la paprika e un pizzico di sale.\n2. Scalda l'olio in una padella grande e cuoci il pollo scolato dalla marinata a fuoco vivo 6-7 minuti, finche' e' ben rosolato ai bordi.\n3. Mescola lo yogurt rimasto con un pizzico di sale per la salsa.\n4. Scalda le piadine, farciscile con insalata, pomodoro a fette, cipolla sottile e il pollo.\n5. Completa con la salsa allo yogurt, arrotola stretto e avvolgi la base in un foglio di carta.",
+    "servings": 2,
+    "prepMinutes": 35,
+    "ingredients": [
+      {
+        "name": "Petto di pollo a fettine",
+        "grams": 350,
+        "per100g": {
+          "calories": 110,
+          "protein": 23,
+          "carbs": 0,
+          "fat": 1.5
+        }
+      },
+      {
+        "name": "Yogurt greco 0%",
+        "grams": 150,
+        "per100g": {
+          "calories": 59,
+          "protein": 10.3,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Piadina integrale",
+        "grams": 140,
+        "per100g": {
+          "calories": 290,
+          "protein": 8,
+          "carbs": 48,
+          "fat": 7
+        }
+      },
+      {
+        "name": "Paprika dolce",
+        "grams": 5,
+        "per100g": {
+          "calories": 282,
+          "protein": 14,
+          "carbs": 34,
+          "fat": 13
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 50,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Pomodori ramati",
+        "grams": 100,
+        "per100g": {
+          "calories": 18,
+          "protein": 0.9,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Insalata mista",
+        "grams": 50,
+        "per100g": {
+          "calories": 17,
+          "protein": 1.2,
+          "carbs": 2.9,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 10,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Pasta fredda al pesto di mandorle con pomodorini e mozzarella",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce"
+    ],
+    "description": "La pasta fredda da portare al lavoro d'estate: pesto sbattuto al frullatore con mandorle al posto dei pinoli, pomodorini e mozzarella light. Regge benissimo la borsa frigo.",
+    "instructions": "1. Cuoci la pasta integrale in acqua salata, scolala al dente e raffreddala sotto un filo di acqua fredda.\n2. Frulla basilico, mandorle, parmigiano, olio e un cucchiaio di acqua fredda con un pizzico di sale fino a un pesto grezzo.\n3. Condisci la pasta con il pesto in una ciotola grande.\n4. Aggiungi i pomodorini a meta' e la mozzarella light a dadini ben scolata, mescola e tieni in frigo fino al momento di mangiare.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Pasta integrale",
+        "grams": 140,
+        "per100g": {
+          "calories": 350,
+          "protein": 13,
+          "carbs": 67,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Basilico fresco",
+        "grams": 30,
+        "per100g": {
+          "calories": 26,
+          "protein": 3.2,
+          "carbs": 2.6,
+          "fat": 0.6
+        }
+      },
+      {
+        "name": "Mandorle",
+        "grams": 15,
+        "per100g": {
+          "calories": 579,
+          "protein": 21.2,
+          "carbs": 21.6,
+          "fat": 49.9
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 20,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Pomodorini",
+        "grams": 200,
+        "per100g": {
+          "calories": 20,
+          "protein": 1,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Mozzarella light",
+        "grams": 100,
+        "per100g": {
+          "calories": 163,
+          "protein": 20,
+          "carbs": 1.5,
+          "fat": 9
+        }
+      }
+    ]
+  },
+  {
+    "name": "Insalata di polpo e patate",
+    "tags": [
+      "cena",
+      "proteico",
+      "leggero"
+    ],
+    "description": "Il classico delle estati al mare: polpo tenero, patate, sedano croccante e prezzemolo. Richiede solo pazienza per la cottura del polpo, il resto e' assemblaggio da fare in anticipo.",
+    "instructions": "1. Immergi il polpo in acqua bollente non salata tre volte per arricciare i tentacoli, poi cuocilo coperto 45 minuti a fuoco basso.\n2. Spegni e lascialo intiepidire nella sua acqua: e' il segreto per averlo tenero.\n3. Nel frattempo lessa le patate a tocchetti per 12 minuti e affetta il sedano sottile.\n4. Taglia il polpo a pezzi e uniscilo a patate e sedano in una ciotola.\n5. Condisci con olio, succo di limone, prezzemolo tritato e sale; meglio dopo un'ora di frigo.",
+    "servings": 2,
+    "prepMinutes": 80,
+    "ingredients": [
+      {
+        "name": "Polpo fresco pulito",
+        "grams": 500,
+        "per100g": {
+          "calories": 82,
+          "protein": 14.9,
+          "carbs": 2.2,
+          "fat": 1
+        }
+      },
+      {
+        "name": "Patate",
+        "grams": 300,
+        "per100g": {
+          "calories": 77,
+          "protein": 2,
+          "carbs": 17.5,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Sedano",
+        "grams": 50,
+        "per100g": {
+          "calories": 16,
+          "protein": 0.7,
+          "carbs": 3,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 10,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 20,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Panzanella con tonno e cannellini",
+    "tags": [
+      "pranzo",
+      "proteico",
+      "veloce",
+      "leggero"
+    ],
+    "description": "La panzanella toscana promossa a piatto unico: pane integrale ammollato, pomodori maturi, tonno e cannellini. Piu' riposa, piu' e' buona: fatta la mattina, a pranzo e' perfetta.",
+    "instructions": "1. Tosta il pane a dadini, poi bagnalo con poca acqua e un cucchiaio di succo di limone: deve ammorbidirsi senza sfaldarsi.\n2. Taglia i pomodori a pezzi e il cetriolo a mezzelune, affetta la cipolla sottilissima.\n3. Unisci in una ciotola pane, verdure, tonno sgocciolato e cannellini sciacquati.\n4. Condisci con olio, il succo di limone rimasto, sale e basilico spezzettato; lascia riposare almeno 15 minuti prima di servire.",
+    "servings": 2,
+    "prepMinutes": 20,
+    "ingredients": [
+      {
+        "name": "Pane integrale",
+        "grams": 120,
+        "per100g": {
+          "calories": 247,
+          "protein": 13,
+          "carbs": 41,
+          "fat": 3.4
+        }
+      },
+      {
+        "name": "Pomodori ramati",
+        "grams": 300,
+        "per100g": {
+          "calories": 18,
+          "protein": 0.9,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cetriolo",
+        "grams": 150,
+        "per100g": {
+          "calories": 14,
+          "protein": 0.7,
+          "carbs": 2.2,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Cipolla",
+        "grams": 40,
+        "per100g": {
+          "calories": 40,
+          "protein": 1.1,
+          "carbs": 9.3,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Tonno al naturale sgocciolato",
+        "grams": 160,
+        "per100g": {
+          "calories": 105,
+          "protein": 24,
+          "carbs": 0,
+          "fat": 1
+        }
+      },
+      {
+        "name": "Fagioli cannellini lessati",
+        "grams": 150,
+        "per100g": {
+          "calories": 91,
+          "protein": 6.3,
+          "carbs": 14,
+          "fat": 0.5
+        }
+      },
+      {
+        "name": "Basilico fresco",
+        "grams": 10,
+        "per100g": {
+          "calories": 26,
+          "protein": 3.2,
+          "carbs": 2.6,
+          "fat": 0.6
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 20,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 20,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "name": "Tabbouleh di bulgur con ceci",
+    "tags": [
+      "pranzo",
+      "veloce",
+      "leggero"
+    ],
+    "description": "L'insalata mediorientale dove il prezzemolo e' verdura, non decorazione: bulgur, ceci, pomodorini e tanto limone. Fredda di frigo, d'estate, vale doppio.",
+    "instructions": "1. Metti il bulgur in una ciotola, coprilo con acqua bollente salata a filo e lascialo gonfiare coperto per 15 minuti, poi sgranalo con la forchetta.\n2. Trita abbondante il prezzemolo, taglia i pomodorini a quarti e il cetriolo a dadini piccoli.\n3. Unisci al bulgur verdure e ceci sciacquati.\n4. Condisci con succo di limone, olio e sale e mescola bene; in frigo si tiene due giorni.",
+    "servings": 2,
+    "prepMinutes": 25,
+    "ingredients": [
+      {
+        "name": "Bulgur",
+        "grams": 120,
+        "per100g": {
+          "calories": 342,
+          "protein": 12.3,
+          "carbs": 76,
+          "fat": 1.3
+        }
+      },
+      {
+        "name": "Ceci lessati",
+        "grams": 200,
+        "per100g": {
+          "calories": 120,
+          "protein": 7,
+          "carbs": 17,
+          "fat": 2.5
+        }
+      },
+      {
+        "name": "Pomodorini",
+        "grams": 150,
+        "per100g": {
+          "calories": 20,
+          "protein": 1,
+          "carbs": 3.5,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Cetriolo",
+        "grams": 100,
+        "per100g": {
+          "calories": 14,
+          "protein": 0.7,
+          "carbs": 2.2,
+          "fat": 0.1
+        }
+      },
+      {
+        "name": "Prezzemolo fresco",
+        "grams": 30,
+        "per100g": {
+          "calories": 36,
+          "protein": 3,
+          "carbs": 6,
+          "fat": 0.8
+        }
+      },
+      {
+        "name": "Succo di limone",
+        "grams": 30,
+        "per100g": {
+          "calories": 25,
+          "protein": 0.4,
+          "carbs": 6,
+          "fat": 0.2
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Torta salata di fillo con ricotta e spinaci",
+    "tags": [
+      "cena",
+      "leggero",
+      "comfort"
+    ],
+    "description": "Tutto il gusto della torta rustica con un decimo del burro: la pasta fillo fa strati sottili e croccanti intorno a un ripieno di ricotta e spinaci. Buona calda, ottima fredda in pausa pranzo.",
+    "instructions": "1. Cuoci gli spinaci in padella finche' l'acqua e' evaporata, strizzali bene e tritali.\n2. Mescolali con ricotta, uova, parmigiano e un pizzico di sale.\n3. Spennella i fogli di fillo con l'olio e sovrapponili in una tortiera facendoli debordare, alternando la direzione.\n4. Versa il ripieno, ripiega i bordi verso il centro lasciando il cuore scoperto e spennella con l'olio rimasto.\n5. Inforna a 190 gradi per 30 minuti finche' la fillo e' dorata; fai intiepidire prima di tagliare.",
+    "servings": 4,
+    "prepMinutes": 50,
+    "ingredients": [
+      {
+        "name": "Pasta fillo",
+        "grams": 120,
+        "per100g": {
+          "calories": 300,
+          "protein": 8.5,
+          "carbs": 58,
+          "fat": 4
+        }
+      },
+      {
+        "name": "Ricotta vaccina",
+        "grams": 300,
+        "per100g": {
+          "calories": 146,
+          "protein": 8.8,
+          "carbs": 3.5,
+          "fat": 10.9
+        }
+      },
+      {
+        "name": "Spinaci surgelati",
+        "grams": 300,
+        "per100g": {
+          "calories": 28,
+          "protein": 3.2,
+          "carbs": 3.6,
+          "fat": 0.4
+        }
+      },
+      {
+        "name": "Uova",
+        "grams": 110,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.5
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 30,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 15,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      }
+    ]
+  },
+  {
+    "name": "Plumcake salato con prosciutto cotto e olive",
+    "tags": [
+      "spuntino",
+      "comfort"
+    ],
+    "description": "Il cake salato dei bistrot francesi in versione integrale: fette compatte con prosciutto e olive che stanno in piedi da sole. Da tagliare e congelare a fette: lo spuntino salato della settimana e' risolto.",
+    "instructions": "1. Accendi il forno a 180 gradi. Sbatti le uova con latte e olio.\n2. Aggiungi farina integrale e lievito istantaneo setacciati e mescola quel tanto che basta.\n3. Incorpora prosciutto a dadini, olive a rondelle e parmigiano con una macinata di pepe.\n4. Versa in uno stampo da plumcake rivestito di carta forno.\n5. Cuoci 40-45 minuti; prova con lo stecchino prima di sfornare e fai raffreddare prima di affettare.",
+    "servings": 6,
+    "prepMinutes": 60,
+    "ingredients": [
+      {
+        "name": "Farina integrale",
+        "grams": 180,
+        "per100g": {
+          "calories": 340,
+          "protein": 12,
+          "carbs": 68,
+          "fat": 2
+        }
+      },
+      {
+        "name": "Lievito istantaneo per torte salate",
+        "grams": 10,
+        "per100g": {
+          "calories": 90,
+          "protein": 0.5,
+          "carbs": 22,
+          "fat": 0
+        }
+      },
+      {
+        "name": "Uova",
+        "grams": 165,
+        "per100g": {
+          "calories": 143,
+          "protein": 12.5,
+          "carbs": 0.7,
+          "fat": 9.5
+        }
+      },
+      {
+        "name": "Latte parzialmente scremato",
+        "grams": 120,
+        "per100g": {
+          "calories": 46,
+          "protein": 3.3,
+          "carbs": 4.9,
+          "fat": 1.6
+        }
+      },
+      {
+        "name": "Olio extravergine d'oliva",
+        "grams": 30,
+        "per100g": {
+          "calories": 884,
+          "protein": 0,
+          "carbs": 0,
+          "fat": 100
+        }
+      },
+      {
+        "name": "Prosciutto cotto sgrassato",
+        "grams": 100,
+        "per100g": {
+          "calories": 110,
+          "protein": 20,
+          "carbs": 0.9,
+          "fat": 3
+        }
+      },
+      {
+        "name": "Olive nere denocciolate",
+        "grams": 50,
+        "per100g": {
+          "calories": 235,
+          "protein": 1.5,
+          "carbs": 4,
+          "fat": 24
+        }
+      },
+      {
+        "name": "Parmigiano grattugiato",
+        "grams": 40,
+        "per100g": {
+          "calories": 392,
+          "protein": 33,
+          "carbs": 0,
+          "fat": 28.5
+        }
+      }
+    ]
+  }
+]
