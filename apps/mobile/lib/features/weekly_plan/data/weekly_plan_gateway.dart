@@ -96,6 +96,11 @@ class SupabaseWeeklyPlanGateway implements WeeklyPlanGateway {
 
   SupabaseQuerySchema get _db => _client.schema(schemaName);
 
+  /// Nessuna chiamata di rete puo' restare appesa: una richiesta che non
+  /// torna mai bloccherebbe il ciclo di attesa del piano, lasciando «il Mac
+  /// sta preparando» sullo schermo per sempre e senza errori.
+  static const networkTimeout = Duration(seconds: 20);
+
   @override
   Future<WeeklyPlanAccount?> currentAccount() async {
     final client = _clientOrNull;
@@ -124,19 +129,23 @@ class SupabaseWeeklyPlanGateway implements WeeklyPlanGateway {
           .from('profiles')
           .select('id')
           .isFilter('deleted_at', null)
-          .limit(1);
+          .limit(1)
+          .timeout(networkTimeout);
       var actualId = existing.isNotEmpty
           ? existing.first['id'] as String?
           : null;
       if (actualId == null) {
         actualId = remoteId;
-        await _db.from('profiles').upsert({
-          'id': remoteId,
-          'display_name': 'Marco',
-          'time_zone': SyncPushMapper.timeZone,
-          'locale': 'it_IT',
-          'last_mutation_id': SyncIds.derived('profile', remoteId),
-        });
+        await _db
+            .from('profiles')
+            .upsert({
+              'id': remoteId,
+              'display_name': 'Marco',
+              'time_zone': SyncPushMapper.timeZone,
+              'locale': 'it_IT',
+              'last_mutation_id': SyncIds.derived('profile', remoteId),
+            })
+            .timeout(networkTimeout);
       }
       _ensuredProfiles[remoteId] = actualId;
       return actualId;
@@ -151,7 +160,7 @@ class SupabaseWeeklyPlanGateway implements WeeklyPlanGateway {
   Future<void> enqueueJob(Map<String, Object?> row) async {
     _requireSession();
     try {
-      await _db.from(jobsTable).insert(row);
+      await _db.from(jobsTable).insert(row).timeout(networkTimeout);
     } on PostgrestException catch (error) {
       if (error.code == '23505') {
         // Retry dopo risposta persa: il job esiste già, niente doppioni.
@@ -172,7 +181,8 @@ class SupabaseWeeklyPlanGateway implements WeeklyPlanGateway {
           .select(_columns)
           .eq('id', jobId)
           .isFilter('deleted_at', null)
-          .limit(1);
+          .limit(1)
+          .timeout(networkTimeout);
       if (rows.isEmpty) {
         return null;
       }

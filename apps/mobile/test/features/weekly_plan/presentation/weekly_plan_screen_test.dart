@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_gateway.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_repository.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
+import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_providers.dart';
 
 class _FakeGateway implements WeeklyPlanGateway {
   WeeklyPlanAccount? account = const WeeklyPlanAccount(userId: 'owner-1');
@@ -34,8 +37,17 @@ class _FakeGateway implements WeeklyPlanGateway {
   @override
   Future<void> enqueueJob(Map<String, Object?> row) async => insertedRow = row;
 
+  /// Quando vale true la lettura non torna MAI: e' la rete che cade a meta'
+  /// richiesta, il caso che bloccava il ciclo di attesa per sempre.
+  bool hangForever = false;
+
   @override
-  Future<Map<String, Object?>?> fetchJobRow(String jobId) async => remoteRow;
+  Future<Map<String, Object?>?> fetchJobRow(String jobId) async {
+    if (hangForever) {
+      return Completer<Map<String, Object?>?>().future;
+    }
+    return remoteRow;
+  }
 }
 
 final _startDate = DateTime.utc(2026, 8, 5);
@@ -333,6 +345,78 @@ void main() {
         .filter((row) => row.id.equals(pendingId))
         .getSingle();
     expect(stored.status, WeeklyPlanStatus.ready.storageValue);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('un controllo appeso non uccide il ciclo di attesa', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final seed = await _seed(tester, database, gateway);
+
+    late final String pendingId;
+    await tester.runAsync(() async {
+      final repository = WeeklyPlanRepository(
+        database,
+        gateway: gateway,
+        now: () => _seedClock.add(const Duration(minutes: 2)),
+      );
+      final pending = await repository.generatePlan(
+        profileId: seed.profileId,
+        startDate: _startDate.add(const Duration(days: 21)),
+        days: 1,
+        meals: const [PlanMeal.cena],
+        targets: const NutritionTarget.standard(),
+      );
+      pendingId = pending.id;
+    });
+
+    // Primo controllo: la rete cade e la richiesta non torna mai.
+    gateway.hangForever = true;
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+    expect(find.byKey(const Key('plan_generating_card')), findsOneWidget);
+
+    // Nel frattempo il Mac ha finito davvero e la rete torna.
+    gateway.remoteRow = {
+      'id':
+          (await database.managers.weeklyPlans
+                  .filter((row) => row.id.equals(pendingId))
+                  .getSingle())
+              .remoteJobId,
+      'status': 'needs_review',
+      'result': {
+        'schema': 1,
+        'days': [
+          {
+            'date': '2026-08-26',
+            'slots': [
+              {'meal': 'cena', 'recipeId': seed.soupId, 'servings': 1},
+            ],
+          },
+        ],
+      },
+    };
+    gateway.hangForever = false;
+
+    // Senza il tetto sul singolo controllo il ciclo sarebbe morto qui:
+    // «_refreshing» non sarebbe mai tornato false e nessun timer riarmato.
+    await tester.pump(WeeklyPlanController.checkTimeout);
+    await tester.pump(const Duration(seconds: 20));
+    await tester.pumpAndSettle();
+
+    final stored = await database.managers.weeklyPlans
+        .filter((row) => row.id.equals(pendingId))
+        .getSingle();
+    expect(
+      stored.status,
+      WeeklyPlanStatus.ready.storageValue,
+      reason: 'il piano deve arrivare comunque dopo un controllo appeso',
+    );
 
     await _disposeApp(tester, database);
   });

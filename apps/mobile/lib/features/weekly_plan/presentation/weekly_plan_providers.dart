@@ -91,6 +91,10 @@ class WeeklyPlanUiState {
 /// Nessun generatore locale di riserva: se il Mac non risponde il piano
 /// diventa `failed` con un messaggio onesto e i piani vecchi restano.
 class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
+  /// Tetto per un singolo controllo, oltre il timeout di rete del gateway:
+  /// qualunque cosa succeda, il giro successivo deve poter ripartire.
+  static const checkTimeout = Duration(seconds: 30);
+
   Timer? _timer;
   bool _disposed = false;
   bool _refreshing = false;
@@ -181,7 +185,13 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
     }
     _refreshing = true;
     try {
-      await ref.read(weeklyPlanRepositoryProvider).refreshPlan(pending.id);
+      // Cintura di sicurezza: se un controllo restasse appeso (rete che
+      // cade a metà richiesta), `_refreshing` non tornerebbe mai false e il
+      // ciclo morirebbe lasciando l'attesa sullo schermo per sempre.
+      await ref
+          .read(weeklyPlanRepositoryProvider)
+          .refreshPlan(pending.id)
+          .timeout(checkTimeout);
       if (!_disposed) {
         state = state.copyWith(
           clearError: true,
@@ -192,8 +202,10 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
       // Offline non si dichiara nulla: si riproverà al prossimo giro.
     } finally {
       _refreshing = false;
+      // Nel `finally`: il prossimo giro va riarmato anche quando questo
+      // fallisce, altrimenti basta un errore per fermare il polling.
+      _scheduleNext();
     }
-    _scheduleNext();
   }
 
   Future<bool> markDone(WeeklyPlanSlot slot) =>
