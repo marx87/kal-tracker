@@ -33,6 +33,38 @@ class $AppProfilesTable extends AppProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _heightCmMeta = const VerificationMeta(
+    'heightCm',
+  );
+  @override
+  late final GeneratedColumn<double> heightCm = GeneratedColumn<double>(
+    'height_cm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _birthDateMeta = const VerificationMeta(
+    'birthDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> birthDate = GeneratedColumn<DateTime>(
+    'birth_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sexMeta = const VerificationMeta('sex');
+  @override
+  late final GeneratedColumn<String> sex = GeneratedColumn<String>(
+    'sex',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 1),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -56,7 +88,15 @@ class $AppProfilesTable extends AppProfiles
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, displayName, createdAt, updatedAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    displayName,
+    heightCm,
+    birthDate,
+    sex,
+    createdAt,
+    updatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -84,6 +124,24 @@ class $AppProfilesTable extends AppProfiles
       );
     } else if (isInserting) {
       context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('height_cm')) {
+      context.handle(
+        _heightCmMeta,
+        heightCm.isAcceptableOrUnknown(data['height_cm']!, _heightCmMeta),
+      );
+    }
+    if (data.containsKey('birth_date')) {
+      context.handle(
+        _birthDateMeta,
+        birthDate.isAcceptableOrUnknown(data['birth_date']!, _birthDateMeta),
+      );
+    }
+    if (data.containsKey('sex')) {
+      context.handle(
+        _sexMeta,
+        sex.isAcceptableOrUnknown(data['sex']!, _sexMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -118,6 +176,18 @@ class $AppProfilesTable extends AppProfiles
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
       )!,
+      heightCm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}height_cm'],
+      ),
+      birthDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}birth_date'],
+      ),
+      sex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sex'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -138,11 +208,17 @@ class $AppProfilesTable extends AppProfiles
 class LocalProfile extends DataClass implements Insertable<LocalProfile> {
   final String id;
   final String displayName;
+  final double? heightCm;
+  final DateTime? birthDate;
+  final String? sex;
   final DateTime createdAt;
   final DateTime updatedAt;
   const LocalProfile({
     required this.id,
     required this.displayName,
+    this.heightCm,
+    this.birthDate,
+    this.sex,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -151,6 +227,15 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['display_name'] = Variable<String>(displayName);
+    if (!nullToAbsent || heightCm != null) {
+      map['height_cm'] = Variable<double>(heightCm);
+    }
+    if (!nullToAbsent || birthDate != null) {
+      map['birth_date'] = Variable<DateTime>(birthDate);
+    }
+    if (!nullToAbsent || sex != null) {
+      map['sex'] = Variable<String>(sex);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -160,6 +245,13 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
     return AppProfilesCompanion(
       id: Value(id),
       displayName: Value(displayName),
+      heightCm: heightCm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heightCm),
+      birthDate: birthDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(birthDate),
+      sex: sex == null && nullToAbsent ? const Value.absent() : Value(sex),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -173,6 +265,9 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
     return LocalProfile(
       id: serializer.fromJson<String>(json['id']),
       displayName: serializer.fromJson<String>(json['displayName']),
+      heightCm: serializer.fromJson<double?>(json['heightCm']),
+      birthDate: serializer.fromJson<DateTime?>(json['birthDate']),
+      sex: serializer.fromJson<String?>(json['sex']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -183,6 +278,9 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'displayName': serializer.toJson<String>(displayName),
+      'heightCm': serializer.toJson<double?>(heightCm),
+      'birthDate': serializer.toJson<DateTime?>(birthDate),
+      'sex': serializer.toJson<String?>(sex),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -191,11 +289,17 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
   LocalProfile copyWith({
     String? id,
     String? displayName,
+    Value<double?> heightCm = const Value.absent(),
+    Value<DateTime?> birthDate = const Value.absent(),
+    Value<String?> sex = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => LocalProfile(
     id: id ?? this.id,
     displayName: displayName ?? this.displayName,
+    heightCm: heightCm.present ? heightCm.value : this.heightCm,
+    birthDate: birthDate.present ? birthDate.value : this.birthDate,
+    sex: sex.present ? sex.value : this.sex,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -205,6 +309,9 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
       displayName: data.displayName.present
           ? data.displayName.value
           : this.displayName,
+      heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
+      birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
+      sex: data.sex.present ? data.sex.value : this.sex,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -215,6 +322,9 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
     return (StringBuffer('LocalProfile(')
           ..write('id: $id, ')
           ..write('displayName: $displayName, ')
+          ..write('heightCm: $heightCm, ')
+          ..write('birthDate: $birthDate, ')
+          ..write('sex: $sex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -222,13 +332,24 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
   }
 
   @override
-  int get hashCode => Object.hash(id, displayName, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    displayName,
+    heightCm,
+    birthDate,
+    sex,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is LocalProfile &&
           other.id == this.id &&
           other.displayName == this.displayName &&
+          other.heightCm == this.heightCm &&
+          other.birthDate == this.birthDate &&
+          other.sex == this.sex &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -236,12 +357,18 @@ class LocalProfile extends DataClass implements Insertable<LocalProfile> {
 class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
   final Value<String> id;
   final Value<String> displayName;
+  final Value<double?> heightCm;
+  final Value<DateTime?> birthDate;
+  final Value<String?> sex;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const AppProfilesCompanion({
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
+    this.heightCm = const Value.absent(),
+    this.birthDate = const Value.absent(),
+    this.sex = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -249,6 +376,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
   AppProfilesCompanion.insert({
     required String id,
     required String displayName,
+    this.heightCm = const Value.absent(),
+    this.birthDate = const Value.absent(),
+    this.sex = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -259,6 +389,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
   static Insertable<LocalProfile> custom({
     Expression<String>? id,
     Expression<String>? displayName,
+    Expression<double>? heightCm,
+    Expression<DateTime>? birthDate,
+    Expression<String>? sex,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -266,6 +399,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (displayName != null) 'display_name': displayName,
+      if (heightCm != null) 'height_cm': heightCm,
+      if (birthDate != null) 'birth_date': birthDate,
+      if (sex != null) 'sex': sex,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -275,6 +411,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
   AppProfilesCompanion copyWith({
     Value<String>? id,
     Value<String>? displayName,
+    Value<double?>? heightCm,
+    Value<DateTime?>? birthDate,
+    Value<String?>? sex,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -282,6 +421,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
     return AppProfilesCompanion(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
+      heightCm: heightCm ?? this.heightCm,
+      birthDate: birthDate ?? this.birthDate,
+      sex: sex ?? this.sex,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -296,6 +438,15 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
     }
     if (displayName.present) {
       map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (heightCm.present) {
+      map['height_cm'] = Variable<double>(heightCm.value);
+    }
+    if (birthDate.present) {
+      map['birth_date'] = Variable<DateTime>(birthDate.value);
+    }
+    if (sex.present) {
+      map['sex'] = Variable<String>(sex.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -314,6 +465,9 @@ class AppProfilesCompanion extends UpdateCompanion<LocalProfile> {
     return (StringBuffer('AppProfilesCompanion(')
           ..write('id: $id, ')
           ..write('displayName: $displayName, ')
+          ..write('heightCm: $heightCm, ')
+          ..write('birthDate: $birthDate, ')
+          ..write('sex: $sex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -3307,6 +3461,167 @@ class $BodyMeasurementsTable extends BodyMeasurements
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _hasImpedanceMeta = const VerificationMeta(
+    'hasImpedance',
+  );
+  @override
+  late final GeneratedColumn<bool> hasImpedance = GeneratedColumn<bool>(
+    'has_impedance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_impedance" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _impedanceOhmMeta = const VerificationMeta(
+    'impedanceOhm',
+  );
+  @override
+  late final GeneratedColumn<double> impedanceOhm = GeneratedColumn<double>(
+    'impedance_ohm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bodyFatPctMeta = const VerificationMeta(
+    'bodyFatPct',
+  );
+  @override
+  late final GeneratedColumn<double> bodyFatPct = GeneratedColumn<double>(
+    'body_fat_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _musclePctMeta = const VerificationMeta(
+    'musclePct',
+  );
+  @override
+  late final GeneratedColumn<double> musclePct = GeneratedColumn<double>(
+    'muscle_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _skeletalMusclePctMeta = const VerificationMeta(
+    'skeletalMusclePct',
+  );
+  @override
+  late final GeneratedColumn<double> skeletalMusclePct =
+      GeneratedColumn<double>(
+        'skeletal_muscle_pct',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bonePctMeta = const VerificationMeta(
+    'bonePct',
+  );
+  @override
+  late final GeneratedColumn<double> bonePct = GeneratedColumn<double>(
+    'bone_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinPctMeta = const VerificationMeta(
+    'proteinPct',
+  );
+  @override
+  late final GeneratedColumn<double> proteinPct = GeneratedColumn<double>(
+    'protein_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _waterPctMeta = const VerificationMeta(
+    'waterPct',
+  );
+  @override
+  late final GeneratedColumn<double> waterPct = GeneratedColumn<double>(
+    'water_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _subcutaneousFatPctMeta =
+      const VerificationMeta('subcutaneousFatPct');
+  @override
+  late final GeneratedColumn<double> subcutaneousFatPct =
+      GeneratedColumn<double>(
+        'subcutaneous_fat_pct',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _visceralFatIndexMeta = const VerificationMeta(
+    'visceralFatIndex',
+  );
+  @override
+  late final GeneratedColumn<int> visceralFatIndex = GeneratedColumn<int>(
+    'visceral_fat_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bmrKcalMeta = const VerificationMeta(
+    'bmrKcal',
+  );
+  @override
+  late final GeneratedColumn<int> bmrKcal = GeneratedColumn<int>(
+    'bmr_kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _formulaVersionMeta = const VerificationMeta(
+    'formulaVersion',
+  );
+  @override
+  late final GeneratedColumn<String> formulaVersion = GeneratedColumn<String>(
+    'formula_version',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 40),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 30),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  static const VerificationMeta _externalIdMeta = const VerificationMeta(
+    'externalId',
+  );
+  @override
+  late final GeneratedColumn<String> externalId = GeneratedColumn<String>(
+    'external_id',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 120),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -3356,6 +3671,20 @@ class $BodyMeasurementsTable extends BodyMeasurements
     profileId,
     weightKg,
     measuredAt,
+    hasImpedance,
+    impedanceOhm,
+    bodyFatPct,
+    musclePct,
+    skeletalMusclePct,
+    bonePct,
+    proteinPct,
+    waterPct,
+    subcutaneousFatPct,
+    visceralFatIndex,
+    bmrKcal,
+    formulaVersion,
+    source,
+    externalId,
     note,
     createdAt,
     updatedAt,
@@ -3401,6 +3730,111 @@ class $BodyMeasurementsTable extends BodyMeasurements
       );
     } else if (isInserting) {
       context.missing(_measuredAtMeta);
+    }
+    if (data.containsKey('has_impedance')) {
+      context.handle(
+        _hasImpedanceMeta,
+        hasImpedance.isAcceptableOrUnknown(
+          data['has_impedance']!,
+          _hasImpedanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('impedance_ohm')) {
+      context.handle(
+        _impedanceOhmMeta,
+        impedanceOhm.isAcceptableOrUnknown(
+          data['impedance_ohm']!,
+          _impedanceOhmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('body_fat_pct')) {
+      context.handle(
+        _bodyFatPctMeta,
+        bodyFatPct.isAcceptableOrUnknown(
+          data['body_fat_pct']!,
+          _bodyFatPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('muscle_pct')) {
+      context.handle(
+        _musclePctMeta,
+        musclePct.isAcceptableOrUnknown(data['muscle_pct']!, _musclePctMeta),
+      );
+    }
+    if (data.containsKey('skeletal_muscle_pct')) {
+      context.handle(
+        _skeletalMusclePctMeta,
+        skeletalMusclePct.isAcceptableOrUnknown(
+          data['skeletal_muscle_pct']!,
+          _skeletalMusclePctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bone_pct')) {
+      context.handle(
+        _bonePctMeta,
+        bonePct.isAcceptableOrUnknown(data['bone_pct']!, _bonePctMeta),
+      );
+    }
+    if (data.containsKey('protein_pct')) {
+      context.handle(
+        _proteinPctMeta,
+        proteinPct.isAcceptableOrUnknown(data['protein_pct']!, _proteinPctMeta),
+      );
+    }
+    if (data.containsKey('water_pct')) {
+      context.handle(
+        _waterPctMeta,
+        waterPct.isAcceptableOrUnknown(data['water_pct']!, _waterPctMeta),
+      );
+    }
+    if (data.containsKey('subcutaneous_fat_pct')) {
+      context.handle(
+        _subcutaneousFatPctMeta,
+        subcutaneousFatPct.isAcceptableOrUnknown(
+          data['subcutaneous_fat_pct']!,
+          _subcutaneousFatPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('visceral_fat_index')) {
+      context.handle(
+        _visceralFatIndexMeta,
+        visceralFatIndex.isAcceptableOrUnknown(
+          data['visceral_fat_index']!,
+          _visceralFatIndexMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bmr_kcal')) {
+      context.handle(
+        _bmrKcalMeta,
+        bmrKcal.isAcceptableOrUnknown(data['bmr_kcal']!, _bmrKcalMeta),
+      );
+    }
+    if (data.containsKey('formula_version')) {
+      context.handle(
+        _formulaVersionMeta,
+        formulaVersion.isAcceptableOrUnknown(
+          data['formula_version']!,
+          _formulaVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('external_id')) {
+      context.handle(
+        _externalIdMeta,
+        externalId.isAcceptableOrUnknown(data['external_id']!, _externalIdMeta),
+      );
     }
     if (data.containsKey('note')) {
       context.handle(
@@ -3455,6 +3889,62 @@ class $BodyMeasurementsTable extends BodyMeasurements
         DriftSqlType.dateTime,
         data['${effectivePrefix}measured_at'],
       )!,
+      hasImpedance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_impedance'],
+      )!,
+      impedanceOhm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}impedance_ohm'],
+      ),
+      bodyFatPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}body_fat_pct'],
+      ),
+      musclePct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}muscle_pct'],
+      ),
+      skeletalMusclePct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}skeletal_muscle_pct'],
+      ),
+      bonePct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bone_pct'],
+      ),
+      proteinPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_pct'],
+      ),
+      waterPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}water_pct'],
+      ),
+      subcutaneousFatPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}subcutaneous_fat_pct'],
+      ),
+      visceralFatIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}visceral_fat_index'],
+      ),
+      bmrKcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bmr_kcal'],
+      ),
+      formulaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula_version'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      externalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_id'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -3486,6 +3976,20 @@ class LocalBodyMeasurement extends DataClass
   final String profileId;
   final double weightKg;
   final DateTime measuredAt;
+  final bool hasImpedance;
+  final double? impedanceOhm;
+  final double? bodyFatPct;
+  final double? musclePct;
+  final double? skeletalMusclePct;
+  final double? bonePct;
+  final double? proteinPct;
+  final double? waterPct;
+  final double? subcutaneousFatPct;
+  final int? visceralFatIndex;
+  final int? bmrKcal;
+  final String? formulaVersion;
+  final String source;
+  final String? externalId;
   final String? note;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -3495,6 +3999,20 @@ class LocalBodyMeasurement extends DataClass
     required this.profileId,
     required this.weightKg,
     required this.measuredAt,
+    required this.hasImpedance,
+    this.impedanceOhm,
+    this.bodyFatPct,
+    this.musclePct,
+    this.skeletalMusclePct,
+    this.bonePct,
+    this.proteinPct,
+    this.waterPct,
+    this.subcutaneousFatPct,
+    this.visceralFatIndex,
+    this.bmrKcal,
+    this.formulaVersion,
+    required this.source,
+    this.externalId,
     this.note,
     required this.createdAt,
     required this.updatedAt,
@@ -3507,6 +4025,44 @@ class LocalBodyMeasurement extends DataClass
     map['profile_id'] = Variable<String>(profileId);
     map['weight_kg'] = Variable<double>(weightKg);
     map['measured_at'] = Variable<DateTime>(measuredAt);
+    map['has_impedance'] = Variable<bool>(hasImpedance);
+    if (!nullToAbsent || impedanceOhm != null) {
+      map['impedance_ohm'] = Variable<double>(impedanceOhm);
+    }
+    if (!nullToAbsent || bodyFatPct != null) {
+      map['body_fat_pct'] = Variable<double>(bodyFatPct);
+    }
+    if (!nullToAbsent || musclePct != null) {
+      map['muscle_pct'] = Variable<double>(musclePct);
+    }
+    if (!nullToAbsent || skeletalMusclePct != null) {
+      map['skeletal_muscle_pct'] = Variable<double>(skeletalMusclePct);
+    }
+    if (!nullToAbsent || bonePct != null) {
+      map['bone_pct'] = Variable<double>(bonePct);
+    }
+    if (!nullToAbsent || proteinPct != null) {
+      map['protein_pct'] = Variable<double>(proteinPct);
+    }
+    if (!nullToAbsent || waterPct != null) {
+      map['water_pct'] = Variable<double>(waterPct);
+    }
+    if (!nullToAbsent || subcutaneousFatPct != null) {
+      map['subcutaneous_fat_pct'] = Variable<double>(subcutaneousFatPct);
+    }
+    if (!nullToAbsent || visceralFatIndex != null) {
+      map['visceral_fat_index'] = Variable<int>(visceralFatIndex);
+    }
+    if (!nullToAbsent || bmrKcal != null) {
+      map['bmr_kcal'] = Variable<int>(bmrKcal);
+    }
+    if (!nullToAbsent || formulaVersion != null) {
+      map['formula_version'] = Variable<String>(formulaVersion);
+    }
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || externalId != null) {
+      map['external_id'] = Variable<String>(externalId);
+    }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
@@ -3524,6 +4080,44 @@ class LocalBodyMeasurement extends DataClass
       profileId: Value(profileId),
       weightKg: Value(weightKg),
       measuredAt: Value(measuredAt),
+      hasImpedance: Value(hasImpedance),
+      impedanceOhm: impedanceOhm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impedanceOhm),
+      bodyFatPct: bodyFatPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyFatPct),
+      musclePct: musclePct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(musclePct),
+      skeletalMusclePct: skeletalMusclePct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(skeletalMusclePct),
+      bonePct: bonePct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bonePct),
+      proteinPct: proteinPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proteinPct),
+      waterPct: waterPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(waterPct),
+      subcutaneousFatPct: subcutaneousFatPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subcutaneousFatPct),
+      visceralFatIndex: visceralFatIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(visceralFatIndex),
+      bmrKcal: bmrKcal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bmrKcal),
+      formulaVersion: formulaVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(formulaVersion),
+      source: Value(source),
+      externalId: externalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalId),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -3543,6 +4137,24 @@ class LocalBodyMeasurement extends DataClass
       profileId: serializer.fromJson<String>(json['profileId']),
       weightKg: serializer.fromJson<double>(json['weightKg']),
       measuredAt: serializer.fromJson<DateTime>(json['measuredAt']),
+      hasImpedance: serializer.fromJson<bool>(json['hasImpedance']),
+      impedanceOhm: serializer.fromJson<double?>(json['impedanceOhm']),
+      bodyFatPct: serializer.fromJson<double?>(json['bodyFatPct']),
+      musclePct: serializer.fromJson<double?>(json['musclePct']),
+      skeletalMusclePct: serializer.fromJson<double?>(
+        json['skeletalMusclePct'],
+      ),
+      bonePct: serializer.fromJson<double?>(json['bonePct']),
+      proteinPct: serializer.fromJson<double?>(json['proteinPct']),
+      waterPct: serializer.fromJson<double?>(json['waterPct']),
+      subcutaneousFatPct: serializer.fromJson<double?>(
+        json['subcutaneousFatPct'],
+      ),
+      visceralFatIndex: serializer.fromJson<int?>(json['visceralFatIndex']),
+      bmrKcal: serializer.fromJson<int?>(json['bmrKcal']),
+      formulaVersion: serializer.fromJson<String?>(json['formulaVersion']),
+      source: serializer.fromJson<String>(json['source']),
+      externalId: serializer.fromJson<String?>(json['externalId']),
       note: serializer.fromJson<String?>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -3557,6 +4169,20 @@ class LocalBodyMeasurement extends DataClass
       'profileId': serializer.toJson<String>(profileId),
       'weightKg': serializer.toJson<double>(weightKg),
       'measuredAt': serializer.toJson<DateTime>(measuredAt),
+      'hasImpedance': serializer.toJson<bool>(hasImpedance),
+      'impedanceOhm': serializer.toJson<double?>(impedanceOhm),
+      'bodyFatPct': serializer.toJson<double?>(bodyFatPct),
+      'musclePct': serializer.toJson<double?>(musclePct),
+      'skeletalMusclePct': serializer.toJson<double?>(skeletalMusclePct),
+      'bonePct': serializer.toJson<double?>(bonePct),
+      'proteinPct': serializer.toJson<double?>(proteinPct),
+      'waterPct': serializer.toJson<double?>(waterPct),
+      'subcutaneousFatPct': serializer.toJson<double?>(subcutaneousFatPct),
+      'visceralFatIndex': serializer.toJson<int?>(visceralFatIndex),
+      'bmrKcal': serializer.toJson<int?>(bmrKcal),
+      'formulaVersion': serializer.toJson<String?>(formulaVersion),
+      'source': serializer.toJson<String>(source),
+      'externalId': serializer.toJson<String?>(externalId),
       'note': serializer.toJson<String?>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -3569,6 +4195,20 @@ class LocalBodyMeasurement extends DataClass
     String? profileId,
     double? weightKg,
     DateTime? measuredAt,
+    bool? hasImpedance,
+    Value<double?> impedanceOhm = const Value.absent(),
+    Value<double?> bodyFatPct = const Value.absent(),
+    Value<double?> musclePct = const Value.absent(),
+    Value<double?> skeletalMusclePct = const Value.absent(),
+    Value<double?> bonePct = const Value.absent(),
+    Value<double?> proteinPct = const Value.absent(),
+    Value<double?> waterPct = const Value.absent(),
+    Value<double?> subcutaneousFatPct = const Value.absent(),
+    Value<int?> visceralFatIndex = const Value.absent(),
+    Value<int?> bmrKcal = const Value.absent(),
+    Value<String?> formulaVersion = const Value.absent(),
+    String? source,
+    Value<String?> externalId = const Value.absent(),
     Value<String?> note = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -3578,6 +4218,28 @@ class LocalBodyMeasurement extends DataClass
     profileId: profileId ?? this.profileId,
     weightKg: weightKg ?? this.weightKg,
     measuredAt: measuredAt ?? this.measuredAt,
+    hasImpedance: hasImpedance ?? this.hasImpedance,
+    impedanceOhm: impedanceOhm.present ? impedanceOhm.value : this.impedanceOhm,
+    bodyFatPct: bodyFatPct.present ? bodyFatPct.value : this.bodyFatPct,
+    musclePct: musclePct.present ? musclePct.value : this.musclePct,
+    skeletalMusclePct: skeletalMusclePct.present
+        ? skeletalMusclePct.value
+        : this.skeletalMusclePct,
+    bonePct: bonePct.present ? bonePct.value : this.bonePct,
+    proteinPct: proteinPct.present ? proteinPct.value : this.proteinPct,
+    waterPct: waterPct.present ? waterPct.value : this.waterPct,
+    subcutaneousFatPct: subcutaneousFatPct.present
+        ? subcutaneousFatPct.value
+        : this.subcutaneousFatPct,
+    visceralFatIndex: visceralFatIndex.present
+        ? visceralFatIndex.value
+        : this.visceralFatIndex,
+    bmrKcal: bmrKcal.present ? bmrKcal.value : this.bmrKcal,
+    formulaVersion: formulaVersion.present
+        ? formulaVersion.value
+        : this.formulaVersion,
+    source: source ?? this.source,
+    externalId: externalId.present ? externalId.value : this.externalId,
     note: note.present ? note.value : this.note,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -3591,6 +4253,38 @@ class LocalBodyMeasurement extends DataClass
       measuredAt: data.measuredAt.present
           ? data.measuredAt.value
           : this.measuredAt,
+      hasImpedance: data.hasImpedance.present
+          ? data.hasImpedance.value
+          : this.hasImpedance,
+      impedanceOhm: data.impedanceOhm.present
+          ? data.impedanceOhm.value
+          : this.impedanceOhm,
+      bodyFatPct: data.bodyFatPct.present
+          ? data.bodyFatPct.value
+          : this.bodyFatPct,
+      musclePct: data.musclePct.present ? data.musclePct.value : this.musclePct,
+      skeletalMusclePct: data.skeletalMusclePct.present
+          ? data.skeletalMusclePct.value
+          : this.skeletalMusclePct,
+      bonePct: data.bonePct.present ? data.bonePct.value : this.bonePct,
+      proteinPct: data.proteinPct.present
+          ? data.proteinPct.value
+          : this.proteinPct,
+      waterPct: data.waterPct.present ? data.waterPct.value : this.waterPct,
+      subcutaneousFatPct: data.subcutaneousFatPct.present
+          ? data.subcutaneousFatPct.value
+          : this.subcutaneousFatPct,
+      visceralFatIndex: data.visceralFatIndex.present
+          ? data.visceralFatIndex.value
+          : this.visceralFatIndex,
+      bmrKcal: data.bmrKcal.present ? data.bmrKcal.value : this.bmrKcal,
+      formulaVersion: data.formulaVersion.present
+          ? data.formulaVersion.value
+          : this.formulaVersion,
+      source: data.source.present ? data.source.value : this.source,
+      externalId: data.externalId.present
+          ? data.externalId.value
+          : this.externalId,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -3605,6 +4299,20 @@ class LocalBodyMeasurement extends DataClass
           ..write('profileId: $profileId, ')
           ..write('weightKg: $weightKg, ')
           ..write('measuredAt: $measuredAt, ')
+          ..write('hasImpedance: $hasImpedance, ')
+          ..write('impedanceOhm: $impedanceOhm, ')
+          ..write('bodyFatPct: $bodyFatPct, ')
+          ..write('musclePct: $musclePct, ')
+          ..write('skeletalMusclePct: $skeletalMusclePct, ')
+          ..write('bonePct: $bonePct, ')
+          ..write('proteinPct: $proteinPct, ')
+          ..write('waterPct: $waterPct, ')
+          ..write('subcutaneousFatPct: $subcutaneousFatPct, ')
+          ..write('visceralFatIndex: $visceralFatIndex, ')
+          ..write('bmrKcal: $bmrKcal, ')
+          ..write('formulaVersion: $formulaVersion, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -3614,16 +4322,30 @@ class LocalBodyMeasurement extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     profileId,
     weightKg,
     measuredAt,
+    hasImpedance,
+    impedanceOhm,
+    bodyFatPct,
+    musclePct,
+    skeletalMusclePct,
+    bonePct,
+    proteinPct,
+    waterPct,
+    subcutaneousFatPct,
+    visceralFatIndex,
+    bmrKcal,
+    formulaVersion,
+    source,
+    externalId,
     note,
     createdAt,
     updatedAt,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3632,6 +4354,20 @@ class LocalBodyMeasurement extends DataClass
           other.profileId == this.profileId &&
           other.weightKg == this.weightKg &&
           other.measuredAt == this.measuredAt &&
+          other.hasImpedance == this.hasImpedance &&
+          other.impedanceOhm == this.impedanceOhm &&
+          other.bodyFatPct == this.bodyFatPct &&
+          other.musclePct == this.musclePct &&
+          other.skeletalMusclePct == this.skeletalMusclePct &&
+          other.bonePct == this.bonePct &&
+          other.proteinPct == this.proteinPct &&
+          other.waterPct == this.waterPct &&
+          other.subcutaneousFatPct == this.subcutaneousFatPct &&
+          other.visceralFatIndex == this.visceralFatIndex &&
+          other.bmrKcal == this.bmrKcal &&
+          other.formulaVersion == this.formulaVersion &&
+          other.source == this.source &&
+          other.externalId == this.externalId &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -3643,6 +4379,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
   final Value<String> profileId;
   final Value<double> weightKg;
   final Value<DateTime> measuredAt;
+  final Value<bool> hasImpedance;
+  final Value<double?> impedanceOhm;
+  final Value<double?> bodyFatPct;
+  final Value<double?> musclePct;
+  final Value<double?> skeletalMusclePct;
+  final Value<double?> bonePct;
+  final Value<double?> proteinPct;
+  final Value<double?> waterPct;
+  final Value<double?> subcutaneousFatPct;
+  final Value<int?> visceralFatIndex;
+  final Value<int?> bmrKcal;
+  final Value<String?> formulaVersion;
+  final Value<String> source;
+  final Value<String?> externalId;
   final Value<String?> note;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -3653,6 +4403,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     this.profileId = const Value.absent(),
     this.weightKg = const Value.absent(),
     this.measuredAt = const Value.absent(),
+    this.hasImpedance = const Value.absent(),
+    this.impedanceOhm = const Value.absent(),
+    this.bodyFatPct = const Value.absent(),
+    this.musclePct = const Value.absent(),
+    this.skeletalMusclePct = const Value.absent(),
+    this.bonePct = const Value.absent(),
+    this.proteinPct = const Value.absent(),
+    this.waterPct = const Value.absent(),
+    this.subcutaneousFatPct = const Value.absent(),
+    this.visceralFatIndex = const Value.absent(),
+    this.bmrKcal = const Value.absent(),
+    this.formulaVersion = const Value.absent(),
+    this.source = const Value.absent(),
+    this.externalId = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -3664,6 +4428,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     required String profileId,
     required double weightKg,
     required DateTime measuredAt,
+    this.hasImpedance = const Value.absent(),
+    this.impedanceOhm = const Value.absent(),
+    this.bodyFatPct = const Value.absent(),
+    this.musclePct = const Value.absent(),
+    this.skeletalMusclePct = const Value.absent(),
+    this.bonePct = const Value.absent(),
+    this.proteinPct = const Value.absent(),
+    this.waterPct = const Value.absent(),
+    this.subcutaneousFatPct = const Value.absent(),
+    this.visceralFatIndex = const Value.absent(),
+    this.bmrKcal = const Value.absent(),
+    this.formulaVersion = const Value.absent(),
+    this.source = const Value.absent(),
+    this.externalId = const Value.absent(),
     this.note = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -3680,6 +4458,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     Expression<String>? profileId,
     Expression<double>? weightKg,
     Expression<DateTime>? measuredAt,
+    Expression<bool>? hasImpedance,
+    Expression<double>? impedanceOhm,
+    Expression<double>? bodyFatPct,
+    Expression<double>? musclePct,
+    Expression<double>? skeletalMusclePct,
+    Expression<double>? bonePct,
+    Expression<double>? proteinPct,
+    Expression<double>? waterPct,
+    Expression<double>? subcutaneousFatPct,
+    Expression<int>? visceralFatIndex,
+    Expression<int>? bmrKcal,
+    Expression<String>? formulaVersion,
+    Expression<String>? source,
+    Expression<String>? externalId,
     Expression<String>? note,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -3691,6 +4483,21 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
       if (profileId != null) 'profile_id': profileId,
       if (weightKg != null) 'weight_kg': weightKg,
       if (measuredAt != null) 'measured_at': measuredAt,
+      if (hasImpedance != null) 'has_impedance': hasImpedance,
+      if (impedanceOhm != null) 'impedance_ohm': impedanceOhm,
+      if (bodyFatPct != null) 'body_fat_pct': bodyFatPct,
+      if (musclePct != null) 'muscle_pct': musclePct,
+      if (skeletalMusclePct != null) 'skeletal_muscle_pct': skeletalMusclePct,
+      if (bonePct != null) 'bone_pct': bonePct,
+      if (proteinPct != null) 'protein_pct': proteinPct,
+      if (waterPct != null) 'water_pct': waterPct,
+      if (subcutaneousFatPct != null)
+        'subcutaneous_fat_pct': subcutaneousFatPct,
+      if (visceralFatIndex != null) 'visceral_fat_index': visceralFatIndex,
+      if (bmrKcal != null) 'bmr_kcal': bmrKcal,
+      if (formulaVersion != null) 'formula_version': formulaVersion,
+      if (source != null) 'source': source,
+      if (externalId != null) 'external_id': externalId,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -3704,6 +4511,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     Value<String>? profileId,
     Value<double>? weightKg,
     Value<DateTime>? measuredAt,
+    Value<bool>? hasImpedance,
+    Value<double?>? impedanceOhm,
+    Value<double?>? bodyFatPct,
+    Value<double?>? musclePct,
+    Value<double?>? skeletalMusclePct,
+    Value<double?>? bonePct,
+    Value<double?>? proteinPct,
+    Value<double?>? waterPct,
+    Value<double?>? subcutaneousFatPct,
+    Value<int?>? visceralFatIndex,
+    Value<int?>? bmrKcal,
+    Value<String?>? formulaVersion,
+    Value<String>? source,
+    Value<String?>? externalId,
     Value<String?>? note,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -3715,6 +4536,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
       profileId: profileId ?? this.profileId,
       weightKg: weightKg ?? this.weightKg,
       measuredAt: measuredAt ?? this.measuredAt,
+      hasImpedance: hasImpedance ?? this.hasImpedance,
+      impedanceOhm: impedanceOhm ?? this.impedanceOhm,
+      bodyFatPct: bodyFatPct ?? this.bodyFatPct,
+      musclePct: musclePct ?? this.musclePct,
+      skeletalMusclePct: skeletalMusclePct ?? this.skeletalMusclePct,
+      bonePct: bonePct ?? this.bonePct,
+      proteinPct: proteinPct ?? this.proteinPct,
+      waterPct: waterPct ?? this.waterPct,
+      subcutaneousFatPct: subcutaneousFatPct ?? this.subcutaneousFatPct,
+      visceralFatIndex: visceralFatIndex ?? this.visceralFatIndex,
+      bmrKcal: bmrKcal ?? this.bmrKcal,
+      formulaVersion: formulaVersion ?? this.formulaVersion,
+      source: source ?? this.source,
+      externalId: externalId ?? this.externalId,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -3737,6 +4572,48 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     }
     if (measuredAt.present) {
       map['measured_at'] = Variable<DateTime>(measuredAt.value);
+    }
+    if (hasImpedance.present) {
+      map['has_impedance'] = Variable<bool>(hasImpedance.value);
+    }
+    if (impedanceOhm.present) {
+      map['impedance_ohm'] = Variable<double>(impedanceOhm.value);
+    }
+    if (bodyFatPct.present) {
+      map['body_fat_pct'] = Variable<double>(bodyFatPct.value);
+    }
+    if (musclePct.present) {
+      map['muscle_pct'] = Variable<double>(musclePct.value);
+    }
+    if (skeletalMusclePct.present) {
+      map['skeletal_muscle_pct'] = Variable<double>(skeletalMusclePct.value);
+    }
+    if (bonePct.present) {
+      map['bone_pct'] = Variable<double>(bonePct.value);
+    }
+    if (proteinPct.present) {
+      map['protein_pct'] = Variable<double>(proteinPct.value);
+    }
+    if (waterPct.present) {
+      map['water_pct'] = Variable<double>(waterPct.value);
+    }
+    if (subcutaneousFatPct.present) {
+      map['subcutaneous_fat_pct'] = Variable<double>(subcutaneousFatPct.value);
+    }
+    if (visceralFatIndex.present) {
+      map['visceral_fat_index'] = Variable<int>(visceralFatIndex.value);
+    }
+    if (bmrKcal.present) {
+      map['bmr_kcal'] = Variable<int>(bmrKcal.value);
+    }
+    if (formulaVersion.present) {
+      map['formula_version'] = Variable<String>(formulaVersion.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (externalId.present) {
+      map['external_id'] = Variable<String>(externalId.value);
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -3763,6 +4640,20 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
           ..write('profileId: $profileId, ')
           ..write('weightKg: $weightKg, ')
           ..write('measuredAt: $measuredAt, ')
+          ..write('hasImpedance: $hasImpedance, ')
+          ..write('impedanceOhm: $impedanceOhm, ')
+          ..write('bodyFatPct: $bodyFatPct, ')
+          ..write('musclePct: $musclePct, ')
+          ..write('skeletalMusclePct: $skeletalMusclePct, ')
+          ..write('bonePct: $bonePct, ')
+          ..write('proteinPct: $proteinPct, ')
+          ..write('waterPct: $waterPct, ')
+          ..write('subcutaneousFatPct: $subcutaneousFatPct, ')
+          ..write('visceralFatIndex: $visceralFatIndex, ')
+          ..write('bmrKcal: $bmrKcal, ')
+          ..write('formulaVersion: $formulaVersion, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -9252,6 +10143,9 @@ typedef $$AppProfilesTableCreateCompanionBuilder =
     AppProfilesCompanion Function({
       required String id,
       required String displayName,
+      Value<double?> heightCm,
+      Value<DateTime?> birthDate,
+      Value<String?> sex,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -9260,6 +10154,9 @@ typedef $$AppProfilesTableUpdateCompanionBuilder =
     AppProfilesCompanion Function({
       Value<String> id,
       Value<String> displayName,
+      Value<double?> heightCm,
+      Value<DateTime?> birthDate,
+      Value<String?> sex,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -9456,6 +10353,21 @@ class $$AppProfilesTableFilterComposer
 
   ColumnFilters<String> get displayName => $composableBuilder(
     column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get birthDate => $composableBuilder(
+    column: $table.birthDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sex => $composableBuilder(
+    column: $table.sex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9714,6 +10626,21 @@ class $$AppProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get birthDate => $composableBuilder(
+    column: $table.birthDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -9741,6 +10668,15 @@ class $$AppProfilesTableAnnotationComposer
     column: $table.displayName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get heightCm =>
+      $composableBuilder(column: $table.heightCm, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get birthDate =>
+      $composableBuilder(column: $table.birthDate, builder: (column) => column);
+
+  GeneratedColumn<String> get sex =>
+      $composableBuilder(column: $table.sex, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10014,12 +10950,18 @@ class $$AppProfilesTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
+                Value<double?> heightCm = const Value.absent(),
+                Value<DateTime?> birthDate = const Value.absent(),
+                Value<String?> sex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AppProfilesCompanion(
                 id: id,
                 displayName: displayName,
+                heightCm: heightCm,
+                birthDate: birthDate,
+                sex: sex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -10028,12 +10970,18 @@ class $$AppProfilesTableTableManager
               ({
                 required String id,
                 required String displayName,
+                Value<double?> heightCm = const Value.absent(),
+                Value<DateTime?> birthDate = const Value.absent(),
+                Value<String?> sex = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => AppProfilesCompanion.insert(
                 id: id,
                 displayName: displayName,
+                heightCm: heightCm,
+                birthDate: birthDate,
+                sex: sex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -12288,6 +13236,20 @@ typedef $$BodyMeasurementsTableCreateCompanionBuilder =
       required String profileId,
       required double weightKg,
       required DateTime measuredAt,
+      Value<bool> hasImpedance,
+      Value<double?> impedanceOhm,
+      Value<double?> bodyFatPct,
+      Value<double?> musclePct,
+      Value<double?> skeletalMusclePct,
+      Value<double?> bonePct,
+      Value<double?> proteinPct,
+      Value<double?> waterPct,
+      Value<double?> subcutaneousFatPct,
+      Value<int?> visceralFatIndex,
+      Value<int?> bmrKcal,
+      Value<String?> formulaVersion,
+      Value<String> source,
+      Value<String?> externalId,
       Value<String?> note,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -12300,6 +13262,20 @@ typedef $$BodyMeasurementsTableUpdateCompanionBuilder =
       Value<String> profileId,
       Value<double> weightKg,
       Value<DateTime> measuredAt,
+      Value<bool> hasImpedance,
+      Value<double?> impedanceOhm,
+      Value<double?> bodyFatPct,
+      Value<double?> musclePct,
+      Value<double?> skeletalMusclePct,
+      Value<double?> bonePct,
+      Value<double?> proteinPct,
+      Value<double?> waterPct,
+      Value<double?> subcutaneousFatPct,
+      Value<int?> visceralFatIndex,
+      Value<int?> bmrKcal,
+      Value<String?> formulaVersion,
+      Value<String> source,
+      Value<String?> externalId,
       Value<String?> note,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -12359,6 +13335,76 @@ class $$BodyMeasurementsTableFilterComposer
 
   ColumnFilters<DateTime> get measuredAt => $composableBuilder(
     column: $table.measuredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasImpedance => $composableBuilder(
+    column: $table.hasImpedance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get impedanceOhm => $composableBuilder(
+    column: $table.impedanceOhm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get musclePct => $composableBuilder(
+    column: $table.musclePct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get skeletalMusclePct => $composableBuilder(
+    column: $table.skeletalMusclePct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bonePct => $composableBuilder(
+    column: $table.bonePct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinPct => $composableBuilder(
+    column: $table.proteinPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get waterPct => $composableBuilder(
+    column: $table.waterPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get subcutaneousFatPct => $composableBuilder(
+    column: $table.subcutaneousFatPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get visceralFatIndex => $composableBuilder(
+    column: $table.visceralFatIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bmrKcal => $composableBuilder(
+    column: $table.bmrKcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formulaVersion => $composableBuilder(
+    column: $table.formulaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalId => $composableBuilder(
+    column: $table.externalId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12430,6 +13476,76 @@ class $$BodyMeasurementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hasImpedance => $composableBuilder(
+    column: $table.hasImpedance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get impedanceOhm => $composableBuilder(
+    column: $table.impedanceOhm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get musclePct => $composableBuilder(
+    column: $table.musclePct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get skeletalMusclePct => $composableBuilder(
+    column: $table.skeletalMusclePct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bonePct => $composableBuilder(
+    column: $table.bonePct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinPct => $composableBuilder(
+    column: $table.proteinPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get waterPct => $composableBuilder(
+    column: $table.waterPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get subcutaneousFatPct => $composableBuilder(
+    column: $table.subcutaneousFatPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get visceralFatIndex => $composableBuilder(
+    column: $table.visceralFatIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bmrKcal => $composableBuilder(
+    column: $table.bmrKcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formulaVersion => $composableBuilder(
+    column: $table.formulaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -12491,6 +13607,66 @@ class $$BodyMeasurementsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get measuredAt => $composableBuilder(
     column: $table.measuredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasImpedance => $composableBuilder(
+    column: $table.hasImpedance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get impedanceOhm => $composableBuilder(
+    column: $table.impedanceOhm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bodyFatPct => $composableBuilder(
+    column: $table.bodyFatPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get musclePct =>
+      $composableBuilder(column: $table.musclePct, builder: (column) => column);
+
+  GeneratedColumn<double> get skeletalMusclePct => $composableBuilder(
+    column: $table.skeletalMusclePct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bonePct =>
+      $composableBuilder(column: $table.bonePct, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinPct => $composableBuilder(
+    column: $table.proteinPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get waterPct =>
+      $composableBuilder(column: $table.waterPct, builder: (column) => column);
+
+  GeneratedColumn<double> get subcutaneousFatPct => $composableBuilder(
+    column: $table.subcutaneousFatPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get visceralFatIndex => $composableBuilder(
+    column: $table.visceralFatIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get bmrKcal =>
+      $composableBuilder(column: $table.bmrKcal, builder: (column) => column);
+
+  GeneratedColumn<String> get formulaVersion => $composableBuilder(
+    column: $table.formulaVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get externalId => $composableBuilder(
+    column: $table.externalId,
     builder: (column) => column,
   );
 
@@ -12564,6 +13740,20 @@ class $$BodyMeasurementsTableTableManager
                 Value<String> profileId = const Value.absent(),
                 Value<double> weightKg = const Value.absent(),
                 Value<DateTime> measuredAt = const Value.absent(),
+                Value<bool> hasImpedance = const Value.absent(),
+                Value<double?> impedanceOhm = const Value.absent(),
+                Value<double?> bodyFatPct = const Value.absent(),
+                Value<double?> musclePct = const Value.absent(),
+                Value<double?> skeletalMusclePct = const Value.absent(),
+                Value<double?> bonePct = const Value.absent(),
+                Value<double?> proteinPct = const Value.absent(),
+                Value<double?> waterPct = const Value.absent(),
+                Value<double?> subcutaneousFatPct = const Value.absent(),
+                Value<int?> visceralFatIndex = const Value.absent(),
+                Value<int?> bmrKcal = const Value.absent(),
+                Value<String?> formulaVersion = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -12574,6 +13764,20 @@ class $$BodyMeasurementsTableTableManager
                 profileId: profileId,
                 weightKg: weightKg,
                 measuredAt: measuredAt,
+                hasImpedance: hasImpedance,
+                impedanceOhm: impedanceOhm,
+                bodyFatPct: bodyFatPct,
+                musclePct: musclePct,
+                skeletalMusclePct: skeletalMusclePct,
+                bonePct: bonePct,
+                proteinPct: proteinPct,
+                waterPct: waterPct,
+                subcutaneousFatPct: subcutaneousFatPct,
+                visceralFatIndex: visceralFatIndex,
+                bmrKcal: bmrKcal,
+                formulaVersion: formulaVersion,
+                source: source,
+                externalId: externalId,
                 note: note,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -12586,6 +13790,20 @@ class $$BodyMeasurementsTableTableManager
                 required String profileId,
                 required double weightKg,
                 required DateTime measuredAt,
+                Value<bool> hasImpedance = const Value.absent(),
+                Value<double?> impedanceOhm = const Value.absent(),
+                Value<double?> bodyFatPct = const Value.absent(),
+                Value<double?> musclePct = const Value.absent(),
+                Value<double?> skeletalMusclePct = const Value.absent(),
+                Value<double?> bonePct = const Value.absent(),
+                Value<double?> proteinPct = const Value.absent(),
+                Value<double?> waterPct = const Value.absent(),
+                Value<double?> subcutaneousFatPct = const Value.absent(),
+                Value<int?> visceralFatIndex = const Value.absent(),
+                Value<int?> bmrKcal = const Value.absent(),
+                Value<String?> formulaVersion = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -12596,6 +13814,20 @@ class $$BodyMeasurementsTableTableManager
                 profileId: profileId,
                 weightKg: weightKg,
                 measuredAt: measuredAt,
+                hasImpedance: hasImpedance,
+                impedanceOhm: impedanceOhm,
+                bodyFatPct: bodyFatPct,
+                musclePct: musclePct,
+                skeletalMusclePct: skeletalMusclePct,
+                bonePct: bonePct,
+                proteinPct: proteinPct,
+                waterPct: waterPct,
+                subcutaneousFatPct: subcutaneousFatPct,
+                visceralFatIndex: visceralFatIndex,
+                bmrKcal: bmrKcal,
+                formulaVersion: formulaVersion,
+                source: source,
+                externalId: externalId,
                 note: note,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

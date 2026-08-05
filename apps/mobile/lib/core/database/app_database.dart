@@ -5,9 +5,22 @@ import 'package:path_provider/path_provider.dart';
 part 'app_database.g.dart';
 
 @DataClassName('LocalProfile')
+/// Dati anagrafici del profilo. Altezza, nascita e sesso sono nullable perché
+/// i profili già installati non li hanno: senza di loro non si calcolano BMI,
+/// BMR né le formule di composizione corporea, e le schermate che ne dipendono
+/// devono chiederli invece di inventarli.
+///
+/// Non hanno CHECK a livello di tabella di proposito: `app_profiles` è
+/// referenziata da dieci tabelle, quindi la migrazione la estende con
+/// `addColumn` e non può ricrearla per applicare nuovi vincoli. I limiti li
+/// impone il dominio, così un database migrato e uno nuovo si comportano
+/// allo stesso modo.
 class AppProfiles extends Table {
   TextColumn get id => text()();
   TextColumn get displayName => text().withLength(min: 1, max: 80)();
+  RealColumn get heightCm => real().nullable()();
+  DateTimeColumn get birthDate => dateTime().nullable()();
+  TextColumn get sex => text().withLength(max: 1).nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -121,12 +134,43 @@ class WaterLogs extends Table {
   name: 'idx_body_measurements_profile_measured_at',
   columns: {#profileId, #measuredAt},
 )
+/// Pesate e composizione corporea.
+///
+/// Si conserva la misura grezza, non i giudizi della bilancia: `impedanceOhm`
+/// è l'unica cosa che il dispositivo misura davvero, tutto il resto è formula.
+/// Le percentuali derivate vengono salvate insieme alla `formulaVersion` che
+/// le ha prodotte, così cambiando formula si ricalcola lo storico invece di
+/// spezzarlo in due serie incoerenti.
+///
+/// Le masse in kg non sono colonne: si ottengono da peso × percentuale. Non lo
+/// è nemmeno il BMI (peso / altezza²). `bmrKcal` invece si conserva perché è
+/// il valore dichiarato dalla sorgente, utile a confrontare il consumo stimato
+/// con quello poi misurato sui dati reali.
+///
+/// `hasImpedance` distingue la pesata completa da quella con i soli piedi
+/// appoggiati male: in quel caso la bilancia restituisce solo il peso, e i
+/// derivati devono restare vuoti invece di sembrare misure vere.
 class BodyMeasurements extends Table {
   TextColumn get id => text()();
   TextColumn get profileId =>
       text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
   RealColumn get weightKg => real()();
   DateTimeColumn get measuredAt => dateTime()();
+  BoolColumn get hasImpedance => boolean().withDefault(const Constant(false))();
+  RealColumn get impedanceOhm => real().nullable()();
+  RealColumn get bodyFatPct => real().nullable()();
+  RealColumn get musclePct => real().nullable()();
+  RealColumn get skeletalMusclePct => real().nullable()();
+  RealColumn get bonePct => real().nullable()();
+  RealColumn get proteinPct => real().nullable()();
+  RealColumn get waterPct => real().nullable()();
+  RealColumn get subcutaneousFatPct => real().nullable()();
+  IntColumn get visceralFatIndex => integer().nullable()();
+  IntColumn get bmrKcal => integer().nullable()();
+  TextColumn get formulaVersion => text().withLength(max: 40).nullable()();
+  TextColumn get source =>
+      text().withLength(max: 30).withDefault(const Constant('manual'))();
+  TextColumn get externalId => text().withLength(max: 120).nullable()();
   TextColumn get note => text().withLength(max: 240).nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -138,6 +182,27 @@ class BodyMeasurements extends Table {
   @override
   List<String> get customConstraints => [
     'CHECK (weight_kg >= 20 AND weight_kg <= 500)',
+    'CHECK (impedance_ohm IS NULL OR '
+        '(impedance_ohm > 0 AND impedance_ohm <= 2000))',
+    'CHECK (body_fat_pct IS NULL OR '
+        '(body_fat_pct >= 0 AND body_fat_pct <= 100))',
+    'CHECK (muscle_pct IS NULL OR (muscle_pct >= 0 AND muscle_pct <= 100))',
+    'CHECK (skeletal_muscle_pct IS NULL OR '
+        '(skeletal_muscle_pct >= 0 AND skeletal_muscle_pct <= 100))',
+    'CHECK (bone_pct IS NULL OR (bone_pct >= 0 AND bone_pct <= 100))',
+    'CHECK (protein_pct IS NULL OR (protein_pct >= 0 AND protein_pct <= 100))',
+    'CHECK (water_pct IS NULL OR (water_pct >= 0 AND water_pct <= 100))',
+    'CHECK (subcutaneous_fat_pct IS NULL OR '
+        '(subcutaneous_fat_pct >= 0 AND subcutaneous_fat_pct <= 100))',
+    'CHECK (visceral_fat_index IS NULL OR '
+        '(visceral_fat_index >= 1 AND visceral_fat_index <= 60))',
+    'CHECK (bmr_kcal IS NULL OR (bmr_kcal > 0 AND bmr_kcal < 10000))',
+    "CHECK (source IN ('manual', 'renpho_ble', 'renpho_csv', "
+        "'gym_tracker', 'health_connect'))",
+    // Le importazioni si deduplicano sulla chiave della sorgente. Le pesate
+    // manuali hanno external_id NULL e in SQLite due NULL non collidono mai,
+    // quindi restano libere di ripetersi.
+    'UNIQUE (profile_id, source, external_id)',
   ];
 }
 
@@ -421,7 +486,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -452,6 +517,42 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await migrator.createTable(weeklyPlans);
         await migrator.createTable(weeklyPlanSlots);
+      }
+      if (from < 5) {
+        // `app_profiles` è referenziata da dieci tabelle: si estende soltanto
+        // con addColumn, mai ricreandola. Per questo le tre colonne nuove sono
+        // nullable e senza CHECK — i limiti li impone il dominio.
+        await migrator.addColumn(appProfiles, appProfiles.heightCm);
+        await migrator.addColumn(appProfiles, appProfiles.birthDate);
+        await migrator.addColumn(appProfiles, appProfiles.sex);
+        // `body_measurements` invece non è referenziata da nessuno, quindi si
+        // può ricreare: serve per applicare i nuovi CHECK e l'UNIQUE anche ai
+        // database già installati, che con un semplice addColumn resterebbero
+        // senza vincoli e divergerebbero da un'installazione nuova.
+        // Le foreign key qui sono ancora spente: `beforeOpen` le accende solo
+        // dopo la migrazione, e dentro una transazione il PRAGMA sarebbe
+        // comunque senza effetto.
+        await migrator.alterTable(
+          TableMigration(
+            bodyMeasurements,
+            newColumns: [
+              bodyMeasurements.hasImpedance,
+              bodyMeasurements.impedanceOhm,
+              bodyMeasurements.bodyFatPct,
+              bodyMeasurements.musclePct,
+              bodyMeasurements.skeletalMusclePct,
+              bodyMeasurements.bonePct,
+              bodyMeasurements.proteinPct,
+              bodyMeasurements.waterPct,
+              bodyMeasurements.subcutaneousFatPct,
+              bodyMeasurements.visceralFatIndex,
+              bodyMeasurements.bmrKcal,
+              bodyMeasurements.formulaVersion,
+              bodyMeasurements.source,
+              bodyMeasurements.externalId,
+            ],
+          ),
+        );
       }
     },
     beforeOpen: (details) async {
