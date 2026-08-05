@@ -120,7 +120,7 @@ Inventario dell'export del 5 agosto 2026, verificato: **29 workout** (29/04→04
 Fattibilità verificata sul codice: **solo 10 file di Gym Tracker toccano Firestore**, tutti coppie modello+repository. La logica pesante è pura e si porta invariata — `superset_flow.dart`, `kcal_estimator.dart` e `personal_records.dart` hanno **zero** riferimenti a Firebase.
 
 - [x] **M5.1** profilo esteso: `heightCm`, `birthDate` e `sex` in `AppProfiles` — Drift **v5** + migrazione Supabase `0006`; *(5 agosto 2026)*
-- [ ] **M5.2** schema allenamento in Drift (`exercises`, `routines`, `workouts`, `workout_exercises`, `workout_sets`) con snapshot del nome esercizio e `trackingMode`, più migrazione Supabase `0006`;
+- [ ] **M5.2** schema allenamento in Drift — **13 tabelle**, non 5: oltre a `exercises`, `routines`, `workouts`, `workout_exercises` e `workout_sets` servono `routine_exercises`, `routine_interval_segments`, `routine_weekly_plan`, `workout_pain_points`, `workout_interval_segments`, `workout_profile_stats`, `workout_achievements` e `body_measurement_values` (le circonferenze a nastro). Migrazione Supabase **`0007`** (la `0006` è già di `body_composition`);
 - [ ] **M5.3** importer one-shot del JSON, idempotente sugli id originali, che porta dentro anche **XP, achievement e streak** (ripartire da zero sarebbe una regressione percepita);
 - [ ] **M5.4** porting della logica pura, invariata: `superset_flow`, `kcal_estimator`, `personal_records`, `cool_down_sequence`, `rest_timer`, `plate_calculator`;
 - [ ] **M5.5** porting della UI workout (live, circuiti, storico, schede, esercizi) sul tema di Kal;
@@ -267,7 +267,18 @@ Resta aperto da prima della fusione: collaudo end-to-end della sync su dispositi
 | Formula BIA diversa da Renpho | atteso e accettato: si salva l'impedenza grezza, quindi lo storico si ricalcola. Taratura in doppia lettura prima di abbandonare l'app Renpho |
 | Porting di `workouts/` (15k righe) | ridotto: la logica è pura, cambia solo il repository sotto. Da fare per ultimo, a fusione già in produzione |
 | Dati dell'orologio Huawei | **rinviato per scelta**: Huawei Health non parla nativamente con Health Connect e servirebbe un ponte di terze parti a pagamento. Per ora sonno ed energia si inseriscono a mano nel check-in |
-| Nome del prodotto | da decidere: "Kal Tracker" non descrive più l'app. Il package Android **non** va toccato |
+| Nome del prodotto | ✅ **Coach360**, scelto il 5 agosto 2026 |
+
+## Scoperte dell'analisi M5.2 (5 agosto 2026)
+
+Tre analisti e tre revisori avversariali hanno studiato i modelli di Gym, l'export reale e le convenzioni di Kal: **29 problemi trovati, 4 bloccanti**, tutti incorporati nel design prima di scrivere una riga di schema. Le quattro che cambiano il piano:
+
+1. **L'export NON contiene tutto.** Mancano le **prescrizioni per esercizio** (serie/ripetizioni/carico prescritti nelle schede) e gli **`intervalSegments`**, cioè i blocchi a tempo dei circuiti HIIT. L'esportatore di Gym non li scrive. Si recuperano solo con un **dump di Firestore prima di spegnerlo** (M5.8): lo schema è già pronto ad accoglierli senza altra migrazione. Tre schede descrivono i blocchi a parole nelle note, ed è oggi l'unico appiglio rimasto.
+2. **Il ripristino «Sostituisci» cancellerebbe gli allenamenti.** `backup_repository._wipeUserTables()` termina con `delete(appProfiles)` e ogni tabella nuova ha `onDelete: cascade` verso il profilo: con `PRAGMA foreign_keys = ON` un ripristino spazzerebbe 29 sessioni, 628 serie e 22 trofei che il documento di backup **non contiene**. Il backup va esteso **nello stesso rilascio** della v6, oppure «Sostituisci» va bloccato quando esistono allenamenti.
+3. **Gli indici `@TableIndex` non esistono sui telefoni migrati.** `Migrator.createTable()` emette il solo `CREATE TABLE`: gli indici li crea `createAll()`, che gira solo su installazione pulita. Verificato empiricamente su drift 2.34.3 con una sonda. **È un difetto preesistente**, non introdotto dalla v6: il database di Marco è oggi senza nessuno degli indici dichiarati dalla v2 in poi. La v6 può ripararli, ma la riparazione è codice nuovo che non ha mai girato.
+4. **Un workout resta aperto 536 ore** (26/06 08:32 → 18/07 16:29, 1.894 kcal, 1.465 XP) e per altre tre sessioni la durata sovrastima di 5-15 minuti perché `accumulatedPauseSeconds` non è nell'export. Vanno importate grezze con un flag, non rettificate in silenzio.
+
+Conseguenza per la v7: **`body_measurements` diventa una tabella referenziata** (da `body_measurement_values`), quindi da lì in poi si estende solo con `addColumn` e il `TableMigration` usato dalla v5 non è più applicabile.
 
 ## Note di handoff (schema v5, 5 agosto 2026)
 
