@@ -118,6 +118,18 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
         unawaited(refreshNow());
       }
     });
+    // `listen` notifica solo i CAMBIAMENTI: riaprendo l'app con un piano già
+    // in attesa nessuno lo controllerebbe più e l'attesa resterebbe appesa
+    // per sempre. Il primo controllo va quindi fatto qui, appena fuori dal
+    // build per non toccare lo stato mentre si costruisce.
+    Future.microtask(() {
+      if (_disposed || _timer != null || _refreshing) {
+        return;
+      }
+      if (ref.read(pendingWeeklyPlanProvider) != null) {
+        unawaited(refreshNow());
+      }
+    });
     return const WeeklyPlanUiState();
   }
 

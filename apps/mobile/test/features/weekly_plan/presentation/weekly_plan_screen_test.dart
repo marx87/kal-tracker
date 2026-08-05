@@ -279,6 +279,63 @@ void main() {
 
     await _disposeApp(tester, database);
   });
+
+  testWidgets('riaprendo l\'app un piano già in attesa viene ricontrollato '
+      'subito', (tester) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final seed = await _seed(tester, database, gateway);
+
+    // Piano lasciato "in preparazione" da una sessione precedente: nessun
+    // cambiamento della lista lo risveglierebbe, il controllo iniziale sì.
+    late final String pendingId;
+    await tester.runAsync(() async {
+      final repository = WeeklyPlanRepository(
+        database,
+        gateway: gateway,
+        now: () => _seedClock.add(const Duration(minutes: 2)),
+      );
+      final pending = await repository.generatePlan(
+        profileId: seed.profileId,
+        startDate: _startDate.add(const Duration(days: 14)),
+        days: 1,
+        meals: const [PlanMeal.cena],
+        targets: const NutritionTarget.standard(),
+      );
+      pendingId = pending.id;
+      // Nel frattempo il Mac ha finito davvero.
+      gateway.remoteRow = {
+        'id': pending.remoteJobId,
+        'status': 'needs_review',
+        'result': {
+          'schema': 1,
+          'days': [
+            {
+              'date': '2026-08-19',
+              'slots': [
+                {'meal': 'cena', 'recipeId': seed.soupId, 'servings': 1},
+              ],
+            },
+          ],
+        },
+      };
+    });
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+    await tester.pumpAndSettle();
+
+    // Senza il controllo all'avvio resterebbe l'attesa: ora il piano c'è.
+    expect(find.byKey(const Key('plan_generating_card')), findsNothing);
+    final stored = await database.managers.weeklyPlans
+        .filter((row) => row.id.equals(pendingId))
+        .getSingle();
+    expect(stored.status, WeeklyPlanStatus.ready.storageValue);
+
+    await _disposeApp(tester, database);
+  });
 }
 
 typedef _Seed = ({
