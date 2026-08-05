@@ -64,19 +64,70 @@ def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
+ADC_PREDEFINITO = (
+    Path.home() / ".config" / "gcloud" / "application_default_credentials.json"
+)
+
+
 def access_token(credenziali: Path) -> str:
-    """Scambia la chiave della service account con un access token OAuth2."""
+    """Ottiene un access token OAuth2 dalle credenziali indicate.
+
+    Accetta due formati, perche le due strade per arrivare qui sono diverse:
+
+    - le credenziali di `gcloud auth application-default login`
+      (`type: authorized_user`), che scadono da sole e non lasciano in giro
+      niente da revocare — e sono quindi la strada preferibile;
+    - la chiave privata di un account di servizio scaricata dalla console
+      Firebase, che invece resta valida finche non la si revoca a mano.
+    """
+    conto = json.loads(credenziali.read_text())
+
+    if conto.get("type") == "authorized_user":
+        return _token_da_utente(conto, credenziali)
+    if "client_email" in conto and "private_key" in conto:
+        return _token_da_service_account(conto)
+
+    raise SystemExit(
+        f"{credenziali}: formato non riconosciuto. Serve o il file di "
+        "`gcloud auth application-default login`, o la chiave privata di un "
+        "account di servizio — non il google-services.json dell'app."
+    )
+
+
+def _token_da_utente(conto: dict[str, Any], credenziali: Path) -> str:
+    """Rinnova l'access token partendo dal refresh token di gcloud."""
+    for chiave in ("client_id", "client_secret", "refresh_token"):
+        if chiave not in conto:
+            raise SystemExit(f"{credenziali}: manca «{chiave}».")
+
+    richiesta = urllib.request.Request(
+        TOKEN_URL,
+        data=urllib.parse.urlencode(
+            {
+                "grant_type": "refresh_token",
+                "client_id": conto["client_id"],
+                "client_secret": conto["client_secret"],
+                "refresh_token": conto["refresh_token"],
+            }
+        ).encode(),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(richiesta, timeout=30) as risposta:
+            return json.load(risposta)["access_token"]
+    except urllib.error.HTTPError as errore:
+        dettaglio = errore.read().decode("utf-8", "replace")[:300]
+        raise SystemExit(
+            "Le credenziali di gcloud sono state rifiutate "
+            f"({errore.code}): {dettaglio}\n"
+            "Rilancia `gcloud auth application-default login` scegliendo "
+            "l'account che possiede il progetto."
+        ) from errore
+
+
+def _token_da_service_account(conto: dict[str, Any]) -> str:
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import padding
-
-    conto = json.loads(credenziali.read_text())
-    for chiave in ("client_email", "private_key"):
-        if chiave not in conto:
-            raise SystemExit(
-                f"{credenziali}: manca «{chiave}». "
-                "Serve la chiave privata di un ACCOUNT DI SERVIZIO, non il "
-                "google-services.json dell'app."
-            )
 
     adesso = int(time.time())
     intestazione = {"alg": "RS256", "typ": "JWT"}
@@ -197,10 +248,17 @@ class Firestore:
                 return nomi
 
     def documenti(self, percorso_collezione: str) -> list[dict[str, Any]]:
+        """Elenca i documenti di una collezione, compresi quelli «fantasma».
+
+        `users/{uid}` in Gym Tracker non ha campi propri: e solo il contenitore
+        di `workouts`, `routines` ed `exercises`. Firestore non restituisce
+        documenti simili in una list normale, e senza `showMissing` il dump
+        tornerebbe vuoto pur avendo trovato la collezione.
+        """
         raccolti: list[dict[str, Any]] = []
         pagina: str | None = None
         while True:
-            query = {"pageSize": "300"}
+            query = {"pageSize": "300", "showMissing": "true"}
             if pagina:
                 query["pageToken"] = pagina
             url = f"{self.base}{percorso_collezione}?{urllib.parse.urlencode(query)}"
@@ -250,7 +308,13 @@ def main() -> int:
     argomenti = argparse.ArgumentParser(
         description="Dump integrale di Firestore per Gym Tracker."
     )
-    argomenti.add_argument("--credenziali", required=True, type=Path)
+    argomenti.add_argument(
+        "--credenziali",
+        type=Path,
+        default=ADC_PREDEFINITO,
+        help="Senza questa opzione usa le credenziali di "
+        "`gcloud auth application-default login`.",
+    )
     argomenti.add_argument("--destinazione", required=True, type=Path)
     argomenti.add_argument("--progetto", default=PROGETTO_PREDEFINITO)
     argomenti.add_argument(
@@ -260,7 +324,12 @@ def main() -> int:
     opzioni = argomenti.parse_args()
 
     if not opzioni.credenziali.is_file():
-        raise SystemExit(f"Credenziali non trovate: {opzioni.credenziali}")
+        raise SystemExit(
+            f"Credenziali non trovate: {opzioni.credenziali}\n"
+            "Esegui `gcloud auth application-default login` scegliendo "
+            "l'account che possiede il progetto, oppure passa --credenziali "
+            "con la chiave di un account di servizio."
+        )
 
     print(f"Progetto: {opzioni.progetto}", file=sys.stderr)
     cliente = Firestore(opzioni.progetto, access_token(opzioni.credenziali))
@@ -296,11 +365,12 @@ def main() -> int:
         f"{peso:.0f} KB in {opzioni.destinazione}",
         file=sys.stderr,
     )
-    print(
-        "Ricorda di revocare la chiave della service account dalla console "
-        "Firebase quando non serve piu.",
-        file=sys.stderr,
-    )
+    if opzioni.credenziali != ADC_PREDEFINITO:
+        print(
+            "Ricorda di revocare la chiave della service account dalla "
+            "console Firebase quando non serve piu.",
+            file=sys.stderr,
+        )
     return 0
 
 
