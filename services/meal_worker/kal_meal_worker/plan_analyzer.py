@@ -90,6 +90,11 @@ Regole non negoziabili:
 - varia: non ripetere lo stesso piatto in giorni vicini e alterna le fonti
   proteiche e i contorni; se il catalogo e' piccolo distanzia il piu'
   possibile le ripetizioni;
+- nei giorni elencati in "workouts" Marco si allena. Quando il giorno porta
+  "proteinMeal", quello e' il pasto che segue l'allenamento: mettici la scelta
+  piu' ricca di proteine della giornata, e tieni piu' leggeri gli altri pasti
+  di quel giorno. Il nome della scheda serve solo a capire che sessione e',
+  non va copiato nella risposta e non e' un pasto;
 - tieni conto dei tempi di preparazione (prepMinutes) e delle note di Marco;
 - motiva ogni scelta nel campo "why" con una riga breve in italiano, senza
   numeri nutrizionali e senza cifre;
@@ -267,6 +272,8 @@ def _build_prompt(request: PlanRequest) -> str:
             "meals": list(request.meals),
             "dailyTargets": request.targets.to_json(),
             "recipes": [recipe.to_json() for recipe in request.recipes],
+            # Giorni di allenamento: dati dell'app, non scelte del modello.
+            "workouts": [workout.to_json() for workout in request.workouts],
         },
         ensure_ascii=False,
         separators=(",", ":"),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/gym_import/presentation/gym_import_providers.dart';
@@ -12,13 +13,38 @@ import 'package:kal_tracker/features/gym_import/presentation/widgets/gym_import_
 /// solo allora si conferma. L'anteprima non è una stima ma l'import vero
 /// annullato, quindi la conferma decide su numeri veri — è la regola dell'app,
 /// la macchina propone e Marco conferma.
-class GymImportScreen extends ConsumerWidget {
+class GymImportScreen extends ConsumerStatefulWidget {
   const GymImportScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GymImportScreen> createState() => _GymImportScreenState();
+}
+
+class _GymImportScreenState extends ConsumerState<GymImportScreen> {
+  /// Quanto ci mette la lista a scendere fino al rendiconto: abbastanza da
+  /// far capire che si è mossa, non tanto da far aspettare.
+  static const Duration _revealDuration = Duration(milliseconds: 260);
+
+  /// La lista deve poter scorrere da sola: il rendiconto nasce sotto il bordo
+  /// dello schermo e senza controller resterebbe lì, invisibile.
+  final ScrollController _list = ScrollController();
+
+  /// Dove sta il rendiconto dentro la lista. È una chiave e non una posizione
+  /// in pixel perché la card cambia altezza con quello che ha dentro.
+  final GlobalKey _reportAnchor = GlobalKey();
+
+  @override
+  void dispose() {
+    _list.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(gymImportControllerProvider);
     final accents = AppAccents.of(context);
+
+    ref.listen(gymImportControllerProvider, _onStateChanged);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,21 +65,13 @@ class GymImportScreen extends ConsumerWidget {
       ),
       body: AdaptiveContent(
         padded: true,
-        child: ListView(
-          key: const Key('gym_import_list'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _IntroCard(),
-            const SizedBox(height: 14),
-            _FilesCard(
-              state: state,
-              onChooseExport: () => _chooseFile(context, ref, isDump: false),
-              onChooseDump: () => _chooseFile(context, ref, isDump: true),
-              onRemoveDump: () => _removeDump(context, ref),
-            ),
-            const SizedBox(height: 14),
-            const _SyncNotice(),
+            // L'errore sta FUORI dalla lista, sotto il titolo: dentro finiva
+            // in fondo a una pagina che scorre e un import fallito sembrava
+            // non essere mai partito. Due tentativi persi per davvero.
             if (state.error case final error?) ...[
-              const SizedBox(height: 14),
               GymImportNotice(
                 key: const Key('gym_import_error'),
                 icon: Icons.dangerous_rounded,
@@ -61,49 +79,130 @@ class GymImportScreen extends ConsumerWidget {
                 title: 'Non ho importato niente',
                 message: error,
               ),
-            ],
-            if (state.step case final step?) ...[
               const SizedBox(height: 14),
-              _ProgressCard(step: step),
             ],
-            const SizedBox(height: 14),
-            _ReportArea(state: state),
-            const SizedBox(height: 16),
-            _ActionArea(state: state),
+            Expanded(
+              child: ListView(
+                key: const Key('gym_import_list'),
+                controller: _list,
+                children: [
+                  const _IntroCard(),
+                  const SizedBox(height: 14),
+                  _FilesCard(
+                    state: state,
+                    onChooseExport: () => _chooseFile(isDump: false),
+                    onChooseDump: () => _chooseFile(isDump: true),
+                    onRemoveDump: _removeDump,
+                  ),
+                  const SizedBox(height: 14),
+                  const _SyncNotice(),
+                  if (state.step case final step?) ...[
+                    const SizedBox(height: 14),
+                    _ProgressCard(step: step),
+                  ],
+                  const SizedBox(height: 14),
+                  KeyedSubtree(
+                    key: _reportAnchor,
+                    child: _ReportArea(state: state),
+                  ),
+                  const SizedBox(height: 16),
+                  _ActionArea(state: state),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Con un selettore di sistema si apre quello; senza, si passa dal percorso
-  /// o dal contenuto incollato, come nel ripristino di un backup.
-  Future<void> _chooseFile(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool isDump,
-  }) async {
-    final controller = ref.read(gymImportControllerProvider.notifier);
-    if (controller.canBrowse) {
-      await (isDump ? controller.browseDump() : controller.browseExport());
-      return;
+  void _onStateChanged(GymImportState? previous, GymImportState next) {
+    // Un rendiconto appena arrivato — anteprima o scrittura vera — nasce
+    // sotto il bordo dello schermo: senza portarcelo, dopo «Vedi cosa entra»
+    // sembra non essere successo niente.
+    final reportArrived =
+        (next.preview != null && previous?.preview == null) ||
+        (next.result != null && previous?.result == null);
+    if (reportArrived) {
+      // Dopo il frame: adesso la card non esiste ancora nell'albero.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealReport());
     }
-    final source = await showModalBottomSheet<String>(
+
+    final error = next.error;
+    if (error != null && error != previous?.error) {
+      // Il riquadro rosso è in alto e si vede, ma chi usa il lettore di
+      // schermo non ha un «in alto»: la frase gli va detta.
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        error,
+        Directionality.of(context),
+      );
+    }
+  }
+
+  /// Porta il rendiconto sotto gli occhi.
+  ///
+  /// Il primo tentativo può non trovare niente: la lista costruisce solo i
+  /// figli dentro la viewport, e finché il rendiconto sta sotto il bordo la
+  /// sua chiave non ha un contesto. Si scende allora in fondo — costruendolo —
+  /// e si riprova. Il giro è limitato perché un ciclo che insegue una lista
+  /// che cresce non finirebbe mai.
+  Future<void> _revealReport() async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (!mounted) {
+        return;
+      }
+      final target = _reportAnchor.currentContext;
+      if (target != null && target.mounted) {
+        await Scrollable.ensureVisible(
+          target,
+          duration: _revealDuration,
+          curve: Curves.easeOut,
+        );
+        return;
+      }
+      if (!_list.hasClients) {
+        return;
+      }
+      final position = _list.position;
+      if (position.pixels >= position.maxScrollExtent) {
+        return;
+      }
+      await _list.animateTo(
+        position.maxScrollExtent,
+        duration: _revealDuration,
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  /// Il foglio è l'unica porta: da lì si apre il selettore di sistema oppure
+  /// si incolla il percorso. Tenere entrambe le strade non è indecisione —
+  /// il selettore serve sul telefono, dove i Download non hanno un percorso
+  /// che qualcuno conosca, e il percorso serve sul Mac e nei test.
+  Future<void> _chooseFile({required bool isDump}) async {
+    final controller = ref.read(gymImportControllerProvider.notifier);
+    final choice = await showModalBottomSheet<_FileChoice>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => _FileSourceSheet(isDump: isDump),
+      builder: (context) =>
+          _FileSourceSheet(isDump: isDump, canBrowse: controller.canBrowse),
     );
-    if (source == null || !context.mounted) {
+    if (choice == null || !mounted) {
       return;
     }
-    await (isDump
-        ? controller.useDumpSource(source)
-        : controller.useExportSource(source));
+    if (choice.source case final source?) {
+      await (isDump
+          ? controller.useDumpSource(source)
+          : controller.useExportSource(source));
+      return;
+    }
+    await (isDump ? controller.browseDump() : controller.browseExport());
   }
 
-  void _removeDump(BuildContext context, WidgetRef ref) {
+  void _removeDump() {
     final controller = ref.read(gymImportControllerProvider.notifier);
     final removed = controller.removeDump();
     if (removed == null) {
@@ -123,6 +222,15 @@ class GymImportScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Cosa ha deciso il foglio: aprire il selettore di sistema, oppure usare il
+/// percorso (o il contenuto) che è stato scritto.
+class _FileChoice {
+  const _FileChoice.browse() : source = null;
+  const _FileChoice.source(String this.source);
+
+  final String? source;
 }
 
 class _IntroCard extends StatelessWidget {
@@ -583,12 +691,16 @@ class _ActionArea extends ConsumerWidget {
   }
 }
 
-/// Il foglio con cui si indica un file quando non c'è un selettore di
-/// sistema: si incolla il percorso oppure direttamente il contenuto.
+/// Il foglio con cui si indica un file: il selettore di sistema quando c'è,
+/// altrimenti (o in alternativa) il percorso o il contenuto incollato.
 class _FileSourceSheet extends StatefulWidget {
-  const _FileSourceSheet({required this.isDump});
+  const _FileSourceSheet({required this.isDump, required this.canBrowse});
 
   final bool isDump;
+
+  /// Il bottone «Sfoglia» compare solo se c'è davvero un selettore da aprire:
+  /// un bottone che non apre niente è peggio che non averlo.
+  final bool canBrowse;
 
   @override
   State<_FileSourceSheet> createState() => _FileSourceSheetState();
@@ -627,32 +739,77 @@ class _FileSourceSheetState extends State<_FileSourceSheet> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Incolla il percorso del file oppure il suo contenuto: prima di '
-              'toccare qualsiasi cosa lo leggo e te lo faccio vedere.',
+              widget.canBrowse
+                  ? 'Cercalo fra i file del telefono: di solito è in '
+                        'Download. Prima di toccare qualsiasi cosa lo leggo e '
+                        'te lo faccio vedere.'
+                  : 'Incolla il percorso del file oppure il suo contenuto: '
+                        'prima di toccare qualsiasi cosa lo leggo e te lo '
+                        'faccio vedere.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: accents.mutedInk,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 16),
+            if (widget.canBrowse) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const Key('gym_import_browse_button'),
+                onPressed: () =>
+                    Navigator.pop(context, const _FileChoice.browse()),
+                icon: const Icon(Icons.folder_open_rounded),
+                label: const Text('Sfoglia i file'),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      'oppure',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: accents.mutedInk,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ] else
+              const SizedBox(height: 16),
             TextField(
               key: const Key('gym_import_source_field'),
               controller: _source,
               minLines: 2,
               maxLines: 5,
-              autofocus: true,
+              // Con il selettore a portata di dito la tastiera che salta su
+              // da sola coprirebbe proprio il bottone da premere.
+              autofocus: !widget.canBrowse,
               decoration: InputDecoration(
                 labelText: 'Percorso o contenuto del file',
                 errorText: _error,
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.icon(
-              key: const Key('gym_import_source_confirm'),
-              onPressed: _submit,
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text('Usa questo file'),
-            ),
+            // Quando c'è il selettore la strada principale è quella, e questa
+            // conferma scende di tono: due bottoni pieni uno sopra l'altro
+            // non direbbero da dove si passa di solito.
+            if (widget.canBrowse)
+              OutlinedButton.icon(
+                key: const Key('gym_import_source_confirm'),
+                onPressed: _submit,
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: const Text('Usa questo file'),
+              )
+            else
+              FilledButton.icon(
+                key: const Key('gym_import_source_confirm'),
+                onPressed: _submit,
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: const Text('Usa questo file'),
+              ),
           ],
         ),
       ),
@@ -665,6 +822,6 @@ class _FileSourceSheetState extends State<_FileSourceSheet> {
       setState(() => _error = 'Serve il percorso oppure il contenuto.');
       return;
     }
-    Navigator.pop(context, source);
+    Navigator.pop(context, _FileChoice.source(source));
   }
 }

@@ -173,7 +173,7 @@ Onestà dichiarata in UI: la BIA piede-piede misura soprattutto la parte bassa d
 - [ ] **M7.5** target derivati da obiettivo + fase + TDEE, con **proteine per kg di massa magra** (2 g → 143 g/giorno) e non di peso;
 - [ ] **M7.6** **budget settimanale, non giornaliero**: uno sforo si redistribuisce sui giorni rimanenti invece di scontarsi tutto il giorno dopo. È la differenza fra un piano che regge e uno che si molla al primo imprevisto;
 - [ ] **M7.7** **ripartizione del deficit su tre leve** — alimentazione, movimento, e l'acqua come qualità del dato: se il cibo non si comprime, il carico si sposta sugli allenamenti;
-- [ ] **M7.8** **piano settimanale unico**: gli `WeeklyPlanSlots` accolgono anche slot di tipo allenamento, assorbendo il `weeklyPlan` (giorno → scheda) di Gym; il generatore colloca il pasto proteico **dopo** l'allenamento previsto;
+- [x] **M7.8** **piano settimanale unico** *(5 agosto 2026)*: gli `WeeklyPlanSlots` accolgono anche slot di tipo allenamento, assorbendo il `weeklyPlan` (giorno → scheda) di Gym; il generatore colloca il pasto proteico **dopo** l'allenamento previsto;
 - [ ] **M7.9** forza relativa: i record di `personal_records` rapportati al peso corporeo.
 
 Criterio: Marco imposta un traguardo e l'app risponde con il ritmo, la data stimata e cosa comporta **oggi**; alla fine dell'avvicinamento passa da sola al consolidamento e poi al mantenimento, senza che il piano si spenga.
@@ -182,12 +182,12 @@ Criterio: Marco imposta un traguardo e l'app risponde con il ritmo, la data stim
 
 Il coach **non è una chat dentro l'app**: è un terzo tipo di job sul Mac mini, accanto a `meal_analysis_jobs` e `weekly_plan_jobs`, con la stessa architettura già collaudata (launchd, Claude CLI, nessuna API a consumo).
 
-- [ ] **M8.1** coda `coach_jobs` con RPC a privilegi minimi;
-- [ ] **M8.2** **brief settimanale della domenica**: TDEE aggiornato, aderenza, ricomposizione, andamento carichi;
-- [ ] **M8.3** avvisi incrociati, primo fra tutti il **semaforo del sovrallenamento** (RPE in salita + calo di peso rapido + proteine sotto target + acqua corporea in calo → deload);
-- [ ] **M8.5** **schermata Oggi orientata all'azione**: non grafici ma «cosa faccio adesso» — kcal e proteine rimanenti, allenamento previsto, e le ricette del ricettario che ci stanno. Il suggeritore per macro rimanenti (`recipe_suggestions.dart`) esiste già ed è oggi una funzione secondaria dentro le ricette: **va promosso al centro dell'esperienza**;
-- [ ] **M8.6** **spiegazione dei movimenti falsi**: quando il peso si muove per idratazione e non per grasso, il coach lo dice esplicitamente («ieri 1,1 L d'acqua: il −700 g di stamattina è acqua»). Serve a evitare sia le euforie sia gli scoraggiamenti senza causa reale;
-- [ ] **M8.7** **proiezione del traguardo**: «a questo ritmo arrivi a 87,4 kg il 2 dicembre, due settimane dopo il previsto» — l'aderenza si comunica come distanza dalla data, non come colpa;
+- [x] **M8.1** coda `coach_jobs` con RPC a privilegi minimi — migrazione `0008` + controllo statico; *(5 agosto 2026)*
+- [x] **M8.2** **brief settimanale della domenica** *(5 agosto 2026, lato app)*: TDEE aggiornato, aderenza, ricomposizione, andamento carichi;
+- [x] **M8.3** avvisi incrociati *(5 agosto 2026)*, primo fra tutti il **semaforo del sovrallenamento** (RPE in salita + calo di peso rapido + proteine sotto target + acqua corporea in calo → deload);
+- [x] **M8.5** **schermata Oggi orientata all'azione** *(5 agosto 2026)*: non grafici ma «cosa faccio adesso» — kcal e proteine rimanenti, allenamento previsto, e le ricette del ricettario che ci stanno. Il suggeritore per macro rimanenti (`recipe_suggestions.dart`) esiste già ed è oggi una funzione secondaria dentro le ricette: **va promosso al centro dell'esperienza**;
+- [x] **M8.6** **spiegazione dei movimenti falsi** *(5 agosto 2026)*: quando il peso si muove per idratazione e non per grasso, il coach lo dice esplicitamente («ieri 1,1 L d'acqua: il −700 g di stamattina è acqua»). Serve a evitare sia le euforie sia gli scoraggiamenti senza causa reale;
+- [x] **M8.7** **proiezione del traguardo** *(5 agosto 2026)*: «a questo ritmo arrivi a 87,4 kg il 2 dicembre, due settimane dopo il previsto» — l'aderenza si comunica come distanza dalla data, non come colpa;
 - [ ] **M8.4** **check-in mattutino da 10 secondi**: peso in automatico dalla bilancia, più due soli campi manuali — ore di sonno ed energia percepita 1-5. È qui che entrano i dati dell'orologio Huawei, **a mano** (scelta di Marco: niente Health Sync per ora).
 
 Vincolo: il coach deve funzionare **con dati mancanti**. Nello storico reale RPE e soddisfazione sono compilati in 17 sessioni su 29, l'umore in 11, le note in nessuna.
@@ -288,7 +288,8 @@ Conseguenza per la v7: **`body_measurements` diventa una tabella referenziata** 
 
 - **Le fixture di test NON sono i dati veri.** `apps/mobile/test/features/gym_import/fixtures/` contiene versioni prodotte da `scripts/anonymize_gym_fixtures.py`: struttura, conteggi, date, identificatori e casi limite sono quelli reali, mentre peso corporeo, circonferenze, carichi, note e UID Firebase sono sostituiti. Il repository è **pubblico** e quelli sono dati sanitari. I file veri stanno in `~/Documents/KalTracker-Signing/`. Rigenerando le fixture, quattro assert dei test vanno riallineati ai nuovi valori.
 - **Import COLLAUDATO sull'emulatore il 5 agosto 2026** con i file veri: 1454 righe scritte, 14 schede (2 circuiti, superserie e blocchi a tempo dal dump), 29 sessioni, 3 pesate, 22 trofei. L'anteprima ha elencato i 13 dati storti prima di scrivere — le quattro sessioni con pausa non registrata, quella rimasta aperta 536 ore, i cinque riferimenti a schede cancellate — e lo storico somma solo le durate attendibili, marcando il totale «Parziale».
-- **Due difetti dell'import trovati provandolo, non dai test**: l'errore di lettura file compare in fondo alla pagina, **fuori dallo schermo** (serve uno scroll automatico o un avviso in alto); e manca `file_picker`, quindi il percorso si digita a mano come nel ripristino del backup.
+- ~~**Due difetti dell'import trovati provandolo**~~ **RISOLTI il 5 agosto**: `file_picker` aggiunto (sistema anche il ripristino del backup, che aveva lo stesso problema) e l'errore è uscito dallo scorrimento, con il rendiconto che si porta da solo sotto gli occhi.
+- Difetti originali, per memoria: l'errore di lettura file compare in fondo alla pagina, **fuori dallo schermo** (serve uno scroll automatico o un avviso in alto); e manca `file_picker`, quindi il percorso si digita a mano come nel ripristino del backup.
 - **`enqueueSync` è false di default** nell'importer, ed è giusto così finché la `0007` non è applicata sul progetto Supabase reale. Il collegamento fra i due lati è però verificato: `test/features/gym_import/import_sync_integration_test.dart` prende la coda vera dell'importer e la passa al mapper vero, perché importer e gateway sono stati scritti in parallelo e le rispettive suite, da sole, resterebbero verdi anche se le forme dei payload divergessero.
 - **Il vocabolario delle sorgenti diverge ancora** fra locale (`manual`) e remoto storico (`kal_tracker`): la traduzione vive in `sync_gateway.dart`.
 - Un entityType sconosciuto ora **blocca la testa della coda** invece di essere scartato: è deliberato (meglio fermarsi che perdere), ma significa che un'app vecchia che riceve un tipo nuovo si pianta finché non viene aggiornata.

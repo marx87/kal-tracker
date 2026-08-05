@@ -7,10 +7,11 @@ import 'package:kal_tracker/features/gym_import/domain/gym_import_report.dart';
 import 'package:kal_tracker/features/gym_import/presentation/gym_import_file_gateway.dart';
 import 'package:kal_tracker/features/gym_import/presentation/gym_import_state.dart';
 
-/// Come si arriva ai due file. Nei test si sostituisce con un finto che
-/// restituisce le fixture, senza toccare il disco.
+/// Come si arriva ai due file: il selettore di sistema, con il percorso
+/// digitato a mano ancora disponibile alle spalle. Nei test si sostituisce con
+/// un finto che restituisce le fixture, senza toccare il disco.
 final gymImportFileGatewayProvider = Provider<GymImportFileGateway>(
-  (ref) => const LocalGymImportFileGateway(),
+  (ref) => const SystemGymImportFileGateway(),
 );
 
 final gymTrackerImporterProvider = Provider<GymTrackerImporter>(

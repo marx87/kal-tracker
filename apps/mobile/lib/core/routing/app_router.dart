@@ -4,6 +4,7 @@ import 'package:kal_tracker/core/presentation/app_shell.dart';
 import 'package:kal_tracker/core/sync/sync_engine.dart';
 import 'package:kal_tracker/features/backup/presentation/backup_screen.dart';
 import 'package:kal_tracker/features/body/presentation/body_screen.dart';
+import 'package:kal_tracker/features/coach/presentation/coach_screen.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercises_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart';
@@ -165,6 +166,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/goal',
                 name: 'goal',
                 builder: (context, state) => const GoalScreen(),
+              ),
+              // Il rapporto del coach sta accanto a corpo e obiettivo: legge
+              // gli stessi dati e risponde alla stessa domanda, «come sto
+              // andando». I numeri li calcola l'app: con il Mac spento resta
+              // tutto leggibile, manca solo il racconto.
+              GoRoute(
+                path: '/coach',
+                name: 'coach',
+                builder: (context, state) => const CoachScreen(),
               ),
               GoRoute(
                 path: '/progress',

@@ -53,6 +53,12 @@ class BodyScreen extends ConsumerWidget {
           // legge se ci si sta arrivando; backup, sincronizzazione e travaso
           // da Gym Tracker riguardano gli stessi dati personali.
           IconButton(
+            key: const Key('body_open_coach_button'),
+            tooltip: 'Rapporto del coach',
+            onPressed: () => context.goNamed('coach'),
+            icon: const Icon(Icons.insights_outlined),
+          ),
+          IconButton(
             key: const Key('body_open_goal_button'),
             tooltip: 'Obiettivo',
             onPressed: () => context.goNamed('goal'),

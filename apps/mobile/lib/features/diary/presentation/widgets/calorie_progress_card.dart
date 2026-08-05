@@ -4,25 +4,37 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
+import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 
-abstract final class DiaryPresentationDefaults {
-  /// Mirrors the standard app target for isolated widget use.
-  static const double dailyCalorieTarget = 2000;
-}
-
+/// Quanto resta oggi: calorie nell'anello, proteine in evidenza.
+///
+/// Le proteine hanno una riga tutta loro e non una pastiglia come le altre
+/// due, perché non sono un macro fra tre: sono il vincolo che protegge la
+/// massa magra durante il deficit. Un traguardo di peso raggiunto perdendo
+/// muscolo è un fallimento travestito da successo.
+///
+/// Carboidrati e grassi restano, in piccolo: servono a spiegare il margine,
+/// non a essere centrati.
 class CalorieProgressCard extends StatelessWidget {
   const CalorieProgressCard({
     required this.nutrients,
-    this.targetCalories = DiaryPresentationDefaults.dailyCalorieTarget,
+    this.target = const NutritionTarget.standard(),
     super.key,
   });
 
+  /// Quello che è già entrato oggi.
   final Nutrients nutrients;
-  final double targetCalories;
+
+  /// Il riferimento del giorno. Senza obiettivo impostato è quello standard:
+  /// la schermata non resta mai senza un metro, e nessun numero qui dentro
+  /// viene inventato.
+  final NutritionTarget target;
 
   @override
   Widget build(BuildContext context) {
+    final accents = AppAccents.of(context);
     final consumed = nutrients.calories;
+    final targetCalories = target.calories;
     final remaining = math.max(0.0, targetCalories - consumed);
     final overTarget = consumed > targetCalories;
     final progress = targetCalories <= 0
@@ -35,15 +47,15 @@ class CalorieProgressCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             right: -28,
             top: -35,
-            child: _DecorativeBubble(size: 104, color: AppPalette.yellowSoft),
+            child: _DecorativeBubble(size: 104, color: accents.warningSurface),
           ),
-          const Positioned(
+          Positioned(
             right: 45,
             top: 24,
-            child: _DecorativeBubble(size: 18, color: AppPalette.lilacSoft),
+            child: _DecorativeBubble(size: 18, color: accents.infoSurface),
           ),
           Padding(
             padding: const EdgeInsets.all(18),
@@ -81,32 +93,27 @@ class CalorieProgressCard extends StatelessWidget {
                 const SizedBox(height: 18),
                 const Divider(),
                 const SizedBox(height: 14),
+                _ProteinFocus(eaten: nutrients.protein, target: target.protein),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: _MacroPill(
-                        label: 'Proteine',
-                        value: nutrients.protein,
-                        color: AppPalette.coral,
-                        background: AppPalette.coralSoft,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _MacroPill(
                         label: 'Carbo',
-                        value: nutrients.carbs,
-                        color: AppPalette.yellow,
-                        background: AppPalette.yellowSoft,
+                        eaten: nutrients.carbs,
+                        target: target.carbs,
+                        color: accents.warning,
+                        background: accents.warningSurface,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: _MacroPill(
                         label: 'Grassi',
-                        value: nutrients.fat,
-                        color: AppPalette.lilac,
-                        background: AppPalette.lilacSoft,
+                        eaten: nutrients.fat,
+                        target: target.fat,
+                        color: accents.info,
+                        background: accents.infoSurface,
                       ),
                     ),
                   ],
@@ -135,6 +142,10 @@ class _CalorieRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final scheme = theme.colorScheme;
+
     return SizedBox.square(
       dimension: 142,
       child: TweenAnimationBuilder<double>(
@@ -145,7 +156,13 @@ class _CalorieRing extends StatelessWidget {
           return CustomPaint(
             painter: _CalorieRingPainter(
               progress: animatedProgress,
-              progressColor: overTarget ? AppPalette.coral : AppPalette.forest,
+              // Oltre il riferimento l'anello cambia tinta, non tono di voce:
+              // è un'informazione, non un rimprovero.
+              progressColor: overTarget ? scheme.secondary : scheme.primary,
+              trackColor: scheme.primaryContainer,
+              markerColor: scheme.secondary,
+              warmDotColor: accents.warning,
+              coolDotColor: accents.info,
             ),
             child: child,
           );
@@ -154,11 +171,7 @@ class _CalorieRing extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.restaurant_rounded,
-                size: 18,
-                color: AppPalette.leaf,
-              ),
+              Icon(Icons.restaurant_rounded, size: 18, color: scheme.primary),
               const SizedBox(height: 3),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -168,8 +181,8 @@ class _CalorieRing extends StatelessWidget {
                     '${calories.round()} kcal',
                     key: const Key('daily_calories'),
                     maxLines: 1,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppPalette.forestDark,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: scheme.onSurface,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
@@ -178,9 +191,9 @@ class _CalorieRing extends StatelessWidget {
               ),
               Text(
                 'su ${NumberFormat.decimalPattern('it').format(target.round())}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: accents.mutedInk,
+                ),
               ),
             ],
           ),
@@ -207,6 +220,9 @@ class _RemainingCalories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final scheme = theme.colorScheme;
     final value = overTarget ? overBy : remaining;
     final label = overTarget ? 'kcal oltre il riferimento' : 'kcal disponibili';
     final message = switch ((consumed, overTarget)) {
@@ -223,9 +239,9 @@ class _RemainingCalories extends StatelessWidget {
           children: [
             Text(
               overTarget ? 'Oggi sei a' : 'Ti restano',
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(color: AppPalette.mutedInk),
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: accents.mutedInk,
+              ),
             ),
             const SizedBox(height: 2),
             FittedBox(
@@ -233,24 +249,25 @@ class _RemainingCalories extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 formatter.format(value.round()),
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: overTarget ? AppPalette.coral : AppPalette.forestDark,
+                key: const Key('remaining_calories'),
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  color: overTarget ? scheme.secondary : scheme.onSurface,
                 ),
               ),
             ),
             Text(
               label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.mutedInk,
+              ),
             ),
             const SizedBox(height: 9),
             Text(
               message,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppPalette.forest,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -261,23 +278,131 @@ class _RemainingCalories extends StatelessWidget {
   }
 }
 
+/// Le proteine rimaste, grandi quanto contano.
+class _ProteinFocus extends StatelessWidget {
+  const _ProteinFocus({required this.eaten, required this.target});
+
+  final double eaten;
+  final double target;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final scheme = theme.colorScheme;
+    final remaining = math.max(0.0, target - eaten);
+    final covered = target <= 0 ? 1.0 : (eaten / target).clamp(0.0, 1.0);
+    final done = remaining <= 0;
+    // A caratteri molto ingranditi etichetta e valore non ci stanno più
+    // sulla stessa riga: sopra 1,3× si impilano, come fa `StatRow`. Meglio
+    // due righe che un troncamento sul numero che conta.
+    final stacked = MediaQuery.textScalerOf(context).scale(14) / 14 > 1.3;
+
+    final label = Text(
+      'Proteine',
+      style: theme.textTheme.labelLarge?.copyWith(color: accents.mutedInk),
+    );
+    final value = Text(
+      done ? 'coperte' : '${remaining.round()} g ancora',
+      key: const Key('remaining_protein'),
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: done ? accents.positive : scheme.onSurface,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+
+    return Semantics(
+      container: true,
+      label: 'Proteine',
+      value: done
+          ? 'obiettivo coperto, ${eaten.round()} grammi su ${target.round()}'
+          : 'restano ${remaining.round()} grammi su ${target.round()}',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (stacked) ...[
+              label,
+              const SizedBox(height: 2),
+              value,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(child: label),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: value,
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 8),
+            _ProgressBar(value: covered),
+            const SizedBox(height: 6),
+            Text(
+              '${eaten.round()} g su ${target.round()} — è il macro che '
+              'protegge il muscolo.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.mutedInk,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(99),
+      child: SizedBox(
+        height: 9,
+        child: LinearProgressIndicator(
+          value: value,
+          backgroundColor: scheme.primaryContainer,
+          valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+        ),
+      ),
+    );
+  }
+}
+
 class _MacroPill extends StatelessWidget {
   const _MacroPill({
     required this.label,
-    required this.value,
+    required this.eaten,
+    required this.target,
     required this.color,
     required this.background,
   });
 
   final String label;
-  final double value;
+  final double eaten;
+  final double target;
   final Color color;
   final Color background;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final remaining = math.max(0.0, target - eaten);
+
     return Semantics(
-      label: '$label, ${value.toStringAsFixed(1)} grammi',
+      label: '$label, restano ${remaining.round()} grammi',
       child: ExcludeSemantics(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -305,8 +430,8 @@ class _MacroPill extends StatelessWidget {
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppPalette.mutedInk,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: accents.mutedInk,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -318,9 +443,9 @@ class _MacroPill extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${value.toStringAsFixed(1)} g',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppPalette.ink,
+                    '${remaining.round()} g ancora',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -356,10 +481,18 @@ class _CalorieRingPainter extends CustomPainter {
   const _CalorieRingPainter({
     required this.progress,
     required this.progressColor,
+    required this.trackColor,
+    required this.markerColor,
+    required this.warmDotColor,
+    required this.coolDotColor,
   });
 
   final double progress;
   final Color progressColor;
+  final Color trackColor;
+  final Color markerColor;
+  final Color warmDotColor;
+  final Color coolDotColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -375,7 +508,7 @@ class _CalorieRingPainter extends CustomPainter {
       math.pi * 2,
       false,
       Paint()
-        ..color = AppPalette.mint
+        ..color = trackColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round,
@@ -400,13 +533,13 @@ class _CalorieRingPainter extends CustomPainter {
         center.dx + math.cos(markerAngle) * radius,
         center.dy + math.sin(markerAngle) * radius,
       );
-      canvas.drawCircle(markerCenter, 4, Paint()..color = AppPalette.coral);
+      canvas.drawCircle(markerCenter, 4, Paint()..color = markerColor);
     }
 
     // Three small “ingredients” keep the ring food-oriented and distinct from
     // the fitness activity ring used by the companion app.
-    _drawIngredientDot(canvas, center, radius + 7, -0.12, AppPalette.yellow);
-    _drawIngredientDot(canvas, center, radius + 7, 2.22, AppPalette.lilac);
+    _drawIngredientDot(canvas, center, radius + 7, -0.12, warmDotColor);
+    _drawIngredientDot(canvas, center, radius + 7, 2.22, coolDotColor);
   }
 
   void _drawIngredientDot(
@@ -429,6 +562,8 @@ class _CalorieRingPainter extends CustomPainter {
   @override
   bool shouldRepaint(_CalorieRingPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.progressColor != progressColor;
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.markerColor != markerColor;
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
+
 /// Un file scelto per il travaso: il contenuto è già letto, perché la
 /// schermata deve poterlo controllare PRIMA di scrivere qualsiasi cosa.
 ///
@@ -44,12 +46,10 @@ class GymImportFileException implements Exception {
 
 /// Da dove arrivano i due file dell'import.
 ///
-/// È un'interfaccia e non una chiamata diretta a `file_picker` perché quel
-/// pacchetto NON è fra le dipendenze di questo progetto (vedi `pubspec.yaml`:
-/// ci sono `image_picker`, `open_file` e `mobile_scanner`, non lui). Con la
-/// dipendenza aggiunta basta scrivere un'implementazione che apra il
-/// selettore di sistema e sostituirla nel provider: la schermata non cambia
-/// di una riga, perché già oggi chiede a [canBrowse] se il selettore esiste.
+/// È un'interfaccia e non una chiamata diretta a `file_picker` perché nei
+/// test il selettore di sistema non esiste: si sostituisce con un finto che
+/// restituisce le fixture. In produzione ci va
+/// [SystemGymImportFileGateway], che il selettore lo apre davvero.
 abstract class GymImportFileGateway {
   /// Vero solo quando c'è davvero un selettore di sistema da aprire. La
   /// schermata mostra il bottone «Sfoglia» soltanto in quel caso: un bottone
@@ -67,9 +67,12 @@ abstract class GymImportFileGateway {
   Future<GymImportFile> read(String rawInput);
 }
 
-/// L'implementazione di serie: niente selettore di sistema, si passa dal
-/// percorso o dal contenuto incollato. È lo stesso patto della schermata di
-/// backup (`readRestoreSource`), quindi è un gesto che Marco conosce già.
+/// Il file indicato a mano: percorso oppure contenuto incollato, senza
+/// selettore di sistema.
+///
+/// Resta la base di [SystemGymImportFileGateway] e non un ripiego morto: sul
+/// Mac e nei test il percorso digitato è il modo più rapido di puntare a un
+/// file, e il contenuto incollato è l'unico che funzioni senza disco.
 class LocalGymImportFileGateway implements GymImportFileGateway {
   const LocalGymImportFileGateway({this.maximumBytes = _defaultMaximumBytes});
 
@@ -134,3 +137,91 @@ class LocalGymImportFileGateway implements GymImportFileGateway {
     return last.isEmpty ? path : last;
   }
 }
+
+/// Chi apre davvero il selettore. È un parametro e non una chiamata diretta
+/// perché `FilePicker` passa da un canale nativo che nei test non esiste:
+/// iniettandolo, la traduzione «file scelto → [GymImportFile]» si prova per
+/// davvero invece di restare l'unico pezzo non coperto.
+typedef GymFilePicker = Future<PlatformFile?> Function();
+
+/// Il selettore di sistema.
+///
+/// Eredita da [LocalGymImportFileGateway] perché il percorso digitato a mano
+/// deve continuare a funzionare anche quando il selettore c'è: sul Mac è più
+/// veloce, e nei test è l'unica strada.
+class SystemGymImportFileGateway extends LocalGymImportFileGateway {
+  const SystemGymImportFileGateway({
+    super.maximumBytes,
+    this.picker = pickGymFileWithSystemPicker,
+  });
+
+  final GymFilePicker picker;
+
+  @override
+  bool get canBrowse => true;
+
+  @override
+  Future<GymImportFile?> browse() async {
+    final PlatformFile? picked;
+    try {
+      picked = await picker();
+    } on Object catch (error) {
+      // Il selettore può mancare (piattaforma senza plugin) o essere negato:
+      // in entrambi i casi Marco deve leggere una frase, non un'eccezione.
+      throw GymImportFileException(
+        'Non riesco ad aprire il selettore di file: $error',
+      );
+    }
+    if (picked == null) {
+      // Chiuso senza scegliere: non è un errore.
+      return null;
+    }
+
+    final path = picked.path;
+    if (path != null) {
+      // Con un percorso si passa dalla lettura già collaudata: stesso tetto
+      // di dimensione, stessi messaggi d'errore, un solo posto da correggere.
+      return read(path);
+    }
+
+    // Senza percorso resta il contenuto in memoria. Su Android e iOS non
+    // capita (il plugin copia sempre il file in cache), ma se capitasse
+    // fermarsi qui sarebbe peggio che leggere i byte che abbiamo già.
+    try {
+      final bytes = await picked.readAsBytes();
+      if (bytes.length > maximumBytes) {
+        throw GymImportFileException(
+          'Il file pesa '
+          '${GymImportFile(name: '', contents: '', sizeBytes: bytes.length).sizeLabel}: '
+          'troppo per essere un export di Gym Tracker.',
+        );
+      }
+      return GymImportFile(
+        name: picked.name,
+        contents: utf8.decode(bytes),
+        sizeBytes: bytes.length,
+      );
+    } on GymImportFileException {
+      rethrow;
+    } on FormatException {
+      throw GymImportFileException(
+        '«${picked.name}» non è un file di testo: l\'export di Gym Tracker è '
+        'un JSON.',
+      );
+    } on Object {
+      throw GymImportFileException(
+        'Non riesco a leggere «${picked.name}»: prova a incollarne il '
+        'percorso.',
+      );
+    }
+  }
+}
+
+/// Il selettore vero.
+///
+/// Nessun filtro per estensione di proposito: su Android i JSON arrivano dai
+/// Download con tipi MIME diversi da `application/json`, e filtrando si
+/// vedrebbero grigi e non selezionabili proprio i file che servono. Che dentro
+/// ci sia un export di Gym lo dice poi la lettura, con una frase in italiano.
+Future<PlatformFile?> pickGymFileWithSystemPicker() =>
+    FilePicker.pickFile(dialogTitle: 'Scegli il file di Gym Tracker');

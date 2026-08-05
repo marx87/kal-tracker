@@ -189,7 +189,7 @@ void main() {
     },
   );
 
-  testWidgets('con un selettore di sistema non si passa dal percorso', (
+  testWidgets('con un selettore di sistema il foglio offre «Sfoglia»', (
     tester,
   ) async {
     final browsing = _FakeGateway(
@@ -200,11 +200,82 @@ void main() {
     await _pumpScreen(tester, database, browsing);
 
     await _tap(tester, const Key('gym_import_pick_export'));
+    await _tap(tester, const Key('gym_import_browse_button'));
 
-    // Nessun foglio: il selettore ha già dato il file.
-    expect(find.byKey(const Key('gym_import_source_field')), findsNothing);
     expect(browsing.browseCalls, 1);
     expect(_slotLabel(tester, 'export'), contains('gym-tracker-export.json'));
+  });
+
+  testWidgets('anche col selettore il percorso digitato resta una strada', (
+    tester,
+  ) async {
+    // Serve sul Mac e nei test, e serve il giorno in cui il selettore di
+    // Android decide di non far vedere il file che c'è.
+    final browsing = _FakeGateway({
+      'export': _fixture(exportPath),
+    }, canBrowse: true);
+    await _pumpScreen(tester, database, browsing);
+
+    await _chooseFile(tester, const Key('gym_import_pick_export'), 'export');
+
+    expect(browsing.browseCalls, 0);
+    expect(_slotLabel(tester, 'export'), contains('gym-tracker-export.json'));
+  });
+
+  testWidgets('il selettore chiuso senza scegliere non dice niente', (
+    tester,
+  ) async {
+    final browsing = _FakeGateway(const {}, canBrowse: true);
+    await _pumpScreen(tester, database, browsing);
+
+    await _tap(tester, const Key('gym_import_pick_export'));
+    await _tap(tester, const Key('gym_import_browse_button'));
+
+    expect(browsing.browseCalls, 1);
+    expect(find.byKey(const Key('gym_import_error')), findsNothing);
+    expect(_slotLabel(tester, 'export'), startsWith('Il file che l\'app'));
+  });
+
+  testWidgets('su uno schermo da telefono l’errore si vede senza scorrere', (
+    tester,
+  ) async {
+    // È il difetto vero, trovato usando l'app: l'errore stava in fondo a una
+    // pagina che scorre e un import fallito sembrava non essere mai partito.
+    await _pumpScreen(tester, database, gateway, viewSize: _phone);
+    await _chooseFile(
+      tester,
+      const Key('gym_import_pick_export'),
+      '/percorso/inventato.json',
+    );
+
+    final error = find.byKey(const Key('gym_import_error'));
+    expect(error, findsOneWidget);
+    // Fuori dalla lista: nessuno scorrimento può portarselo via.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('gym_import_list')),
+        matching: error,
+      ),
+      findsNothing,
+    );
+    expect(_isOnScreen(tester, error), isTrue);
+  });
+
+  testWidgets('il rendiconto si porta sotto gli occhi da solo', (tester) async {
+    await _pumpScreen(tester, database, gateway, viewSize: _phone);
+    await _chooseFile(tester, const Key('gym_import_pick_export'), 'export');
+    await _tap(tester, const Key('gym_import_preview_button'));
+
+    final preview = find.byKey(const Key('gym_import_preview'));
+    expect(preview, findsOneWidget);
+    expect(_isOnScreen(tester, preview), isTrue);
+
+    await _tap(tester, const Key('gym_import_confirm_button'));
+
+    // E lo stesso vale per il rendiconto della scrittura vera.
+    final result = find.byKey(const Key('gym_import_result'));
+    expect(result, findsOneWidget);
+    expect(_isOnScreen(tester, result), isTrue);
   });
 
   testWidgets('mentre lavora mostra il passo e toglie i bottoni', (
@@ -292,10 +363,21 @@ void main() {
   });
 }
 
+/// La finestra di un telefono vero: è lì che i difetti di posizione si
+/// vedono, e su una finestra alta 3600 nessuno di loro esisterebbe.
+const Size _phone = Size(390, 844);
+
 /// Che cosa dice la riga del file scelto. Si legge dalla sua chiave e non dal
 /// testo, perché lo stesso nome di file compare anche nella snackbar.
 String _slotLabel(WidgetTester tester, String slot) =>
     tester.widget<Text>(find.byKey(Key('gym_import_${slot}_name'))).data!;
+
+/// Vero se il bordo alto di un widget cade dentro la finestra: è la domanda
+/// «Marco lo vede?» tradotta in una misura.
+bool _isOnScreen(WidgetTester tester, Finder finder) {
+  final top = tester.getTopLeft(finder).dy;
+  return top >= 0 && top < tester.view.physicalSize.height;
+}
 
 /// Legge una fixture in modo sincrono: dentro `testWidgets` l'I/O vero non
 /// verrebbe completato dal falso orologio del test.
@@ -315,10 +397,12 @@ Future<void> _pumpScreen(
   ThemeData? theme,
   double textScale = 1,
   GymTrackerImporter? importer,
+  Size viewSize = const Size(430, 3600),
 }) async {
-  // Finestra alta: la schermata è una lista lunga e i figli fuori viewport
-  // non verrebbero nemmeno costruiti.
-  tester.view.physicalSize = const Size(430, 3600);
+  // Di serie una finestra alta: la schermata è una lista lunga e i figli
+  // fuori viewport non verrebbero nemmeno costruiti. Chi vuole misurare cosa
+  // si vede davvero passa invece [_phone].
+  tester.view.physicalSize = viewSize;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
