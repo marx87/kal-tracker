@@ -121,7 +121,10 @@ Fattibilità verificata sul codice: **solo 10 file di Gym Tracker toccano Firest
 
 - [x] **M5.1** profilo esteso: `heightCm`, `birthDate` e `sex` in `AppProfiles` — Drift **v5** + migrazione Supabase `0006`; *(5 agosto 2026)*
 - [ ] **M5.2** schema allenamento in Drift — **13 tabelle**, non 5: oltre a `exercises`, `routines`, `workouts`, `workout_exercises` e `workout_sets` servono `routine_exercises`, `routine_interval_segments`, `routine_weekly_plan`, `workout_pain_points`, `workout_interval_segments`, `workout_profile_stats`, `workout_achievements` e `body_measurement_values` (le circonferenze a nastro). Migrazione Supabase **`0007`** (la `0006` è già di `body_composition`);
-- [ ] **M5.3** importer one-shot del JSON, idempotente sugli id originali, che porta dentro anche **XP, achievement e streak** (ripartire da zero sarebbe una regressione percepita);
+- [x] **M5.3** importer one-shot, idempotente sugli id originali, con **XP, achievement e streak**; fonde export dell'app e dump Firestore (senza dump gira lo stesso e il rendiconto dice cosa manca) — `lib/features/gym_import/`; *(5 agosto 2026)*
+- [x] **M5.3a** backup e ripristino estesi alle 13 tabelle nuove, formato documento **v2** version-aware: un backup v1 conserva il suo checksum byte per byte, altrimenti risulterebbe danneggiato. Chiude il rischio del ripristino «Sostituisci»; *(5 agosto 2026)*
+- [x] **M5.3b** migrazione Supabase **`0007`** con le 13 tabelle remote, RLS e trigger, più `supabase/tests/workouts_static_test.sh`; *(5 agosto 2026)*
+- [x] **M5.3c** gateway di sincronizzazione esteso ai quattro entityType nuovi, **con due difetti preesistenti corretti**: un entityType sconosciuto non viene più ingoiato dal `default:` (la riga di outbox veniva cancellata come se fosse stata inviata) e gli errori Postgres 23503/23505 non vengono più scartati ma ritentati; *(5 agosto 2026)*
 - [ ] **M5.4** porting della logica pura, invariata: `superset_flow`, `kcal_estimator`, `personal_records`, `cool_down_sequence`, `rest_timer`, `plate_calculator`;
 - [ ] **M5.5** porting della UI workout (live, circuiti, storico, schede, esercizi) sul tema di Kal;
 - [ ] **M5.6** Health Connect push-only per workout e calorie, come già fa Gym (`health` plugin, plugin già collaudato);
@@ -280,6 +283,15 @@ Tre analisti e tre revisori avversariali hanno studiato i modelli di Gym, l'expo
 4. **Un workout resta aperto 536 ore** (26/06 08:32 → 18/07 16:29, 1.894 kcal, 1.465 XP) e per altre tre sessioni la durata sovrastima di 5-15 minuti perché `accumulatedPauseSeconds` non è nell'export. Vanno importate grezze con un flag, non rettificate in silenzio.
 
 Conseguenza per la v7: **`body_measurements` diventa una tabella referenziata** (da `body_measurement_values`), quindi da lì in poi si estende solo con `addColumn` e il `TableMigration` usato dalla v5 non è più applicabile.
+
+## Note di handoff (import e sincronizzazione, 5 agosto 2026)
+
+- **Le fixture di test NON sono i dati veri.** `apps/mobile/test/features/gym_import/fixtures/` contiene versioni prodotte da `scripts/anonymize_gym_fixtures.py`: struttura, conteggi, date, identificatori e casi limite sono quelli reali, mentre peso corporeo, circonferenze, carichi, note e UID Firebase sono sostituiti. Il repository è **pubblico** e quelli sono dati sanitari. I file veri stanno in `~/Documents/KalTracker-Signing/`. Rigenerando le fixture, quattro assert dei test vanno riallineati ai nuovi valori.
+- **`enqueueSync` è false di default** nell'importer, ed è giusto così finché la `0007` non è applicata sul progetto Supabase reale. Il collegamento fra i due lati è però verificato: `test/features/gym_import/import_sync_integration_test.dart` prende la coda vera dell'importer e la passa al mapper vero, perché importer e gateway sono stati scritti in parallelo e le rispettive suite, da sole, resterebbero verdi anche se le forme dei payload divergessero.
+- **Il vocabolario delle sorgenti diverge ancora** fra locale (`manual`) e remoto storico (`kal_tracker`): la traduzione vive in `sync_gateway.dart`.
+- Un entityType sconosciuto ora **blocca la testa della coda** invece di essere scartato: è deliberato (meglio fermarsi che perdere), ma significa che un'app vecchia che riceve un tipo nuovo si pianta finché non viene aggiornata.
+- `total_kcal` remoto è `numeric(12,6)` mentre i valori veri hanno dodici decimali: il round-trip perde le ultime cifre di un campo dichiarato immutabile. Irrilevante per una stima calorica, ma è scritto nel commento della migrazione.
+- La sequenza di defaticamento vive in `lib/features/gym_import/domain/cool_down_sequence.dart`. Quando arriverà il modulo workout (M5.5) va tenuta **una copia sola**: due file con gli stessi slug darebbero allo stesso esercizio due nomi diversi.
 
 ## Note di handoff (schema v5, 5 agosto 2026)
 

@@ -253,7 +253,8 @@ class _BackupIntro extends StatelessWidget {
                   const SizedBox(height: 3),
                   const Text(
                     'Il backup crea un file con tutto: pasti, obiettivi, '
-                    'acqua, peso, alimenti, ricette e modelli. Salvalo dove '
+                    'acqua, peso, alimenti, ricette, modelli e allenamenti '
+                    '(schede, sessioni, serie, XP e trofei). Salvalo dove '
                     'vuoi e ritrovi tutto anche su un telefono nuovo.',
                   ),
                 ],
@@ -474,6 +475,12 @@ class _BackupHint extends StatelessWidget {
             const Text(
               '3. Prima di scrivere controlliamo che il file sia integro: se '
               'qualcosa non torna, il diario resta com’è.',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              '4. Un backup fatto prima degli allenamenti si può ancora '
+              'unire, ma non può sostituire tutto: te lo diciamo invece di '
+              'cancellarti schede e sessioni.',
             ),
           ],
         ),

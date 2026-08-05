@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
@@ -324,6 +324,255 @@ void main() {
     });
   });
 
+  test('esporta anche gli allenamenti del profilo', () async {
+    await _seed(database, profileId, moment);
+    await _seedWorkouts(database, profileId, moment);
+
+    final document = await repository.exportBackup(
+      profileId: profileId,
+      exportedAt: exportedAt,
+    );
+
+    expect(document.formatVersion, 2);
+    expect(document.exercises.map((row) => row.id), ['cd-childpose', 'ex-1']);
+    expect(document.routines, hasLength(1));
+    expect(document.routineExercises, hasLength(2));
+    expect(document.routineIntervalSegments, hasLength(1));
+    expect(document.routineWeeklyPlan, hasLength(2));
+    expect(document.workouts, hasLength(2));
+    expect(document.workoutExercises, hasLength(2));
+    expect(document.workoutSets, hasLength(3));
+    expect(document.workoutPainPoints.single.label, 'Spalla destra');
+    expect(document.workoutIntervalSegments.single.completedMarker, isTrue);
+    expect(document.workoutIntervalSegments.single.partialMarker, isTrue);
+    expect(document.workoutProfileStats.single.totalXp, 11370);
+    expect(document.workoutAchievements, hasLength(2));
+    expect(document.bodyMeasurementValues.single.label, 'Vita');
+    // Le pesate portano la composizione corporea, non solo il peso.
+    expect(document.bodyMeasurements.single.bodyFatPct, 24.3);
+    expect(document.bodyMeasurements.single.source, 'renpho_ble');
+  });
+
+  test(
+    'il ripristino su un telefono nuovo ricrea anche gli allenamenti',
+    () async {
+      await _seed(database, profileId, moment);
+      await _seedWorkouts(database, profileId, moment);
+      final original = await repository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      );
+
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final fresh = AppDatabase(NativeDatabase.memory());
+      addTearDown(() {
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+        return fresh.close();
+      });
+      await LocalProfileRepository(fresh).getOrCreateMarco();
+      final freshRepository = BackupRepository(fresh);
+
+      await freshRepository.importBackup(
+        original.encode(),
+        mode: BackupRestoreMode.replace,
+      );
+
+      final restored = await freshRepository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      );
+      expect(restored.encode(), original.encode());
+
+      final sets = await fresh.select(fresh.workoutSets).get();
+      expect(sets, hasLength(3));
+      expect(sets.firstWhere((row) => row.id == 'set-1').weightKg, 62.5);
+      expect(sets.firstWhere((row) => row.id == 'set-3').completed, isFalse);
+      final rows = await fresh.select(fresh.workoutExercises).get();
+      final orphan = rows.firstWhere((row) => row.id == 'workout-exercise-2');
+      expect(orphan.exerciseId, isNull);
+      expect(orphan.exerciseRefId, 'ex-sparito');
+      expect(orphan.exerciseNameSnapshot, 'Esercizio cancellato');
+      expect(
+        (await fresh.select(fresh.workoutProfileStats).getSingle()).totalXp,
+        11370,
+      );
+      expect(await fresh.select(fresh.workoutAchievements).get(), hasLength(2));
+      expect(
+        (await fresh.select(fresh.bodyMeasurementValues).getSingle()).value,
+        96,
+      );
+      final measurement = await fresh
+          .select(fresh.bodyMeasurements)
+          .getSingle();
+      expect(measurement.impedanceOhm, 512);
+      expect(measurement.externalId, 'renpho-1');
+    },
+  );
+
+  test(
+    'gli allenamenti non finiscono nella coda di sincronizzazione',
+    () async {
+      await _seed(database, profileId, moment);
+      await _seedWorkouts(database, profileId, moment);
+      final document = await repository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      );
+
+      await repository.importBackup(
+        document.encode(),
+        mode: BackupRestoreMode.replace,
+      );
+
+      final types = (await database.select(database.syncOutbox).get())
+          .map((row) => row.entityType)
+          .toSet();
+      expect(
+        types.intersection({
+          'workout',
+          'exercise',
+          'routine',
+          'workout_profile_stats',
+        }),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'un backup senza allenamenti non può sostituire quelli che ci sono',
+    () async {
+      await _seed(database, profileId, moment);
+      await _seedWorkouts(database, profileId, moment);
+      final legacy = _asLegacy(
+        await repository.exportBackup(
+          profileId: profileId,
+          exportedAt: exportedAt,
+        ),
+      );
+
+      await expectLater(
+        repository.importBackup(
+          legacy.encode(),
+          mode: BackupRestoreMode.replace,
+        ),
+        throwsA(
+          isA<BackupWouldLoseDataException>().having(
+            (error) => error.message,
+            'message',
+            allOf(contains('2 sessioni'), contains('Unisci')),
+          ),
+        ),
+      );
+
+      expect(await database.select(database.workouts).get(), hasLength(2));
+      expect(await database.select(database.workoutSets).get(), hasLength(3));
+      expect(await database.select(database.meals).get(), hasLength(1));
+      expect(await database.select(database.syncOutbox).get(), isEmpty);
+    },
+  );
+
+  test(
+    'un backup senza allenamenti sostituisce tutto se non ce ne sono',
+    () async {
+      await _seed(database, profileId, moment);
+      final legacy = _asLegacy(
+        await repository.exportBackup(
+          profileId: profileId,
+          exportedAt: exportedAt,
+        ),
+      );
+
+      final summary = await repository.importBackup(
+        legacy.encode(),
+        mode: BackupRestoreMode.replace,
+      );
+
+      // Il blocco scatta solo se c'è qualcosa da perdere: su un telefono senza
+      // allenamenti un backup vecchio deve restare ripristinabile com'era.
+      expect(summary.created, greaterThan(0));
+      expect(await database.select(database.meals).get(), hasLength(1));
+      expect(await database.select(database.workouts).get(), isEmpty);
+    },
+  );
+
+  test('un backup senza allenamenti si può comunque unire', () async {
+    await _seed(database, profileId, moment);
+    await _seedWorkouts(database, profileId, moment);
+    final legacy = _asLegacy(
+      await repository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      ),
+    );
+
+    final summary = await repository.importBackup(
+      legacy.encode(),
+      mode: BackupRestoreMode.merge,
+    );
+
+    expect(summary.mode, BackupRestoreMode.merge);
+    expect(await database.select(database.workouts).get(), hasLength(2));
+    expect(await database.select(database.workoutSets).get(), hasLength(3));
+    expect(await database.select(database.exercises).get(), hasLength(2));
+  });
+
+  test(
+    'sostituendo con un backup del formato 2 le sessioni assenti spariscono',
+    () async {
+      await _seed(database, profileId, moment);
+      await _seedWorkouts(database, profileId, moment);
+      final document = await repository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      );
+
+      await repository.importBackup(
+        _withoutSessions(document).encode(),
+        mode: BackupRestoreMode.replace,
+      );
+
+      // Il file COPRE le sessioni e non ne ha: sostituire vuol dire toglierle.
+      // Il catalogo, che il file ha, resta.
+      expect(await database.select(database.workouts).get(), isEmpty);
+      expect(await database.select(database.workoutSets).get(), isEmpty);
+      expect(await database.select(database.exercises).get(), hasLength(2));
+      expect(await database.select(database.routines).get(), hasLength(1));
+    },
+  );
+
+  test(
+    'unendo, una sessione corretta dopo il backup non torna indietro',
+    () async {
+      await _seed(database, profileId, moment);
+      await _seedWorkouts(database, profileId, moment);
+      final document = await repository.exportBackup(
+        profileId: profileId,
+        exportedAt: exportedAt,
+      );
+
+      final later = moment.add(const Duration(days: 2));
+      await (database.update(database.workoutSets)
+            ..where((row) => row.id.equals('set-1')))
+          .write(const WorkoutSetsCompanion(weightKg: Value(70)));
+      await (database.update(database.workouts)
+            ..where((row) => row.id.equals('workout-1')))
+          .write(WorkoutsCompanion(updatedAt: Value(later)));
+
+      final summary = await repository.importBackup(
+        document.encode(),
+        mode: BackupRestoreMode.merge,
+      );
+
+      final set = await (database.select(
+        database.workoutSets,
+      )..where((row) => row.id.equals('set-1'))).getSingle();
+      expect(set.weightKg, 70);
+      expect(summary.skipped, greaterThan(0));
+      expect(await database.select(database.workoutSets).get(), hasLength(3));
+    },
+  );
+
   test('rifiuta un backup danneggiato senza toccare il database', () async {
     await _seed(database, profileId, moment);
     final document = await repository.exportBackup(
@@ -355,8 +604,11 @@ BackupDocument _copy(
   List<BackupNutritionTarget>? nutritionTargets,
   List<BackupFoodPreference>? foodPreferences,
   List<BackupRecipe>? fitRecipes,
+  int? formatVersion,
+  bool keepWorkouts = true,
+  bool keepSessions = true,
 }) => BackupDocument(
-  formatVersion: source.formatVersion,
+  formatVersion: formatVersion ?? source.formatVersion,
   appVersion: source.appVersion,
   exportedAt: source.exportedAt,
   profile: source.profile,
@@ -371,7 +623,37 @@ BackupDocument _copy(
   recipeIngredients: source.recipeIngredients,
   mealTemplates: source.mealTemplates,
   mealTemplateItems: source.mealTemplateItems,
+  bodyMeasurementValues: keepWorkouts ? source.bodyMeasurementValues : const [],
+  exercises: keepWorkouts ? source.exercises : const [],
+  routines: keepWorkouts ? source.routines : const [],
+  routineExercises: keepWorkouts ? source.routineExercises : const [],
+  routineIntervalSegments: keepWorkouts
+      ? source.routineIntervalSegments
+      : const [],
+  routineWeeklyPlan: keepWorkouts ? source.routineWeeklyPlan : const [],
+  workouts: keepWorkouts && keepSessions ? source.workouts : const [],
+  workoutExercises: keepWorkouts && keepSessions
+      ? source.workoutExercises
+      : const [],
+  workoutSets: keepWorkouts && keepSessions ? source.workoutSets : const [],
+  workoutPainPoints: keepWorkouts && keepSessions
+      ? source.workoutPainPoints
+      : const [],
+  workoutIntervalSegments: keepWorkouts && keepSessions
+      ? source.workoutIntervalSegments
+      : const [],
+  workoutProfileStats: keepWorkouts ? source.workoutProfileStats : const [],
+  workoutAchievements: keepWorkouts ? source.workoutAchievements : const [],
 );
+
+/// Il file com'era prima che il backup conoscesse gli allenamenti: versione 1
+/// del formato e nessuna delle sezioni nuove.
+BackupDocument _asLegacy(BackupDocument source) =>
+    _copy(source, formatVersion: 1, keepWorkouts: false);
+
+/// Un file della versione 2 che il catalogo ce l'ha ma le sessioni no.
+BackupDocument _withoutSessions(BackupDocument source) =>
+    _copy(source, keepSessions: false);
 
 Future<void> _seed(
   AppDatabase database,
@@ -472,6 +754,12 @@ Future<void> _seed(
           profileId: profileId,
           weightKg: 80.5,
           measuredAt: moment,
+          hasImpedance: const Value(true),
+          impedanceOhm: const Value(512),
+          bodyFatPct: const Value(24.3),
+          formulaVersion: const Value('renpho-1'),
+          source: const Value('renpho_ble'),
+          externalId: const Value('renpho-1'),
           note: const Value('dopo la corsa'),
           createdAt: moment,
           updatedAt: moment,
@@ -582,6 +870,309 @@ Future<void> _seed(
           proteinPer100g: 16.9,
           carbsPer100g: 66.3,
           fatPer100g: 6.9,
+        ),
+      );
+}
+
+/// Un pezzo di storico realistico: catalogo con un preset sintetico, una
+/// scheda a circuito, una sessione chiusa e una ancora aperta.
+Future<void> _seedWorkouts(
+  AppDatabase database,
+  String profileId,
+  DateTime moment,
+) async {
+  await database
+      .into(database.exercises)
+      .insert(
+        ExercisesCompanion.insert(
+          id: 'ex-1',
+          profileId: profileId,
+          name: 'Panca piana',
+          muscleGroup: 'petto',
+          trackingMode: 'weightReps',
+          notes: const Value('Scapole strette.'),
+          defaultRestSec: const Value(90),
+          source: const Value('gym_tracker'),
+          externalId: const Value('gym-ex-1'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.exercises)
+      .insert(
+        ExercisesCompanion.insert(
+          id: 'cd-childpose',
+          profileId: profileId,
+          name: 'Posizione del bambino',
+          muscleGroup: 'mobilita',
+          trackingMode: 'timed',
+          defaultRestSec: const Value(10),
+          isPreset: const Value(true),
+          isSynthetic: const Value(true),
+          source: const Value('cooldown_preset'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.routines)
+      .insert(
+        RoutinesCompanion.insert(
+          id: 'routine-1',
+          profileId: profileId,
+          name: 'Giorno1 spalle petto tricipiti',
+          isCircuit: const Value(true),
+          rounds: const Value(4),
+          source: const Value('gym_tracker'),
+          externalId: const Value('gym-routine-1'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.routineExercises)
+      .insert(
+        RoutineExercisesCompanion.insert(
+          id: 'routine-exercise-1',
+          routineId: 'routine-1',
+          block: 'warmup',
+          position: 0,
+          exerciseRefId: 'cd-childpose',
+          exerciseId: const Value('cd-childpose'),
+          exerciseNameSnapshot: 'Posizione del bambino',
+          warmupDurationSec: const Value(30),
+        ),
+      );
+  await database
+      .into(database.routineExercises)
+      .insert(
+        RoutineExercisesCompanion.insert(
+          id: 'routine-exercise-2',
+          routineId: 'routine-1',
+          block: 'main',
+          position: 0,
+          exerciseRefId: 'ex-1',
+          exerciseId: const Value('ex-1'),
+          exerciseNameSnapshot: 'Panca piana',
+          prescSets: const Value(4),
+          prescReps: const Value(8),
+          prescRestSec: const Value(90),
+        ),
+      );
+  await database
+      .into(database.routineIntervalSegments)
+      .insert(
+        RoutineIntervalSegmentsCompanion.insert(
+          id: 'routine-segment-1',
+          routineId: 'routine-1',
+          segmentIndex: 0,
+          startIdx: 0,
+          endIdx: 1,
+          workSec: const Value(40),
+          restSec: const Value(20),
+          rounds: const Value(3),
+        ),
+      );
+  await database
+      .into(database.routineWeeklyPlan)
+      .insert(
+        RoutineWeeklyPlanCompanion.insert(
+          id: 'plan-lunedi',
+          profileId: profileId,
+          weekday: 1,
+          routineId: const Value('routine-1'),
+          routineExternalId: const Value('routine-1'),
+          routineNameSnapshot: const Value('Giorno1 spalle petto tricipiti'),
+          updatedAt: moment,
+        ),
+      );
+  // Il giorno che punta a una scheda cancellata: la FK è nulla ma il nome e
+  // l'id originale restano.
+  await database
+      .into(database.routineWeeklyPlan)
+      .insert(
+        RoutineWeeklyPlanCompanion.insert(
+          id: 'plan-mercoledi',
+          profileId: profileId,
+          weekday: 3,
+          routineExternalId: const Value('e91fda05-scomparsa'),
+          routineNameSnapshot: const Value('Esercizi 1'),
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.workouts)
+      .insert(
+        WorkoutsCompanion.insert(
+          id: 'workout-1',
+          profileId: profileId,
+          startedAt: moment,
+          endedAt: Value(moment.add(const Duration(minutes: 70))),
+          accumulatedPauseSeconds: const Value(300),
+          finalDurationSeconds: const Value(3900),
+          routineId: const Value('routine-1'),
+          routineExternalId: const Value('routine-1'),
+          routineNameSnapshot: const Value('Giorno1 spalle petto tricipiti'),
+          notes: const Value('Bene la panca.'),
+          totalKcal: const Value(477.7840476190476),
+          mood: const Value(4),
+          rpe: const Value(7),
+          satisfaction: const Value(5),
+          xpEarned: const Value(120),
+          source: const Value('gym_tracker'),
+          externalId: const Value('gym-workout-1'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.workouts)
+      .insert(
+        WorkoutsCompanion.insert(
+          id: 'workout-2',
+          profileId: profileId,
+          startedAt: moment.add(const Duration(days: 1)),
+          durationSuspect: const Value(true),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.workoutExercises)
+      .insert(
+        WorkoutExercisesCompanion.insert(
+          id: 'workout-exercise-1',
+          workoutId: 'workout-1',
+          position: 0,
+          exerciseRefId: 'ex-1',
+          exerciseId: const Value('ex-1'),
+          exerciseNameSnapshot: 'Panca piana',
+          trackingMode: 'weightReps',
+          muscleGroupSnapshot: const Value('petto'),
+          restSeconds: const Value(90),
+        ),
+      );
+  // La riga di un esercizio cancellato dal catalogo: exercise_id nullo,
+  // exercise_ref_id no.
+  await database
+      .into(database.workoutExercises)
+      .insert(
+        WorkoutExercisesCompanion.insert(
+          id: 'workout-exercise-2',
+          workoutId: 'workout-1',
+          position: 1,
+          exerciseRefId: 'ex-sparito',
+          exerciseNameSnapshot: 'Esercizio cancellato',
+          trackingMode: 'timeOnly',
+          isInSupersetWithPrevious: const Value(true),
+          intervalSegmentIndex: const Value(0),
+        ),
+      );
+  await database
+      .into(database.workoutSets)
+      .insert(
+        WorkoutSetsCompanion.insert(
+          id: 'set-1',
+          workoutExerciseId: 'workout-exercise-1',
+          position: 0,
+          weightKg: const Value(62.5),
+          reps: const Value(8),
+          completed: const Value(true),
+        ),
+      );
+  await database
+      .into(database.workoutSets)
+      .insert(
+        WorkoutSetsCompanion.insert(
+          id: 'set-2',
+          workoutExerciseId: 'workout-exercise-1',
+          position: 1,
+          weightKg: const Value(62.5),
+          reps: const Value(6),
+          rpe: const Value(9),
+          completed: const Value(true),
+        ),
+      );
+  // Serie non completata e con la sola durata: la metrica non segue la
+  // modalità, e il ripristino non deve inventarla.
+  await database
+      .into(database.workoutSets)
+      .insert(
+        WorkoutSetsCompanion.insert(
+          id: 'set-3',
+          workoutExerciseId: 'workout-exercise-2',
+          position: 0,
+          durationSec: const Value(45),
+        ),
+      );
+  await database
+      .into(database.workoutPainPoints)
+      .insert(
+        WorkoutPainPointsCompanion.insert(
+          id: 'pain-1',
+          workoutId: 'workout-1',
+          label: 'Spalla destra',
+        ),
+      );
+  await database
+      .into(database.workoutIntervalSegments)
+      .insert(
+        WorkoutIntervalSegmentsCompanion.insert(
+          id: 'workout-segment-1',
+          workoutId: 'workout-1',
+          segmentIndex: 0,
+          completedMarker: const Value(true),
+          partialMarker: const Value(true),
+          completionSignature: const Value('{"work":40,"rest":20}'),
+        ),
+      );
+  await database
+      .into(database.workoutProfileStats)
+      .insert(
+        WorkoutProfileStatsCompanion.insert(
+          id: 'stats-1',
+          profileId: profileId,
+          totalXp: const Value(11370),
+          currentStreak: const Value(2),
+          longestStreak: const Value(2),
+          lastWorkoutDay: Value(moment),
+          weeklyWorkoutGoal: const Value(4),
+          reminderEnabled: const Value(true),
+          healthConnectEnabled: const Value(true),
+          gymBodyWeightKg: const Value(94.7),
+          gymExportedAt: Value(moment),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.workoutAchievements)
+      .insert(
+        WorkoutAchievementsCompanion.insert(
+          id: 'achievement-1',
+          profileId: profileId,
+          slug: 'pr_10',
+        ),
+      );
+  await database
+      .into(database.workoutAchievements)
+      .insert(
+        WorkoutAchievementsCompanion.insert(
+          id: 'achievement-2',
+          profileId: profileId,
+          slug: 'streak_2',
+          unlockedAt: Value(moment),
+        ),
+      );
+  await database
+      .into(database.bodyMeasurementValues)
+      .insert(
+        BodyMeasurementValuesCompanion.insert(
+          id: 'girth-1',
+          measurementId: 'weight-1',
+          label: 'Vita',
+          value: 96,
         ),
       );
 }

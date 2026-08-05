@@ -77,8 +77,28 @@ class FakeSyncGateway implements SyncGateway {
   }
 }
 
+/// Gateway con lo stesso contratto di quello vero: traduce la mutation con
+/// [SyncPushMapper] e "invia" soltanto gli op che ne escono. Serve a
+/// presidiare il buco per cui una mappatura vuota è indistinguibile da un
+/// invio riuscito.
+class MappingSyncGateway extends FakeSyncGateway {
+  final List<RemoteOp> executed = [];
+
+  @override
+  Future<void> pushMutation(SyncMutation mutation) async {
+    received.add(mutation);
+    executed.addAll(SyncPushMapper.map(mutation).ops);
+    applied++;
+  }
+}
+
 const _mealId = '33333333-3333-4333-8333-333333333333';
 const _itemId = '22222222-2222-4222-8222-222222222222';
+const _routineId = '77777777-7777-4777-8777-777777777777';
+const _workoutId = '88888888-8888-4888-8888-888888888888';
+const _exerciseId = '99999999-9999-4999-8999-999999999999';
+const _rowId = 'aaaaaaaa-0000-4000-8000-000000000001';
+const _setId = 'dddddddd-0000-4000-8000-000000000001';
 
 const _cloudConfig = AppConfig(
   supabaseUrl: 'https://esempio.supabase.co',
@@ -196,9 +216,11 @@ void main() {
         milliliters: 500,
         loggedAt: DateTime(2026, 8, 3, 9),
       );
+      // 23514: un CHECK violato è l'unico rifiuto davvero definitivo, e
+      // ritentarlo per sempre bloccherebbe tutta la coda dietro questa riga.
       gateway.failBeforeApply = (mutation) => mutation.entityId == poisoned
           ? const SyncGatewayException(
-              'Il server ha rifiutato la modifica (codice 23505).',
+              'Il server ha rifiutato la modifica (codice 23514).',
             )
           : null;
 
@@ -523,6 +545,319 @@ void main() {
       expect(await outbox(), hasLength(1));
     },
   );
+
+  test('un tipo che il mapper non conosce non svuota la coda', () async {
+    final mapping = MappingSyncGateway();
+    gateway = mapping;
+    await database
+        .into(database.syncOutbox)
+        .insert(
+          SyncOutboxCompanion.insert(
+            id: '90000000-0000-4000-8000-000000000001',
+            entityType: 'entita_del_futuro',
+            entityId: _workoutId,
+            operation: 'upsert',
+            payloadJson: jsonEncode({'id': _workoutId}),
+            createdAt: now,
+          ),
+        );
+
+    final report = await engine().sync();
+
+    // Prima della correzione il mapper ritornava zero op, il push riusciva
+    // e la riga spariva contata come inviata: perdita silenziosa.
+    expect(report.pushed, 0);
+    expect(report.error, isNotNull);
+    expect(mapping.executed, isEmpty);
+    final row = (await outbox()).single;
+    expect(row.entityType, 'entita_del_futuro');
+    expect(row.attemptCount, 1);
+  });
+
+  test('un allenamento accodato raggiunge davvero le tabelle remote', () async {
+    final mapping = MappingSyncGateway();
+    gateway = mapping;
+    await database
+        .into(database.syncOutbox)
+        .insert(
+          SyncOutboxCompanion.insert(
+            id: '90000000-0000-4000-8000-000000000002',
+            entityType: 'workout',
+            entityId: _workoutId,
+            operation: 'upsert',
+            payloadJson: jsonEncode({
+              'id': _workoutId,
+              'profile_id': profileId,
+              'started_at': '2026-08-04T20:34:30.000Z',
+              'updated_at': '2026-08-05T10:00:00.000Z',
+              'exercises': [
+                {
+                  'id': _rowId,
+                  'position': 0,
+                  'exercise_ref_id': 'cd-childpose',
+                  'exercise_name_snapshot': 'Child pose',
+                  'tracking_mode': 'timed',
+                  'sets': [
+                    {'id': _setId, 'position': 0, 'duration_sec': 40},
+                  ],
+                },
+              ],
+            }),
+            createdAt: now,
+          ),
+        );
+
+    final report = await engine().sync();
+
+    expect(report.pushed, 1);
+    expect(await outbox(), isEmpty);
+    final tables = [
+      for (final op in mapping.executed)
+        switch (op) {
+          RemoteUpsert() => op.table,
+          RemotePatch() => op.table,
+          RemoteChildrenSwap() => op.table,
+        },
+    ];
+    expect(tables, contains('workouts'));
+    expect(tables, contains('workout_exercises'));
+    expect(tables, contains('workout_sets'));
+  });
+
+  test('un 23503 non scarta la mutation: resta in coda col backoff', () async {
+    await database
+        .into(database.syncOutbox)
+        .insert(
+          SyncOutboxCompanion.insert(
+            id: '90000000-0000-4000-8000-000000000003',
+            entityType: 'workout',
+            entityId: _workoutId,
+            operation: 'upsert',
+            payloadJson: jsonEncode({
+              'id': _workoutId,
+              'profile_id': profileId,
+              'started_at': '2026-08-04T20:34:30.000Z',
+            }),
+            createdAt: now,
+          ),
+        );
+    // L'esercizio citato non è ancora arrivato sul server: la FK risponde
+    // 23503. Scartare la riga farebbe sparire l'intero allenamento.
+    gateway.failBeforeApply = (_) => SyncGatewayException(
+      'Il server non ha ancora tutti i dati collegati (codice 23503).',
+      retryable: SyncRetryPolicy.isRetryable('23503'),
+    );
+
+    final report = await engine().sync();
+
+    expect(report.pushed, 0);
+    expect(report.error, isNot(contains('scartat')));
+    final row = (await outbox()).single;
+    expect(row.entityId, _workoutId);
+    expect(row.attemptCount, 1);
+    expect(row.nextAttemptAt, isNotNull);
+  });
+
+  test('il pull ricostruisce una sessione con esercizi e serie', () async {
+    final exerciseRemoteId = SyncIds.remoteId('cd-childpose');
+    // L'alias slug -> uuid nasce dal push dell'esercizio: senza, il pull non
+    // saprebbe che `cd-childpose` e quell'uuid sono la stessa riga.
+    await database
+        .into(database.syncOutbox)
+        .insert(
+          SyncOutboxCompanion.insert(
+            id: '90000000-0000-4000-8000-000000000004',
+            entityType: 'exercise',
+            entityId: 'cd-childpose',
+            operation: 'upsert',
+            payloadJson: jsonEncode({
+              'id': 'cd-childpose',
+              'profile_id': profileId,
+              'name': 'Child pose',
+              'muscle_group': 'mobilita',
+              'tracking_mode': 'timed',
+              'source': 'cooldown_preset',
+              'external_id': 'cd-childpose',
+              'updated_at': '2026-08-05T10:00:00.000Z',
+            }),
+            createdAt: now,
+          ),
+        );
+    await engine().sync();
+    expect(
+      (await store.read()).remoteToLocalIds[exerciseRemoteId],
+      'cd-childpose',
+    );
+
+    gateway.changes = [
+      RemoteChange(
+        changeId: 1,
+        entityType: 'exercises',
+        entityId: exerciseRemoteId,
+        operation: 'upsert',
+        payload: {
+          'id': exerciseRemoteId,
+          'name': 'Child pose',
+          'muscle_group': 'mobilita',
+          'tracking_mode': 'timed',
+          'is_synthetic': true,
+          'source': 'cooldown_preset',
+          'external_id': 'cd-childpose',
+          'updated_at': '2030-01-01T00:00:00+00:00',
+          'deleted_at': null,
+        },
+      ),
+      const RemoteChange(
+        changeId: 2,
+        entityType: 'workouts',
+        entityId: _workoutId,
+        operation: 'upsert',
+        payload: {
+          'id': _workoutId,
+          'started_at': '2026-08-04T20:34:30+00:00',
+          'ended_at': '2026-08-04T21:10:00+00:00',
+          'total_kcal': 477.7840476190476,
+          'duration_suspect': false,
+          // La scheda non esiste più: la FK resta vuota, id e nome no.
+          'routine_id': null,
+          'routine_external_id': _routineId,
+          'routine_name_snapshot': 'Esercizi  2',
+          'source': 'gym_tracker',
+          'external_id': _workoutId,
+          'updated_at': '2026-08-05T10:00:00+00:00',
+          'deleted_at': null,
+        },
+      ),
+      RemoteChange(
+        changeId: 3,
+        entityType: 'workout_exercises',
+        entityId: _rowId,
+        operation: 'upsert',
+        payload: {
+          'id': _rowId,
+          'workout_id': _workoutId,
+          'position': 0,
+          'exercise_ref_id': exerciseRemoteId,
+          'exercise_id': exerciseRemoteId,
+          'exercise_name_snapshot': 'Child pose',
+          'tracking_mode': 'timed',
+          'muscle_group_snapshot': 'mobilita',
+          'is_cooldown': true,
+          'deleted_at': null,
+        },
+      ),
+      const RemoteChange(
+        changeId: 4,
+        entityType: 'workout_sets',
+        entityId: _setId,
+        operation: 'upsert',
+        payload: {
+          'id': _setId,
+          'workout_id': _workoutId,
+          'workout_exercise_id': _rowId,
+          'position': 0,
+          'duration_sec': 40,
+          'completed': true,
+          'deleted_at': null,
+        },
+      ),
+    ];
+
+    final report = await engine().sync();
+    expect(report.pulled, 4);
+    expect(report.error, isNull);
+
+    final workout = await (database.select(
+      database.workouts,
+    )..where((t) => t.id.equals(_workoutId))).getSingle();
+    expect(workout.profileId, profileId);
+    expect(workout.routineId, isNull);
+    expect(workout.routineExternalId, _routineId);
+    expect(workout.routineNameSnapshot, 'Esercizi  2');
+    expect(workout.totalKcal, 477.7840476190476);
+
+    final row = await (database.select(
+      database.workoutExercises,
+    )..where((t) => t.id.equals(_rowId))).getSingle();
+    // L'alias riporta lo slug: senza, exercise_ref_id resterebbe un uuid che
+    // qui non corrisponde a nessun esercizio e i record personali si
+    // spezzerebbero in due gruppi.
+    expect(row.exerciseRefId, 'cd-childpose');
+    expect(row.exerciseId, 'cd-childpose');
+    expect(row.isCooldown, isTrue);
+
+    final set = await (database.select(
+      database.workoutSets,
+    )..where((t) => t.id.equals(_setId))).getSingle();
+    expect(set.workoutExerciseId, _rowId);
+    expect(set.durationSec, 40);
+    expect(set.weightKg, isNull, reason: '«non inserito» non è zero');
+  });
+
+  test(
+    'una riga figlia senza padre locale si salta invece di esplodere',
+    () async {
+      gateway.changes = [
+        const RemoteChange(
+          changeId: 1,
+          entityType: 'workout_sets',
+          entityId: _setId,
+          operation: 'upsert',
+          payload: {
+            'id': _setId,
+            'workout_id': _workoutId,
+            'workout_exercise_id': _rowId,
+            'position': 0,
+            'reps': 10,
+            'deleted_at': null,
+          },
+        ),
+      ];
+
+      final report = await engine().sync();
+      expect(report.pulled, 0);
+      expect(report.skipped, 1);
+      expect(report.error, isNull, reason: 'non è un errore locale');
+      expect(await database.select(database.workoutSets).get(), isEmpty);
+    },
+  );
+
+  test('last_workout_day torna dal server come giorno di Roma', () async {
+    gateway.changes = [
+      RemoteChange(
+        changeId: 1,
+        entityType: 'workout_profile_stats',
+        entityId: _exerciseId,
+        operation: 'upsert',
+        payload: {
+          'id': _exerciseId,
+          'total_xp': 11370,
+          'current_streak': 2,
+          'longest_streak': 2,
+          // Colonna remota `date`: arriva senza fuso.
+          'last_workout_day': '2026-08-04',
+          'weekly_workout_goal': 4,
+          'reminder_enabled': true,
+          'health_connect_enabled': true,
+          'gym_body_weight_kg': 94.7,
+          'updated_at': '2026-08-05T10:00:00+00:00',
+          'deleted_at': null,
+        },
+      ),
+    ];
+
+    final report = await engine().sync();
+    expect(report.pulled, 1);
+
+    final stats = await (database.select(
+      database.workoutProfileStats,
+    )..where((t) => t.profileId.equals(profileId))).getSingle();
+    expect(stats.totalXp, 11370);
+    expect(stats.gymBodyWeightKg, 94.7);
+    // Mezzanotte di Roma, non mezzanotte UTC: leggerla come UTC farebbe
+    // arretrare il giorno di due ore e spezzerebbe lo streak.
+    expect(stats.lastWorkoutDay!.toUtc(), DateTime.utc(2026, 8, 3, 22));
+  });
 
   test('senza configurazione il motore resta spento: zero chiamate', () async {
     final container = ProviderContainer(
