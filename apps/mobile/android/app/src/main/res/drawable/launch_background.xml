@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+<!-- La schermata d'avvio prima di Android 12: il fondo dell'app e il marchio
+     al centro. Dura il tempo che il motore Flutter impiega a disegnare il
+     primo fotogramma, e serve a non far partire l'app da un lampo bianco.
 
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+     Il logo è un <bitmap> e non un vector drawable perché nel windowBackground
+     i vettori sono affidabili solo da Android 7 in su: i PNG per densità li
+     legge chiunque, e sono già in `drawable-*dpi` (con la variante notturna in
+     `drawable-night-*dpi`).
+
+     Da Android 12 comanda la SplashScreen di sistema: il colore lo dà
+     `values-v31/styles.xml`, l'immagine è l'icona dell'app. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@drawable/ic_splash_logo" />
+    </item>
 </layer-list>

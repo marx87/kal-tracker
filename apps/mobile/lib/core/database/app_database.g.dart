@@ -3622,6 +3622,30 @@ class $BodyMeasurementsTable extends BodyMeasurements
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deviceModelMeta = const VerificationMeta(
+    'deviceModel',
+  );
+  @override
+  late final GeneratedColumn<String> deviceModel = GeneratedColumn<String>(
+    'device_model',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 60),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rawPayloadMeta = const VerificationMeta(
+    'rawPayload',
+  );
+  @override
+  late final GeneratedColumn<String> rawPayload = GeneratedColumn<String>(
+    'raw_payload',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 512),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -3685,6 +3709,8 @@ class $BodyMeasurementsTable extends BodyMeasurements
     formulaVersion,
     source,
     externalId,
+    deviceModel,
+    rawPayload,
     note,
     createdAt,
     updatedAt,
@@ -3836,6 +3862,21 @@ class $BodyMeasurementsTable extends BodyMeasurements
         externalId.isAcceptableOrUnknown(data['external_id']!, _externalIdMeta),
       );
     }
+    if (data.containsKey('device_model')) {
+      context.handle(
+        _deviceModelMeta,
+        deviceModel.isAcceptableOrUnknown(
+          data['device_model']!,
+          _deviceModelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('raw_payload')) {
+      context.handle(
+        _rawPayloadMeta,
+        rawPayload.isAcceptableOrUnknown(data['raw_payload']!, _rawPayloadMeta),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -3945,6 +3986,14 @@ class $BodyMeasurementsTable extends BodyMeasurements
         DriftSqlType.string,
         data['${effectivePrefix}external_id'],
       ),
+      deviceModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_model'],
+      ),
+      rawPayload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_payload'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -3990,6 +4039,8 @@ class LocalBodyMeasurement extends DataClass
   final String? formulaVersion;
   final String source;
   final String? externalId;
+  final String? deviceModel;
+  final String? rawPayload;
   final String? note;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -4013,6 +4064,8 @@ class LocalBodyMeasurement extends DataClass
     this.formulaVersion,
     required this.source,
     this.externalId,
+    this.deviceModel,
+    this.rawPayload,
     this.note,
     required this.createdAt,
     required this.updatedAt,
@@ -4062,6 +4115,12 @@ class LocalBodyMeasurement extends DataClass
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || externalId != null) {
       map['external_id'] = Variable<String>(externalId);
+    }
+    if (!nullToAbsent || deviceModel != null) {
+      map['device_model'] = Variable<String>(deviceModel);
+    }
+    if (!nullToAbsent || rawPayload != null) {
+      map['raw_payload'] = Variable<String>(rawPayload);
     }
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
@@ -4118,6 +4177,12 @@ class LocalBodyMeasurement extends DataClass
       externalId: externalId == null && nullToAbsent
           ? const Value.absent()
           : Value(externalId),
+      deviceModel: deviceModel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceModel),
+      rawPayload: rawPayload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rawPayload),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -4155,6 +4220,8 @@ class LocalBodyMeasurement extends DataClass
       formulaVersion: serializer.fromJson<String?>(json['formulaVersion']),
       source: serializer.fromJson<String>(json['source']),
       externalId: serializer.fromJson<String?>(json['externalId']),
+      deviceModel: serializer.fromJson<String?>(json['deviceModel']),
+      rawPayload: serializer.fromJson<String?>(json['rawPayload']),
       note: serializer.fromJson<String?>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -4183,6 +4250,8 @@ class LocalBodyMeasurement extends DataClass
       'formulaVersion': serializer.toJson<String?>(formulaVersion),
       'source': serializer.toJson<String>(source),
       'externalId': serializer.toJson<String?>(externalId),
+      'deviceModel': serializer.toJson<String?>(deviceModel),
+      'rawPayload': serializer.toJson<String?>(rawPayload),
       'note': serializer.toJson<String?>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -4209,6 +4278,8 @@ class LocalBodyMeasurement extends DataClass
     Value<String?> formulaVersion = const Value.absent(),
     String? source,
     Value<String?> externalId = const Value.absent(),
+    Value<String?> deviceModel = const Value.absent(),
+    Value<String?> rawPayload = const Value.absent(),
     Value<String?> note = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -4240,6 +4311,8 @@ class LocalBodyMeasurement extends DataClass
         : this.formulaVersion,
     source: source ?? this.source,
     externalId: externalId.present ? externalId.value : this.externalId,
+    deviceModel: deviceModel.present ? deviceModel.value : this.deviceModel,
+    rawPayload: rawPayload.present ? rawPayload.value : this.rawPayload,
     note: note.present ? note.value : this.note,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -4285,6 +4358,12 @@ class LocalBodyMeasurement extends DataClass
       externalId: data.externalId.present
           ? data.externalId.value
           : this.externalId,
+      deviceModel: data.deviceModel.present
+          ? data.deviceModel.value
+          : this.deviceModel,
+      rawPayload: data.rawPayload.present
+          ? data.rawPayload.value
+          : this.rawPayload,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -4313,6 +4392,8 @@ class LocalBodyMeasurement extends DataClass
           ..write('formulaVersion: $formulaVersion, ')
           ..write('source: $source, ')
           ..write('externalId: $externalId, ')
+          ..write('deviceModel: $deviceModel, ')
+          ..write('rawPayload: $rawPayload, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4341,6 +4422,8 @@ class LocalBodyMeasurement extends DataClass
     formulaVersion,
     source,
     externalId,
+    deviceModel,
+    rawPayload,
     note,
     createdAt,
     updatedAt,
@@ -4368,6 +4451,8 @@ class LocalBodyMeasurement extends DataClass
           other.formulaVersion == this.formulaVersion &&
           other.source == this.source &&
           other.externalId == this.externalId &&
+          other.deviceModel == this.deviceModel &&
+          other.rawPayload == this.rawPayload &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -4393,6 +4478,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
   final Value<String?> formulaVersion;
   final Value<String> source;
   final Value<String?> externalId;
+  final Value<String?> deviceModel;
+  final Value<String?> rawPayload;
   final Value<String?> note;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -4417,6 +4504,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     this.formulaVersion = const Value.absent(),
     this.source = const Value.absent(),
     this.externalId = const Value.absent(),
+    this.deviceModel = const Value.absent(),
+    this.rawPayload = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4442,6 +4531,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     this.formulaVersion = const Value.absent(),
     this.source = const Value.absent(),
     this.externalId = const Value.absent(),
+    this.deviceModel = const Value.absent(),
+    this.rawPayload = const Value.absent(),
     this.note = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -4472,6 +4563,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     Expression<String>? formulaVersion,
     Expression<String>? source,
     Expression<String>? externalId,
+    Expression<String>? deviceModel,
+    Expression<String>? rawPayload,
     Expression<String>? note,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -4498,6 +4591,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
       if (formulaVersion != null) 'formula_version': formulaVersion,
       if (source != null) 'source': source,
       if (externalId != null) 'external_id': externalId,
+      if (deviceModel != null) 'device_model': deviceModel,
+      if (rawPayload != null) 'raw_payload': rawPayload,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -4525,6 +4620,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     Value<String?>? formulaVersion,
     Value<String>? source,
     Value<String?>? externalId,
+    Value<String?>? deviceModel,
+    Value<String?>? rawPayload,
     Value<String?>? note,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -4550,6 +4647,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
       formulaVersion: formulaVersion ?? this.formulaVersion,
       source: source ?? this.source,
       externalId: externalId ?? this.externalId,
+      deviceModel: deviceModel ?? this.deviceModel,
+      rawPayload: rawPayload ?? this.rawPayload,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -4615,6 +4714,12 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
     if (externalId.present) {
       map['external_id'] = Variable<String>(externalId.value);
     }
+    if (deviceModel.present) {
+      map['device_model'] = Variable<String>(deviceModel.value);
+    }
+    if (rawPayload.present) {
+      map['raw_payload'] = Variable<String>(rawPayload.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -4654,6 +4759,8 @@ class BodyMeasurementsCompanion extends UpdateCompanion<LocalBodyMeasurement> {
           ..write('formulaVersion: $formulaVersion, ')
           ..write('source: $source, ')
           ..write('externalId: $externalId, ')
+          ..write('deviceModel: $deviceModel, ')
+          ..write('rawPayload: $rawPayload, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -19311,6 +19418,1812 @@ class BodyMeasurementValuesCompanion
   }
 }
 
+class $DailyCheckInsTable extends DailyCheckIns
+    with TableInfo<$DailyCheckInsTable, LocalDailyCheckIn> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyCheckInsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<DateTime> day = GeneratedColumn<DateTime>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sleepHoursMeta = const VerificationMeta(
+    'sleepHours',
+  );
+  @override
+  late final GeneratedColumn<double> sleepHours = GeneratedColumn<double>(
+    'sleep_hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _energyScoreMeta = const VerificationMeta(
+    'energyScore',
+  );
+  @override
+  late final GeneratedColumn<int> energyScore = GeneratedColumn<int>(
+    'energy_score',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    day,
+    sleepHours,
+    energyScore,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_check_ins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalDailyCheckIn> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('sleep_hours')) {
+      context.handle(
+        _sleepHoursMeta,
+        sleepHours.isAcceptableOrUnknown(data['sleep_hours']!, _sleepHoursMeta),
+      );
+    }
+    if (data.containsKey('energy_score')) {
+      context.handle(
+        _energyScoreMeta,
+        energyScore.isAcceptableOrUnknown(
+          data['energy_score']!,
+          _energyScoreMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalDailyCheckIn map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalDailyCheckIn(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day'],
+      )!,
+      sleepHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sleep_hours'],
+      ),
+      energyScore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}energy_score'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $DailyCheckInsTable createAlias(String alias) {
+    return $DailyCheckInsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalDailyCheckIn extends DataClass
+    implements Insertable<LocalDailyCheckIn> {
+  final String id;
+  final String profileId;
+  final DateTime day;
+  final double? sleepHours;
+  final int? energyScore;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const LocalDailyCheckIn({
+    required this.id,
+    required this.profileId,
+    required this.day,
+    this.sleepHours,
+    this.energyScore,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['day'] = Variable<DateTime>(day);
+    if (!nullToAbsent || sleepHours != null) {
+      map['sleep_hours'] = Variable<double>(sleepHours);
+    }
+    if (!nullToAbsent || energyScore != null) {
+      map['energy_score'] = Variable<int>(energyScore);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  DailyCheckInsCompanion toCompanion(bool nullToAbsent) {
+    return DailyCheckInsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      day: Value(day),
+      sleepHours: sleepHours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sleepHours),
+      energyScore: energyScore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(energyScore),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory LocalDailyCheckIn.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalDailyCheckIn(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      day: serializer.fromJson<DateTime>(json['day']),
+      sleepHours: serializer.fromJson<double?>(json['sleepHours']),
+      energyScore: serializer.fromJson<int?>(json['energyScore']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'day': serializer.toJson<DateTime>(day),
+      'sleepHours': serializer.toJson<double?>(sleepHours),
+      'energyScore': serializer.toJson<int?>(energyScore),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  LocalDailyCheckIn copyWith({
+    String? id,
+    String? profileId,
+    DateTime? day,
+    Value<double?> sleepHours = const Value.absent(),
+    Value<int?> energyScore = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => LocalDailyCheckIn(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    day: day ?? this.day,
+    sleepHours: sleepHours.present ? sleepHours.value : this.sleepHours,
+    energyScore: energyScore.present ? energyScore.value : this.energyScore,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  LocalDailyCheckIn copyWithCompanion(DailyCheckInsCompanion data) {
+    return LocalDailyCheckIn(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      day: data.day.present ? data.day.value : this.day,
+      sleepHours: data.sleepHours.present
+          ? data.sleepHours.value
+          : this.sleepHours,
+      energyScore: data.energyScore.present
+          ? data.energyScore.value
+          : this.energyScore,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalDailyCheckIn(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('day: $day, ')
+          ..write('sleepHours: $sleepHours, ')
+          ..write('energyScore: $energyScore, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    day,
+    sleepHours,
+    energyScore,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalDailyCheckIn &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.day == this.day &&
+          other.sleepHours == this.sleepHours &&
+          other.energyScore == this.energyScore &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class DailyCheckInsCompanion extends UpdateCompanion<LocalDailyCheckIn> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<DateTime> day;
+  final Value<double?> sleepHours;
+  final Value<int?> energyScore;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const DailyCheckInsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.day = const Value.absent(),
+    this.sleepHours = const Value.absent(),
+    this.energyScore = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyCheckInsCompanion.insert({
+    required String id,
+    required String profileId,
+    required DateTime day,
+    this.sleepHours = const Value.absent(),
+    this.energyScore = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       day = Value(day),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalDailyCheckIn> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<DateTime>? day,
+    Expression<double>? sleepHours,
+    Expression<int>? energyScore,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (day != null) 'day': day,
+      if (sleepHours != null) 'sleep_hours': sleepHours,
+      if (energyScore != null) 'energy_score': energyScore,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyCheckInsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<DateTime>? day,
+    Value<double?>? sleepHours,
+    Value<int?>? energyScore,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return DailyCheckInsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      day: day ?? this.day,
+      sleepHours: sleepHours ?? this.sleepHours,
+      energyScore: energyScore ?? this.energyScore,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<DateTime>(day.value);
+    }
+    if (sleepHours.present) {
+      map['sleep_hours'] = Variable<double>(sleepHours.value);
+    }
+    if (energyScore.present) {
+      map['energy_score'] = Variable<int>(energyScore.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyCheckInsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('day: $day, ')
+          ..write('sleepHours: $sleepHours, ')
+          ..write('energyScore: $energyScore, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $GoalsTable extends Goals with TableInfo<$GoalsTable, LocalGoal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GoalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _targetWeightKgMeta = const VerificationMeta(
+    'targetWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> targetWeightKg = GeneratedColumn<double>(
+    'target_weight_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetLevelMeta = const VerificationMeta(
+    'targetLevel',
+  );
+  @override
+  late final GeneratedColumn<String> targetLevel = GeneratedColumn<String>(
+    'target_level',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paceKgPerWeekMeta = const VerificationMeta(
+    'paceKgPerWeek',
+  );
+  @override
+  late final GeneratedColumn<double> paceKgPerWeek = GeneratedColumn<double>(
+    'pace_kg_per_week',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startWeightKgMeta = const VerificationMeta(
+    'startWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> startWeightKg = GeneratedColumn<double>(
+    'start_weight_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startFatFreeMassKgMeta =
+      const VerificationMeta('startFatFreeMassKg');
+  @override
+  late final GeneratedColumn<double> startFatFreeMassKg =
+      GeneratedColumn<double>(
+        'start_fat_free_mass_kg',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _phaseMeta = const VerificationMeta('phase');
+  @override
+  late final GeneratedColumn<String> phase = GeneratedColumn<String>(
+    'phase',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('approach'),
+  );
+  static const VerificationMeta _phaseStartedAtMeta = const VerificationMeta(
+    'phaseStartedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> phaseStartedAt =
+      GeneratedColumn<DateTime>(
+        'phase_started_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> closedAt = GeneratedColumn<DateTime>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 20),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    targetWeightKg,
+    targetLevel,
+    paceKgPerWeek,
+    startedAt,
+    startWeightKg,
+    startFatFreeMassKg,
+    phase,
+    phaseStartedAt,
+    closedAt,
+    outcome,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'goals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalGoal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('target_weight_kg')) {
+      context.handle(
+        _targetWeightKgMeta,
+        targetWeightKg.isAcceptableOrUnknown(
+          data['target_weight_kg']!,
+          _targetWeightKgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetWeightKgMeta);
+    }
+    if (data.containsKey('target_level')) {
+      context.handle(
+        _targetLevelMeta,
+        targetLevel.isAcceptableOrUnknown(
+          data['target_level']!,
+          _targetLevelMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetLevelMeta);
+    }
+    if (data.containsKey('pace_kg_per_week')) {
+      context.handle(
+        _paceKgPerWeekMeta,
+        paceKgPerWeek.isAcceptableOrUnknown(
+          data['pace_kg_per_week']!,
+          _paceKgPerWeekMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_paceKgPerWeekMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('start_weight_kg')) {
+      context.handle(
+        _startWeightKgMeta,
+        startWeightKg.isAcceptableOrUnknown(
+          data['start_weight_kg']!,
+          _startWeightKgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startWeightKgMeta);
+    }
+    if (data.containsKey('start_fat_free_mass_kg')) {
+      context.handle(
+        _startFatFreeMassKgMeta,
+        startFatFreeMassKg.isAcceptableOrUnknown(
+          data['start_fat_free_mass_kg']!,
+          _startFatFreeMassKgMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startFatFreeMassKgMeta);
+    }
+    if (data.containsKey('phase')) {
+      context.handle(
+        _phaseMeta,
+        phase.isAcceptableOrUnknown(data['phase']!, _phaseMeta),
+      );
+    }
+    if (data.containsKey('phase_started_at')) {
+      context.handle(
+        _phaseStartedAtMeta,
+        phaseStartedAt.isAcceptableOrUnknown(
+          data['phase_started_at']!,
+          _phaseStartedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalGoal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalGoal(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      targetWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_weight_kg'],
+      )!,
+      targetLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_level'],
+      )!,
+      paceKgPerWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pace_kg_per_week'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      startWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}start_weight_kg'],
+      )!,
+      startFatFreeMassKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}start_fat_free_mass_kg'],
+      )!,
+      phase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phase'],
+      )!,
+      phaseStartedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}phase_started_at'],
+      ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}closed_at'],
+      ),
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $GoalsTable createAlias(String alias) {
+    return $GoalsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalGoal extends DataClass implements Insertable<LocalGoal> {
+  final String id;
+  final String profileId;
+  final double targetWeightKg;
+  final String targetLevel;
+  final double paceKgPerWeek;
+  final DateTime startedAt;
+  final double startWeightKg;
+  final double startFatFreeMassKg;
+  final String phase;
+  final DateTime? phaseStartedAt;
+  final DateTime? closedAt;
+  final String? outcome;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const LocalGoal({
+    required this.id,
+    required this.profileId,
+    required this.targetWeightKg,
+    required this.targetLevel,
+    required this.paceKgPerWeek,
+    required this.startedAt,
+    required this.startWeightKg,
+    required this.startFatFreeMassKg,
+    required this.phase,
+    this.phaseStartedAt,
+    this.closedAt,
+    this.outcome,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['target_weight_kg'] = Variable<double>(targetWeightKg);
+    map['target_level'] = Variable<String>(targetLevel);
+    map['pace_kg_per_week'] = Variable<double>(paceKgPerWeek);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['start_weight_kg'] = Variable<double>(startWeightKg);
+    map['start_fat_free_mass_kg'] = Variable<double>(startFatFreeMassKg);
+    map['phase'] = Variable<String>(phase);
+    if (!nullToAbsent || phaseStartedAt != null) {
+      map['phase_started_at'] = Variable<DateTime>(phaseStartedAt);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<DateTime>(closedAt);
+    }
+    if (!nullToAbsent || outcome != null) {
+      map['outcome'] = Variable<String>(outcome);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  GoalsCompanion toCompanion(bool nullToAbsent) {
+    return GoalsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      targetWeightKg: Value(targetWeightKg),
+      targetLevel: Value(targetLevel),
+      paceKgPerWeek: Value(paceKgPerWeek),
+      startedAt: Value(startedAt),
+      startWeightKg: Value(startWeightKg),
+      startFatFreeMassKg: Value(startFatFreeMassKg),
+      phase: Value(phase),
+      phaseStartedAt: phaseStartedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phaseStartedAt),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
+      outcome: outcome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outcome),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory LocalGoal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalGoal(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      targetWeightKg: serializer.fromJson<double>(json['targetWeightKg']),
+      targetLevel: serializer.fromJson<String>(json['targetLevel']),
+      paceKgPerWeek: serializer.fromJson<double>(json['paceKgPerWeek']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      startWeightKg: serializer.fromJson<double>(json['startWeightKg']),
+      startFatFreeMassKg: serializer.fromJson<double>(
+        json['startFatFreeMassKg'],
+      ),
+      phase: serializer.fromJson<String>(json['phase']),
+      phaseStartedAt: serializer.fromJson<DateTime?>(json['phaseStartedAt']),
+      closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
+      outcome: serializer.fromJson<String?>(json['outcome']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'targetWeightKg': serializer.toJson<double>(targetWeightKg),
+      'targetLevel': serializer.toJson<String>(targetLevel),
+      'paceKgPerWeek': serializer.toJson<double>(paceKgPerWeek),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'startWeightKg': serializer.toJson<double>(startWeightKg),
+      'startFatFreeMassKg': serializer.toJson<double>(startFatFreeMassKg),
+      'phase': serializer.toJson<String>(phase),
+      'phaseStartedAt': serializer.toJson<DateTime?>(phaseStartedAt),
+      'closedAt': serializer.toJson<DateTime?>(closedAt),
+      'outcome': serializer.toJson<String?>(outcome),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  LocalGoal copyWith({
+    String? id,
+    String? profileId,
+    double? targetWeightKg,
+    String? targetLevel,
+    double? paceKgPerWeek,
+    DateTime? startedAt,
+    double? startWeightKg,
+    double? startFatFreeMassKg,
+    String? phase,
+    Value<DateTime?> phaseStartedAt = const Value.absent(),
+    Value<DateTime?> closedAt = const Value.absent(),
+    Value<String?> outcome = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => LocalGoal(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+    targetLevel: targetLevel ?? this.targetLevel,
+    paceKgPerWeek: paceKgPerWeek ?? this.paceKgPerWeek,
+    startedAt: startedAt ?? this.startedAt,
+    startWeightKg: startWeightKg ?? this.startWeightKg,
+    startFatFreeMassKg: startFatFreeMassKg ?? this.startFatFreeMassKg,
+    phase: phase ?? this.phase,
+    phaseStartedAt: phaseStartedAt.present
+        ? phaseStartedAt.value
+        : this.phaseStartedAt,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
+    outcome: outcome.present ? outcome.value : this.outcome,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  LocalGoal copyWithCompanion(GoalsCompanion data) {
+    return LocalGoal(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      targetWeightKg: data.targetWeightKg.present
+          ? data.targetWeightKg.value
+          : this.targetWeightKg,
+      targetLevel: data.targetLevel.present
+          ? data.targetLevel.value
+          : this.targetLevel,
+      paceKgPerWeek: data.paceKgPerWeek.present
+          ? data.paceKgPerWeek.value
+          : this.paceKgPerWeek,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      startWeightKg: data.startWeightKg.present
+          ? data.startWeightKg.value
+          : this.startWeightKg,
+      startFatFreeMassKg: data.startFatFreeMassKg.present
+          ? data.startFatFreeMassKg.value
+          : this.startFatFreeMassKg,
+      phase: data.phase.present ? data.phase.value : this.phase,
+      phaseStartedAt: data.phaseStartedAt.present
+          ? data.phaseStartedAt.value
+          : this.phaseStartedAt,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalGoal(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
+          ..write('targetLevel: $targetLevel, ')
+          ..write('paceKgPerWeek: $paceKgPerWeek, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('startWeightKg: $startWeightKg, ')
+          ..write('startFatFreeMassKg: $startFatFreeMassKg, ')
+          ..write('phase: $phase, ')
+          ..write('phaseStartedAt: $phaseStartedAt, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('outcome: $outcome, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    targetWeightKg,
+    targetLevel,
+    paceKgPerWeek,
+    startedAt,
+    startWeightKg,
+    startFatFreeMassKg,
+    phase,
+    phaseStartedAt,
+    closedAt,
+    outcome,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalGoal &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.targetWeightKg == this.targetWeightKg &&
+          other.targetLevel == this.targetLevel &&
+          other.paceKgPerWeek == this.paceKgPerWeek &&
+          other.startedAt == this.startedAt &&
+          other.startWeightKg == this.startWeightKg &&
+          other.startFatFreeMassKg == this.startFatFreeMassKg &&
+          other.phase == this.phase &&
+          other.phaseStartedAt == this.phaseStartedAt &&
+          other.closedAt == this.closedAt &&
+          other.outcome == this.outcome &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class GoalsCompanion extends UpdateCompanion<LocalGoal> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<double> targetWeightKg;
+  final Value<String> targetLevel;
+  final Value<double> paceKgPerWeek;
+  final Value<DateTime> startedAt;
+  final Value<double> startWeightKg;
+  final Value<double> startFatFreeMassKg;
+  final Value<String> phase;
+  final Value<DateTime?> phaseStartedAt;
+  final Value<DateTime?> closedAt;
+  final Value<String?> outcome;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const GoalsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.targetWeightKg = const Value.absent(),
+    this.targetLevel = const Value.absent(),
+    this.paceKgPerWeek = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.startWeightKg = const Value.absent(),
+    this.startFatFreeMassKg = const Value.absent(),
+    this.phase = const Value.absent(),
+    this.phaseStartedAt = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GoalsCompanion.insert({
+    required String id,
+    required String profileId,
+    required double targetWeightKg,
+    required String targetLevel,
+    required double paceKgPerWeek,
+    required DateTime startedAt,
+    required double startWeightKg,
+    required double startFatFreeMassKg,
+    this.phase = const Value.absent(),
+    this.phaseStartedAt = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.outcome = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       targetWeightKg = Value(targetWeightKg),
+       targetLevel = Value(targetLevel),
+       paceKgPerWeek = Value(paceKgPerWeek),
+       startedAt = Value(startedAt),
+       startWeightKg = Value(startWeightKg),
+       startFatFreeMassKg = Value(startFatFreeMassKg),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalGoal> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<double>? targetWeightKg,
+    Expression<String>? targetLevel,
+    Expression<double>? paceKgPerWeek,
+    Expression<DateTime>? startedAt,
+    Expression<double>? startWeightKg,
+    Expression<double>? startFatFreeMassKg,
+    Expression<String>? phase,
+    Expression<DateTime>? phaseStartedAt,
+    Expression<DateTime>? closedAt,
+    Expression<String>? outcome,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
+      if (targetLevel != null) 'target_level': targetLevel,
+      if (paceKgPerWeek != null) 'pace_kg_per_week': paceKgPerWeek,
+      if (startedAt != null) 'started_at': startedAt,
+      if (startWeightKg != null) 'start_weight_kg': startWeightKg,
+      if (startFatFreeMassKg != null)
+        'start_fat_free_mass_kg': startFatFreeMassKg,
+      if (phase != null) 'phase': phase,
+      if (phaseStartedAt != null) 'phase_started_at': phaseStartedAt,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (outcome != null) 'outcome': outcome,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GoalsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<double>? targetWeightKg,
+    Value<String>? targetLevel,
+    Value<double>? paceKgPerWeek,
+    Value<DateTime>? startedAt,
+    Value<double>? startWeightKg,
+    Value<double>? startFatFreeMassKg,
+    Value<String>? phase,
+    Value<DateTime?>? phaseStartedAt,
+    Value<DateTime?>? closedAt,
+    Value<String?>? outcome,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return GoalsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+      targetLevel: targetLevel ?? this.targetLevel,
+      paceKgPerWeek: paceKgPerWeek ?? this.paceKgPerWeek,
+      startedAt: startedAt ?? this.startedAt,
+      startWeightKg: startWeightKg ?? this.startWeightKg,
+      startFatFreeMassKg: startFatFreeMassKg ?? this.startFatFreeMassKg,
+      phase: phase ?? this.phase,
+      phaseStartedAt: phaseStartedAt ?? this.phaseStartedAt,
+      closedAt: closedAt ?? this.closedAt,
+      outcome: outcome ?? this.outcome,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (targetWeightKg.present) {
+      map['target_weight_kg'] = Variable<double>(targetWeightKg.value);
+    }
+    if (targetLevel.present) {
+      map['target_level'] = Variable<String>(targetLevel.value);
+    }
+    if (paceKgPerWeek.present) {
+      map['pace_kg_per_week'] = Variable<double>(paceKgPerWeek.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (startWeightKg.present) {
+      map['start_weight_kg'] = Variable<double>(startWeightKg.value);
+    }
+    if (startFatFreeMassKg.present) {
+      map['start_fat_free_mass_kg'] = Variable<double>(
+        startFatFreeMassKg.value,
+      );
+    }
+    if (phase.present) {
+      map['phase'] = Variable<String>(phase.value);
+    }
+    if (phaseStartedAt.present) {
+      map['phase_started_at'] = Variable<DateTime>(phaseStartedAt.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<DateTime>(closedAt.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GoalsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('targetWeightKg: $targetWeightKg, ')
+          ..write('targetLevel: $targetLevel, ')
+          ..write('paceKgPerWeek: $paceKgPerWeek, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('startWeightKg: $startWeightKg, ')
+          ..write('startFatFreeMassKg: $startFatFreeMassKg, ')
+          ..write('phase: $phase, ')
+          ..write('phaseStartedAt: $phaseStartedAt, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('outcome: $outcome, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BodyImpedanceReadingsTable extends BodyImpedanceReadings
+    with TableInfo<$BodyImpedanceReadingsTable, LocalBodyImpedanceReading> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BodyImpedanceReadingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _measurementIdMeta = const VerificationMeta(
+    'measurementId',
+  );
+  @override
+  late final GeneratedColumn<String> measurementId = GeneratedColumn<String>(
+    'measurement_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES body_measurements (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _segmentMeta = const VerificationMeta(
+    'segment',
+  );
+  @override
+  late final GeneratedColumn<String> segment = GeneratedColumn<String>(
+    'segment',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 16,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _frequencyHzMeta = const VerificationMeta(
+    'frequencyHz',
+  );
+  @override
+  late final GeneratedColumn<int> frequencyHz = GeneratedColumn<int>(
+    'frequency_hz',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ohmMeta = const VerificationMeta('ohm');
+  @override
+  late final GeneratedColumn<double> ohm = GeneratedColumn<double>(
+    'ohm',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    measurementId,
+    segment,
+    frequencyHz,
+    ohm,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'body_impedance_readings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalBodyImpedanceReading> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('measurement_id')) {
+      context.handle(
+        _measurementIdMeta,
+        measurementId.isAcceptableOrUnknown(
+          data['measurement_id']!,
+          _measurementIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_measurementIdMeta);
+    }
+    if (data.containsKey('segment')) {
+      context.handle(
+        _segmentMeta,
+        segment.isAcceptableOrUnknown(data['segment']!, _segmentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_segmentMeta);
+    }
+    if (data.containsKey('frequency_hz')) {
+      context.handle(
+        _frequencyHzMeta,
+        frequencyHz.isAcceptableOrUnknown(
+          data['frequency_hz']!,
+          _frequencyHzMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ohm')) {
+      context.handle(
+        _ohmMeta,
+        ohm.isAcceptableOrUnknown(data['ohm']!, _ohmMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ohmMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalBodyImpedanceReading map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalBodyImpedanceReading(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      measurementId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}measurement_id'],
+      )!,
+      segment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}segment'],
+      )!,
+      frequencyHz: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}frequency_hz'],
+      ),
+      ohm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ohm'],
+      )!,
+    );
+  }
+
+  @override
+  $BodyImpedanceReadingsTable createAlias(String alias) {
+    return $BodyImpedanceReadingsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalBodyImpedanceReading extends DataClass
+    implements Insertable<LocalBodyImpedanceReading> {
+  final String id;
+  final String measurementId;
+  final String segment;
+  final int? frequencyHz;
+  final double ohm;
+  const LocalBodyImpedanceReading({
+    required this.id,
+    required this.measurementId,
+    required this.segment,
+    this.frequencyHz,
+    required this.ohm,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['measurement_id'] = Variable<String>(measurementId);
+    map['segment'] = Variable<String>(segment);
+    if (!nullToAbsent || frequencyHz != null) {
+      map['frequency_hz'] = Variable<int>(frequencyHz);
+    }
+    map['ohm'] = Variable<double>(ohm);
+    return map;
+  }
+
+  BodyImpedanceReadingsCompanion toCompanion(bool nullToAbsent) {
+    return BodyImpedanceReadingsCompanion(
+      id: Value(id),
+      measurementId: Value(measurementId),
+      segment: Value(segment),
+      frequencyHz: frequencyHz == null && nullToAbsent
+          ? const Value.absent()
+          : Value(frequencyHz),
+      ohm: Value(ohm),
+    );
+  }
+
+  factory LocalBodyImpedanceReading.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalBodyImpedanceReading(
+      id: serializer.fromJson<String>(json['id']),
+      measurementId: serializer.fromJson<String>(json['measurementId']),
+      segment: serializer.fromJson<String>(json['segment']),
+      frequencyHz: serializer.fromJson<int?>(json['frequencyHz']),
+      ohm: serializer.fromJson<double>(json['ohm']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'measurementId': serializer.toJson<String>(measurementId),
+      'segment': serializer.toJson<String>(segment),
+      'frequencyHz': serializer.toJson<int?>(frequencyHz),
+      'ohm': serializer.toJson<double>(ohm),
+    };
+  }
+
+  LocalBodyImpedanceReading copyWith({
+    String? id,
+    String? measurementId,
+    String? segment,
+    Value<int?> frequencyHz = const Value.absent(),
+    double? ohm,
+  }) => LocalBodyImpedanceReading(
+    id: id ?? this.id,
+    measurementId: measurementId ?? this.measurementId,
+    segment: segment ?? this.segment,
+    frequencyHz: frequencyHz.present ? frequencyHz.value : this.frequencyHz,
+    ohm: ohm ?? this.ohm,
+  );
+  LocalBodyImpedanceReading copyWithCompanion(
+    BodyImpedanceReadingsCompanion data,
+  ) {
+    return LocalBodyImpedanceReading(
+      id: data.id.present ? data.id.value : this.id,
+      measurementId: data.measurementId.present
+          ? data.measurementId.value
+          : this.measurementId,
+      segment: data.segment.present ? data.segment.value : this.segment,
+      frequencyHz: data.frequencyHz.present
+          ? data.frequencyHz.value
+          : this.frequencyHz,
+      ohm: data.ohm.present ? data.ohm.value : this.ohm,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalBodyImpedanceReading(')
+          ..write('id: $id, ')
+          ..write('measurementId: $measurementId, ')
+          ..write('segment: $segment, ')
+          ..write('frequencyHz: $frequencyHz, ')
+          ..write('ohm: $ohm')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, measurementId, segment, frequencyHz, ohm);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalBodyImpedanceReading &&
+          other.id == this.id &&
+          other.measurementId == this.measurementId &&
+          other.segment == this.segment &&
+          other.frequencyHz == this.frequencyHz &&
+          other.ohm == this.ohm);
+}
+
+class BodyImpedanceReadingsCompanion
+    extends UpdateCompanion<LocalBodyImpedanceReading> {
+  final Value<String> id;
+  final Value<String> measurementId;
+  final Value<String> segment;
+  final Value<int?> frequencyHz;
+  final Value<double> ohm;
+  final Value<int> rowid;
+  const BodyImpedanceReadingsCompanion({
+    this.id = const Value.absent(),
+    this.measurementId = const Value.absent(),
+    this.segment = const Value.absent(),
+    this.frequencyHz = const Value.absent(),
+    this.ohm = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BodyImpedanceReadingsCompanion.insert({
+    required String id,
+    required String measurementId,
+    required String segment,
+    this.frequencyHz = const Value.absent(),
+    required double ohm,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       measurementId = Value(measurementId),
+       segment = Value(segment),
+       ohm = Value(ohm);
+  static Insertable<LocalBodyImpedanceReading> custom({
+    Expression<String>? id,
+    Expression<String>? measurementId,
+    Expression<String>? segment,
+    Expression<int>? frequencyHz,
+    Expression<double>? ohm,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (measurementId != null) 'measurement_id': measurementId,
+      if (segment != null) 'segment': segment,
+      if (frequencyHz != null) 'frequency_hz': frequencyHz,
+      if (ohm != null) 'ohm': ohm,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BodyImpedanceReadingsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? measurementId,
+    Value<String>? segment,
+    Value<int?>? frequencyHz,
+    Value<double>? ohm,
+    Value<int>? rowid,
+  }) {
+    return BodyImpedanceReadingsCompanion(
+      id: id ?? this.id,
+      measurementId: measurementId ?? this.measurementId,
+      segment: segment ?? this.segment,
+      frequencyHz: frequencyHz ?? this.frequencyHz,
+      ohm: ohm ?? this.ohm,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (measurementId.present) {
+      map['measurement_id'] = Variable<String>(measurementId.value);
+    }
+    if (segment.present) {
+      map['segment'] = Variable<String>(segment.value);
+    }
+    if (frequencyHz.present) {
+      map['frequency_hz'] = Variable<int>(frequencyHz.value);
+    }
+    if (ohm.present) {
+      map['ohm'] = Variable<double>(ohm.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BodyImpedanceReadingsCompanion(')
+          ..write('id: $id, ')
+          ..write('measurementId: $measurementId, ')
+          ..write('segment: $segment, ')
+          ..write('frequencyHz: $frequencyHz, ')
+          ..write('ohm: $ohm, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -19363,6 +21276,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkoutAchievementsTable(this);
   late final $BodyMeasurementValuesTable bodyMeasurementValues =
       $BodyMeasurementValuesTable(this);
+  late final $DailyCheckInsTable dailyCheckIns = $DailyCheckInsTable(this);
+  late final $GoalsTable goals = $GoalsTable(this);
+  late final $BodyImpedanceReadingsTable bodyImpedanceReadings =
+      $BodyImpedanceReadingsTable(this);
   late final Index idxMealsProfileEatenAt = Index(
     'idx_meals_profile_eaten_at',
     'CREATE INDEX idx_meals_profile_eaten_at ON meals (profile_id, eaten_at)',
@@ -19451,6 +21368,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_body_measurement_values_label',
     'CREATE INDEX idx_body_measurement_values_label ON body_measurement_values (measurement_id, label)',
   );
+  late final Index idxDailyCheckInsProfileDay = Index(
+    'idx_daily_check_ins_profile_day',
+    'CREATE INDEX idx_daily_check_ins_profile_day ON daily_check_ins (profile_id, day)',
+  );
+  late final Index idxGoalsProfileStarted = Index(
+    'idx_goals_profile_started',
+    'CREATE INDEX idx_goals_profile_started ON goals (profile_id, started_at)',
+  );
+  late final Index idxBodyImpedanceReadingsMeasurement = Index(
+    'idx_body_impedance_readings_measurement',
+    'CREATE INDEX idx_body_impedance_readings_measurement ON body_impedance_readings (measurement_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -19484,6 +21413,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workoutProfileStats,
     workoutAchievements,
     bodyMeasurementValues,
+    dailyCheckIns,
+    goals,
+    bodyImpedanceReadings,
     idxMealsProfileEatenAt,
     idxMealItemsMealId,
     idxSyncOutboxCreatedAt,
@@ -19506,6 +21438,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxWorkoutExercisesExerciseRef,
     idxWorkoutSetsExercisePosition,
     idxBodyMeasurementValuesLabel,
+    idxDailyCheckInsProfileDay,
+    idxGoalsProfileStarted,
+    idxBodyImpedanceReadingsMeasurement,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -19736,6 +21671,27 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('body_measurement_values', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('daily_check_ins', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('goals', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'body_measurements',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('body_impedance_readings', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -20058,6 +22014,43 @@ final class $$AppProfilesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _workoutAchievementsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DailyCheckInsTable, List<LocalDailyCheckIn>>
+  _dailyCheckInsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.dailyCheckIns,
+    aliasName: 'app_profiles__id__daily_check_ins__profile_id',
+  );
+
+  $$DailyCheckInsTableProcessedTableManager get dailyCheckInsRefs {
+    final manager = $$DailyCheckInsTableTableManager(
+      $_db,
+      $_db.dailyCheckIns,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_dailyCheckInsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$GoalsTable, List<LocalGoal>> _goalsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.goals,
+    aliasName: 'app_profiles__id__goals__profile_id',
+  );
+
+  $$GoalsTableProcessedTableManager get goalsRefs {
+    final manager = $$GoalsTableTableManager(
+      $_db,
+      $_db.goals,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_goalsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -20474,6 +22467,56 @@ class $$AppProfilesTableFilterComposer
           }) => $$WorkoutAchievementsTableFilterComposer(
             $db: $db,
             $table: $db.workoutAchievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dailyCheckInsRefs(
+    Expression<bool> Function($$DailyCheckInsTableFilterComposer f) f,
+  ) {
+    final $$DailyCheckInsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dailyCheckIns,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DailyCheckInsTableFilterComposer(
+            $db: $db,
+            $table: $db.dailyCheckIns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> goalsRefs(
+    Expression<bool> Function($$GoalsTableFilterComposer f) f,
+  ) {
+    final $$GoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.goals,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -20938,6 +22981,56 @@ class $$AppProfilesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> dailyCheckInsRefs<T extends Object>(
+    Expression<T> Function($$DailyCheckInsTableAnnotationComposer a) f,
+  ) {
+    final $$DailyCheckInsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dailyCheckIns,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DailyCheckInsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.dailyCheckIns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> goalsRefs<T extends Object>(
+    Expression<T> Function($$GoalsTableAnnotationComposer a) f,
+  ) {
+    final $$GoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.goals,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.goals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AppProfilesTableTableManager
@@ -20969,6 +23062,8 @@ class $$AppProfilesTableTableManager
             bool workoutsRefs,
             bool workoutProfileStatsRefs,
             bool workoutAchievementsRefs,
+            bool dailyCheckInsRefs,
+            bool goalsRefs,
           })
         > {
   $$AppProfilesTableTableManager(_$AppDatabase db, $AppProfilesTable table)
@@ -21047,6 +23142,8 @@ class $$AppProfilesTableTableManager
                 workoutsRefs = false,
                 workoutProfileStatsRefs = false,
                 workoutAchievementsRefs = false,
+                dailyCheckInsRefs = false,
+                goalsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -21066,6 +23163,8 @@ class $$AppProfilesTableTableManager
                     if (workoutsRefs) db.workouts,
                     if (workoutProfileStatsRefs) db.workoutProfileStats,
                     if (workoutAchievementsRefs) db.workoutAchievements,
+                    if (dailyCheckInsRefs) db.dailyCheckIns,
+                    if (goalsRefs) db.goals,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -21385,6 +23484,48 @@ class $$AppProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (dailyCheckInsRefs)
+                        await $_getPrefetchedData<
+                          LocalProfile,
+                          $AppProfilesTable,
+                          LocalDailyCheckIn
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AppProfilesTableReferences
+                              ._dailyCheckInsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AppProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dailyCheckInsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (goalsRefs)
+                        await $_getPrefetchedData<
+                          LocalProfile,
+                          $AppProfilesTable,
+                          LocalGoal
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AppProfilesTableReferences
+                              ._goalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AppProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).goalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -21421,6 +23562,8 @@ typedef $$AppProfilesTableProcessedTableManager =
         bool workoutsRefs,
         bool workoutProfileStatsRefs,
         bool workoutAchievementsRefs,
+        bool dailyCheckInsRefs,
+        bool goalsRefs,
       })
     >;
 typedef $$MealsTableCreateCompanionBuilder =
@@ -23430,6 +25573,8 @@ typedef $$BodyMeasurementsTableCreateCompanionBuilder =
       Value<String?> formulaVersion,
       Value<String> source,
       Value<String?> externalId,
+      Value<String?> deviceModel,
+      Value<String?> rawPayload,
       Value<String?> note,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -23456,6 +25601,8 @@ typedef $$BodyMeasurementsTableUpdateCompanionBuilder =
       Value<String?> formulaVersion,
       Value<String> source,
       Value<String?> externalId,
+      Value<String?> deviceModel,
+      Value<String?> rawPayload,
       Value<String?> note,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -23513,6 +25660,32 @@ final class $$BodyMeasurementsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _bodyMeasurementValuesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $BodyImpedanceReadingsTable,
+    List<LocalBodyImpedanceReading>
+  >
+  _bodyImpedanceReadingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.bodyImpedanceReadings,
+        aliasName:
+            'body_measurements__id__body_impedance_readings__measurement_id',
+      );
+
+  $$BodyImpedanceReadingsTableProcessedTableManager
+  get bodyImpedanceReadingsRefs {
+    final manager = $$BodyImpedanceReadingsTableTableManager(
+      $_db,
+      $_db.bodyImpedanceReadings,
+    ).filter((f) => f.measurementId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _bodyImpedanceReadingsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -23614,6 +25787,16 @@ class $$BodyMeasurementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get deviceModel => $composableBuilder(
+    column: $table.deviceModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawPayload => $composableBuilder(
+    column: $table.rawPayload,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnFilters(column),
@@ -23674,6 +25857,32 @@ class $$BodyMeasurementsTableFilterComposer
               }) => $$BodyMeasurementValuesTableFilterComposer(
                 $db: $db,
                 $table: $db.bodyMeasurementValues,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> bodyImpedanceReadingsRefs(
+    Expression<bool> Function($$BodyImpedanceReadingsTableFilterComposer f) f,
+  ) {
+    final $$BodyImpedanceReadingsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.bodyImpedanceReadings,
+          getReferencedColumn: (t) => t.measurementId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BodyImpedanceReadingsTableFilterComposer(
+                $db: $db,
+                $table: $db.bodyImpedanceReadings,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -23775,6 +25984,16 @@ class $$BodyMeasurementsTableOrderingComposer
 
   ColumnOrderings<String> get externalId => $composableBuilder(
     column: $table.externalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceModel => $composableBuilder(
+    column: $table.deviceModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawPayload => $composableBuilder(
+    column: $table.rawPayload,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -23902,6 +26121,16 @@ class $$BodyMeasurementsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get deviceModel => $composableBuilder(
+    column: $table.deviceModel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rawPayload => $composableBuilder(
+    column: $table.rawPayload,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
@@ -23962,6 +26191,32 @@ class $$BodyMeasurementsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> bodyImpedanceReadingsRefs<T extends Object>(
+    Expression<T> Function($$BodyImpedanceReadingsTableAnnotationComposer a) f,
+  ) {
+    final $$BodyImpedanceReadingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.bodyImpedanceReadings,
+          getReferencedColumn: (t) => t.measurementId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$BodyImpedanceReadingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.bodyImpedanceReadings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$BodyMeasurementsTableTableManager
@@ -23980,6 +26235,7 @@ class $$BodyMeasurementsTableTableManager
           PrefetchHooks Function({
             bool profileId,
             bool bodyMeasurementValuesRefs,
+            bool bodyImpedanceReadingsRefs,
           })
         > {
   $$BodyMeasurementsTableTableManager(
@@ -24015,6 +26271,8 @@ class $$BodyMeasurementsTableTableManager
                 Value<String?> formulaVersion = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> externalId = const Value.absent(),
+                Value<String?> deviceModel = const Value.absent(),
+                Value<String?> rawPayload = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -24039,6 +26297,8 @@ class $$BodyMeasurementsTableTableManager
                 formulaVersion: formulaVersion,
                 source: source,
                 externalId: externalId,
+                deviceModel: deviceModel,
+                rawPayload: rawPayload,
                 note: note,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -24065,6 +26325,8 @@ class $$BodyMeasurementsTableTableManager
                 Value<String?> formulaVersion = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> externalId = const Value.absent(),
+                Value<String?> deviceModel = const Value.absent(),
+                Value<String?> rawPayload = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -24089,6 +26351,8 @@ class $$BodyMeasurementsTableTableManager
                 formulaVersion: formulaVersion,
                 source: source,
                 externalId: externalId,
+                deviceModel: deviceModel,
+                rawPayload: rawPayload,
                 note: note,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -24104,11 +26368,16 @@ class $$BodyMeasurementsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({profileId = false, bodyMeasurementValuesRefs = false}) {
+              ({
+                profileId = false,
+                bodyMeasurementValuesRefs = false,
+                bodyImpedanceReadingsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (bodyMeasurementValuesRefs) db.bodyMeasurementValues,
+                    if (bodyImpedanceReadingsRefs) db.bodyImpedanceReadings,
                   ],
                   addJoins:
                       <
@@ -24167,6 +26436,27 @@ class $$BodyMeasurementsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (bodyImpedanceReadingsRefs)
+                        await $_getPrefetchedData<
+                          LocalBodyMeasurement,
+                          $BodyMeasurementsTable,
+                          LocalBodyImpedanceReading
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BodyMeasurementsTableReferences
+                              ._bodyImpedanceReadingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BodyMeasurementsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bodyImpedanceReadingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.measurementId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -24187,7 +26477,11 @@ typedef $$BodyMeasurementsTableProcessedTableManager =
       $$BodyMeasurementsTableUpdateCompanionBuilder,
       (LocalBodyMeasurement, $$BodyMeasurementsTableReferences),
       LocalBodyMeasurement,
-      PrefetchHooks Function({bool profileId, bool bodyMeasurementValuesRefs})
+      PrefetchHooks Function({
+        bool profileId,
+        bool bodyMeasurementValuesRefs,
+        bool bodyImpedanceReadingsRefs,
+      })
     >;
 typedef $$FoodsTableCreateCompanionBuilder =
     FoodsCompanion Function({
@@ -35922,6 +38216,1248 @@ typedef $$BodyMeasurementValuesTableProcessedTableManager =
       LocalBodyMeasurementValue,
       PrefetchHooks Function({bool measurementId})
     >;
+typedef $$DailyCheckInsTableCreateCompanionBuilder =
+    DailyCheckInsCompanion Function({
+      required String id,
+      required String profileId,
+      required DateTime day,
+      Value<double?> sleepHours,
+      Value<int?> energyScore,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$DailyCheckInsTableUpdateCompanionBuilder =
+    DailyCheckInsCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<DateTime> day,
+      Value<double?> sleepHours,
+      Value<int?> energyScore,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$DailyCheckInsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $DailyCheckInsTable, LocalDailyCheckIn> {
+  $$DailyCheckInsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AppProfilesTable _profileIdTable(_$AppDatabase db) => db.appProfiles
+      .createAlias('daily_check_ins__profile_id__app_profiles__id');
+
+  $$AppProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$AppProfilesTableTableManager(
+      $_db,
+      $_db.appProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DailyCheckInsTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyCheckInsTable> {
+  $$DailyCheckInsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get energyScore => $composableBuilder(
+    column: $table.energyScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppProfilesTableFilterComposer get profileId {
+    final $$AppProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyCheckInsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyCheckInsTable> {
+  $$DailyCheckInsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get energyScore => $composableBuilder(
+    column: $table.energyScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppProfilesTableOrderingComposer get profileId {
+    final $$AppProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyCheckInsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyCheckInsTable> {
+  $$DailyCheckInsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<double> get sleepHours => $composableBuilder(
+    column: $table.sleepHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get energyScore => $composableBuilder(
+    column: $table.energyScore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AppProfilesTableAnnotationComposer get profileId {
+    final $$AppProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyCheckInsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyCheckInsTable,
+          LocalDailyCheckIn,
+          $$DailyCheckInsTableFilterComposer,
+          $$DailyCheckInsTableOrderingComposer,
+          $$DailyCheckInsTableAnnotationComposer,
+          $$DailyCheckInsTableCreateCompanionBuilder,
+          $$DailyCheckInsTableUpdateCompanionBuilder,
+          (LocalDailyCheckIn, $$DailyCheckInsTableReferences),
+          LocalDailyCheckIn,
+          PrefetchHooks Function({bool profileId})
+        > {
+  $$DailyCheckInsTableTableManager(_$AppDatabase db, $DailyCheckInsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyCheckInsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyCheckInsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyCheckInsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<DateTime> day = const Value.absent(),
+                Value<double?> sleepHours = const Value.absent(),
+                Value<int?> energyScore = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyCheckInsCompanion(
+                id: id,
+                profileId: profileId,
+                day: day,
+                sleepHours: sleepHours,
+                energyScore: energyScore,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required DateTime day,
+                Value<double?> sleepHours = const Value.absent(),
+                Value<int?> energyScore = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyCheckInsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                day: day,
+                sleepHours: sleepHours,
+                energyScore: energyScore,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DailyCheckInsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.profileId,
+                                referencedTable: $$DailyCheckInsTableReferences
+                                    ._profileIdTable(db),
+                                referencedColumn: $$DailyCheckInsTableReferences
+                                    ._profileIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DailyCheckInsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyCheckInsTable,
+      LocalDailyCheckIn,
+      $$DailyCheckInsTableFilterComposer,
+      $$DailyCheckInsTableOrderingComposer,
+      $$DailyCheckInsTableAnnotationComposer,
+      $$DailyCheckInsTableCreateCompanionBuilder,
+      $$DailyCheckInsTableUpdateCompanionBuilder,
+      (LocalDailyCheckIn, $$DailyCheckInsTableReferences),
+      LocalDailyCheckIn,
+      PrefetchHooks Function({bool profileId})
+    >;
+typedef $$GoalsTableCreateCompanionBuilder =
+    GoalsCompanion Function({
+      required String id,
+      required String profileId,
+      required double targetWeightKg,
+      required String targetLevel,
+      required double paceKgPerWeek,
+      required DateTime startedAt,
+      required double startWeightKg,
+      required double startFatFreeMassKg,
+      Value<String> phase,
+      Value<DateTime?> phaseStartedAt,
+      Value<DateTime?> closedAt,
+      Value<String?> outcome,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$GoalsTableUpdateCompanionBuilder =
+    GoalsCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<double> targetWeightKg,
+      Value<String> targetLevel,
+      Value<double> paceKgPerWeek,
+      Value<DateTime> startedAt,
+      Value<double> startWeightKg,
+      Value<double> startFatFreeMassKg,
+      Value<String> phase,
+      Value<DateTime?> phaseStartedAt,
+      Value<DateTime?> closedAt,
+      Value<String?> outcome,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$GoalsTableReferences
+    extends BaseReferences<_$AppDatabase, $GoalsTable, LocalGoal> {
+  $$GoalsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AppProfilesTable _profileIdTable(_$AppDatabase db) =>
+      db.appProfiles.createAlias('goals__profile_id__app_profiles__id');
+
+  $$AppProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$AppProfilesTableTableManager(
+      $_db,
+      $_db.appProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$GoalsTableFilterComposer extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetLevel => $composableBuilder(
+    column: $table.targetLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paceKgPerWeek => $composableBuilder(
+    column: $table.paceKgPerWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get startWeightKg => $composableBuilder(
+    column: $table.startWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get startFatFreeMassKg => $composableBuilder(
+    column: $table.startFatFreeMassKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get phaseStartedAt => $composableBuilder(
+    column: $table.phaseStartedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppProfilesTableFilterComposer get profileId {
+    final $$AppProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GoalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetLevel => $composableBuilder(
+    column: $table.targetLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get paceKgPerWeek => $composableBuilder(
+    column: $table.paceKgPerWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get startWeightKg => $composableBuilder(
+    column: $table.startWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get startFatFreeMassKg => $composableBuilder(
+    column: $table.startFatFreeMassKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get phaseStartedAt => $composableBuilder(
+    column: $table.phaseStartedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppProfilesTableOrderingComposer get profileId {
+    final $$AppProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GoalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GoalsTable> {
+  $$GoalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get targetWeightKg => $composableBuilder(
+    column: $table.targetWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetLevel => $composableBuilder(
+    column: $table.targetLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get paceKgPerWeek => $composableBuilder(
+    column: $table.paceKgPerWeek,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<double> get startWeightKg => $composableBuilder(
+    column: $table.startWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get startFatFreeMassKg => $composableBuilder(
+    column: $table.startFatFreeMassKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get phase =>
+      $composableBuilder(column: $table.phase, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get phaseStartedAt => $composableBuilder(
+    column: $table.phaseStartedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AppProfilesTableAnnotationComposer get profileId {
+    final $$AppProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GoalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GoalsTable,
+          LocalGoal,
+          $$GoalsTableFilterComposer,
+          $$GoalsTableOrderingComposer,
+          $$GoalsTableAnnotationComposer,
+          $$GoalsTableCreateCompanionBuilder,
+          $$GoalsTableUpdateCompanionBuilder,
+          (LocalGoal, $$GoalsTableReferences),
+          LocalGoal,
+          PrefetchHooks Function({bool profileId})
+        > {
+  $$GoalsTableTableManager(_$AppDatabase db, $GoalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GoalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GoalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GoalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<double> targetWeightKg = const Value.absent(),
+                Value<String> targetLevel = const Value.absent(),
+                Value<double> paceKgPerWeek = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<double> startWeightKg = const Value.absent(),
+                Value<double> startFatFreeMassKg = const Value.absent(),
+                Value<String> phase = const Value.absent(),
+                Value<DateTime?> phaseStartedAt = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GoalsCompanion(
+                id: id,
+                profileId: profileId,
+                targetWeightKg: targetWeightKg,
+                targetLevel: targetLevel,
+                paceKgPerWeek: paceKgPerWeek,
+                startedAt: startedAt,
+                startWeightKg: startWeightKg,
+                startFatFreeMassKg: startFatFreeMassKg,
+                phase: phase,
+                phaseStartedAt: phaseStartedAt,
+                closedAt: closedAt,
+                outcome: outcome,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required double targetWeightKg,
+                required String targetLevel,
+                required double paceKgPerWeek,
+                required DateTime startedAt,
+                required double startWeightKg,
+                required double startFatFreeMassKg,
+                Value<String> phase = const Value.absent(),
+                Value<DateTime?> phaseStartedAt = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<String?> outcome = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GoalsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                targetWeightKg: targetWeightKg,
+                targetLevel: targetLevel,
+                paceKgPerWeek: paceKgPerWeek,
+                startedAt: startedAt,
+                startWeightKg: startWeightKg,
+                startFatFreeMassKg: startFatFreeMassKg,
+                phase: phase,
+                phaseStartedAt: phaseStartedAt,
+                closedAt: closedAt,
+                outcome: outcome,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$GoalsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.profileId,
+                                referencedTable: $$GoalsTableReferences
+                                    ._profileIdTable(db),
+                                referencedColumn: $$GoalsTableReferences
+                                    ._profileIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$GoalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GoalsTable,
+      LocalGoal,
+      $$GoalsTableFilterComposer,
+      $$GoalsTableOrderingComposer,
+      $$GoalsTableAnnotationComposer,
+      $$GoalsTableCreateCompanionBuilder,
+      $$GoalsTableUpdateCompanionBuilder,
+      (LocalGoal, $$GoalsTableReferences),
+      LocalGoal,
+      PrefetchHooks Function({bool profileId})
+    >;
+typedef $$BodyImpedanceReadingsTableCreateCompanionBuilder =
+    BodyImpedanceReadingsCompanion Function({
+      required String id,
+      required String measurementId,
+      required String segment,
+      Value<int?> frequencyHz,
+      required double ohm,
+      Value<int> rowid,
+    });
+typedef $$BodyImpedanceReadingsTableUpdateCompanionBuilder =
+    BodyImpedanceReadingsCompanion Function({
+      Value<String> id,
+      Value<String> measurementId,
+      Value<String> segment,
+      Value<int?> frequencyHz,
+      Value<double> ohm,
+      Value<int> rowid,
+    });
+
+final class $$BodyImpedanceReadingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $BodyImpedanceReadingsTable,
+          LocalBodyImpedanceReading
+        > {
+  $$BodyImpedanceReadingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BodyMeasurementsTable _measurementIdTable(_$AppDatabase db) =>
+      db.bodyMeasurements.createAlias(
+        'body_impedance_readings__measurement_id__body_measurements__id',
+      );
+
+  $$BodyMeasurementsTableProcessedTableManager get measurementId {
+    final $_column = $_itemColumn<String>('measurement_id')!;
+
+    final manager = $$BodyMeasurementsTableTableManager(
+      $_db,
+      $_db.bodyMeasurements,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_measurementIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BodyImpedanceReadingsTableFilterComposer
+    extends Composer<_$AppDatabase, $BodyImpedanceReadingsTable> {
+  $$BodyImpedanceReadingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get frequencyHz => $composableBuilder(
+    column: $table.frequencyHz,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ohm => $composableBuilder(
+    column: $table.ohm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BodyMeasurementsTableFilterComposer get measurementId {
+    final $$BodyMeasurementsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.measurementId,
+      referencedTable: $db.bodyMeasurements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BodyMeasurementsTableFilterComposer(
+            $db: $db,
+            $table: $db.bodyMeasurements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BodyImpedanceReadingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BodyImpedanceReadingsTable> {
+  $$BodyImpedanceReadingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get segment => $composableBuilder(
+    column: $table.segment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get frequencyHz => $composableBuilder(
+    column: $table.frequencyHz,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ohm => $composableBuilder(
+    column: $table.ohm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BodyMeasurementsTableOrderingComposer get measurementId {
+    final $$BodyMeasurementsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.measurementId,
+      referencedTable: $db.bodyMeasurements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BodyMeasurementsTableOrderingComposer(
+            $db: $db,
+            $table: $db.bodyMeasurements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BodyImpedanceReadingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BodyImpedanceReadingsTable> {
+  $$BodyImpedanceReadingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get segment =>
+      $composableBuilder(column: $table.segment, builder: (column) => column);
+
+  GeneratedColumn<int> get frequencyHz => $composableBuilder(
+    column: $table.frequencyHz,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get ohm =>
+      $composableBuilder(column: $table.ohm, builder: (column) => column);
+
+  $$BodyMeasurementsTableAnnotationComposer get measurementId {
+    final $$BodyMeasurementsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.measurementId,
+      referencedTable: $db.bodyMeasurements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BodyMeasurementsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bodyMeasurements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BodyImpedanceReadingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BodyImpedanceReadingsTable,
+          LocalBodyImpedanceReading,
+          $$BodyImpedanceReadingsTableFilterComposer,
+          $$BodyImpedanceReadingsTableOrderingComposer,
+          $$BodyImpedanceReadingsTableAnnotationComposer,
+          $$BodyImpedanceReadingsTableCreateCompanionBuilder,
+          $$BodyImpedanceReadingsTableUpdateCompanionBuilder,
+          (LocalBodyImpedanceReading, $$BodyImpedanceReadingsTableReferences),
+          LocalBodyImpedanceReading,
+          PrefetchHooks Function({bool measurementId})
+        > {
+  $$BodyImpedanceReadingsTableTableManager(
+    _$AppDatabase db,
+    $BodyImpedanceReadingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BodyImpedanceReadingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$BodyImpedanceReadingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$BodyImpedanceReadingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> measurementId = const Value.absent(),
+                Value<String> segment = const Value.absent(),
+                Value<int?> frequencyHz = const Value.absent(),
+                Value<double> ohm = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BodyImpedanceReadingsCompanion(
+                id: id,
+                measurementId: measurementId,
+                segment: segment,
+                frequencyHz: frequencyHz,
+                ohm: ohm,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String measurementId,
+                required String segment,
+                Value<int?> frequencyHz = const Value.absent(),
+                required double ohm,
+                Value<int> rowid = const Value.absent(),
+              }) => BodyImpedanceReadingsCompanion.insert(
+                id: id,
+                measurementId: measurementId,
+                segment: segment,
+                frequencyHz: frequencyHz,
+                ohm: ohm,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BodyImpedanceReadingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({measurementId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (measurementId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.measurementId,
+                                referencedTable:
+                                    $$BodyImpedanceReadingsTableReferences
+                                        ._measurementIdTable(db),
+                                referencedColumn:
+                                    $$BodyImpedanceReadingsTableReferences
+                                        ._measurementIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BodyImpedanceReadingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BodyImpedanceReadingsTable,
+      LocalBodyImpedanceReading,
+      $$BodyImpedanceReadingsTableFilterComposer,
+      $$BodyImpedanceReadingsTableOrderingComposer,
+      $$BodyImpedanceReadingsTableAnnotationComposer,
+      $$BodyImpedanceReadingsTableCreateCompanionBuilder,
+      $$BodyImpedanceReadingsTableUpdateCompanionBuilder,
+      (LocalBodyImpedanceReading, $$BodyImpedanceReadingsTableReferences),
+      LocalBodyImpedanceReading,
+      PrefetchHooks Function({bool measurementId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -35988,4 +39524,10 @@ class $AppDatabaseManager {
       $$WorkoutAchievementsTableTableManager(_db, _db.workoutAchievements);
   $$BodyMeasurementValuesTableTableManager get bodyMeasurementValues =>
       $$BodyMeasurementValuesTableTableManager(_db, _db.bodyMeasurementValues);
+  $$DailyCheckInsTableTableManager get dailyCheckIns =>
+      $$DailyCheckInsTableTableManager(_db, _db.dailyCheckIns);
+  $$GoalsTableTableManager get goals =>
+      $$GoalsTableTableManager(_db, _db.goals);
+  $$BodyImpedanceReadingsTableTableManager get bodyImpedanceReadings =>
+      $$BodyImpedanceReadingsTableTableManager(_db, _db.bodyImpedanceReadings);
 }

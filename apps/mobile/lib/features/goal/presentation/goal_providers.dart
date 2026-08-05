@@ -9,9 +9,12 @@ import 'package:kal_tracker/features/goal/domain/goal.dart';
 import 'package:kal_tracker/features/goal/domain/goal_plan.dart';
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
 
-/// Store su file JSON dell'Obiettivo: nei test si sostituisce con quello in
-/// memoria.
-final goalStoreProvider = Provider<GoalStore>((ref) => FileGoalStore());
+/// Store Drift dell'Obiettivo (v7): nei test si sostituisce con quello in
+/// memoria. Alla prima lettura porta dentro il vecchio file JSON e lo
+/// archivia.
+final goalStoreProvider = Provider<GoalStore>(
+  (ref) => DriftGoalStore(ref.watch(databaseProvider)),
+);
 
 final goalRepositoryProvider = Provider<GoalRepository>(
   (ref) => GoalRepository(ref.watch(goalStoreProvider)),

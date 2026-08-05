@@ -430,7 +430,7 @@ jobs:
             "$STAGE/SHA256SUMS" \
             "$STAGE/SOURCE.json" \
             --repo "$RELEASES_REPO" \
-            --title "Kal Tracker $VERSION ($BUILD_NUMBER)" \
+            --title "Coach360 $VERSION ($BUILD_NUMBER)" \
             --notes-file "$STAGE/RELEASE_NOTES.md" \
             --draft
 

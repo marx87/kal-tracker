@@ -150,6 +150,22 @@ class WaterLogs extends Table {
 /// `hasImpedance` distingue la pesata completa da quella con i soli piedi
 /// appoggiati male: in quel caso la bilancia restituisce solo il peso, e i
 /// derivati devono restare vuoti invece di sembrare misure vere.
+///
+/// La v7 aggiunge le due cose che mancavano a una lettura Bluetooth completa,
+/// entrambe con `addColumn` perché da `body_measurement_values` in poi questa
+/// tabella è REFERENZIATA e non si può più ricreare:
+/// [deviceModel], cioè quale bilancia ha prodotto la riga (serve alla taratura
+/// in doppia lettura e al giorno in cui le bilance saranno due), e
+/// [rawPayload], la trama grezza così com'è arrivata. Se un domani si scopre
+/// che quel pacchetto conteneva un campo che non sapevamo leggere, lo storico
+/// si ridecodifica invece di ricominciare: è lo stesso motivo per cui si salva
+/// l'impedenza e non le masse.
+///
+/// I valori di impedenza multipli — più frequenze, oppure i segmenti di una
+/// bilancia a otto elettrodi — vivono in `body_impedance_readings`.
+/// [impedanceOhm] resta il valore di corpo intero che alimenta la formula BIA:
+/// è denormalizzato apposta, perché ogni lettore (formula, grafici, medie a 7
+/// giorni) lo vuole senza una join.
 class BodyMeasurements extends Table {
   TextColumn get id => text()();
   TextColumn get profileId =>
@@ -171,6 +187,8 @@ class BodyMeasurements extends Table {
   TextColumn get source =>
       text().withLength(max: 30).withDefault(const Constant('manual'))();
   TextColumn get externalId => text().withLength(max: 120).nullable()();
+  TextColumn get deviceModel => text().withLength(max: 60).nullable()();
+  TextColumn get rawPayload => text().withLength(max: 512).nullable()();
   TextColumn get note => text().withLength(max: 240).nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -1068,8 +1086,10 @@ class WorkoutAchievements extends Table {
 /// ATTENZIONE: questa tabella rende `body_measurements` una tabella
 /// REFERENZIATA. Da qui in poi si estende solo con `addColumn` nullable e
 /// senza CHECK, come `app_profiles`: il `TableMigration` usato dalla v5 non è
-/// più applicabile. La nota di handoff in ROADMAP_MARFLOOR.md va aggiornata
-/// nello stesso commit.
+/// più applicabile — la v7 lo ha rispettato, e le sue due colonne nuove sono
+/// elencate anche fra i `newColumns` del ramo della v5 perché quel ramo
+/// ricostruisce la tabella dalla definizione Dart di oggi. La regola vive
+/// nelle note di handoff di `docs/ROADMAP.md`.
 @DataClassName('LocalBodyMeasurementValue')
 @TableIndex(
   name: 'idx_body_measurement_values_label',
@@ -1089,6 +1109,191 @@ class BodyMeasurementValues extends Table {
   List<String> get customConstraints => [
     'CHECK (value > 0 AND value <= 1000)',
     'UNIQUE (measurement_id, label)',
+  ];
+}
+
+// ---------------------------------------------------------------------
+// Check-in, obiettivo e impedenze (v7).
+//
+// Le prime due tabelle raccolgono due file JSON che vivevano fuori dal
+// database: fuori dal backup, fuori dalla sincronizzazione e invisibili al
+// coach, che invece li vuole — il semaforo del sovrallenamento (M8.3) legge
+// sonno ed energia, e il motore adattivo (M7) legge l'obiettivo.
+// ---------------------------------------------------------------------
+
+/// Il check-in del mattino: sonno ed energia di un giorno.
+///
+/// **Una tabella sola.** Sonno ed energia sono lo stesso gesto sullo stesso
+/// giorno: due tabelle avrebbero due righe da tenere allineate e nessuna
+/// domanda che le voglia separate. Entrambi i campi restano facoltativi —
+/// un check-in con il solo sonno è un check-in valido, e il coach deve
+/// funzionare con dati mancanti.
+///
+/// [day] è l'ETICHETTA del giorno civile romano, non un istante: `DateTime`
+/// UTC a mezzanotte, stessa convenzione di `AppProfiles.birthDate` e di
+/// `WeeklyPlans.startDate`. Alle 00:30 di Roma un timestamp finirebbe nel
+/// giorno prima.
+///
+/// Il peso NON sta qui: vive in `body_measurements`, dove è sempre vissuto.
+/// Due tabelle con lo stesso numero diventano due numeri diversi il giorno in
+/// cui una delle due sbaglia.
+///
+/// [id] è deterministico (uuid v5 di profilo + giorno, vedi
+/// `DriftCheckInStore`): due dispositivi che compilano lo stesso giorno
+/// offline producono la STESSA riga e la sincronizzazione la fonde invece di
+/// duplicarla. È per questo che l'unicità qui è totale e non parziale sulle
+/// righe vive: un giorno cancellato e ricompilato riusa la sua riga.
+@DataClassName('LocalDailyCheckIn')
+@TableIndex(
+  name: 'idx_daily_check_ins_profile_day',
+  columns: {#profileId, #day},
+)
+class DailyCheckIns extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get day => dateTime()();
+  RealColumn get sleepHours => real().nullable()();
+  IntColumn get energyScore => integer().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    // Le stesse scale del dominio: mezz'ore fino a 16, energia 1-5. Sopra le
+    // 16 ore non è più una notte, è un errore di digitazione.
+    'CHECK (sleep_hours IS NULL OR (sleep_hours >= 0 AND sleep_hours <= 16))',
+    'CHECK (energy_score IS NULL OR (energy_score >= 1 AND energy_score <= 5))',
+    // Una riga viva senza nessuno dei due campi non è un check-in: farebbe
+    // contare come «compilato» un giorno vuoto. Il tombstone invece è proprio
+    // una riga svuotata, e resta lecito.
+    'CHECK (deleted_at IS NOT NULL OR '
+        'sleep_hours IS NOT NULL OR energy_score IS NOT NULL)',
+    'UNIQUE (profile_id, day)',
+  ];
+}
+
+/// **L'Obiettivo**, con il suo storico.
+///
+/// Una riga per traguardo: quello in corso è la riga con [closedAt] nullo,
+/// gli altri sono il passato. Cambiare traguardo non azzera niente — si
+/// archivia la riga vecchia con la sua data di chiusura e il suo [outcome], e
+/// se ne apre una nuova. Tendenze, pesate e TDEE misurato non passano di qui:
+/// sono proprietà del corpo di Marco, non del traguardo.
+///
+/// [startWeightKg] e [startFatFreeMassKg] sono lo stato di partenza di
+/// *questo* traguardo e non si toccano più: servono a misurarne i progressi
+/// senza ripescare com'era il corpo il giorno in cui è nato.
+///
+/// [paceKgPerWeek] vive qui e non in una costante di codice proprio perché si
+/// cambia in corsa (M7.1c). Il limite dello 0,7 % del peso non è un CHECK: è
+/// una frazione del peso corrente, che questa riga non conosce, e vive in
+/// `GoalPace.assess`. Il CHECK qui rifiuta solo l'assurdo.
+///
+/// **Nessun indice unico sull'obiettivo aperto**, a differenza di
+/// `idx_workouts_one_active`. Due dispositivi offline che fissano un traguardo
+/// ciascuno produrrebbero due righe aperte, e un vincolo qui bloccherebbe la
+/// sincronizzazione invece di risolvere: l'elezione dell'obiettivo corrente
+/// (il più recente per [startedAt]) la fa `DriftGoalStore` in lettura, e la
+/// scrittura successiva archivia gli altri.
+@DataClassName('LocalGoal')
+@TableIndex(
+  name: 'idx_goals_profile_started',
+  columns: {#profileId, #startedAt},
+)
+class Goals extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  RealColumn get targetWeightKg => real()();
+  TextColumn get targetLevel => text().withLength(min: 1, max: 20)();
+  RealColumn get paceKgPerWeek => real()();
+  DateTimeColumn get startedAt => dateTime()();
+  RealColumn get startWeightKg => real()();
+  RealColumn get startFatFreeMassKg => real()();
+  TextColumn get phase => text()
+      .withLength(min: 1, max: 20)
+      .withDefault(const Constant('approach'))();
+  DateTimeColumn get phaseStartedAt => dateTime().nullable()();
+  DateTimeColumn get closedAt => dateTime().nullable()();
+  TextColumn get outcome => text().withLength(max: 20).nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (target_weight_kg >= 20 AND target_weight_kg <= 500)',
+    'CHECK (start_weight_kg >= 20 AND start_weight_kg <= 500)',
+    'CHECK (start_fat_free_mass_kg > 0 AND start_fat_free_mass_kg <= 500)',
+    // Il limite vero è lo 0,7 % del peso e sta nel dominio: qui passa tutto
+    // ciò che è un ritmo, e si ferma ciò che non lo è.
+    'CHECK (pace_kg_per_week > 0 AND pace_kg_per_week <= 5)',
+    "CHECK (target_level IN ('soft', 'normal', 'lean', 'athletic', "
+        "'defined', 'veryDefined'))",
+    "CHECK (phase IN ('approach', 'consolidation', 'maintenance'))",
+    "CHECK (outcome IS NULL OR outcome IN ('reached', 'replaced', "
+        "'abandoned'))",
+    // Un esito senza data di chiusura è un obiettivo chiuso a metà.
+    'CHECK (outcome IS NULL OR closed_at IS NOT NULL)',
+    'CHECK (closed_at IS NULL OR closed_at >= started_at)',
+    'CHECK (phase_started_at IS NULL OR phase_started_at >= started_at)',
+  ];
+}
+
+/// Ogni valore di impedenza che la bilancia ha emesso in una pesata.
+///
+/// La QN-Scale di Marco ne dà uno solo, di corpo intero, e per lui questa
+/// tabella resterà quasi sempre vuota. Esiste ORA perché una bilancia a otto
+/// elettrodi o multifrequenza ne dà cinque o dieci, e scoprirlo dopo
+/// significherebbe una v8 e uno storico spezzato in due: l'impedenza è la sola
+/// cosa che il dispositivo misura davvero, tutto il resto è formula.
+///
+/// [frequencyHz] è NULLABLE perché la maggior parte dei protocolli non la
+/// dichiara: scrivere «50 kHz» perché è il valore tipico sarebbe salvare una
+/// supposizione accanto a una misura. L'unicità sulla coppia
+/// (misura, segmento) per le letture senza frequenza è un indice parziale
+/// (`idx_body_impedance_readings_undeclared`), perché in SQLite due NULL non
+/// collidono mai.
+///
+/// Il valore di corpo intero compare anche in
+/// `body_measurements.impedance_ohm`: là è il numero che alimenta la formula,
+/// qui è il verbale completo della lettura.
+///
+/// Il tetto è più alto di quello del genitore (2000 Ω): alle basse frequenze e
+/// sui singoli arti l'impedenza è legittimamente maggiore di quella di corpo
+/// intero a 50 kHz.
+@DataClassName('LocalBodyImpedanceReading')
+@TableIndex(
+  name: 'idx_body_impedance_readings_measurement',
+  columns: {#measurementId},
+)
+class BodyImpedanceReadings extends Table {
+  TextColumn get id => text()();
+  TextColumn get measurementId =>
+      text().references(BodyMeasurements, #id, onDelete: KeyAction.cascade)();
+  TextColumn get segment => text().withLength(min: 1, max: 16)();
+  IntColumn get frequencyHz => integer().nullable()();
+  RealColumn get ohm => real()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (segment IN ('whole', 'leftArm', 'rightArm', 'leftLeg', "
+        "'rightLeg', 'trunk'))",
+    'CHECK (frequency_hz IS NULL OR '
+        '(frequency_hz > 0 AND frequency_hz <= 10000000))',
+    'CHECK (ohm > 0 AND ohm <= 5000)',
+    'UNIQUE (measurement_id, segment, frequency_hz)',
   ];
 }
 
@@ -1123,6 +1328,10 @@ class BodyMeasurementValues extends Table {
     WorkoutProfileStats,
     WorkoutAchievements,
     BodyMeasurementValues,
+    // v7 — check-in, obiettivo e impedenze multiple
+    DailyCheckIns,
+    Goals,
+    BodyImpedanceReadings,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1139,7 +1348,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1204,6 +1413,14 @@ class AppDatabase extends _$AppDatabase {
               bodyMeasurements.formulaVersion,
               bodyMeasurements.source,
               bodyMeasurements.externalId,
+              // Le due della v7 vanno elencate QUI anche se sono di un'altra
+              // versione: `TableMigration` ricrea la tabella dalla definizione
+              // Dart di OGGI e copia con un INSERT ... SELECT che nomina ogni
+              // colonna non dichiarata nuova. Senza queste due righe la
+              // migrazione da v1-v4 leggerebbe `device_model` da una tabella
+              // che non ce l'ha. La guardia gemella sta nel ramo `from < 7`.
+              bodyMeasurements.deviceModel,
+              bodyMeasurements.rawPayload,
             ],
           ),
         );
@@ -1227,6 +1444,30 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(workoutProfileStats);
         await migrator.createTable(workoutAchievements);
         await migrator.createTable(bodyMeasurementValues);
+      }
+      if (from < 7) {
+        // `body_measurements` da qui in poi si estende SOLO con addColumn: la
+        // referenziano `body_measurement_values` (v6) e `body_impedance_
+        // readings` (questa versione), quindi il TableMigration della v5 non è
+        // più applicabile.
+        //
+        // La guardia `from >= 5` è la gemella della nota nel ramo della v5:
+        // chi arriva da v1-v4 ha appena ricevuto le due colonne dalla
+        // ricostruzione della tabella, e un addColumn qui esploderebbe con
+        // «duplicate column name» — è lo stesso inciampo dei tag della v3.
+        if (from >= 5) {
+          await migrator.addColumn(
+            bodyMeasurements,
+            bodyMeasurements.deviceModel,
+          );
+          await migrator.addColumn(
+            bodyMeasurements,
+            bodyMeasurements.rawPayload,
+          );
+        }
+        await migrator.createTable(dailyCheckIns);
+        await migrator.createTable(goals);
+        await migrator.createTable(bodyImpedanceReadings);
       }
       // Fuori dalla guardia di proposito: ripara anche gli indici delle
       // versioni 2-5, che nessun database migrato ha mai avuto.
@@ -1268,6 +1509,15 @@ class AppDatabase extends _$AppDatabase {
       'CREATE UNIQUE INDEX IF NOT EXISTS idx_workouts_one_active '
       'ON workouts (profile_id) '
       'WHERE ended_at IS NULL AND deleted_at IS NULL',
+    );
+    // Due letture di corpo intero senza frequenza dichiarata sono la stessa
+    // lettura scritta due volte: la UNIQUE della tabella non le vede, perché
+    // in SQLite due NULL non collidono mai.
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS '
+      'idx_body_impedance_readings_undeclared '
+      'ON body_impedance_readings (measurement_id, segment) '
+      'WHERE frequency_hz IS NULL',
     );
   }
 

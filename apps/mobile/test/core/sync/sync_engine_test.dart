@@ -12,6 +12,7 @@ import 'package:kal_tracker/core/sync/sync_state_store.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/profile/data/local_profile_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/data/workout_plan_repository.dart';
 import 'package:kal_tracker/features/wellbeing/data/wellbeing_repository.dart';
 
 class FakeSyncGateway implements SyncGateway {
@@ -622,6 +623,44 @@ void main() {
     expect(tables, contains('workouts'));
     expect(tables, contains('workout_exercises'));
     expect(tables, contains('workout_sets'));
+  });
+
+  test('la settimana composta a mano arriva al server, giorno tolto '
+      'compreso', () async {
+    final mapping = MappingSyncGateway();
+    gateway = mapping;
+    await database
+        .into(database.routines)
+        .insert(
+          RoutinesCompanion.insert(
+            id: _routineId,
+            profileId: profileId,
+            name: 'Giorno1 spalle petto tricipiti',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    final plan = WorkoutPlanRepository(database);
+
+    // Martedì Giorno1, poi ci si ripensa e il martedì torna riposo.
+    await plan.setDay(profileId: profileId, weekday: 2, routineId: _routineId);
+    await plan.clearDay(profileId: profileId, weekday: 2);
+
+    final report = await engine().sync();
+
+    expect(report.pushed, 2);
+    expect(await outbox(), isEmpty);
+    final swaps = mapping.executed.whereType<RemoteChildrenSwap>().toList();
+    expect(swaps, hasLength(2));
+    expect(swaps.every((swap) => swap.table == 'routine_weekly_plan'), isTrue);
+    expect(swaps.first.rows.single['weekday'], 2);
+    expect(swaps.first.rows.single['routine_id'], _routineId);
+    // Il ripensamento non manda un tombstone per il martedì: manda una
+    // settimana senza martedì, e lo swap se ne accorge da solo. Se mandasse
+    // una lista vuota di senso opposto — cioè «non parlo dei giorni» — la
+    // riga resterebbe viva sul server e il tablet la rivedrebbe al pull.
+    expect(swaps.last.rows, isEmpty);
+    expect(swaps.last.tombstoneTargets(['una-riga-viva']), ['una-riga-viva']);
   });
 
   test('un 23503 non scarta la mutation: resta in coda col backoff', () async {

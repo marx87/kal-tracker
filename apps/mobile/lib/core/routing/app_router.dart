@@ -11,6 +11,8 @@ import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart
 import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_screen.dart';
 import 'package:kal_tracker/features/gym_import/presentation/gym_import_screen.dart';
+import 'package:kal_tracker/features/onboarding/presentation/onboarding_gate.dart';
+import 'package:kal_tracker/features/onboarding/presentation/personal_details_screen.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_review_screen.dart';
 import 'package:kal_tracker/features/quick_add/barcode_scan_screen.dart';
@@ -35,8 +37,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         // Il listener tiene vivo il polling dei job foto e mostra la
         // notifica in-app "Proposta pronta da rivedere".
+        // Il gate del primo avvio sta DENTRO la shell e non attorno al
+        // router: il benvenuto apre il calendario della data di nascita, e
+        // sopra il router un `Navigator` non c'è ancora.
         builder: (context, state, navigationShell) => PhotoProposalsListener(
-          child: AppShell(navigationShell: navigationShell),
+          child: OnboardingGate(
+            child: AppShell(navigationShell: navigationShell),
+          ),
         ),
         branches: [
           StatefulShellBranch(
@@ -195,6 +202,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'import-gym',
                     name: 'gym-import',
                     builder: (context, state) => const GymImportScreen(),
+                  ),
+                  // Altezza, nascita e sesso dopo il primo avvio: chi ha
+                  // saltato il benvenuto deve avere una porta per tornarci,
+                  // altrimenti «lo faccio dopo» è un vicolo cieco.
+                  GoRoute(
+                    path: 'dati-personali',
+                    name: 'personal-details',
+                    builder: (context, state) => const PersonalDetailsScreen(),
                   ),
                 ],
               ),

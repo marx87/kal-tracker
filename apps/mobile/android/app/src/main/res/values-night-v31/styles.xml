@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Il gemello notturno di `values-v31/styles.xml`. Non è una ripetizione
+         inutile: nella scala dei qualificatori la notte precede la versione,
+         quindi su Android 12 al buio vincerebbe `values-night/styles.xml` — che
+         del fondo d'avvio non sa niente — e l'app ripartirebbe da un lampo
+         nero di sistema invece che dal proprio verde bosco. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+</resources>

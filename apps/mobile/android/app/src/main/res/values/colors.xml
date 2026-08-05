@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo dell'icona adattiva: la crema del tema (AppPalette.cream).
+         Non ha una variante notturna di proposito — un'icona che cambia
+         colore con l'ora non si ritrova più sulla schermata iniziale.
+
+         Questo file lo riscrive `flutter_launcher_icons` quando lo si lancia:
+         i colori dell'avvio stanno apposta in `splash_colors.xml`. -->
+    <color name="ic_launcher_background">#FBF7ED</color>
+</resources>

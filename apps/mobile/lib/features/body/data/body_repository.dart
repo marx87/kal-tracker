@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
+import 'package:kal_tracker/features/body/domain/bia_formula.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
+import 'package:kal_tracker/features/body/domain/scale_session.dart';
 import 'package:uuid/uuid.dart';
 
 /// Lettura e scrittura delle pesate con composizione corporea.
@@ -20,6 +22,10 @@ class BodyRepository {
 
   final AppDatabase _database;
   final Uuid _uuid;
+
+  /// La provenienza delle pesate lette via Bluetooth. È metà della UNIQUE che
+  /// deduplica, quindi non è una decorazione.
+  static const scaleSource = 'renpho_ble';
 
   /// Quante circonferenze si accettano in una sola pesata. Non è un limite
   /// del database: è il punto oltre il quale il foglio di inserimento smette
@@ -189,6 +195,283 @@ class BodyRepository {
       );
     });
     return id;
+  }
+
+  /// Registra una pesata letta dalla bilancia via Bluetooth.
+  ///
+  /// Differisce da [addMeasurement] in tre punti, tutti conseguenza dello
+  /// stesso principio: **si conserva la misura, non il giudizio**.
+  ///
+  /// 1. `impedanceOhm` è la misura, e viaggia insieme alla `formulaVersion`
+  ///    che ha prodotto le percentuali: senza, il ricalcolo dello storico non
+  ///    saprebbe quali righe rifare.
+  /// 2. `rawPayload` conserva la trama grezza. Se domani si scopre che quel
+  ///    pacchetto conteneva un campo che non sapevamo leggere, lo storico si
+  ///    ridecodifica invece di ricominciare.
+  /// 3. `externalId` è deterministico (istante al minuto + peso in grammi),
+  ///    quindi la UNIQUE `(profile_id, source, external_id)` trasforma un
+  ///    doppio tocco su «Salva» in un errore leggibile invece che in due
+  ///    pesate identiche a un minuto l'una dall'altra.
+  ///
+  /// [composition] è nulla quando gli elettrodi non hanno fatto contatto o
+  /// quando il profilo non ha ancora altezza, nascita e sesso: in quel caso
+  /// entra il solo peso, che è un dato buono, e le percentuali restano vuote
+  /// invece di essere inventate.
+  Future<String> addScaleMeasurement({
+    required String profileId,
+    required ScaleReading reading,
+    BodyCompositionEstimate? composition,
+    String? note,
+  }) async {
+    _checkRange(
+      reading.weightKg,
+      min: 20,
+      max: 500,
+      what: 'Il peso',
+      unit: 'kg',
+    );
+    final impedanceOhm = reading.hasImpedance ? reading.impedanceOhm : null;
+    if (impedanceOhm != null) {
+      _checkRange(
+        impedanceOhm,
+        min: 1,
+        max: 2000,
+        what: 'L’impedenza',
+        unit: 'ohm',
+      );
+    }
+    final cleanNote = _cleanNote(note);
+
+    final instant = reading.measuredAt.toUtc();
+    final externalId = scaleExternalId(
+      measuredAt: instant,
+      weightKg: reading.weightKg,
+    );
+    final duplicate =
+        await (_database.select(_database.bodyMeasurements)..where(
+              (row) =>
+                  row.profileId.equals(profileId) &
+                  row.source.equals(scaleSource) &
+                  row.externalId.equals(externalId),
+            ))
+            .getSingleOrNull();
+    if (duplicate != null) {
+      throw const FormatException('Questa pesata è già registrata.');
+    }
+
+    final id = _uuid.v4();
+    final now = AppTime.nowUtc();
+    // Il taglio è alla percentuale di grasso, come per la pesata manuale:
+    // senza quella non si separa la massa grassa dalla magra, ed è quello che
+    // l'impedenza serve a produrre.
+    final hasComposition = composition != null;
+
+    await _database.transaction(() async {
+      await _database
+          .into(_database.bodyMeasurements)
+          .insert(
+            BodyMeasurementsCompanion.insert(
+              id: id,
+              profileId: profileId,
+              weightKg: reading.weightKg,
+              measuredAt: instant,
+              hasImpedance: Value(hasComposition),
+              impedanceOhm: Value(impedanceOhm),
+              bodyFatPct: Value(composition?.bodyFatPct),
+              waterPct: Value(composition?.waterPct),
+              bmrKcal: Value(composition?.bmrKcal),
+              formulaVersion: Value(composition?.formulaVersion),
+              source: const Value(scaleSource),
+              externalId: Value(externalId),
+              deviceModel: Value(_clampDevice(reading.deviceName)),
+              rawPayload: Value(_clampPayload(reading.rawPayloadHex)),
+              note: Value(cleanNote),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      if (impedanceOhm != null) {
+        // La lettura di corpo intero, senza frequenza dichiarata: la QN-Scale
+        // non la trasmette, e scriverci «50 kHz» sarebbe salvare una
+        // supposizione accanto a una misura.
+        await _database
+            .into(_database.bodyImpedanceReadings)
+            .insert(
+              BodyImpedanceReadingsCompanion.insert(
+                id: _uuid.v4(),
+                measurementId: id,
+                segment: 'whole',
+                ohm: impedanceOhm,
+              ),
+            );
+      }
+      await _appendOutbox(
+        entityId: id,
+        operation: 'upsert',
+        payload: {
+          'id': id,
+          'profile_id': profileId,
+          'weight_kg': reading.weightKg,
+          'measured_at': instant.toIso8601String(),
+          'has_impedance': hasComposition,
+          'impedance_ohm': impedanceOhm,
+          'body_fat_pct': composition?.bodyFatPct,
+          'water_pct': composition?.waterPct,
+          'bmr_kcal': composition?.bmrKcal,
+          'formula_version': composition?.formulaVersion,
+          'source': scaleSource,
+          'external_id': externalId,
+          'device_model': _clampDevice(reading.deviceName),
+          'raw_payload': _clampPayload(reading.rawPayloadHex),
+          'note': cleanNote,
+          'updated_at': now.toIso8601String(),
+          // Una pesata appena letta dalla bilancia non ha circonferenze: la
+          // lista vuota è la verità, non un'omissione.
+          'values': const <Map<String, Object?>>[],
+        },
+        now: now,
+      );
+    });
+    return id;
+  }
+
+  /// Riscrive le percentuali delle pesate calcolate da noi con una versione
+  /// vecchia della formula.
+  ///
+  /// **Si toccano solo le righe nostre.** Una pesata con `formula_version`
+  /// nulla porta numeri dichiarati da altri — digitati dal display Renpho o
+  /// importati dal loro CSV — e non è nostra da rifare: sovrascriverla
+  /// sostituirebbe una misura registrata con una nostra stima, che è
+  /// esattamente il contrario del patto.
+  ///
+  /// Torna quante righe sono state riscritte.
+  Future<int> recalculateComposition({
+    required String profileId,
+    required double? heightCm,
+    required DateTime? birthDate,
+    required String? sexCode,
+    BiaFormula? formula,
+  }) async {
+    final target = formula ?? BiaFormulas.current;
+    final rows = await pendingRecalculation(
+      profileId: profileId,
+      formula: target,
+    );
+    if (rows.isEmpty) {
+      return 0;
+    }
+
+    var rewritten = 0;
+    final now = AppTime.nowUtc();
+    await _database.transaction(() async {
+      for (final row in rows) {
+        final input = biaInputFrom(
+          heightCm: heightCm,
+          birthDate: birthDate,
+          sexCode: sexCode,
+          weightKg: row.weightKg,
+          impedanceOhm: row.impedanceOhm,
+          // L'età di ALLORA, non quella di oggi: ricalcolare il passato con
+          // l'anagrafica del presente lo riscriverebbe con un dato che allora
+          // non era vero.
+          measuredAt: row.measuredAt,
+        );
+        final estimate = input == null ? null : target.estimate(input);
+        if (estimate == null) {
+          continue;
+        }
+        await (_database.update(
+          _database.bodyMeasurements,
+        )..where((item) => item.id.equals(row.id))).write(
+          BodyMeasurementsCompanion(
+            bodyFatPct: Value(estimate.bodyFatPct),
+            waterPct: Value(estimate.waterPct),
+            bmrKcal: Value(estimate.bmrKcal),
+            formulaVersion: Value(estimate.formulaVersion),
+            updatedAt: Value(now),
+          ),
+        );
+        await _appendOutbox(
+          entityId: row.id,
+          operation: 'upsert',
+          payload: {
+            'id': row.id,
+            'profile_id': row.profileId,
+            'weight_kg': row.weightKg,
+            'measured_at': row.measuredAt.toIso8601String(),
+            'has_impedance': true,
+            'impedance_ohm': row.impedanceOhm,
+            'body_fat_pct': estimate.bodyFatPct,
+            'water_pct': estimate.waterPct,
+            'bmr_kcal': estimate.bmrKcal,
+            'formula_version': estimate.formulaVersion,
+            'source': row.source,
+            'external_id': row.externalId,
+            'device_model': row.deviceModel,
+            'raw_payload': row.rawPayload,
+            'note': row.note,
+            'updated_at': now.toIso8601String(),
+          },
+          now: now,
+        );
+        rewritten++;
+      }
+    });
+    return rewritten;
+  }
+
+  /// Le pesate che una nuova versione della formula rifarebbe. La schermata la
+  /// usa per proporre il ricalcolo invece di eseguirlo di nascosto: riscrivere
+  /// mesi di storico senza dirlo sarebbe una sorpresa sgradevole.
+  Future<List<LocalBodyMeasurement>> pendingRecalculation({
+    required String profileId,
+    BiaFormula? formula,
+  }) async {
+    final target = formula ?? BiaFormulas.current;
+    final rows =
+        await (_database.select(_database.bodyMeasurements)..where(
+              (row) =>
+                  row.profileId.equals(profileId) &
+                  row.deletedAt.isNull() &
+                  row.impedanceOhm.isNotNull() &
+                  row.formulaVersion.isNotNull() &
+                  row.formulaVersion.equals(target.version).not(),
+            ))
+            .get();
+    return rows
+        .where((row) => BiaFormulas.isOurs(row.formulaVersion))
+        .toList(growable: false);
+  }
+
+  /// La chiave con cui una pesata Bluetooth si riconosce: minuto e peso in
+  /// grammi. Due letture separate da meno di un minuto e identiche al grammo
+  /// sono la stessa salita sulla bilancia salvata due volte.
+  static String scaleExternalId({
+    required DateTime measuredAt,
+    required double weightKg,
+  }) {
+    final at = measuredAt.toUtc();
+    String two(int value) => value.toString().padLeft(2, '0');
+    final stamp =
+        '${at.year}${two(at.month)}${two(at.day)}'
+        'T${two(at.hour)}${two(at.minute)}';
+    return 'ble-$stamp-${(weightKg * 1000).round()}';
+  }
+
+  static String? _clampDevice(String name) {
+    final clean = name.trim();
+    if (clean.isEmpty) {
+      return null;
+    }
+    return clean.length <= 60 ? clean : clean.substring(0, 60);
+  }
+
+  static String? _clampPayload(String hex) {
+    final clean = hex.trim();
+    if (clean.isEmpty) {
+      return null;
+    }
+    return clean.length <= 512 ? clean : clean.substring(0, 512);
   }
 
   /// Cancellazione morbida, come nel resto dell'app: la riga resta, così la

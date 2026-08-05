@@ -114,6 +114,28 @@ class ProgressScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(recentWeightsProvider),
             ),
           ),
+          const SizedBox(height: 14),
+          // Altezza, nascita e sesso. È l'unica porta per tornarci dopo aver
+          // saltato il benvenuto del primo avvio: senza, «lo faccio dopo»
+          // sarebbe un vicolo cieco, perché quei tre dati non si inseriscono
+          // da nessun'altra parte.
+          Card(
+            child: ListTile(
+              key: const Key('open_personal_details_button'),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+              leading: const Icon(Icons.straighten_rounded),
+              title: const Text('Dati personali'),
+              subtitle: const Text(
+                'Altezza, nascita e sesso: senza, BMI, metabolismo e '
+                'composizione restano a metà.',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.pushNamed('personal-details'),
+            ),
+          ),
         ],
       ),
     );

@@ -6,10 +6,11 @@ import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/goal/domain/body_state.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_providers.dart';
 
-/// Store su file JSON del check-in: nei test si sostituisce con quello in
-/// memoria.
+/// Store Drift del check-in (v7): nei test si sostituisce con quello in
+/// memoria. Alla prima lettura porta dentro il vecchio file JSON e lo
+/// archivia.
 final checkInStoreProvider = Provider<CheckInStore>(
-  (ref) => FileCheckInStore(),
+  (ref) => DriftCheckInStore(ref.watch(databaseProvider)),
 );
 
 final checkInRepositoryProvider = Provider<CheckInRepository>(

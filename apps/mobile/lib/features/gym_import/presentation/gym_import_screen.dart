@@ -461,16 +461,19 @@ class _SyncNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Il messaggio è cambiato quando la sincronizzazione ha imparato schede,
+    // esercizi e sessioni: prima diceva che restava tutto sul telefono, e
+    // continuare a dirlo sarebbe stato falso.
     return const GymImportNotice(
       key: Key('gym_import_sync_notice'),
-      icon: Icons.cloud_off_rounded,
-      tone: GymImportNoticeTone.warning,
-      title: 'Resta tutto su questo telefono',
+      icon: Icons.cloud_sync_rounded,
+      tone: GymImportNoticeTone.info,
+      title: 'Lo storico si sincronizza',
       message:
-          'La sincronizzazione non conosce ancora schede, esercizi e '
-          'sessioni: l\'import non accoda niente al server, di proposito. '
-          'Finché non sarà pronta, l\'unica copia dello storico è qui — al '
-          'sicuro la mette solo il backup.',
+          'Schede, esercizi e sessioni entrano nella coda di '
+          'sincronizzazione insieme al resto: se la sincronizzazione è '
+          'accesa arrivano anche sugli altri dispositivi. Il backup resta '
+          'comunque la copia che non dipende da nessun server.',
     );
   }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo della schermata d'avvio: la stessa crema su cui si apre l'app
+         (AppPalette.cream). Sta in un file suo e non in `colors.xml` perché
+         quello lo rigenera `flutter_launcher_icons`. -->
+    <color name="splash_background">#FBF7ED</color>
+</resources>

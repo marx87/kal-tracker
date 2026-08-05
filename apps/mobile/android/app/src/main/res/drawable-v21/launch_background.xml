@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Copia identica di `drawable/launch_background.xml`: da API 21 in su vince
+     questa, e le due devono restare uguali. È rimasta distinta perché è la
+     struttura che genera Flutter, e cancellarla la farebbe ricomparire come
+     template alla prossima rigenerazione della cartella android/. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/splash_background" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@drawable/ic_splash_logo" />
+    </item>
 </layer-list>

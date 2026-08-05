@@ -594,11 +594,25 @@ void main() {
     expect(await database.select(database.exercises).get(), isEmpty);
   });
 
-  test('di default non accoda niente alla coda di sincronizzazione', () async {
+  test('spegnendo enqueueSync non accoda niente', () async {
     final report = await runImport();
 
     expect(report.syncMutations, 0);
     expect(await database.select(database.syncOutbox).get(), isEmpty);
+  });
+
+  test('di serie la coda di sincronizzazione è ACCESA', () async {
+    // Il parametro non viene passato: si guarda proprio il valore di
+    // fabbrica, che è quello con cui l'import gira sul telefono di Marco.
+    // Finché era falso lo storico di Gym restava chiuso nel dispositivo.
+    final report = await importer.importExport(
+      profileId: profileId,
+      export: loadGymExport(),
+      firestoreDump: loadFirestoreDump(),
+    );
+
+    expect(report.syncMutations, greaterThan(0));
+    expect(await database.select(database.syncOutbox).get(), isNotEmpty);
   });
 
   test('con enqueueSync accoda una mutation per ogni entità radice', () async {

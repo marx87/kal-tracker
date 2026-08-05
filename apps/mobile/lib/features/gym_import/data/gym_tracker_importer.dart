@@ -32,13 +32,19 @@ class GymTrackerImporter {
   final AppDatabase _database;
   final Uuid _uuid;
 
-  /// [enqueueSync] è FALSO di proposito. `SyncPushMapper.map` non conosce
-  /// ancora `exercise`, `routine`, `workout` e `workout_profile_stats`: quelle
-  /// mutation cadrebbero nel `default:` dello switch, `pushMutation`
-  /// riuscirebbe senza fare niente e `SyncEngine._push` cancellerebbe la riga
-  /// di outbox contandola come inviata. La coda si svuoterebbe senza che il
-  /// server riceva nulla, e non ci sarebbe modo di rigenerarla perché al
-  /// secondo lancio l'importer è un no-op.
+  /// [enqueueSync] è ora VERO di serie. Restava falso perché il gateway non
+  /// sapeva mappare `exercise`, `routine`, `workout` e
+  /// `workout_profile_stats`: quelle mutation cadevano nel `default:` dello
+  /// switch, `pushMutation` riusciva senza fare niente e `SyncEngine._push`
+  /// cancellava la riga di outbox contandola come inviata — la coda si
+  /// svuotava senza che il server ricevesse nulla, e non c'era modo di
+  /// rigenerarla perché al secondo lancio l'importer è un no-op.
+  ///
+  /// Oggi i quattro tipi sono mappati, un entityType sconosciuto ferma la
+  /// testa della coda invece di essere ingoiato, e le migrazioni `0007` e
+  /// `0008` sono applicate sul progetto reale: lo storico di Gym può quindi
+  /// uscire dal telefono. Resta un parametro perché i test lo spengono per
+  /// osservare il solo travaso.
   ///
   /// È `async` anche per i controlli di testa: un metodo che a volte lancia
   /// prima di restituire il Future e a volte dopo obbligherebbe ogni
@@ -48,7 +54,7 @@ class GymTrackerImporter {
     required Map<String, Object?> export,
     Map<String, Object?>? firestoreDump,
     String? firestoreUserId,
-    bool enqueueSync = false,
+    bool enqueueSync = true,
   }) async {
     const what = 'export Gym Tracker';
     final app = optionalString(require(export, 'app', what));

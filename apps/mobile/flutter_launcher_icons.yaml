@@ -1,0 +1,39 @@
+# Icona di Coach360.
+#
+# ATTENZIONE — questo file oggi è una DICHIARAZIONE, non una ricetta che gira:
+# `flutter_launcher_icons` non è fra le dipendenze di `pubspec.yaml` (non era
+# mio da toccare). Le risorse Android sono già state generate a mano da
+# `assets/icon/build_icon.py`, con le stesse dimensioni e gli stessi nomi che
+# produrrebbe il pacchetto: chi aggiungerà la dipendenza troverà tutto al posto
+# giusto e la rigenerazione sarà una conferma, non una sorpresa.
+#
+#     dev_dependencies:
+#       flutter_launcher_icons: ^0.14.4
+#     dart run flutter_launcher_icons
+#
+# Il segno: un anello aperto in alto a destra, un punto sospeso nel varco e un
+# accento che sale al centro. Il giro dei 360 gradi che non è ancora chiuso, il
+# passo che manca, la direzione. Verde bosco su crema, la stessa coppia di
+# `AppPalette`; nessuna lettera, perché a 48 px non si legge niente.
+#
+# `android: "ic_launcher"` conserva il nome della risorsa già scritto nel
+# manifest (`android:icon="@mipmap/ic_launcher"`): rinominarla in
+# `launcher_icon`, come fa Gym Tracker, obbligherebbe a toccare il manifest.
+flutter_launcher_icons:
+  android: "ic_launcher"
+  image_path: "assets/icon/app_icon.png"
+  # Android pre-8 mostra il PNG così com'è: gli angoli sono già smussati qui.
+  image_path_android: "assets/icon/app_icon.png"
+  # iOS pretende un quadrato pieno: `remove_alpha_ios` appiattirebbe su bianco
+  # gli angoli trasparenti dell'altro, lasciando quattro spicchi bianchi sulla
+  # crema.
+  image_path_ios: "assets/icon/app_icon_ios.png"
+  ios: true
+  remove_alpha_ios: true
+  # Il fondo dell'icona adattiva è un colore e non un'immagine: il launcher lo
+  # ritaglia con la maschera che preferisce e un colore non si deforma.
+  adaptive_icon_background: "#FBF7ED"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # Livello a tema di Android 13: il sistema ne usa solo l'alfa.
+  adaptive_icon_monochrome: "assets/icon/app_icon_monochrome.png"
+  min_sdk_android: 24

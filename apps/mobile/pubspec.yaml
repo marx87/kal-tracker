@@ -67,6 +67,14 @@ dependencies:
   # compilate e l'APK fallisce su `FilePickerPlugin`. La 12 quel caso lo
   # gestisce esplicitamente.
   file_picker: ^12.0.0-beta.7
+  # Bluetooth Low Energy: serve a leggere la bilancia Renpho (`QN-Scale`)
+  # direttamente, senza la sua app e senza il suo cloud.
+  #
+  # Tutto ciò che il pacchetto espone è racchiuso in `ScaleLink`
+  # (`lib/features/body/data/scale_link.dart`): sopra quella interfaccia il
+  # codice è puro Dart e si prova con un dispositivo finto. È l'unico modo di
+  # collaudare un protocollo che nessun test può mettere sotto i piedi.
+  flutter_blue_plus: ^2.3.11
 
 dev_dependencies:
   flutter_test:

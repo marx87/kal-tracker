@@ -6,6 +6,26 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- I promemoria pianificati devono sopravvivere al riavvio. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Bilancia Renpho (QN-Scale) via Bluetooth Low Energy.
+         `required="false"`: senza Bluetooth l'app funziona lo stesso, la
+         pesata si inserisce a mano. -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
+    <!-- Android 12 e oltre. `neverForLocation` è una dichiarazione, non
+         un'ottimizzazione: promette al sistema che dalle scansioni non si
+         ricava la posizione, ed è vero — si cerca una bilancia in bagno.
+         In cambio Android non pretende il permesso di posizione. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Android 11 e precedenti: lì la scansione BLE passava per i vecchi
+         permessi e pretendeva la posizione precisa. `maxSdkVersion` li spegne
+         sui telefoni nuovi, dove chiederli sarebbe un permesso in più senza
+         motivo. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <application
         android:label="Coach360"
         android:name="${applicationName}"

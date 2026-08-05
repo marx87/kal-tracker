@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Di notte l'app si apre sul verde bosco quasi nero (AppPalette.
+         nightCanvas): l'avvio deve essere già quel fondo, altrimenti al buio
+         si prende un lampo di crema in faccia. Il logo passa da solo alla
+         foglia schiarita, con i PNG di `drawable-night-*`. -->
+    <color name="splash_background">#101613</color>
+</resources>

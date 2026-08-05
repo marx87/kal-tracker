@@ -5,7 +5,9 @@ import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/routines/domain/routine_models.dart';
 import 'package:kal_tracker/features/routines/presentation/routine_editor_screen.dart';
 import 'package:kal_tracker/features/routines/presentation/routine_providers.dart';
+import 'package:kal_tracker/features/routines/presentation/weekly_schedule_screen.dart';
 import 'package:kal_tracker/features/routines/presentation/widgets/routine_tags.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/start_workout_action.dart';
 
 /// L'elenco delle schede. Ogni riga dice in una frase che allenamento è:
 /// quanti esercizi, quanto dura, se è un circuito e se contiene superserie o
@@ -27,6 +29,12 @@ class RoutinesScreen extends ConsumerWidget {
         // Le tre facce della palestra stanno sotto la stessa voce: quello che
         // hai preparato, quello che puoi fare e quello che hai già fatto.
         actions: [
+          IconButton(
+            key: const Key('gym_open_week_button'),
+            tooltip: 'La settimana',
+            onPressed: () => openWeeklySchedule(context),
+            icon: const Icon(Icons.calendar_month_rounded),
+          ),
           IconButton(
             key: const Key('gym_open_exercises_button'),
             tooltip: 'Catalogo esercizi',
@@ -268,65 +276,81 @@ class _RoutineCard extends ConsumerWidget {
         onTap: () => openRoutineEditor(context, routineId: routine.id),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: routine.isCircuit
-                      ? accents.warningSurface
-                      : theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                child: Icon(
-                  routine.isCircuit
-                      ? Icons.bolt_rounded
-                      : Icons.assignment_rounded,
-                  color: routine.isCircuit
-                      ? accents.warning
-                      : theme.colorScheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      routine.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: routine.isCircuit
+                          ? accents.warningSurface
+                          : theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(17),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      detail,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: accents.mutedInk,
-                      ),
+                    child: Icon(
+                      routine.isCircuit
+                          ? Icons.bolt_rounded
+                          : Icons.assignment_rounded,
+                      color: routine.isCircuit
+                          ? accents.warning
+                          : theme.colorScheme.onPrimaryContainer,
                     ),
-                    if (routine.isCircuit ||
-                        routine.supersetGroupCount > 0 ||
-                        routine.segmentCount > 0) ...[
-                      const SizedBox(height: 9),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          if (routine.isCircuit) const RoutineTag.circuit(),
-                          if (routine.supersetGroupCount > 0)
-                            RoutineTag.superset(routine.supersetGroupCount),
-                          if (routine.segmentCount > 0)
-                            RoutineTag.segments(routine.segmentCount),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          routine.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          detail,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: accents.mutedInk,
+                          ),
+                        ),
+                        if (routine.isCircuit ||
+                            routine.supersetGroupCount > 0 ||
+                            routine.segmentCount > 0) ...[
+                          const SizedBox(height: 9),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (routine.isCircuit) const RoutineTag.circuit(),
+                              if (routine.supersetGroupCount > 0)
+                                RoutineTag.superset(routine.supersetGroupCount),
+                              if (routine.segmentCount > 0)
+                                RoutineTag.segments(routine.segmentCount),
+                            ],
+                          ),
                         ],
-                      ),
-                    ],
-                  ],
+                      ],
+                    ),
+                  ),
+                  _RoutineMenu(routine: routine),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Una scheda esiste per essere eseguita: l'azione principale sta
+              // sulla card, non dietro un'apertura in modifica. Il tocco sulla
+              // card continua a portare all'editor.
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: StartRoutineButton(
+                  routineId: routine.id,
+                  routineName: routine.name,
                 ),
               ),
-              _RoutineMenu(routine: routine),
             ],
           ),
         ),

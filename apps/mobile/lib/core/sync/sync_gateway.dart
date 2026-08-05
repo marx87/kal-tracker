@@ -200,6 +200,7 @@ class MappedMutation {
 /// • `workout` → `exercises[]`, ognuno con i suoi `sets[]`, più
 ///   `pain_points[]` e `interval_segments[]`;
 /// • `workout_profile_stats` → `achievements[]` e `weekly_plan[]`;
+/// • `routine_weekly_plan` → `days[]` (la settimana intera, vedi sotto);
 /// • `body_measurement` → `values[]` (le circonferenze).
 ///
 /// La CHIAVE ASSENTE e la lista vuota vogliono dire cose diverse: assente è
@@ -233,6 +234,8 @@ abstract final class SyncPushMapper {
         return _exercise(mutation);
       case 'routine':
         return _routine(mutation);
+      case 'routine_weekly_plan':
+        return _routineWeeklyPlan(mutation);
       case 'workout':
         return _workout(mutation);
       case 'workout_profile_stats':
@@ -842,6 +845,81 @@ abstract final class SyncPushMapper {
         'routine-exercise:$index',
       ),
     };
+  }
+
+  /// La settimana di allenamenti: UNA mutation per l'intera settimana, non
+  /// una per giorno.
+  ///
+  /// Il giorno di riposo non è una riga con un flag, è una riga che non c'è:
+  /// togliere il martedì significa, di là, tombstonare la riga del martedì. Un
+  /// payload per giorno non saprebbe dirlo — il tombstone locale non esiste,
+  /// la riga viene proprio cancellata — quindi il contratto è la sostituzione
+  /// in blocco dei figli del profilo, la stessa già usata per i trofei.
+  ///
+  /// Gli id dei giorni sono deterministici su (profilo, giorno), gli stessi
+  /// che genera l'importer di Gym: la settimana composta a mano e quella
+  /// importata si sovrascrivono invece di sommarsi.
+  static MappedMutation _routineWeeklyPlan(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['profile_id']) ?? mutation.entityId;
+    final remoteProfileId = SyncIds.remoteId(profileLocalId);
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    // `delete` qui vuol dire «nessun giorno»: la settimana non ha una riga
+    // propria da tombstonare, ha solo i suoi giorni.
+    final isDelete = mutation.operation == 'delete';
+    if (!isDelete && !p.containsKey('days')) {
+      // Uno swap con la chiave assente svuoterebbe la settimana remota
+      // credendo di aggiornarla. Meglio perdere questa riga di coda, che
+      // nessun dato locale rappresenta, che cancellare la settimana di là:
+      // non ritentabile, così la coda prosegue invece di bloccarsi su un
+      // payload che non migliorerà mai da solo.
+      throw const SyncGatewayException(
+        'Settimana di allenamenti senza giorni: non la mando, cancellerebbe '
+        'quella già sincronizzata.',
+      );
+    }
+    final days = isDelete
+        ? const <Map<Object?, Object?>>[]
+        : _children(p['days']);
+    return MappedMutation(
+      ops: [
+        RemoteChildrenSwap(
+          table: 'routine_weekly_plan',
+          parentColumn: 'profile_id',
+          parentId: remoteProfileId,
+          rows: [
+            for (final (index, row) in days.indexed)
+              {
+                'id': _childId(
+                  row['id'],
+                  mutation.mutationId,
+                  'week-day',
+                  index,
+                ),
+                'profile_id': remoteProfileId,
+                'weekday': _bounded(row['weekday'], 1, 7) ?? 1,
+                'routine_id': _optionalId(row['routine_id']),
+                'routine_external_id': _optionalId(row['routine_external_id']),
+                'routine_name_snapshot': _text(
+                  row['routine_name_snapshot'],
+                  max: 160,
+                ),
+                'deleted_at': null,
+                'last_mutation_id': SyncIds.derived(
+                  mutation.mutationId,
+                  'week-day:$index',
+                ),
+              },
+          ],
+          tombstoneMutationIdFor: (remoteRowId) => SyncIds.derived(
+            mutation.mutationId,
+            'week-day-tomb:$remoteRowId',
+          ),
+          tombstoneAt: updatedAt,
+        ),
+      ],
+      profileLocalId: profileLocalId,
+    );
   }
 
   static MappedMutation _workout(SyncMutation mutation) {

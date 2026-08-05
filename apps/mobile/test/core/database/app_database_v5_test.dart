@@ -7,7 +7,7 @@ import 'package:kal_tracker/features/profile/data/local_profile_repository.dart'
 
 /// Fixture della v4 scritta a mano: le 15 tabelle installate sul telefono di
 /// Marco (v0.9.x), con i soli vincoli significativi. Chi porterà lo schema a
-/// v6 dovrà scrivere la propria fixture v5 con lo stesso pattern.
+/// v7 ha scritto la propria fixture v6 con lo stesso pattern.
 QueryExecutor _schemaV4({required List<String> seed}) {
   return NativeDatabase.memory(
     setup: (raw) {
@@ -280,7 +280,7 @@ void main() {
     )..orderBy([(row) => OrderingTerm(expression: row.measuredAt)])).get();
     final plans = await database.select(database.weeklyPlans).get();
 
-    expect(version, 6);
+    expect(version, 7);
     expect(profile.displayName, 'Marco v4');
     expect(measurements.map((row) => row.weightKg), [96.2, 94.5]);
     expect(measurements.last.note, 'dopo le ferie');

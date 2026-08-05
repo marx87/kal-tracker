@@ -899,4 +899,132 @@ void main() {
     expect(ops, hasLength(1));
     expect((ops.single as RemoteUpsert).rows.single['source'], 'kal_tracker');
   });
+
+  test('la settimana di allenamenti viaggia intera, non giorno per '
+      'giorno', () {
+    const dayId = '50000000-0000-4000-8000-000000000002';
+    const mutation = SyncMutation(
+      mutationId: _mutationId,
+      entityType: 'routine_weekly_plan',
+      entityId: _profileId,
+      operation: 'upsert',
+      payload: {
+        'profile_id': _profileId,
+        'updated_at': '2026-08-06T09:00:00.000Z',
+        'days': [
+          {
+            'id': dayId,
+            'weekday': 2,
+            'routine_id': _routineId,
+            'routine_external_id': _routineId,
+            'routine_name_snapshot': 'Giorno1 spalle petto tricipiti',
+          },
+        ],
+      },
+    );
+
+    final ops = SyncPushMapper.map(mutation).ops;
+    // Una sola operazione, e non è un upsert: è una sostituzione in blocco
+    // dei figli del profilo. Solo così il giorno TOLTO — che localmente è una
+    // riga sparita e non un tombstone — arriva anche di là.
+    expect(ops, hasLength(1));
+    final swap = ops.single as RemoteChildrenSwap;
+    expect(swap.table, 'routine_weekly_plan');
+    expect(swap.parentColumn, 'profile_id');
+    expect(swap.parentId, _profileId);
+    expect(swap.tombstoneAt, '2026-08-06T09:00:00.000Z');
+
+    final row = swap.rows.single;
+    expect(row['id'], dayId);
+    expect(row['profile_id'], _profileId);
+    expect(row['weekday'], 2);
+    expect(row['routine_id'], _routineId);
+    expect(row['routine_external_id'], _routineId);
+    expect(row['routine_name_snapshot'], 'Giorno1 spalle petto tricipiti');
+    expect(row['deleted_at'], isNull);
+    expect(SyncIds.isUuid(row['last_mutation_id']! as String), isTrue);
+
+    // Le righe della generazione corrente non si tombstonano: dopo una
+    // risposta persa il retry le rivedrebbe «vive» e le azzererebbe.
+    expect(swap.tombstoneTargets([dayId, 'altro']), ['altro']);
+  });
+
+  test('una settimana vuota tombstona tutti i giorni', () {
+    const mutation = SyncMutation(
+      mutationId: _mutationId,
+      entityType: 'routine_weekly_plan',
+      entityId: _profileId,
+      operation: 'upsert',
+      payload: {
+        'profile_id': _profileId,
+        'updated_at': '2026-08-06T09:00:00.000Z',
+        'days': <Object?>[],
+      },
+    );
+
+    final swap = SyncPushMapper.map(mutation).ops.single as RemoteChildrenSwap;
+    // «Sette giorni di riposo» è un'affermazione, non un'omissione: le righe
+    // remote devono sparire tutte.
+    expect(swap.rows, isEmpty);
+    expect(swap.tombstoneTargets(['a', 'b']), ['a', 'b']);
+  });
+
+  test('una settimana senza la chiave days non viene mandata', () {
+    const mutation = SyncMutation(
+      mutationId: _mutationId,
+      entityType: 'routine_weekly_plan',
+      entityId: _profileId,
+      operation: 'upsert',
+      payload: {'profile_id': _profileId},
+    );
+
+    // Uno swap con zero righe cancellerebbe la settimana già sincronizzata
+    // credendo di aggiornarla: meglio perdere questa riga di coda (che
+    // nessun dato locale rappresenta) che il dato di là. Non ritentabile,
+    // così la coda prosegue invece di bloccarsi su un payload che non
+    // migliorerà da solo.
+    expect(
+      () => SyncPushMapper.map(mutation),
+      throwsA(
+        isA<SyncGatewayException>().having(
+          (error) => error.retryable,
+          'ritentabile',
+          isFalse,
+        ),
+      ),
+    );
+  });
+
+  test('adoptProfile riporta anche la settimana sul profilo adottato', () {
+    const adoptedProfileId = '66666666-6666-4666-8666-666666666666';
+    const mutation = SyncMutation(
+      mutationId: _mutationId,
+      entityType: 'routine_weekly_plan',
+      entityId: _profileId,
+      operation: 'upsert',
+      payload: {
+        'profile_id': _profileId,
+        'updated_at': '2026-08-06T09:00:00.000Z',
+        'days': [
+          {
+            'id': '50000000-0000-4000-8000-000000000005',
+            'weekday': 5,
+            'routine_id': _routineId,
+            'routine_external_id': _routineId,
+            'routine_name_snapshot': 'Gambe',
+          },
+        ],
+      },
+    );
+
+    final swap =
+        SyncPushMapper.adoptProfile(
+              SyncPushMapper.map(mutation).ops.single,
+              from: _profileId,
+              to: adoptedProfileId,
+            )
+            as RemoteChildrenSwap;
+    expect(swap.parentId, adoptedProfileId);
+    expect(swap.rows.single['profile_id'], adoptedProfileId);
+  });
 }

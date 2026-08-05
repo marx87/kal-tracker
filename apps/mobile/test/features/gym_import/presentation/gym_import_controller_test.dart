@@ -34,6 +34,9 @@ void main() {
   Future<int> countWorkouts() async =>
       (await database.select(database.workouts).get()).length;
 
+  Future<int> countOutbox() async =>
+      (await database.select(database.syncOutbox).get()).length;
+
   test('la prova a vuoto conta tutto senza scrivere niente', () async {
     await controller().useExportSource(exportPath);
     await controller().useDumpSource(dumpPath);
@@ -50,8 +53,12 @@ void main() {
     expect(preview.usedFirestoreDump, isTrue);
     expect(preview.warnings, isNotEmpty);
 
-    // La prova non deve aver lasciato una riga.
+    // La prova non deve aver lasciato una riga. Con la coda accesa vale anche
+    // per l'outbox: un'anteprima che accodasse davvero manderebbe al server
+    // uno storico che sul telefono è stato annullato.
     expect(await countWorkouts(), 0);
+    expect(await countOutbox(), 0);
+    expect(preview.syncMutations, greaterThan(0));
     expect(read().result, isNull);
     expect(read().isBusy, isFalse);
   });
@@ -63,7 +70,12 @@ void main() {
 
     final result = read().result!;
     expect(result.workouts, 29);
-    expect(result.syncMutations, 0, reason: 'la coda di sync resta spenta');
+    // La coda di sincronizzazione è accesa: lo storico appena travasato deve
+    // poter uscire dal telefono, altrimenti resta chiuso qui come lo era in
+    // Firebase — con la differenza che al secondo lancio l'importer è un
+    // no-op e la coda non si potrebbe più rigenerare.
+    expect(result.syncMutations, greaterThan(0));
+    expect(await countOutbox(), result.syncMutations);
     expect(await countWorkouts(), 29);
 
     // Rilanciato sullo stesso file: l'anteprima dice che non c'è niente di

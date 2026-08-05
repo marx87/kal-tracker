@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Da Android 12 la schermata d'avvio la disegna il sistema e il
+         `windowBackground` non basta più: senza queste due righe l'app parte
+         da un lampo bianco e poi diventa crema.
+
+         L'immagine non la dichiariamo: il sistema usa l'icona dell'app, che è
+         già la nostra. Dichiararla di nuovo la farebbe mascherare due volte.
+
+         Il file è versionato (`-v31`) e non fuso in `values/styles.xml` perché
+         quegli attributi esistono solo da API 31 in su. Serve anche il gemello
+         `values-night-v31`: fra i qualificatori la notte conta più della
+         versione, quindi al buio vincerebbe `values-night/styles.xml` e le
+         righe qui sotto sparirebbero. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+    </style>
+</resources>
