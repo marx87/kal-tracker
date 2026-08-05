@@ -45,7 +45,7 @@ class TodayDiaryScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Kal Tracker',
+              'Coach360',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: AppPalette.forestDark,
                 fontWeight: FontWeight.w900,

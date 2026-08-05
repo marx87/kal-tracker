@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The shared food-and-wellness palette for Kal Tracker.
+/// The shared food-and-wellness palette for Coach360.
 ///
 /// Colors are public so small presentation widgets can stay visually
 /// consistent without duplicating magic values.

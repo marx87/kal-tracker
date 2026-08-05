@@ -60,7 +60,7 @@ class BackupDocument {
     final formatVersion = _integer(root, 'format_version', minimum: 1);
     if (formatVersion > currentFormatVersion) {
       throw BackupFormatException(
-        'Questo backup usa il formato $formatVersion: aggiorna Kal Tracker '
+        'Questo backup usa il formato $formatVersion: aggiorna Coach360 '
         'per poterlo ripristinare.',
       );
     }

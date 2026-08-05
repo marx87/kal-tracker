@@ -54,7 +54,7 @@ void main() {
           isA<BackupFormatException>().having(
             (error) => error.message,
             'message',
-            contains('aggiorna Kal Tracker'),
+            contains('aggiorna Coach360'),
           ),
         ),
       );

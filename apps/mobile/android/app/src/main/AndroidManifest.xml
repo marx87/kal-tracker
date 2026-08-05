@@ -7,7 +7,7 @@
     <!-- I promemoria pianificati devono sopravvivere al riavvio. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
-        android:label="Kal Tracker"
+        android:label="Coach360"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
