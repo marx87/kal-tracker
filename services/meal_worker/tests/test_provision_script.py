@@ -42,6 +42,12 @@ esac
 """
 
 
+@unittest.skipUnless(
+    Path("/usr/bin/security").exists(),
+    "lo script di provisioning scrive nel Portachiavi: senza "
+    "/usr/bin/security si ferma subito, e questi test verificherebbero "
+    "quel messaggio invece del comportamento che li interessa",
+)
 class ProvisionScriptGuardTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
