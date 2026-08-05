@@ -61,6 +61,14 @@ class ProgressScreen extends ConsumerWidget {
             onPressed: () => context.pushNamed('backup'),
             icon: const Icon(Icons.save_alt_rounded),
           ),
+          // Il travaso da Gym Tracker si fa una volta sola, ma senza un modo
+          // per lanciarlo l'importer resterebbe codice che nessuno chiama.
+          IconButton(
+            key: const Key('open_gym_import_button'),
+            tooltip: 'Importa da Gym Tracker',
+            onPressed: () => context.pushNamed('gym-import'),
+            icon: const Icon(Icons.move_to_inbox_outlined),
+          ),
         ],
       ),
       body: ListView(
