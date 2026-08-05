@@ -105,8 +105,16 @@ class CoachNarrative {
     'dropped': droppedParagraphs,
   };
 
-  /// Una cifra, in qualunque alfabeto latino-arabo, squalifica il testo.
-  static final RegExp _digit = RegExp('[0-9]');
+  /// Un numero, in qualunque forma, squalifica il testo.
+  ///
+  /// Non basta `[0-9]`: «hai perso ½ chilo più del previsto» è un numero del
+  /// modello esattamente come «0,5», e passerebbe indenne anche dalla CHECK
+  /// del database, che verifica il tipo dei campi e non il contenuto della
+  /// prosa. `\p{N}` copre cifre decimali, frazioni e numerali in un colpo
+  /// solo, ed è lo stesso insieme che scarta il worker sul Mac
+  /// (`coach_contract._is_numeric_text`). Restano fuori solo i numeri scritti
+  /// in lettere: lì un filtro cancellerebbe anche «un chilo».
+  static final RegExp _digit = RegExp(r'\p{N}', unicode: true);
 
   static String? _clean(Object? value, int maxLength) {
     if (value is! String) {

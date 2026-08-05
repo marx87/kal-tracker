@@ -12,6 +12,7 @@ from typing import Any
 from urllib.parse import quote, urlsplit
 from uuid import UUID
 
+from .coach_contract import CoachNarrativeResult
 from .contract import AnalysisResult
 from .plan_contract import WeeklyPlanResult
 from .transport import (
@@ -144,6 +145,55 @@ class ClaimedJob:
         )
 
 
+def _request_job_fields(
+    value: object, *, request_label: str
+) -> dict[str, object] | None:
+    """Campi del claim delle code che portano la richiesta dentro il job.
+
+    Piano settimanale e coach hanno la stessa identica risposta di claim: otto
+    chiavi, nessuna delle quali riguarda le foto. Le due code restano classi
+    diverse (i loro job non sono intercambiabili e i messaggi d'errore devono
+    dire di quale coda si parla), ma la lettura difensiva e' una sola: due
+    copie della stessa validazione divergerebbero al primo campo aggiunto.
+    """
+    if not isinstance(value, dict):
+        raise SupabaseProtocolError("Risposta claim non valida")
+    if value == {"claimed": False}:
+        return None
+
+    expected = {
+        "claimed",
+        "job_id",
+        "owner_id",
+        "profile_id",
+        "request",
+        "attempt_count",
+        "row_version",
+        "lease_expires_at",
+    }
+    if set(value) != expected or value.get("claimed") is not True:
+        raise SupabaseProtocolError("Campi claim mancanti o inattesi")
+
+    request = value["request"]
+    if not isinstance(request, dict):
+        raise SupabaseProtocolError(f"Richiesta {request_label} non valida")
+
+    attempt_count = _integer(value["attempt_count"], "attempt_count")
+    row_version = _integer(value["row_version"], "row_version")
+    if not 1 <= attempt_count <= 10 or row_version <= 0:
+        raise SupabaseProtocolError("Versione o tentativo claim non valido")
+
+    return {
+        "job_id": _uuid_string(value["job_id"], "job_id"),
+        "owner_id": _uuid_string(value["owner_id"], "owner_id"),
+        "profile_id": _uuid_string(value["profile_id"], "profile_id"),
+        "request": request,
+        "attempt_count": attempt_count,
+        "row_version": row_version,
+        "lease_expires_at": _lease_timestamp(value["lease_expires_at"]),
+    }
+
+
 @dataclass(frozen=True)
 class ClaimedPlanJob:
     """Job della coda del piano settimanale.
@@ -163,42 +213,35 @@ class ClaimedPlanJob:
 
     @classmethod
     def from_json(cls, value: object) -> "ClaimedPlanJob | None":
-        if not isinstance(value, dict):
-            raise SupabaseProtocolError("Risposta claim non valida")
-        if value == {"claimed": False}:
+        fields = _request_job_fields(value, request_label="del piano")
+        if fields is None:
             return None
+        return cls(**fields)  # type: ignore[arg-type]
 
-        expected = {
-            "claimed",
-            "job_id",
-            "owner_id",
-            "profile_id",
-            "request",
-            "attempt_count",
-            "row_version",
-            "lease_expires_at",
-        }
-        if set(value) != expected or value.get("claimed") is not True:
-            raise SupabaseProtocolError("Campi claim mancanti o inattesi")
 
-        request = value["request"]
-        if not isinstance(request, dict):
-            raise SupabaseProtocolError("Richiesta del piano non valida")
+@dataclass(frozen=True)
+class ClaimedCoachJob:
+    """Job della coda del coach.
 
-        attempt_count = _integer(value["attempt_count"], "attempt_count")
-        row_version = _integer(value["row_version"], "row_version")
-        if not 1 <= attempt_count <= 10 or row_version <= 0:
-            raise SupabaseProtocolError("Versione o tentativo claim non valido")
+    Stessa forma del piano, contenuto opposto: qui ``request`` non e' un
+    catalogo da cui scegliere ma il rapporto gia' calcolato dall'app, e dal
+    Mac tornera' solo testo.
+    """
 
-        return cls(
-            job_id=_uuid_string(value["job_id"], "job_id"),
-            owner_id=_uuid_string(value["owner_id"], "owner_id"),
-            profile_id=_uuid_string(value["profile_id"], "profile_id"),
-            request=request,
-            attempt_count=attempt_count,
-            row_version=row_version,
-            lease_expires_at=_lease_timestamp(value["lease_expires_at"]),
-        )
+    job_id: str
+    owner_id: str
+    profile_id: str
+    request: Mapping[str, object]
+    attempt_count: int
+    row_version: int
+    lease_expires_at: str
+
+    @classmethod
+    def from_json(cls, value: object) -> "ClaimedCoachJob | None":
+        fields = _request_job_fields(value, request_label="del coach")
+        if fields is None:
+            return None
+        return cls(**fields)  # type: ignore[arg-type]
 
 
 @dataclass(frozen=True)
@@ -697,6 +740,116 @@ class SupabasePlanGateway(_SupabaseRpcClient):
         normalized_job_id = _uuid_string(job_id, "job_id")
         value = self._rpc(
             "fail_weekly_plan_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_error_code": _validated_error_code(error_code),
+                "p_retryable": retryable,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={
+                "job_id",
+                "status",
+                "retryable",
+                "attempt_count",
+                "row_version",
+                "completed_at",
+            },
+            job_id=normalized_job_id,
+            allowed_statuses={"queued", "failed"},
+        )
+        if not isinstance(value["retryable"], bool):
+            raise SupabaseProtocolError("Flag retry RPC non valido")
+        return value
+
+
+class SupabaseCoachGateway(_SupabaseRpcClient):
+    """Le quattro RPC della coda del coach, piu' la sonda del binding.
+
+    Come per il piano: nessuno Storage, nessun accesso diretto a
+    ``coach_jobs``, nessuna ``service_role``. L'unica cosa che questo gateway
+    puo' scrivere e' un oggetto di sole stringhe, e la sua forma canonica la
+    decide ``CoachNarrativeResult.to_json()``.
+    """
+
+    def binding_active(self) -> bool:
+        """Dice se questo worker ha un binding 'coaching' attivo.
+
+        E' l'unica chiamata di questo gateway che non tocca la coda: serve al
+        doctor, che prima provava il binding con un claim vero e cosi' facendo
+        consumava un tentativo del job di Marco (e al decimo lo chiudeva).
+        """
+        value = self._rpc("coaching_binding_active", {})
+        active = value.get("active")
+        if set(value) != {"active"} or not isinstance(active, bool):
+            raise SupabaseProtocolError("Risposta binding non valida")
+        return active
+
+    def claim(self, mutation_id: str, lease_seconds: int) -> ClaimedCoachJob | None:
+        value = self._rpc(
+            "claim_coach_job",
+            {
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        return ClaimedCoachJob.from_json(value)
+
+    def heartbeat(
+        self, job_id: str, mutation_id: str, lease_seconds: int
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "heartbeat_coach_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                "p_lease_seconds": lease_seconds,
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "lease_expires_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"processing"},
+        )
+        return value
+
+    def complete(
+        self, job_id: str, mutation_id: str, result: CoachNarrativeResult
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "complete_coach_job",
+            {
+                "p_job_id": normalized_job_id,
+                "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),
+                # `to_json()` verifica da se' che sia solo testo: se non lo
+                # fosse solleverebbe qui, prima della richiesta, invece di
+                # farsi rifiutare dalla CHECK di Postgres.
+                "p_result": result.to_json(),
+            },
+        )
+        _validate_rpc_result(
+            value,
+            expected_fields={"job_id", "status", "row_version", "completed_at"},
+            job_id=normalized_job_id,
+            allowed_statuses={"needs_review"},
+        )
+        return value
+
+    def fail(
+        self,
+        job_id: str,
+        mutation_id: str,
+        error_code: str,
+        retryable: bool,
+    ) -> Mapping[str, object]:
+        normalized_job_id = _uuid_string(job_id, "job_id")
+        value = self._rpc(
+            "fail_coach_job",
             {
                 "p_job_id": normalized_job_id,
                 "p_mutation_id": _uuid_string(mutation_id, "mutation_id"),

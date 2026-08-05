@@ -27,6 +27,23 @@ void main() {
       expect(narrative.paragraphs.any((text) => text.contains('600')), isFalse);
     });
 
+    test('anche una frazione o un numerale è un numero', () {
+      // ½ non è una cifra decimale: con il vecchio filtro [0-9] arrivava sul
+      // telefono accanto ai numeri veri calcolati dall'app.
+      for (final numeral in ['½', '¾', 'Ⅶ', '①', '٢']) {
+        final narrative = parse({
+          'paragraphs': [
+            'Hai perso $numeral chilo più del previsto.',
+            'Il deficit sta reggendo.',
+          ],
+        });
+
+        expect(narrative!.paragraphs, hasLength(1), reason: numeral);
+        expect(narrative.droppedParagraphs, 1, reason: numeral);
+        expect(narrative.paragraphs.first.contains(numeral), isFalse);
+      }
+    });
+
     test('un titolo con una cifra sparisce da solo', () {
       final narrative = parse({
         'headline': 'Meno 0,5 kg',

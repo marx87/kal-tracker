@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "description": "Commento della settimana: SOLO parole. In questo schema non esiste alcun campo numerico, perche' ogni misura del rapporto e' gia' stata calcolata dall'app: qui si scrive il perche', mai il quanto.",
+  "additionalProperties": false,
+  "required": ["headline", "paragraphs"],
+  "properties": {
+    "headline": {
+      "type": "string",
+      "description": "Titolo brevissimo della settimana, in italiano, senza alcuna cifra: un titolo con cifre viene scartato e non arriva a Marco.",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "paragraphs": {
+      "type": "array",
+      "description": "Da uno a cinque capoversi in italiano, nell'ordine in cui vanno letti: prima cosa e' successo, poi perche', infine cosa conviene fare.",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "description": "Un capoverso di poche righe, senza alcuna cifra e senza misure ripetute dal rapporto: un capoverso con cifre viene scartato insieme a tutto quello che diceva.",
+        "minLength": 1,
+        "maxLength": 400
+      }
+    }
+  }
+}

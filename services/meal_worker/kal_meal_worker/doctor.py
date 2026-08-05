@@ -10,6 +10,7 @@ from enum import Enum
 from .keychain import KeychainError
 from .supabase_gateway import (
     SupabaseAuth,
+    SupabaseCoachGateway,
     SupabaseMealGateway,
     SupabasePlanGateway,
     SupabaseProtocolError,
@@ -26,6 +27,10 @@ _PHOTO_BUCKET = "kal-tracker-meal-photos"
 _EXPECTED_BUCKET_SIZE_LIMIT = 10 * 1024 * 1024
 _EXPECTED_BUCKET_MIME_TYPES = ("image/jpeg", "image/png", "image/webp")
 _MAX_DIAGNOSTIC_RESPONSE_BYTES = 64 * 1024
+
+# La diagnostica non scrive: nessun claim, nessun fail, nessun job toccato.
+# Il binding del coach si legge con `coaching_binding_active()`, e le altre due
+# code si sondano con un heartbeat su un job inesistente.
 
 # Stessa filosofia degli analyzer: la CLI di verifica non riceve API key,
 # token o variabili KAL_*.
@@ -257,6 +262,73 @@ def check_plan_rpc(gateway: SupabasePlanGateway) -> CheckResult:
     )
 
 
+def check_coach_binding(gateway: SupabaseCoachGateway) -> CheckResult:
+    """Verifica RPC **e binding** della coda del coach, senza toccare la coda.
+
+    E' l'unico controllo che prova davvero un binding, e c'e' per una ragione
+    precisa: con `meal_planning` la riga in `automation_bindings` fu
+    dimenticata, il doctor rimase tutto verde e il 42501 si scopri' solo a
+    `serve` avviato. Il sondaggio con heartbeat non puo' vederlo, perche' la
+    RPC scarta il job inesistente (P0002) prima ancora di guardare il binding.
+
+    La prima versione usava `claim_coach_job`, l'unica delle quattro RPC che
+    il binding lo guarda prima del job. Sbagliato: un claim incrementa
+    `attempt_count`, e su un job gia' al nono tentativo il rilascio con
+    `fail(retryable=True)` trova `attempt_count < 10` falso e lo chiude come
+    'failed'. Un comando di diagnosi non deve poter distruggere il lavoro che
+    sta diagnosticando, e non deve dipendere da quanti tentativi aveva gia'
+    speso il job che si trova davanti.
+
+    Adesso la domanda la fa `kal_tracker.coaching_binding_active()`
+    (migrazione 202608050009): sola lettura, nessuna riga toccata, nessuna
+    scrittura nel ledger delle mutazioni. Costa zero e si puo' rilanciare
+    quante volte si vuole.
+    """
+    name = "Binding coach"
+    try:
+        active = gateway.binding_active()
+    except HttpStatusError as error:
+        if error.status == 404:
+            return CheckResult(
+                name,
+                CheckStatus.FAILED,
+                "sonda del binding assente: applicare le migrazioni "
+                "202608050008_coach_jobs.sql e "
+                "202608050009_coach_binding_probe.sql, poi ricaricare lo schema",
+            )
+        if error.error_code == "42501" or error.status == 403:
+            return CheckResult(
+                name,
+                CheckStatus.FAILED,
+                "richiesta rifiutata (42501): token worker non valido o execute "
+                "mancante su coaching_binding_active",
+            )
+        return CheckResult(
+            name,
+            CheckStatus.FAILED,
+            f"risposta inattesa HTTP {error.status} da coaching_binding_active",
+        )
+    except TransportError:
+        return CheckResult(name, CheckStatus.FAILED, "PostgREST non raggiungibile")
+    except SupabaseProtocolError:
+        return CheckResult(name, CheckStatus.FAILED, "risposta RPC fuori contratto")
+
+    if not active:
+        return CheckResult(
+            name,
+            CheckStatus.FAILED,
+            "binding 'coaching' assente o disattivo: se questo Mac deve "
+            "scrivere i commenti, aggiungerlo con insert into "
+            "kal_tracker.automation_bindings (worker_user_id, owner_id, scope) "
+            "values (WORKER, MARCO, 'coaching')",
+        )
+    return CheckResult(
+        name,
+        CheckStatus.OK,
+        "binding 'coaching' attivo (sonda di sola lettura: nessun job toccato)",
+    )
+
+
 def _probe_heartbeat_rpc(
     gateway: SupabaseMealGateway | SupabasePlanGateway,
     *,
@@ -343,6 +415,7 @@ def run_doctor(
     auth: SupabaseAuth,
     gateway: SupabaseMealGateway,
     plan_gateway: SupabasePlanGateway,
+    coach_gateway: SupabaseCoachGateway,
     transport: HttpTransport,
     request_timeout: float = 30,
     cli_timeout_seconds: float = 30,
@@ -389,6 +462,7 @@ def run_doctor(
     if login_result.passed:
         results.append(check_worker_rpc(gateway))
         results.append(check_plan_rpc(plan_gateway))
+        results.append(check_coach_binding(coach_gateway))
         results.append(
             check_photo_bucket(
                 transport=transport,
@@ -402,6 +476,7 @@ def run_doctor(
         results.append(
             CheckResult("RPC piano settimanale", CheckStatus.SKIPPED, reason)
         )
+        results.append(CheckResult("Binding coach", CheckStatus.SKIPPED, reason))
         results.append(
             CheckResult(f"Bucket {_PHOTO_BUCKET}", CheckStatus.SKIPPED, reason)
         )
@@ -414,8 +489,10 @@ def run_doctor(
     if passed != len(results):
         emit(
             "Suggerimento: la procedura completa e in "
-            "docs/MEAL_WORKER_PROTOCOL.md; la prova finale del binding e "
-            "`kal-meal-worker serve --once`"
+            "docs/MEAL_WORKER_PROTOCOL.md. Nessun controllo tocca la coda: "
+            "solo il binding 'coaching' ha una sonda di sola lettura, per "
+            "'meal_analysis' e 'meal_planning' la prova del binding resta "
+            "`kal-meal-worker serve --scope AMBITO --once`"
         )
         return 1
     return 0

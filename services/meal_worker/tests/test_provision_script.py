@@ -96,9 +96,10 @@ class ProvisionScriptGuardTest(unittest.TestCase):
         self.assertNotIn("PUT ", log)
         self.assertNotIn("POST ", log)
 
-    def test_dry_run_prevede_entrambi_gli_ambiti(self) -> None:
+    def test_dry_run_prevede_tutti_gli_ambiti(self) -> None:
         # Senza il binding meal_planning ogni RPC del piano risponde 42501 e
-        # il doctor non se ne accorge: il piano d'azione deve nominarlo.
+        # il doctor non se ne accorge; senza 'coaching' il doctor resta rosso.
+        # Il piano d'azione deve nominarli tutti e tre.
         result = self._run(
             "--owner-id",
             OWNER_UUID,
@@ -112,6 +113,7 @@ class ProvisionScriptGuardTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("meal_analysis", result.stdout)
         self.assertIn("meal_planning", result.stdout)
+        self.assertIn("coaching", result.stdout)
         self.assertFalse(self.curl_log.exists())
 
     def test_email_uguali_a_maiuscole_diverse_sono_rifiutate(self) -> None:

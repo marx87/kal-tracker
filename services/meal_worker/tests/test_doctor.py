@@ -8,6 +8,7 @@ from kal_meal_worker.doctor import CheckStatus
 from kal_meal_worker.keychain import KeychainError
 from kal_meal_worker.supabase_gateway import (
     SupabaseAuth,
+    SupabaseCoachGateway,
     SupabaseMealGateway,
     SupabasePlanGateway,
 )
@@ -26,6 +27,11 @@ _TOKEN_RESPONSE = HttpResponse(
         }
     ).encode("utf-8"),
 )
+# La sonda del binding e' di sola lettura: risponde una riga e non tocca
+# nessun job. Prima era un claim vero, e con la coda piena costava un
+# tentativo su dieci (al decimo, la fine del job).
+_COACH_BINDING_ACTIVE = HttpResponse(200, {}, b'{"active": true}')
+_COACH_BINDING_MISSING = HttpResponse(200, {}, b'{"active": false}')
 _BUCKET_METADATA = {
     "id": "kal-tracker-meal-photos",
     "name": "kal-tracker-meal-photos",
@@ -41,10 +47,14 @@ class ScriptedTransport:
     def __init__(self, steps):
         self._steps = list(steps)
         self.calls = []
+        # I corpi restano a parte: `calls` e' (metodo, url, header) in tutti i
+        # controlli, e cambiarne la forma vorrebbe dire riscrivere ogni test.
+        self.bodies = []
 
     def request(self, method, url, *, headers, body, timeout, max_response_bytes):
-        del body, timeout, max_response_bytes
+        del timeout, max_response_bytes
         self.calls.append((method, url, dict(headers)))
+        self.bodies.append(body)
         if not self._steps:
             raise AssertionError(f"richiesta HTTP non programmata: {method} {url}")
         step = self._steps.pop(0)
@@ -334,6 +344,108 @@ class PlanRpcCheckTest(unittest.TestCase):
         self.assertIn("42501", result.detail)
 
 
+class CoachBindingCheckTest(unittest.TestCase):
+    """L'unico controllo che prova davvero un binding, e non tocca la coda.
+
+    E' nato dal buco di `meal_planning`: la riga in `automation_bindings` fu
+    dimenticata, il doctor rimase verde e il 42501 arrivo' solo a `serve`
+    avviato. La prima versione lo provava con un claim vero e consumava un
+    tentativo del job di Marco: ora la domanda la fa una funzione di sola
+    lettura.
+    """
+
+    def _gateway(self, transport):
+        auth = _auth(transport)
+        return SupabaseCoachGateway(auth=auth, transport=transport)
+
+    def test_active_binding_is_ok_without_touching_the_queue(self) -> None:
+        transport = ScriptedTransport([_TOKEN_RESPONSE, _COACH_BINDING_ACTIVE])
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.OK)
+        self.assertIn("sola lettura", result.detail)
+        method, url, _ = transport.calls[1]
+        self.assertEqual(method, "POST")
+        self.assertIn("/rest/v1/rpc/coaching_binding_active", url)
+        # Una sola richiesta: nessun claim, nessun fail, nessun job toccato.
+        self.assertEqual(len(transport.calls), 2)
+
+    def test_the_probe_never_claims_or_fails_a_job(self) -> None:
+        """La diagnosi non deve poter distruggere il lavoro che diagnostica."""
+        transport = ScriptedTransport([_TOKEN_RESPONSE, _COACH_BINDING_ACTIVE])
+
+        doctor.check_coach_binding(self._gateway(transport))
+
+        called = " ".join(url for _, url, _ in transport.calls)
+        self.assertNotIn("claim_coach_job", called)
+        self.assertNotIn("fail_coach_job", called)
+        # Nemmeno un lease o un error_code di prova nel corpo.
+        self.assertEqual(json.loads(transport.bodies[1]), {})
+
+    def test_repeated_probes_cost_nothing(self) -> None:
+        """Dieci doctor di fila non consumano i dieci tentativi di un job."""
+        steps = [_TOKEN_RESPONSE]
+        steps.extend(_COACH_BINDING_ACTIVE for _ in range(10))
+        transport = ScriptedTransport(steps)
+        gateway = self._gateway(transport)
+
+        for _ in range(10):
+            self.assertIs(
+                doctor.check_coach_binding(gateway).status, CheckStatus.OK
+            )
+
+        self.assertEqual(len(transport.calls), 11)
+
+    def test_missing_binding_is_named_with_the_sql_to_run(self) -> None:
+        transport = ScriptedTransport([_TOKEN_RESPONSE, _COACH_BINDING_MISSING])
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("'coaching'", result.detail)
+        self.assertIn("automation_bindings", result.detail)
+
+    def test_missing_migration_fails_with_hint(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpStatusError(404, "PGRST202")]
+        )
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("202608050009_coach_binding_probe.sql", result.detail)
+
+    def test_permission_denied_is_told_apart_from_a_missing_binding(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpStatusError(403, "42501")]
+        )
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("42501", result.detail)
+        self.assertIn("coaching_binding_active", result.detail)
+
+    def test_answer_out_of_contract_fails(self) -> None:
+        transport = ScriptedTransport(
+            [_TOKEN_RESPONSE, HttpResponse(200, {}, b'{"active": "si"}')]
+        )
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("fuori contratto", result.detail)
+
+    def test_unreachable_postgrest_fails(self) -> None:
+        transport = ScriptedTransport([_TOKEN_RESPONSE, NetworkError("giu")])
+
+        result = doctor.check_coach_binding(self._gateway(transport))
+
+        self.assertIs(result.status, CheckStatus.FAILED)
+        self.assertIn("PostgREST", result.detail)
+
+
 class PhotoBucketCheckTest(unittest.TestCase):
     def test_metadata_matching_schema_is_ok(self) -> None:
         transport = ScriptedTransport([_TOKEN_RESPONSE, _bucket_response()])
@@ -441,12 +553,14 @@ class RunDoctorTest(unittest.TestCase):
                 _TOKEN_RESPONSE,
                 HttpStatusError(400, "P0002"),
                 HttpStatusError(400, "P0002"),
+                _COACH_BINDING_ACTIVE,
                 _bucket_response(),
             ]
         )
         auth = _auth(transport)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
         plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
+        coach_gateway = SupabaseCoachGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -458,6 +572,7 @@ class RunDoctorTest(unittest.TestCase):
             auth=auth,
             gateway=gateway,
             plan_gateway=plan_gateway,
+            coach_gateway=coach_gateway,
             transport=transport,
             runner=self._ok_runner,
             emit=lines.append,
@@ -465,8 +580,9 @@ class RunDoctorTest(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         report = "\n".join(lines)
-        self.assertIn("Esito: 7/7 controlli superati", report)
+        self.assertIn("Esito: 8/8 controlli superati", report)
         self.assertIn("RPC piano settimanale", report)
+        self.assertIn("[OK     ] Binding coach", report)
         self.assertNotIn("ERRORE", report)
         self.assertNotIn("password", report.replace("password del worker", ""))
 
@@ -478,6 +594,7 @@ class RunDoctorTest(unittest.TestCase):
         auth = _auth(transport, provider)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
         plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
+        coach_gateway = SupabaseCoachGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -489,6 +606,7 @@ class RunDoctorTest(unittest.TestCase):
             auth=auth,
             gateway=gateway,
             plan_gateway=plan_gateway,
+            coach_gateway=coach_gateway,
             transport=transport,
             runner=self._ok_runner,
             emit=lines.append,
@@ -500,6 +618,7 @@ class RunDoctorTest(unittest.TestCase):
         self.assertIn("[SALTATO] Login worker", report)
         self.assertIn("[SALTATO] RPC kal_tracker", report)
         self.assertIn("[SALTATO] RPC piano settimanale", report)
+        self.assertIn("[SALTATO] Binding coach", report)
         self.assertIn("[SALTATO] Bucket kal-tracker-meal-photos", report)
 
     def test_logged_out_cli_fails_overall_run(self) -> None:
@@ -513,12 +632,14 @@ class RunDoctorTest(unittest.TestCase):
                 _TOKEN_RESPONSE,
                 HttpStatusError(400, "P0002"),
                 HttpStatusError(400, "P0002"),
+                _COACH_BINDING_ACTIVE,
                 _bucket_response(),
             ]
         )
         auth = _auth(transport)
         gateway = SupabaseMealGateway(auth=auth, transport=transport)
         plan_gateway = SupabasePlanGateway(auth=auth, transport=transport)
+        coach_gateway = SupabaseCoachGateway(auth=auth, transport=transport)
         lines = []
 
         exit_code = doctor.run_doctor(
@@ -530,6 +651,7 @@ class RunDoctorTest(unittest.TestCase):
             auth=auth,
             gateway=gateway,
             plan_gateway=plan_gateway,
+            coach_gateway=coach_gateway,
             transport=transport,
             runner=runner,
             emit=lines.append,

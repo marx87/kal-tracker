@@ -3,6 +3,8 @@ import unittest
 
 from kal_meal_worker import service_cli
 from kal_meal_worker.claude_analyzer import ClaudeAnalyzer
+from kal_meal_worker.coach_analyzer import ClaudeCoach
+from kal_meal_worker.coach_worker import CoachWorker
 from kal_meal_worker.codex_analyzer import CodexAnalyzer
 from kal_meal_worker.plan_analyzer import ClaudePlanner
 from kal_meal_worker.plan_worker import PlanWorker
@@ -87,9 +89,15 @@ class ScopeSelectionTest(unittest.TestCase):
         )
         return service_cli.build_worker(arguments, auth=auth, transport=transport)
 
-    def test_default_scope_serves_both_queues(self) -> None:
+    def test_default_scope_serves_all_three_queues(self) -> None:
         self.assertEqual(self._parse().scope, "all")
-        self.assertIsInstance(self._worker(), AlternatingWorker)
+
+        worker = self._worker()
+
+        self.assertIsInstance(worker, AlternatingWorker)
+        # Tre code a turno in un processo solo: una sola lavorazione alla
+        # volta e una sola password nel Portachiavi.
+        self.assertEqual(len(worker._workers), 3)
 
     def test_single_scopes_build_a_single_worker(self) -> None:
         self.assertIsInstance(
@@ -98,6 +106,20 @@ class ScopeSelectionTest(unittest.TestCase):
         self.assertIsInstance(
             self._worker("--scope", "meal_planning"), PlanWorker
         )
+        self.assertIsInstance(self._worker("--scope", "coaching"), CoachWorker)
+
+    def test_the_coach_scope_is_named_like_the_database_binding(self) -> None:
+        # Non "coach": il valore deve combaciare con `automation_bindings.scope`,
+        # altrimenti l'errore si presenta come un 42501 incomprensibile.
+        self.assertEqual(service_cli.COACHING_SCOPE, "coaching")
+
+    def test_commentator_is_claude_only(self) -> None:
+        self.assertIsInstance(
+            service_cli.create_commentator(self._parse()), ClaudeCoach
+        )
+
+        with self.assertRaisesRegex(ValueError, "solo con il provider claude"):
+            service_cli.create_commentator(self._parse("--provider", "codex"))
 
     def test_environment_variable_switches_scope(self) -> None:
         os.environ["KAL_MEAL_WORKER_SCOPE"] = "meal_analysis"
@@ -112,13 +134,25 @@ class ScopeSelectionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "solo con il provider claude"):
             service_cli.create_planner(self._parse("--provider", "codex"))
 
-    def test_codex_cannot_serve_the_plan_queue(self) -> None:
+    def test_codex_cannot_serve_the_plan_or_coach_queues(self) -> None:
         with self.assertRaises(ValueError):
             self._worker("--provider", "codex")
+        with self.assertRaises(ValueError):
+            self._worker("--provider", "codex", "--scope", "coaching")
 
         self.assertIsInstance(
             self._worker("--provider", "codex", "--scope", "meal_analysis"),
             MealWorker,
+        )
+
+    def test_coach_timeout_may_exceed_the_lease(self) -> None:
+        # Come per il piano: l'heartbeat rinnova il lease mentre il modello
+        # scrive, quindi il tetto non e' strozzato da un singolo lease.
+        self.assertIsInstance(
+            self._worker(
+                "--scope", "coaching", "--lease-seconds", "60", "--coach-timeout", "300"
+            ),
+            CoachWorker,
         )
 
     def test_plan_timeout_may_exceed_the_lease(self) -> None:

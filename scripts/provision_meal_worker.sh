@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Provisioning una tantum dell'utente worker (foto dei pasti e piano
-# settimanale).
+# Provisioning una tantum dell'utente worker (foto dei pasti, piano settimanale
+# e commento del coach).
 #
 # Lo script legge PROJECT_REF e service_role key SOLO da variabili d'ambiente
 # (mai da argomenti, mai stampate), crea l'utente Supabase Auth dedicato con
-# una password generata, prova a registrare i binding meal_analysis e
-# meal_planning e salva le credenziali nel Portachiavi macOS con i nomi attesi
+# una password generata, prova a registrare i binding meal_analysis,
+# meal_planning e coaching e salva le credenziali nel Portachiavi macOS con i nomi attesi
 # da keychain.py (servizio com.kaltracker.meal-worker.supabase, account =
 # email worker).
 #
@@ -19,9 +19,11 @@ umask 077
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly DEFAULT_KEYCHAIN_SERVICE="com.kaltracker.meal-worker.supabase"
-# Un binding per ogni coda servita dal worker: senza la riga meal_planning
-# ogni RPC del piano fallisce con 42501 e il doctor non lo intercetta.
-readonly BINDING_SCOPES=("meal_analysis" "meal_planning")
+# Un binding per ogni coda servita dal worker: senza la riga meal_planning ogni
+# RPC del piano fallisce con 42501 e il doctor non lo intercetta; senza la riga
+# coaching il doctor lo intercetta (ha una sonda di sola lettura) e resta rosso
+# finche' la riga non c'e'.
+readonly BINDING_SCOPES=("meal_analysis" "meal_planning" "coaching")
 readonly SECURITY_BIN="/usr/bin/security"
 readonly MAX_USER_PAGES=10
 readonly USERS_PER_PAGE=200
@@ -511,7 +513,7 @@ fi
 [[ "$WORKER_ID" != "$OWNER_ID" ]] ||
   fail "worker e proprietario coincidono: il binding richiede utenti distinti"
 
-# 3. Binding meal_analysis e meal_planning -------------------------------------
+# 3. Binding meal_analysis, meal_planning e coaching ---------------------------
 BINDINGS_ACTIVE=()
 BINDINGS_PENDING=()
 for scope in "${BINDING_SCOPES[@]}"; do

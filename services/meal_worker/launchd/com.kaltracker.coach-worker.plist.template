@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Servizio dedicato alla SOLA coda del coach.
+
+     ATTENZIONE: e' un'ALTERNATIVA al servizio unico, non un'aggiunta. Il plist
+     com.kaltracker.meal-worker.plist.template gira con
+     KAL_MEAL_WORKER_SCOPE=all, che dalla migrazione 0008 in poi serve tutte e
+     tre le code: caricare entrambi i servizi con l'impostazione predefinita
+     significherebbe due processi che si contendono gli stessi job. Il claim e'
+     atomico (FOR UPDATE SKIP LOCKED), quindi non si corrompe niente, ma si
+     avrebbero due Claude accesi insieme sullo stesso abbonamento senza nessun
+     guadagno.
+
+     Serve in un caso solo: tenere il coach separato dalle altre due code, per
+     esempio per dargli log propri o per fermarlo da solo. In quel caso l'altro
+     servizio va portato a KAL_MEAL_WORKER_SCOPE=meal_analysis,meal_planning —
+     che oggi non esiste come valore: si sceglie uno dei due, oppure si
+     caricano tre servizi, uno per ambito. -->
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.kaltracker.meal-worker</string>
+  <string>com.kaltracker.coach-worker</string>
 
   <key>ProgramArguments</key>
   <array>
     <string>__VENV_PATH__/bin/kal-meal-worker</string>
     <string>serve</string>
+    <string>--scope</string>
+    <string>coaching</string>
   </array>
 
   <key>WorkingDirectory</key>
@@ -31,22 +49,18 @@
     <string>__WORKER_EMAIL__</string>
     <key>KAL_MEAL_WORKER_KEYCHAIN_SERVICE</key>
     <string>com.kaltracker.meal-worker.supabase</string>
-    <!-- Un solo processo serve tutte le code a turno (foto, piano settimanale
-         e commento del coach): una sola password nel Portachiavi e una sola
-         lavorazione alla volta. Con "meal_analysis", "meal_planning" o
-         "coaching" si serve una coda sola — vedi
-         com.kaltracker.coach-worker.plist.template, che e' un'ALTERNATIVA a
-         questo servizio e non un'aggiunta. -->
+    <!-- Lo stesso utente worker e la stessa password nel Portachiavi delle
+         altre code: cambia solo l'ambito servito. Sul database serve pero' la
+         riga automation_bindings con scope 'coaching', altrimenti ogni RPC
+         risponde 42501 (`kal-meal-worker doctor` lo dice). -->
     <key>KAL_MEAL_WORKER_SCOPE</key>
-    <string>all</string>
+    <string>coaching</string>
+    <!-- Il commento lo scrive solo Claude, come il piano: con provider codex
+         questo servizio si rifiuta di partire. -->
     <key>KAL_MEAL_ANALYZER_PROVIDER</key>
     <string>claude</string>
     <key>KAL_CLAUDE_EXECUTABLE</key>
     <string>__CLAUDE_EXECUTABLE_ABSOLUTE_PATH__</string>
-    <!-- Per tornare a Codex: KAL_MEAL_ANALYZER_PROVIDER=codex,
-         KAL_CODEX_EXECUTABLE=/percorso/assoluto/codex e
-         KAL_MEAL_WORKER_SCOPE=meal_analysis (piano e commento del coach li
-         genera solo Claude). -->
   </dict>
 
   <key>RunAtLoad</key>
@@ -66,10 +80,11 @@
   <string>Background</string>
 
   <!-- Log dedicati del servizio: creare prima la directory
-       (mkdir -p __LOG_DIRECTORY__). Nei log non compaiono password o token. -->
+       (mkdir -p __LOG_DIRECTORY__). Nei log compaiono solo ID job e codici
+       stabili: mai il commento, mai i numeri del rapporto, mai segreti. -->
   <key>StandardOutPath</key>
-  <string>__LOG_DIRECTORY__/meal-worker.out.log</string>
+  <string>__LOG_DIRECTORY__/coach-worker.out.log</string>
   <key>StandardErrorPath</key>
-  <string>__LOG_DIRECTORY__/meal-worker.err.log</string>
+  <string>__LOG_DIRECTORY__/coach-worker.err.log</string>
 </dict>
 </plist>

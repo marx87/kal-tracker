@@ -8,6 +8,8 @@ import sys
 import threading
 
 from .claude_analyzer import ClaudeAnalyzer
+from .coach_analyzer import ClaudeCoach
+from .coach_worker import CoachWorker
 from .codex_analyzer import CodexAnalyzer
 from .doctor import run_doctor
 from .keychain import MacOSKeychainPassword
@@ -15,6 +17,7 @@ from .plan_analyzer import ClaudePlanner
 from .plan_worker import PlanWorker
 from .supabase_gateway import (
     SupabaseAuth,
+    SupabaseCoachGateway,
     SupabaseConfigurationError,
     SupabaseMealGateway,
     SupabasePlanGateway,
@@ -25,7 +28,12 @@ from .worker import AlternatingWorker, CycleOutcome, MealWorker, RetryPolicy
 
 MEAL_ANALYSIS_SCOPE = "meal_analysis"
 MEAL_PLANNING_SCOPE = "meal_planning"
+# Il nome dell'ambito e' quello del binding sul database ('coaching'), non
+# 'coach': una differenza di una lettera qui si presenterebbe come un 42501
+# incomprensibile.
+COACHING_SCOPE = "coaching"
 ALL_SCOPES = "all"
+_SCOPES = (MEAL_ANALYSIS_SCOPE, MEAL_PLANNING_SCOPE, COACHING_SCOPE, ALL_SCOPES)
 
 
 def _add_connection_arguments(subparser: argparse.ArgumentParser) -> None:
@@ -73,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="kal-meal-worker",
         description=(
             "Worker privato Supabase -> CLI AI (Claude o Codex) per le foto "
-            "dei pasti e per il piano settimanale."
+            "dei pasti, per il piano settimanale e per il commento del coach."
         ),
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -82,11 +90,12 @@ def build_parser() -> argparse.ArgumentParser:
     _add_connection_arguments(serve)
     serve.add_argument(
         "--scope",
-        choices=(MEAL_ANALYSIS_SCOPE, MEAL_PLANNING_SCOPE, ALL_SCOPES),
+        choices=_SCOPES,
         default=os.environ.get("KAL_MEAL_WORKER_SCOPE", ALL_SCOPES),
         help=(
-            "Code servite: foto, piano settimanale o entrambe a turno "
-            "(un solo processo, una sola lavorazione alla volta)"
+            "Code servite: foto, piano settimanale, commento del coach o "
+            "tutte a turno (un solo processo, una sola lavorazione alla "
+            "volta)"
         ),
     )
     serve.add_argument("--poll-seconds", type=float, default=5)
@@ -105,6 +114,18 @@ def build_parser() -> argparse.ArgumentParser:
             "l'heartbeat rinnova il lease durante il lavoro"
         ),
     )
+    serve.add_argument(
+        "--coach-timeout",
+        type=int,
+        default=300,
+        help=(
+            "Tetto massimo per la scrittura di un commento, almeno 90 s. Il "
+            "budget vero si calcola per richiesta (60 s + 20 s per tema del "
+            "rapporto): una settimana da sei temi ottiene 180 s. Come per il "
+            "piano puo' superare --lease-seconds, perche' l'heartbeat rinnova "
+            "il lease durante il lavoro"
+        ),
+    )
     serve.add_argument("--operation-attempts", type=int, default=3)
     serve.add_argument("--once", action="store_true")
     serve.add_argument(
@@ -117,7 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor",
         help=(
             "Verifica Portachiavi, CLI AI, raggiungibilita Supabase, RPC "
-            "delle due code e bucket foto"
+            "delle tre code, binding del coach e bucket foto"
         ),
     )
     _add_connection_arguments(doctor)
@@ -155,6 +176,20 @@ def create_planner(arguments: argparse.Namespace) -> ClaudePlanner:
     )
 
 
+def create_commentator(arguments: argparse.Namespace) -> ClaudeCoach:
+    """Il commento lo scrive solo Claude, come il piano."""
+    provider = (arguments.provider or "").strip().lower()
+    if provider != "claude":
+        raise ValueError(
+            "Il commento del coach si scrive solo con il provider claude: "
+            f"con {arguments.provider} usa --scope {MEAL_ANALYSIS_SCOPE}"
+        )
+    return ClaudeCoach(
+        executable=(arguments.claude_executable,),
+        timeout_seconds=arguments.coach_timeout,
+    )
+
+
 def resolve_keychain_account(arguments: argparse.Namespace) -> str:
     """L'account Portachiavi esplicito vince, altrimenti l'email del worker."""
     account = (arguments.keychain_account or "").strip()
@@ -185,14 +220,14 @@ def build_worker(
     *,
     auth: SupabaseAuth,
     transport: HttpTransport,
-) -> MealWorker | PlanWorker | AlternatingWorker:
-    """Un solo processo serve una o entrambe le code, secondo --scope."""
+) -> MealWorker | PlanWorker | CoachWorker | AlternatingWorker:
+    """Un solo processo serve una o tutte le code, secondo --scope."""
     scope = (arguments.scope or "").strip().lower()
-    if scope not in {MEAL_ANALYSIS_SCOPE, MEAL_PLANNING_SCOPE, ALL_SCOPES}:
+    if scope not in set(_SCOPES):
         raise ValueError(f"Ambito non supportato: {arguments.scope}")
 
     retry_policy = RetryPolicy(maximum_attempts=arguments.operation_attempts)
-    workers: list[MealWorker | PlanWorker] = []
+    workers: list[MealWorker | PlanWorker | CoachWorker] = []
 
     if scope in {MEAL_ANALYSIS_SCOPE, ALL_SCOPES}:
         workers.append(
@@ -222,6 +257,24 @@ def build_worker(
                     request_timeout=arguments.request_timeout,
                 ),
                 planner=create_planner(arguments),
+                lease_seconds=arguments.lease_seconds,
+                heartbeat_interval_seconds=arguments.heartbeat_seconds,
+                poll_interval_seconds=arguments.poll_seconds,
+                retry_policy=retry_policy,
+            )
+        )
+
+    if scope in {COACHING_SCOPE, ALL_SCOPES}:
+        # Come il piano: il commento puo' durare piu' di un lease, e va bene,
+        # perche' l'heartbeat lo rinnova mentre il modello scrive.
+        workers.append(
+            CoachWorker(
+                gateway=SupabaseCoachGateway(
+                    auth=auth,
+                    transport=transport,
+                    request_timeout=arguments.request_timeout,
+                ),
+                commentator=create_commentator(arguments),
                 lease_seconds=arguments.lease_seconds,
                 heartbeat_interval_seconds=arguments.heartbeat_seconds,
                 poll_interval_seconds=arguments.poll_seconds,
@@ -334,6 +387,11 @@ def _run_doctor(
             transport=transport,
             request_timeout=arguments.request_timeout,
         )
+        coach_gateway = SupabaseCoachGateway(
+            auth=auth,
+            transport=transport,
+            request_timeout=arguments.request_timeout,
+        )
         analyzer_executable = resolve_analyzer_executable(arguments)
     except (SupabaseConfigurationError, ValueError) as error:
         print(f"Configurazione worker non valida: {error}", file=sys.stderr)
@@ -348,6 +406,7 @@ def _run_doctor(
         auth=auth,
         gateway=gateway,
         plan_gateway=plan_gateway,
+        coach_gateway=coach_gateway,
         transport=transport,
         request_timeout=arguments.request_timeout,
         cli_timeout_seconds=arguments.cli_timeout,
