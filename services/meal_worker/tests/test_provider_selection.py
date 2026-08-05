@@ -121,12 +121,12 @@ class ScopeSelectionTest(unittest.TestCase):
             MealWorker,
         )
 
-    def test_plan_timeout_must_stay_within_the_lease(self) -> None:
-        with self.assertRaisesRegex(ValueError, "--plan-timeout"):
-            self._worker("--lease-seconds", "60", "--plan-timeout", "120")
-
+    def test_plan_timeout_may_exceed_the_lease(self) -> None:
+        # Durante la composizione l'heartbeat rinnova il lease ogni lease/3
+        # secondi: un piano lungo non lo perde, quindi il tetto del timeout
+        # non deve piu' essere strozzato dalla durata di un singolo lease.
         self.assertIsInstance(
-            self._worker("--lease-seconds", "600", "--plan-timeout", "540"),
+            self._worker("--lease-seconds", "180", "--plan-timeout", "600"),
             AlternatingWorker,
         )
 

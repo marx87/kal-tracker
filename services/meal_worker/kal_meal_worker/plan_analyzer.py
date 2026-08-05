@@ -14,6 +14,7 @@ Due differenze volute:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 import tempfile
@@ -50,6 +51,7 @@ _MAX_OUTPUT_BYTES = 512 * 1024
 # nel prompt: 400 ricette stanno in ~80 KB, ma la guardia resta esplicita
 # perche' un superamento silenzioso diventerebbe un E2BIG incomprensibile.
 _MAX_ARGUMENTS_BYTES = 256 * 1024
+_LOGGER = logging.getLogger("kal_meal_worker")
 
 _ALLOWED_ENVIRONMENT_KEYS = {
     "CLAUDE_CONFIG_DIR",
@@ -98,12 +100,27 @@ Regole non negoziabili:
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
+# Il tempo di composizione cresce con gli slot da produrre, non con la
+# dimensione del catalogo: un piano 7x4 (28 slot, 158 ricette) misurato sul
+# Mac di Marco impiega ~280 s. Base + quota per slot, con ~40% di margine.
+_TIMEOUT_BASE_SECONDS = 60
+_TIMEOUT_PER_SLOT_SECONDS = 14
+_TIMEOUT_FLOOR_SECONDS = 120
+
+
+def plan_timeout_for(request: PlanRequest, *, ceiling_seconds: int) -> int:
+    """Budget di tempo per questa richiesta, entro il tetto configurato."""
+    slots = request.days * len(request.meals)
+    budget = _TIMEOUT_BASE_SECONDS + _TIMEOUT_PER_SLOT_SECONDS * slots
+    return max(_TIMEOUT_FLOOR_SECONDS, min(ceiling_seconds, budget))
+
+
 class ClaudePlanner:
     def __init__(
         self,
         *,
         executable: Sequence[str] = ("claude",),
-        timeout_seconds: int = 170,
+        timeout_seconds: int = 600,
         runner: Runner = subprocess.run,
     ) -> None:
         if not executable:
@@ -111,6 +128,7 @@ class ClaudePlanner:
         if timeout_seconds < 30:
             raise ValueError("timeout_seconds deve essere almeno 30")
         self._executable = tuple(executable)
+        # Tetto massimo: il timeout effettivo si calcola per richiesta.
         self._timeout_seconds = timeout_seconds
         self._runner = runner
 
@@ -150,6 +168,13 @@ class ClaudePlanner:
         environment["NO_COLOR"] = "1"
         environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
 
+        timeout = plan_timeout_for(request, ceiling_seconds=self._timeout_seconds)
+        _LOGGER.info(
+            "Piano da %d slot: budget %d s",
+            request.days * len(request.meals),
+            timeout,
+        )
+
         # Directory vuota e temporanea: la CLI non deve vedere ne' il
         # repository ne' i file di Marco.
         with tempfile.TemporaryDirectory(prefix="kal-plan-") as temp:
@@ -160,7 +185,7 @@ class ClaudePlanner:
                     env=environment,
                     capture_output=True,
                     text=True,
-                    timeout=self._timeout_seconds,
+                    timeout=timeout,
                     check=False,
                 )
             except FileNotFoundError as error:

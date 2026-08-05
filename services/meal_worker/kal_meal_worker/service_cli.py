@@ -97,10 +97,12 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument(
         "--plan-timeout",
         type=int,
-        default=170,
+        default=600,
         help=(
-            "Timeout della CLI per un piano: piu' generoso dell'analisi foto "
-            "e mai oltre --lease-seconds"
+            "Tetto massimo per la composizione di un piano. Il budget vero si "
+            "calcola per richiesta (60 s + 14 s per slot): un 7x4 da 28 slot "
+            "ottiene ~450 s. Puo' superare --lease-seconds perche' "
+            "l'heartbeat rinnova il lease durante il lavoro"
         ),
     )
     serve.add_argument("--operation-attempts", type=int, default=3)
@@ -209,11 +211,9 @@ def build_worker(
         )
 
     if scope in {MEAL_PLANNING_SCOPE, ALL_SCOPES}:
-        if arguments.plan_timeout > arguments.lease_seconds:
-            raise ValueError(
-                "--plan-timeout deve stare entro --lease-seconds "
-                f"({arguments.plan_timeout} > {arguments.lease_seconds})"
-            )
+        # Nessun vincolo con --lease-seconds: durante la composizione il
+        # thread di heartbeat rinnova il lease ogni lease/3 secondi, quindi
+        # un piano puo' durare piu' di un singolo lease senza perderlo.
         workers.append(
             PlanWorker(
                 gateway=SupabasePlanGateway(

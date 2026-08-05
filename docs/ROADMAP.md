@@ -94,7 +94,8 @@ Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento no
 - [x] il piano non scrive nel diario: «Fatto» per slot (con Annulla), «Sostituisci», apertura ricetta;
 - [x] lista della spesa: aggregazione scalata sulle porzioni, reparti del supermercato, quantità arrotondate «da spesa», spunte persistenti, copia come testo;
 - [x] Mac spento = messaggio onesto con timeout (8 min in coda / 25 min in lavorazione) e piani precedenti sempre leggibili offline; **nessun generatore locale di riserva** (scelta di Marco);
-- [ ] follow-up noti: il piano non entra in backup/sync; niente foglio di condivisione di sistema per la lista (solo copia negli appunti, servirebbe `share_plus`).
+- [x] **budget di tempo proporzionato agli slot** (5/08): il primo piano reale di Marco (7 giorni x 4 pasti = 28 slot, 158 ricette) falliva 10 volte con `PLAN_CLAUDE_TIMEOUT` perche' il tetto fisso era 170 s mentre la composizione richiede ~210-280 s. Ora il timeout si calcola per richiesta (60 s + 14 s per slot, pavimento 120 s, tetto `--plan-timeout` alzato a 600 s) e non e' piu' vincolato a `--lease-seconds`, dato che il thread di heartbeat rinnova il lease durante il lavoro. Verificato end-to-end: piano da 28 slot completato al primo tentativo in 207 s, 28 ricette diverse, giorni a 1951-2039 kcal su un obiettivo di 2000.
+- [ ] follow-up noti: il piano non entra in backup/sync; niente foglio di condivisione di sistema per la lista (solo copia negli appunti, servirebbe `share_plus`); prompt ancora completo di tutte le ricette anche quando i pasti pianificati sono pochi (filtrarlo accorcerebbe la composizione).
 
 ### M5 — Collegamento Gym Tracker
 

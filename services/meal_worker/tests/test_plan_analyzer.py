@@ -105,15 +105,36 @@ class ClaudePlannerCommandTest(unittest.TestCase):
         self.assertIn("2026-08-05", prompt)
         self.assertIn("Niente funghi", prompt)
 
-    def test_timeout_is_the_configured_one(self) -> None:
+    def test_timeout_scales_with_the_slots_to_compose(self) -> None:
         observed = {}
         runner = make_runner(
             wrapper_stdout(json.dumps(plan_payload())), observed=observed
         )
 
-        ClaudePlanner(runner=runner, timeout_seconds=240).plan(valid_request())
+        # La richiesta di prova e' piccola: sotto il pavimento dei 120 s.
+        ClaudePlanner(runner=runner, timeout_seconds=600).plan(valid_request())
 
-        self.assertEqual(observed["timeout"], 240)
+        self.assertEqual(observed["timeout"], 120)
+
+    def test_the_configured_timeout_is_only_a_ceiling(self) -> None:
+        # Il caso reale che aveva rotto il piano di Marco: 7 giorni x 4 pasti.
+        request = valid_request(
+            days=7,
+            meals=["colazione", "pranzo", "cena", "spuntino"],
+        )
+
+        # 60 + 14 * 28 = 452 s, dentro un tetto generoso...
+        self.assertEqual(
+            plan_analyzer.plan_timeout_for(request, ceiling_seconds=600), 452
+        )
+        # ...ma il tetto resta l'ultima parola.
+        self.assertEqual(
+            plan_analyzer.plan_timeout_for(request, ceiling_seconds=300), 300
+        )
+
+    def test_rejects_a_timeout_that_is_too_short(self) -> None:
+        with self.assertRaises(ValueError):
+            ClaudePlanner(timeout_seconds=20)
 
     def test_rejects_a_timeout_that_is_too_short(self) -> None:
         with self.assertRaises(ValueError):
