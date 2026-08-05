@@ -105,6 +105,34 @@ class ClaudePlannerCommandTest(unittest.TestCase):
         self.assertIn("2026-08-05", prompt)
         self.assertIn("Niente funghi", prompt)
 
+    def test_prompt_says_when_marco_trains_and_where_the_protein_meal_goes(
+        self,
+    ) -> None:
+        observed = {}
+        runner = make_runner(
+            wrapper_stdout(json.dumps(plan_payload())), observed=observed
+        )
+        request = valid_request(
+            workouts=[
+                {
+                    "date": "2026-08-06",
+                    "name": "Spinta: petto e tricipiti",
+                    "proteinMeal": "cena",
+                }
+            ]
+        )
+
+        ClaudePlanner(runner=runner).plan(request)
+
+        prompt = observed["command"][-1]
+        self.assertIn('"workouts"', prompt)
+        self.assertIn("Spinta: petto e tricipiti", prompt)
+        self.assertIn("proteinMeal", prompt)
+        self.assertIn("il pasto che segue l'allenamento", prompt)
+        # Resta la regola madre: nessuna cifra nutrizionale nel prompt di
+        # risposta, gli allenamenti non la indeboliscono.
+        self.assertIn("NON dichiarare MAI calorie", prompt)
+
     def test_timeout_scales_with_the_slots_to_compose(self) -> None:
         observed = {}
         runner = make_runner(

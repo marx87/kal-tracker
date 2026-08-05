@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
@@ -264,6 +265,90 @@ void main() {
           '2026-08-05',
         ),
       );
+    },
+  );
+
+  /// La settimana delle schede: mercoledì (il 5 agosto 2026) c'è «Spinta».
+  Future<void> planWednesdayWorkout() async {
+    await database
+        .into(database.routines)
+        .insert(
+          RoutinesCompanion.insert(
+            id: 'routine-spinta',
+            profileId: profile.id,
+            name: 'Spinta: petto e tricipiti',
+            createdAt: clock,
+            updatedAt: clock,
+          ),
+        );
+    await database
+        .into(database.routineWeeklyPlan)
+        .insert(
+          RoutineWeeklyPlanCompanion.insert(
+            id: 'rwp-mercoledi',
+            profileId: profile.id,
+            weekday: DateTime.utc(2026, 8, 5).weekday,
+            routineId: const Value('routine-spinta'),
+            routineExternalId: const Value('routine-spinta'),
+            routineNameSnapshot: const Value('Spinta: petto e tricipiti'),
+            updatedAt: clock,
+          ),
+        );
+  }
+
+  /// Una sessione vera delle 18 (16 UTC d'estate), chiusa: è da qui che si
+  /// misura l'ora in cui Marco si allena.
+  Future<void> addEveningWorkout(String id, DateTime startedAt) => database
+      .into(database.workouts)
+      .insert(
+        WorkoutsCompanion.insert(
+          id: id,
+          profileId: profile.id,
+          startedAt: startedAt,
+          endedAt: Value(startedAt.add(const Duration(minutes: 50))),
+          createdAt: clock,
+          updatedAt: clock,
+        ),
+      );
+
+  test('la richiesta dice al Mac quando ci si allena', () async {
+    await planWednesdayWorkout();
+    await addEveningWorkout('w-1', DateTime.utc(2026, 7, 29, 16));
+    await addEveningWorkout('w-2', DateTime.utc(2026, 8, 1, 16, 20));
+
+    await generate();
+
+    final request = gateway.insertedRow!['request']! as Map<String, Object?>;
+    // Solo il 5 (mercoledì): il 6 non ha allenamento. E il pasto proteico è
+    // la cena perché Marco si allena alle 18, non perché l'ha detto il
+    // modello — che i numeri non li produce mai.
+    expect(request['workouts'], [
+      {
+        'date': '2026-08-05',
+        'name': 'Spinta: petto e tricipiti',
+        'proteinMeal': 'cena',
+      },
+    ]);
+  });
+
+  test('senza storico non si dichiara un pasto dopo l’allenamento', () async {
+    await planWednesdayWorkout();
+
+    await generate();
+
+    final request = gateway.insertedRow!['request']! as Map<String, Object?>;
+    expect(request['workouts'], [
+      {'date': '2026-08-05', 'name': 'Spinta: petto e tricipiti'},
+    ]);
+  });
+
+  test(
+    'senza settimana di allenamenti la richiesta resta quella di prima',
+    () async {
+      await generate();
+
+      final request = gateway.insertedRow!['request']! as Map<String, Object?>;
+      expect(request['workouts'], isEmpty);
     },
   );
 

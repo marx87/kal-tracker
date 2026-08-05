@@ -33,12 +33,14 @@ void main() {
 
     expect(find.byType(NavigationDestination), findsNWidgets(5));
 
+    // Le cinque voci di Coach360, ognuna con un elemento che esiste solo
+    // nella schermata che deve aprire.
     const destinations = <String, String>{
       'nav_today': 'daily_calories',
-      'nav_foods': 'food_search_field',
-      'nav_recipes': 'recipe_search_field',
+      'nav_food': 'food_search_field',
+      'nav_gym': 'routines_list',
+      'nav_body': 'body_list',
       'nav_plan': 'weekly_plan_list',
-      'nav_progress': 'progress_list',
     };
 
     for (final entry in destinations.entries) {

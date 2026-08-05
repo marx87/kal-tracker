@@ -50,7 +50,7 @@ class _UpdateBannerState extends ConsumerState<UpdateBanner> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Kal Tracker ${manifest.version} disponibile',
+                    'Coach360 ${manifest.version} disponibile',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),

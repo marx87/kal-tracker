@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 
+/// L'invito di quando il diario del giorno è ancora vuoto.
+///
+/// È lo stato vuoto condiviso, non una card fatta in casa: prima aveva una
+/// tavolozza sua di colori fissi e di notte restava chiaro su chiaro. Il
+/// testo non cambia — dice cosa fare e ricorda che funziona anche senza rete.
 class PlayfulDiaryEmptyState extends StatelessWidget {
   const PlayfulDiaryEmptyState({super.key});
 
@@ -9,47 +14,11 @@ class PlayfulDiaryEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: message,
-      child: ExcludeSemantics(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppPalette.mintSoft,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppPalette.mint),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppPalette.paper,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.eco_rounded,
-                  color: AppPalette.leaf,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppPalette.forestDark,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return const AppEmptyState(
+      key: Key('diary_empty_state'),
+      compact: true,
+      icon: Icons.eco_rounded,
+      message: message,
     );
   }
 }

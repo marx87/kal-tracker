@@ -27,7 +27,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_recipes')));
+    await tester.tap(find.byKey(const Key('nav_food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('food_open_recipes_button')));
     await tester.pumpAndSettle();
 
     final source =
@@ -122,7 +124,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_recipes')));
+    await tester.tap(find.byKey(const Key('nav_food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('food_open_recipes_button')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -201,7 +205,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_recipes')));
+    await tester.tap(find.byKey(const Key('nav_food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('food_open_recipes_button')));
     await tester.pumpAndSettle();
 
     final source = await (database.select(

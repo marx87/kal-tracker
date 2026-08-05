@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:kal_tracker/core/presentation/snackbars.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/recipes/domain/recipe_models.dart';
@@ -14,14 +13,24 @@ import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 import 'package:kal_tracker/features/weekly_plan/data/plan_nutrition.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_week.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_workout_start.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_providers.dart';
 
-/// Schermata "Piano" (quinta voce della barra).
+/// Schermata "Piano" (quinta voce della barra): UNA settimana, non due.
+///
+/// Ogni giorno mostra quello che ha — i pasti previsti e l'allenamento
+/// previsto — perché è così che si vive un mercoledì. Le due metà però
+/// nascono in posti diversi e restano indipendenti: i pasti li compone il Mac
+/// (`weekly_plan_slots`), gli allenamenti vengono dalla settimana delle schede
+/// (`routine_weekly_plan`) e ci sono anche quando il piano dei pasti non
+/// c'è ancora.
 ///
 /// Tre stati, mai bloccanti:
 /// * nessun piano → le caselle dei pasti, i giorni, la data di inizio e le
-///   note: "Genera il piano" accoda il lavoro al Mac;
+///   note: "Genera il piano" accoda il lavoro al Mac. Sotto, gli allenamenti
+///   della settimana restano visibili;
 /// * in attesa → si può uscire e tornare, il piano vecchio resta leggibile;
 /// * piano pronto → i giorni in fila con i valori CALCOLATI dall'app dalle
 ///   ricette reali, il confronto col target e il pulsante "Fatto" che porta
@@ -63,10 +72,13 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
     final plan = ref.watch(activeWeeklyPlanProvider);
     final pending = ref.watch(pendingWeeklyPlanProvider);
     final failed = ref.watch(failedWeeklyPlanProvider);
     final ui = ref.watch(weeklyPlanControllerProvider);
+    final week = ref.watch(planWeekProvider);
     final recipes =
         ref.watch(recipesProvider).valueOrNull ?? const <FitRecipeSummary>[];
     final target =
@@ -74,18 +86,26 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
         const NutritionTarget.standard();
     final recipesById = {for (final recipe in recipes) recipe.id: recipe};
     final formOpen = _formOpen ?? (plan == null && pending == null);
+    // Senza piano dei pasti una fila di giorni vuoti non direbbe niente: si
+    // mostrano solo quelli che hanno un allenamento.
+    final days = plan == null
+        ? [
+            for (final day in week)
+              if (!day.isEmpty) day,
+          ]
+        : week;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Piano'),
+            const Text('Piano'),
             Text(
-              'La settimana, decisa una volta sola',
-              style: TextStyle(
-                color: AppPalette.mutedInk,
-                fontSize: 13,
+              'La settimana, pasti e allenamenti',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.mutedInk,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -100,115 +120,107 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
           ),
         ],
       ),
-      body: ListView(
-        key: const Key('weekly_plan_list'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        children: [
-          // Il messaggio d'errore sta dove Marco ha appena toccato: dentro il
-          // modulo se è aperto, in cima alla lista se il modulo è chiuso.
-          if (ui.error case final message? when !formOpen) ...[
-            _MessageCard(
-              key: const Key('weekly_plan_error'),
-              icon: Icons.error_outline_rounded,
-              color: AppPalette.coralSoft,
-              iconColor: AppPalette.coral,
-              title: 'Non ci siamo',
-              message: message,
-            ),
-            const SizedBox(height: 12),
-          ],
-          if (pending != null) ...[
-            const _MessageCard(
-              key: Key('plan_generating_card'),
-              icon: Icons.hourglass_top_rounded,
-              color: AppPalette.yellowSoft,
-              iconColor: AppPalette.yellow,
-              title: 'Il Mac sta preparando il piano',
-              message:
-                  'Ci vuole qualche minuto. Puoi uscire e tornare: appena è '
-                  'pronto lo trovi qui. Se il Mac è spento non arriverà '
-                  'nulla, e te lo dirò senza girarci intorno.',
-            ),
-            const SizedBox(height: 12),
-          ],
-          if (failed != null && pending == null) ...[
-            _MessageCard(
-              key: const Key('plan_failed_card'),
-              icon: Icons.cloud_off_rounded,
-              color: AppPalette.coralSoft,
-              iconColor: AppPalette.coral,
-              title: 'Piano non arrivato',
-              message:
-                  failed.notes ??
-                  'Il Mac non ha risposto: riprova quando è acceso.',
-              action: OutlinedButton.icon(
-                key: const Key('plan_retry_button'),
-                onPressed: () => setState(() => _formOpen = true),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Riprova'),
+      body: AdaptiveContent(
+        child: ListView(
+          key: const Key('weekly_plan_list'),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+          children: [
+            // Il messaggio d'errore sta dove Marco ha appena toccato: dentro
+            // il modulo se è aperto, in cima alla lista se il modulo è chiuso.
+            if (ui.error case final message? when !formOpen) ...[
+              _MessageCard(
+                key: const Key('weekly_plan_error'),
+                icon: Icons.error_outline_rounded,
+                color: accents.criticalSurface,
+                iconColor: accents.critical,
+                title: 'Non ci siamo',
+                message: message,
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ],
+            if (pending != null) ...[
+              _MessageCard(
+                key: const Key('plan_generating_card'),
+                icon: Icons.hourglass_top_rounded,
+                color: accents.warningSurface,
+                iconColor: accents.warning,
+                title: 'Il Mac sta preparando il piano',
+                message:
+                    'Ci vuole qualche minuto. Puoi uscire e tornare: appena è '
+                    'pronto lo trovi qui. Se il Mac è spento non arriverà '
+                    'nulla, e te lo dirò senza girarci intorno.',
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (failed != null && pending == null) ...[
+              _MessageCard(
+                key: const Key('plan_failed_card'),
+                icon: Icons.cloud_off_rounded,
+                color: accents.criticalSurface,
+                iconColor: accents.critical,
+                title: 'Piano non arrivato',
+                message:
+                    failed.notes ??
+                    'Il Mac non ha risposto: riprova quando è acceso.',
+                action: OutlinedButton.icon(
+                  key: const Key('plan_retry_button'),
+                  onPressed: () => setState(() => _formOpen = true),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Riprova'),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (formOpen) ...[
+              _PlanForm(
+                meals: _meals,
+                days: _days,
+                dayOptions: _dayOptions,
+                startDate: _startDate ?? _tomorrow,
+                notes: _notes,
+                error: ui.error,
+                busy: ui.busy,
+                waiting: pending != null,
+                canClose: plan != null,
+                onMealToggled: _toggleMeal,
+                onDaysChanged: (value) => setState(() => _days = value),
+                onPickStartDate: _pickStartDate,
+                onGenerate: _generate,
+                onClose: () => setState(() => _formOpen = false),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (plan != null)
+              _PlanHeader(
+                plan: plan,
+                showNewPlanButton: !formOpen,
+                onShoppingList: () => context.goNamed('plan-shopping'),
+                onNewPlan: () => setState(() => _formOpen = true),
+              ),
+            // Senza piano dei pasti la settimana è solo palestra: si dice, così
+            // l'elenco che segue non sembra un piano a metà.
+            if (plan == null && days.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              _WorkoutsOnlyIntro(count: days.length),
+            ],
+            for (final day in days)
+              _PlanDay(
+                day: day,
+                recipesById: recipesById,
+                target: target,
+                showTotals: plan != null,
+                busySlotId: ui.busySlotId,
+                canStartWorkout: ref.watch(planWorkoutStarterProvider) != null,
+                onDone: _markDone,
+                onUndo: _undo,
+                onReplace: _replace,
+                onOpenRecipe: _openRecipe,
+                onStartWorkout: _startWorkout,
+              ),
           ],
-          if (formOpen) ...[
-            _PlanForm(
-              meals: _meals,
-              days: _days,
-              dayOptions: _dayOptions,
-              startDate: _startDate ?? _tomorrow,
-              notes: _notes,
-              error: ui.error,
-              busy: ui.busy,
-              waiting: pending != null,
-              canClose: plan != null,
-              onMealToggled: _toggleMeal,
-              onDaysChanged: (value) => setState(() => _days = value),
-              onPickStartDate: _pickStartDate,
-              onGenerate: _generate,
-              onClose: () => setState(() => _formOpen = false),
-            ),
-            const SizedBox(height: 12),
-          ],
-          if (plan != null)
-            ..._planSections(
-              plan: plan,
-              recipesById: recipesById,
-              target: target,
-              busySlotId: ui.busySlotId,
-              formOpen: formOpen,
-            ),
-        ],
+        ),
       ),
     );
-  }
-
-  List<Widget> _planSections({
-    required WeeklyPlan plan,
-    required Map<String, FitRecipeSummary> recipesById,
-    required NutritionTarget target,
-    required String? busySlotId,
-    required bool formOpen,
-  }) {
-    return [
-      _PlanHeader(
-        plan: plan,
-        showNewPlanButton: !formOpen,
-        onShoppingList: () => context.goNamed('plan-shopping'),
-        onNewPlan: () => setState(() => _formOpen = true),
-      ),
-      for (final date in plan.dates)
-        _PlanDay(
-          date: date,
-          slots: plan.slotsFor(date),
-          recipesById: recipesById,
-          target: target,
-          busySlotId: busySlotId,
-          onDone: _markDone,
-          onUndo: _undo,
-          onReplace: _replace,
-          onOpenRecipe: _openRecipe,
-        ),
-    ];
   }
 
   void _toggleMeal(PlanMeal meal, bool selected) {
@@ -353,6 +365,44 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
     // altro ramo un push finirebbe in un navigator non visibile.
     context.goNamed('recipe-details', pathParameters: {'recipeId': recipeId});
   }
+
+  /// Avvia la sessione del giorno, o porta alla scheda se non c'è ancora chi
+  /// sa aprirla (vedi `planWorkoutStarterProvider`).
+  Future<void> _startWorkout(PlannedWorkout workout) async {
+    final routineId = workout.routineId;
+    if (routineId == null) {
+      return;
+    }
+    final starter = ref.read(planWorkoutStarterProvider);
+    if (starter == null) {
+      // La scheda vive nel ramo Palestra: `go`, non `push`.
+      context.goNamed('routine-edit', pathParameters: {'routineId': routineId});
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await starter(routineId);
+    if (!mounted) {
+      return;
+    }
+    switch (result) {
+      case PlanWorkoutRunning(:final workoutId, :final resumed):
+        if (resumed) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Avevi già una sessione aperta: riprendo quella.'),
+            ),
+          );
+        }
+        // A schermo intero e fuori dalla shell: in palestra il telefono
+        // mostra una cosa sola.
+        await context.pushNamed(
+          'workout-live',
+          pathParameters: {'workoutId': workoutId},
+        );
+      case PlanWorkoutNotStarted(:final message):
+        messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 }
 
 class _PlanForm extends StatelessWidget {
@@ -393,6 +443,8 @@ class _PlanForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
     final ready = meals.isNotEmpty && !busy && !waiting;
     return Card(
       key: const Key('weekly_plan_form'),
@@ -407,7 +459,7 @@ class _PlanForm extends StatelessWidget {
                   child: Text(
                     'Prepariamo la settimana',
                     key: const Key('weekly_plan_form_title'),
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: theme.textTheme.titleLarge,
                   ),
                 ),
                 if (canClose)
@@ -420,16 +472,15 @@ class _PlanForm extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Scegli cosa pianificare: il piano lo prepara il Mac usando '
-              'solo le tue ricette.',
-              style: TextStyle(color: AppPalette.mutedInk),
+              'solo le tue ricette, e tiene conto dei giorni in cui ti alleni.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accents.mutedInk,
+              ),
             ),
             const SizedBox(height: 14),
-            Text(
-              'Quali pasti?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Quali pasti?', style: theme.textTheme.titleMedium),
             for (final meal in PlanMeal.values)
               CheckboxListTile(
                 key: Key('plan_meal_${meal.storageValue}'),
@@ -439,13 +490,10 @@ class _PlanForm extends StatelessWidget {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                activeColor: AppPalette.forest,
+                activeColor: theme.colorScheme.primary,
               ),
             const SizedBox(height: 6),
-            Text(
-              'Quanti giorni?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Quanti giorni?', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -457,12 +505,12 @@ class _PlanForm extends StatelessWidget {
                     label: Text('$option giorni'),
                     selected: days == option,
                     onSelected: (_) => onDaysChanged(option),
-                    selectedColor: AppPalette.mint,
+                    selectedColor: theme.colorScheme.primaryContainer,
                   ),
               ],
             ),
             const SizedBox(height: 14),
-            Text('Da quando?', style: Theme.of(context).textTheme.titleMedium),
+            Text('Da quando?', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               key: const Key('plan_start_date_button'),
@@ -483,11 +531,11 @@ class _PlanForm extends StatelessWidget {
               ),
             ),
             if (meals.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   'Scegli almeno un pasto da pianificare.',
-                  style: TextStyle(color: AppPalette.coral),
+                  style: TextStyle(color: accents.critical),
                 ),
               ),
             if (error case final message?)
@@ -497,16 +545,16 @@ class _PlanForm extends StatelessWidget {
                   key: const Key('weekly_plan_error'),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline_rounded,
                       size: 18,
-                      color: AppPalette.coral,
+                      color: accents.critical,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         message,
-                        style: const TextStyle(color: AppPalette.coral),
+                        style: TextStyle(color: accents.critical),
                       ),
                     ),
                   ],
@@ -545,10 +593,11 @@ class _PlanHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final last = PlanDate.addDays(plan.startDate, plan.days - 1);
     return Card(
       key: const Key('weekly_plan_header'),
-      color: AppPalette.mintSoft,
+      color: theme.colorScheme.primaryContainer,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
         child: Column(
@@ -557,12 +606,16 @@ class _PlanHeader extends StatelessWidget {
             Text(
               'Il tuo piano di ${plan.days} giorni',
               key: const Key('weekly_plan_title'),
-              style: Theme.of(context).textTheme.titleLarge,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Da ${_dayLabel(plan.startDate)} a ${_dayLabel(last)}',
-              style: const TextStyle(color: AppPalette.mutedInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -571,7 +624,9 @@ class _PlanHeader extends StatelessWidget {
                   : '${plan.doneCount} di ${plan.slots.length} pasti già nel '
                         'diario.',
               key: const Key('weekly_plan_progress'),
-              style: const TextStyle(color: AppPalette.mutedInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             if (plan.notes case final notes?) ...[
               const SizedBox(height: 10),
@@ -579,17 +634,17 @@ class _PlanHeader extends StatelessWidget {
                 key: const Key('weekly_plan_notes'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.chat_bubble_outline_rounded,
                     size: 18,
-                    color: AppPalette.lilac,
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       notes,
-                      style: const TextStyle(
-                        color: AppPalette.mutedInk,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -624,32 +679,69 @@ class _PlanHeader extends StatelessWidget {
   }
 }
 
+/// Cappello dell'elenco quando il piano dei pasti non c'è ancora.
+class _WorkoutsOnlyIntro extends StatelessWidget {
+  const _WorkoutsOnlyIntro({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: const Key('plan_workouts_only_intro'),
+      padding: const EdgeInsets.only(top: 6),
+      child: AppEmptyState(
+        compact: true,
+        icon: Icons.fitness_center_rounded,
+        message: count == 1
+            ? 'Il piano dei pasti non c’è ancora, ma un allenamento in '
+                  'settimana sì: eccolo.'
+            : 'Il piano dei pasti non c’è ancora, ma gli allenamenti della '
+                  'settimana sì: eccoli.',
+      ),
+    );
+  }
+}
+
+/// Una giornata: il titolo, l'allenamento previsto e i pasti previsti.
 class _PlanDay extends StatelessWidget {
   const _PlanDay({
-    required this.date,
-    required this.slots,
+    required this.day,
     required this.recipesById,
     required this.target,
+    required this.showTotals,
     required this.busySlotId,
+    required this.canStartWorkout,
     required this.onDone,
     required this.onUndo,
     required this.onReplace,
     required this.onOpenRecipe,
+    required this.onStartWorkout,
   });
 
-  final DateTime date;
-  final List<WeeklyPlanSlot> slots;
+  final PlanWeekDay day;
   final Map<String, FitRecipeSummary> recipesById;
   final NutritionTarget target;
+
+  /// Il confronto col target ha senso solo dove i pasti sono pianificati: in
+  /// una settimana di soli allenamenti «0 / 2.000 kcal» sarebbe un giudizio
+  /// su un dato che non esiste.
+  final bool showTotals;
+
   final String? busySlotId;
+  final bool canStartWorkout;
   final Future<void> Function(WeeklyPlanSlot slot) onDone;
   final Future<void> Function(WeeklyPlanSlot slot) onUndo;
   final Future<void> Function(WeeklyPlanSlot slot) onReplace;
   final void Function(WeeklyPlanSlot slot) onOpenRecipe;
+  final Future<void> Function(PlannedWorkout workout) onStartWorkout;
 
   @override
   Widget build(BuildContext context) {
-    final iso = PlanDate.format(date);
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final iso = PlanDate.format(day.date);
+    final slots = day.meals;
     final total = PlanNutrition.sum([
       for (final slot in slots)
         if (_perServing(slot) case final perServing?)
@@ -669,28 +761,60 @@ class _PlanDay extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                _capitalize(_dayLabel(date)),
+                _capitalize(_dayLabel(day.date)),
                 key: Key('plan_day_$iso'),
-                style: Theme.of(context).textTheme.titleLarge,
+                style: theme.textTheme.titleLarge,
               ),
             ),
-            Text(
-              '${_round(total.calories)} / ${_round(target.calories)} kcal',
-              key: Key('plan_day_total_$iso'),
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: reached ? AppPalette.forest : AppPalette.mutedInk,
+            if (showTotals)
+              Text(
+                '${_round(total.calories)} / ${_round(target.calories)} kcal',
+                key: Key('plan_day_total_$iso'),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: reached ? accents.positive : accents.mutedInk,
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 8),
-        if (slots.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 4),
+        if (day.workout case final workout?)
+          _WorkoutCard(
+            date: day.date,
+            workout: workout,
+            canStart: canStartWorkout,
+            onStart: () => unawaited(onStartWorkout(workout)),
+          )
+        else if (showTotals)
+          Padding(
+            key: Key('plan_rest_$iso'),
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                Icon(Icons.bedtime_outlined, size: 16, color: accents.mutedInk),
+                const SizedBox(width: 6),
+                // A caratteri ingranditi la frase va a capo invece di
+                // sfondare la riga.
+                Expanded(
+                  child: Text(
+                    'Riposo: nessun allenamento previsto.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: accents.mutedInk,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (day.workout != null && slots.isNotEmpty) const SizedBox(height: 10),
+        if (slots.isEmpty && showTotals)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
             child: Text(
               'Niente in programma: giornata libera.',
-              style: TextStyle(color: AppPalette.mutedInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accents.mutedInk,
+              ),
             ),
           ),
         for (final slot in slots)
@@ -719,6 +843,128 @@ class _PlanDay extends StatelessWidget {
   }
 }
 
+/// L'allenamento previsto del giorno, con la sua unica azione.
+class _WorkoutCard extends StatelessWidget {
+  const _WorkoutCard({
+    required this.date,
+    required this.workout,
+    required this.canStart,
+    required this.onStart,
+  });
+
+  final DateTime date;
+  final PlannedWorkout workout;
+
+  /// Vero quando qualcuno sa aprire davvero la sessione: altrimenti il
+  /// pulsante non promette un allenamento, porta alla scheda.
+  final bool canStart;
+
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final iso = PlanDate.format(date);
+    final detail = [
+      if (workout.isCircuit) 'circuito',
+      if (workout.exerciseCount == 1)
+        '1 esercizio'
+      else if (workout.exerciseCount > 1)
+        '${workout.exerciseCount} esercizi',
+    ].join(' · ');
+
+    return Card(
+      key: Key('plan_workout_$iso'),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: workout.isCircuit
+                        ? accents.warningSurface
+                        : theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Icon(
+                    workout.isCircuit
+                        ? Icons.bolt_rounded
+                        : Icons.fitness_center_rounded,
+                    size: 21,
+                    color: workout.isCircuit
+                        ? accents.warning
+                        : theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ALLENAMENTO',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: accents.positive,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        workout.routineName,
+                        key: Key('plan_workout_name_$iso'),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      if (detail.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          detail,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: accents.mutedInk,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (workout.isMissing) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Questa scheda non è più nel tuo elenco: era prevista qui.',
+                key: Key('plan_workout_missing_$iso'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: accents.critical,
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: Key('plan_workout_start_$iso'),
+                onPressed: onStart,
+                icon: Icon(
+                  canStart
+                      ? Icons.play_arrow_rounded
+                      : Icons.assignment_outlined,
+                ),
+                label: Text(canStart ? 'Inizia allenamento' : 'Apri la scheda'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PlanSlotCard extends StatelessWidget {
   const _PlanSlotCard({
     required this.slot,
@@ -742,6 +988,8 @@ class _PlanSlotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
     final available = slot.hasRecipe && perServing != null;
     final nutrients = perServing == null
         ? null
@@ -752,7 +1000,7 @@ class _PlanSlotCard extends StatelessWidget {
 
     return Card(
       key: Key('plan_slot_${slot.id}'),
-      color: slot.isDone ? AppPalette.mintSoft : null,
+      color: slot.isDone ? theme.colorScheme.primaryContainer : null,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
         child: Column(
@@ -767,10 +1015,9 @@ class _PlanSlotCard extends StatelessWidget {
                     children: [
                       Text(
                         slot.meal.label.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppPalette.leaf,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: accents.positive,
                           fontWeight: FontWeight.w800,
-                          fontSize: 11,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -778,16 +1025,13 @@ class _PlanSlotCard extends StatelessWidget {
                       Text(
                         slot.recipeName,
                         key: Key('plan_slot_recipe_${slot.id}'),
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: theme.textTheme.titleMedium,
                       ),
                     ],
                   ),
                 ),
                 if (slot.isDone)
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: AppPalette.leaf,
-                  ),
+                  Icon(Icons.check_circle_rounded, color: accents.positive),
               ],
             ),
             const SizedBox(height: 6),
@@ -801,14 +1045,18 @@ class _PlanSlotCard extends StatelessWidget {
                         'C ${nutrients.carbs.toStringAsFixed(1)} · '
                         'G ${nutrients.fat.toStringAsFixed(1)}',
               key: Key('plan_slot_macros_${slot.id}'),
-              style: const TextStyle(color: AppPalette.mutedInk),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accents.mutedInk,
+              ),
             ),
             if (!available) ...[
               const SizedBox(height: 6),
               Text(
                 'Questa ricetta non è più nel ricettario: sostituiscila.',
                 key: Key('plan_slot_missing_${slot.id}'),
-                style: const TextStyle(color: AppPalette.coral),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: accents.critical,
+                ),
               ),
             ],
             if (slot.why case final why?) ...[
@@ -817,19 +1065,18 @@ class _PlanSlotCard extends StatelessWidget {
                 key: Key('plan_slot_why_${slot.id}'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 16,
-                    color: AppPalette.lilac,
+                    color: accents.info,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       why,
-                      style: const TextStyle(
-                        color: AppPalette.mutedInk,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: accents.mutedInk,
                         fontStyle: FontStyle.italic,
-                        fontSize: 13,
                       ),
                     ),
                   ),
@@ -894,6 +1141,8 @@ class _ReplaceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
     return SafeArea(
       child: ListView(
         key: const Key('plan_replace_sheet'),
@@ -902,12 +1151,14 @@ class _ReplaceSheet extends StatelessWidget {
         children: [
           Text(
             'Cosa metti a ${meal.label.toLowerCase()}?',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Solo ricette del tuo ricettario.',
-            style: TextStyle(color: AppPalette.mutedInk),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: accents.mutedInk,
+            ),
           ),
           const SizedBox(height: 10),
           for (final recipe in [...suggested, ...others])
@@ -918,7 +1169,7 @@ class _ReplaceSheet extends StatelessWidget {
                 recipe.id == currentRecipeId
                     ? Icons.radio_button_checked_rounded
                     : Icons.radio_button_unchecked_rounded,
-                color: AppPalette.leaf,
+                color: theme.colorScheme.primary,
               ),
               title: Text(recipe.name),
               subtitle: Text(
@@ -953,6 +1204,7 @@ class _MessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       color: color,
       child: Padding(
@@ -968,10 +1220,12 @@ class _MessageCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(message),
+                  Text(message, style: theme.textTheme.bodyMedium),
                   if (action case final action?) ...[
                     const SizedBox(height: 10),
                     action,

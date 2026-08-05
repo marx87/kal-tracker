@@ -5,6 +5,7 @@ import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/calorie_progress_card.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/wellness_meal_card.dart';
+import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 
 void main() {
   testWidgets('il riepilogo giocoso resta leggibile su un telefono stretto', (
@@ -28,7 +29,12 @@ void main() {
               child: const SingleChildScrollView(
                 padding: EdgeInsets.all(12),
                 child: CalorieProgressCard(
-                  targetCalories: 2200,
+                  target: NutritionTarget(
+                    calories: 2200,
+                    protein: 150,
+                    carbs: 240,
+                    fat: 70,
+                  ),
                   nutrients: Nutrients(
                     calories: 195,
                     protein: 4.1,

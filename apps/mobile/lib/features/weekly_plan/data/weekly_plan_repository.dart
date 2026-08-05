@@ -15,6 +15,9 @@ import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart'
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/weekly_plan/data/plan_nutrition.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_gateway.dart';
+import 'package:kal_tracker/features/weekly_plan/data/workout_plan_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_week.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/post_workout_meal.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
 import 'package:uuid/uuid.dart';
 
@@ -36,12 +39,14 @@ class WeeklyPlanRepository {
     required this._gateway,
     RecipeRepository? recipeRepository,
     DiaryRepository? diaryRepository,
+    WorkoutPlanRepository? workoutPlanRepository,
     Uuid? uuid,
     DateTime Function()? now,
   }) : _uuid = uuid ?? const Uuid(),
        _now = now ?? AppTime.nowUtc {
     _recipes = recipeRepository ?? RecipeRepository(_database);
     _diary = diaryRepository ?? DiaryRepository(_database);
+    _workouts = workoutPlanRepository ?? WorkoutPlanRepository(_database);
   }
 
   /// Il Mac non ha ancora preso in carico il job: dopo questo tempo si smette
@@ -61,6 +66,7 @@ class WeeklyPlanRepository {
   final DateTime Function() _now;
   late final RecipeRepository _recipes;
   late final DiaryRepository _diary;
+  late final WorkoutPlanRepository _workouts;
 
   /// Tutti i piani del profilo, dal più recente. Legge SOLO dal database
   /// locale: offline si continua a consultare il piano già generato.
@@ -128,6 +134,12 @@ class WeeklyPlanRepository {
       targets: targets,
       notes: notes,
       recipes: await _recipeDigest(profileId),
+      workouts: await _workoutDays(
+        profileId: profileId,
+        startDate: startDate,
+        days: days,
+        meals: meals,
+      ),
     );
     final Map<String, Object?> payload;
     try {
@@ -398,6 +410,58 @@ class WeeklyPlanRepository {
     ];
   }
 
+  /// I giorni di allenamento che cadono nel periodo del piano.
+  ///
+  /// La settimana delle schede è per giorno ISO (ogni mercoledì la stessa
+  /// scheda): qui diventa un elenco di date vere, perché è così che il
+  /// pianificatore ragiona. Il pasto proteico non lo sceglie il modello: lo
+  /// decide [postWorkoutMeal] a partire dall'ora in cui Marco si allena
+  /// DAVVERO, misurata sullo storico. Senza storico non si indovina un
+  /// orario: il giorno viaggia lo stesso, senza indicazione.
+  ///
+  /// Un errore qui non deve impedire il piano dei pasti: la settimana
+  /// unificata è un di più, la cena di domani no.
+  Future<List<PlanWorkoutDay>> _workoutDays({
+    required String profileId,
+    required DateTime startDate,
+    required int days,
+    required Iterable<PlanMeal> meals,
+  }) async {
+    final List<PlannedWorkout> planned;
+    final int? hour;
+    try {
+      planned = await _workouts.plannedWorkouts(profileId);
+      hour = await _workouts.trainingHour(profileId);
+    } on Object {
+      return const <PlanWorkoutDay>[];
+    }
+    if (planned.isEmpty) {
+      return const <PlanWorkoutDay>[];
+    }
+    final proteinMeal = postWorkoutMeal(
+      meals: PlanMeals.normalize(meals),
+      trainingHour: hour,
+    );
+    final byWeekday = {for (final workout in planned) workout.weekday: workout};
+    final start = PlanDate.normalize(startDate);
+    final workoutDays = <PlanWorkoutDay>[];
+    for (var offset = 0; offset < days; offset++) {
+      final date = PlanDate.addDays(start, offset);
+      final workout = byWeekday[date.weekday];
+      if (workout == null) {
+        continue;
+      }
+      workoutDays.add(
+        PlanWorkoutDay(
+          date: date,
+          name: workout.routineName,
+          proteinMeal: proteinMeal,
+        ),
+      );
+    }
+    return workoutDays;
+  }
+
   /// Vista di una ricetta con i totali denormalizzati (scritti da
   /// `RecipeNutritionCalculator`) divisi per le porzioni: gli stessi numeri
   /// che Marco vede nella schermata Ricette.
@@ -664,5 +728,6 @@ final weeklyPlanRepositoryProvider = Provider<WeeklyPlanRepository>(
     gateway: ref.watch(weeklyPlanGatewayProvider),
     recipeRepository: ref.watch(recipeRepositoryProvider),
     diaryRepository: ref.watch(diaryRepositoryProvider),
+    workoutPlanRepository: ref.watch(workoutPlanRepositoryProvider),
   ),
 );

@@ -194,6 +194,103 @@ void main() {
       );
     });
 
+    test('i giorni di allenamento viaggiano con la richiesta, in ordine', () {
+      final request = WeeklyPlanRequest(
+        startDate: DateTime.utc(2026, 8, 5),
+        days: 2,
+        meals: const [PlanMeal.pranzo, PlanMeal.cena],
+        targets: const NutritionTarget.standard(),
+        recipes: [_option('recipe-a', 'Bowl pollo e riso')],
+        workouts: [
+          PlanWorkoutDay(
+            date: DateTime.utc(2026, 8, 6),
+            name: 'Gambe',
+            proteinMeal: PlanMeal.cena,
+          ),
+          PlanWorkoutDay(date: DateTime.utc(2026, 8, 5), name: 'Spinta'),
+        ],
+      );
+
+      final workouts = request.toJson()['workouts']! as List;
+      expect(workouts, [
+        {'date': '2026-08-05', 'name': 'Spinta'},
+        {'date': '2026-08-06', 'name': 'Gambe', 'proteinMeal': 'cena'},
+      ]);
+      // Il giro completo li rilegge identici: la richiesta salvata è il
+      // contratto con cui si valida il piano che tornerà.
+      final reread = WeeklyPlanRequest.fromJson(request.toJson());
+      expect(reread.workouts.map((workout) => workout.name), [
+        'Spinta',
+        'Gambe',
+      ]);
+      expect(reread.workouts.last.proteinMeal, PlanMeal.cena);
+    });
+
+    test('una richiesta salvata senza allenamenti resta leggibile', () {
+      // Le richieste scritte prima del piano unificato non hanno la chiave.
+      final payload = _request().toJson()..remove('workouts');
+
+      expect(WeeklyPlanRequest.fromJson(payload).workouts, isEmpty);
+    });
+
+    test(
+      'rifiuta allenamenti fuori dal piano, doppi o su un pasto assente',
+      () {
+        WeeklyPlanRequest withWorkouts(List<PlanWorkoutDay> workouts) =>
+            WeeklyPlanRequest(
+              startDate: DateTime.utc(2026, 8, 5),
+              days: 2,
+              meals: const [PlanMeal.pranzo, PlanMeal.cena],
+              targets: const NutritionTarget.standard(),
+              recipes: [_option('recipe-a', 'Bowl pollo e riso')],
+              workouts: workouts,
+            );
+
+        expect(
+          () => withWorkouts([
+            PlanWorkoutDay(date: DateTime.utc(2026, 8, 9), name: 'Gambe'),
+          ]).validate(),
+          throwsFormatException,
+          reason: 'un allenamento fuori dai giorni del piano',
+        );
+        expect(
+          () => withWorkouts([
+            PlanWorkoutDay(date: DateTime.utc(2026, 8, 5), name: 'Spinta'),
+            PlanWorkoutDay(date: DateTime.utc(2026, 8, 5), name: 'Gambe'),
+          ]).validate(),
+          throwsFormatException,
+          reason: 'due allenamenti nello stesso giorno',
+        );
+        expect(
+          () => withWorkouts([
+            PlanWorkoutDay(
+              date: DateTime.utc(2026, 8, 5),
+              name: 'Spinta',
+              proteinMeal: PlanMeal.colazione,
+            ),
+          ]).validate(),
+          throwsFormatException,
+          reason: 'il pasto dopo l’allenamento non è fra quelli richiesti',
+        );
+      },
+    );
+
+    test('il nome della scheda si aggiusta invece di far fallire il piano', () {
+      // È uno scatto preso dal database: vuoto o lunghissimo non deve
+      // costare una settimana di pasti.
+      expect(
+        PlanWorkoutDay(date: DateTime.utc(2026, 8, 5), name: '   ').name,
+        'Allenamento',
+      );
+      expect(
+        PlanWorkoutDay(
+          date: DateTime.utc(2026, 8, 5),
+          name: 'x' * 300,
+        ).name.length,
+        PlanWorkoutDay.maxNameLength,
+      );
+    });
+
     test('una ricetta reale diventa opzione con i valori per porzione', () {
       final summary = FitRecipeSummary(
         id: 'recipe-real',

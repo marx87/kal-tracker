@@ -62,6 +62,7 @@ _MAXIMUM_RECIPE_NAME = 160
 _MAXIMUM_TAGS = 8
 _MAXIMUM_TAG_LENGTH = 24
 _MAXIMUM_PREP_MINUTES = 10080
+_MAXIMUM_ROUTINE_NAME = 160
 
 # Codici errore stabili.
 BAD_REQUEST = "PLAN_BAD_REQUEST"
@@ -314,6 +315,65 @@ class PlanRecipeOption:
 
 
 @dataclass(frozen=True)
+class PlanWorkoutDay:
+    """Un giorno in cui Marco si allena.
+
+    NON e' una scelta del modello e non torna mai indietro: gli allenamenti
+    li decide la settimana delle schede dentro l'app. Viaggiano con la
+    richiesta per una ragione sola — collocare il pasto proteico DOPO la
+    sessione invece che a caso nella giornata.
+
+    ``protein_meal`` lo calcola l'app dall'ora in cui Marco si allena davvero
+    (misurata sul suo storico), non il modello: qui e' un dato, come i target.
+    Puo' mancare, e allora quel giorno non ha nessuna indicazione.
+    """
+
+    date: date
+    name: str
+    protein_meal: str | None
+
+    @classmethod
+    def from_json(cls, value: Any, *, index: int) -> "PlanWorkoutDay":
+        payload = _mapping(value, f"workouts[{index}]", BAD_REQUEST)
+        raw_meal = payload.get("proteinMeal")
+        protein_meal: str | None = None
+        if raw_meal is not None:
+            protein_meal = _text(
+                raw_meal,
+                f"workouts[{index}].proteinMeal",
+                maximum=20,
+                error_code=BAD_REQUEST,
+            ).lower()
+            if protein_meal not in _MEAL_ORDER:
+                raise _fail(
+                    f"Pasto non riconosciuto: {protein_meal!r}", BAD_REQUEST
+                )
+        return cls(
+            date=parse_plan_date(
+                payload.get("date"),
+                f"workouts[{index}].date",
+                error_code=BAD_REQUEST,
+            ),
+            name=_text(
+                payload.get("name"),
+                f"workouts[{index}].name",
+                maximum=_MAXIMUM_ROUTINE_NAME,
+                error_code=BAD_REQUEST,
+            ),
+            protein_meal=protein_meal,
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "date": format_plan_date(self.date),
+            "name": self.name,
+        }
+        if self.protein_meal is not None:
+            payload["proteinMeal"] = self.protein_meal
+        return payload
+
+
+@dataclass(frozen=True)
 class PlanRequest:
     """La richiesta che l'app ha messo nel job.
 
@@ -327,6 +387,7 @@ class PlanRequest:
     targets: PlanTargets
     notes: str
     recipes: tuple[PlanRecipeOption, ...]
+    workouts: tuple[PlanWorkoutDay, ...] = ()
 
     @classmethod
     def from_json(cls, value: Any) -> "PlanRequest":
@@ -386,15 +447,59 @@ class PlanRequest:
         if len(notes) > MAXIMUM_REQUEST_NOTES:
             raise _fail("Le note della richiesta sono troppo lunghe", BAD_REQUEST)
 
+        start_date = parse_plan_date(
+            payload.get("startDate"), "startDate", error_code=BAD_REQUEST
+        )
+
+        # Chiave aggiunta col piano unificato: una richiesta scritta prima non
+        # ha allenamenti e resta valida (nessun bump di schema).
+        raw_workouts = payload.get("workouts")
+        entries = (
+            []
+            if raw_workouts is None
+            else _sequence(raw_workouts, "workouts", BAD_REQUEST)
+        )
+        if len(entries) > days:
+            raise _fail(
+                "Ci sono piu' allenamenti che giorni nel piano", BAD_REQUEST
+            )
+        workouts = tuple(
+            PlanWorkoutDay.from_json(entry, index=index)
+            for index, entry in enumerate(entries)
+        )
+        planned_days = {
+            start_date + timedelta(days=offset) for offset in range(days)
+        }
+        seen: set[date] = set()
+        for workout in workouts:
+            if workout.date not in planned_days:
+                raise _fail(
+                    f"L'allenamento del {format_plan_date(workout.date)} non "
+                    "cade nei giorni del piano",
+                    BAD_REQUEST,
+                )
+            if workout.date in seen:
+                raise _fail(
+                    f"Il giorno {format_plan_date(workout.date)} ha due "
+                    "allenamenti",
+                    BAD_REQUEST,
+                )
+            seen.add(workout.date)
+            if workout.protein_meal is not None and workout.protein_meal not in meals:
+                raise _fail(
+                    f"Il pasto dopo l'allenamento ({workout.protein_meal}) non "
+                    "e' fra quelli da pianificare",
+                    BAD_REQUEST,
+                )
+
         return cls(
-            start_date=parse_plan_date(
-                payload.get("startDate"), "startDate", error_code=BAD_REQUEST
-            ),
+            start_date=start_date,
             days=days,
             meals=meals,
             targets=PlanTargets.from_json(payload.get("targets")),
             notes=notes,
             recipes=recipes,
+            workouts=tuple(sorted(workouts, key=lambda entry: entry.date)),
         )
 
     @property
@@ -406,6 +511,10 @@ class PlanRequest:
     @property
     def recipe_ids(self) -> frozenset[str]:
         return frozenset(recipe.id for recipe in self.recipes)
+
+    @property
+    def workouts_by_date(self) -> dict[date, PlanWorkoutDay]:
+        return {workout.date: workout for workout in self.workouts}
 
     @property
     def recipe_names_by_id(self) -> dict[str, str]:
@@ -420,6 +529,7 @@ class PlanRequest:
             "targets": self.targets.to_json(),
             "notes": self.notes,
             "recipes": [recipe.to_json() for recipe in self.recipes],
+            "workouts": [workout.to_json() for workout in self.workouts],
         }
 
 

@@ -6,6 +6,9 @@ import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_gateway.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/data/workout_plan_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_week.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_workout_start.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
 
 /// Tutti i piani del profilo, dal più recente. Sorgente unica per la
@@ -46,6 +49,49 @@ final failedWeeklyPlanProvider = Provider<WeeklyPlan?>((ref) {
   final latest = (plans ?? const <WeeklyPlan>[]).firstOrNull;
   return latest?.status == WeeklyPlanStatus.failed ? latest : null;
 });
+
+/// La settimana degli allenamenti (giorno ISO → scheda), letta dal database
+/// locale: c'è anche col Mac spento e senza nessun piano dei pasti.
+final plannedWorkoutsProvider = StreamProvider<List<PlannedWorkout>>((
+  ref,
+) async* {
+  final profile = await ref.watch(marcoProfileProvider.future);
+  yield* ref
+      .watch(workoutPlanRepositoryProvider)
+      .watchPlannedWorkouts(profile.id);
+});
+
+/// LA settimana: un giorno, i suoi pasti e il suo allenamento.
+///
+/// Le date sono quelle del piano quando c'è; quando non c'è si parte da oggi,
+/// perché gli allenamenti previsti vanno mostrati lo stesso — è la promessa
+/// «leggibile col Mac spento e senza piano generato».
+final planWeekProvider = Provider<List<PlanWeekDay>>((ref) {
+  final plan = ref.watch(activeWeeklyPlanProvider);
+  final workouts =
+      ref.watch(plannedWorkoutsProvider).valueOrNull ??
+      const <PlannedWorkout>[];
+  return PlanWeek.build(
+    dates: plan?.dates ?? PlanWeek.upcomingDates(AppTime.nowInRome()),
+    plan: plan,
+    workouts: workouts,
+  );
+});
+
+/// Come si avvia l'allenamento previsto dal giorno.
+///
+/// Comporre una sessione dalla scheda è lavoro del modulo Palestra, che oggi
+/// non ha ancora il suo repository collegato (`liveWorkoutRepositoryProvider`
+/// lancia apposta, finché non arriva l'implementazione Drift). Questo è il
+/// punto d'innesto: chi lo collega sovrascrive il provider e «Inizia
+/// allenamento» parte, senza cambiare una riga di questa cartella.
+///
+/// Finché è null il piano non promette quello che non può fare: il pulsante
+/// dice «Apri la scheda» e porta in Palestra.
+typedef PlanWorkoutStarter =
+    Future<PlanWorkoutStartResult> Function(String routineId);
+
+final planWorkoutStarterProvider = Provider<PlanWorkoutStarter?>((ref) => null);
 
 /// Polling gentile mentre il Mac lavora: una lettura ogni 15 s, e solo
 /// finché esiste un piano in preparazione.
@@ -130,7 +176,7 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
       if (_disposed || _timer != null || _refreshing) {
         return;
       }
-      if (ref.read(pendingWeeklyPlanProvider) != null) {
+      if (_pendingPlan() != null) {
         unawaited(refreshNow());
       }
     });
@@ -179,7 +225,7 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
     }
     _timer?.cancel();
     _timer = null;
-    final pending = ref.read(pendingWeeklyPlanProvider);
+    final pending = _pendingPlan();
     if (pending == null) {
       return;
     }
@@ -242,13 +288,30 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
     }
   }
 
+  /// Il piano in attesa letto ALLA SORGENTE, non da [pendingWeeklyPlanProvider].
+  ///
+  /// Il ciclo di attesa parte da dentro la `ref.listen` sulla lista dei piani,
+  /// e lì un provider derivato può ancora avere in cache il valore di prima:
+  /// si leggerebbe «nessun piano in attesa» proprio nell'istante in cui ne è
+  /// appena arrivato uno, e l'attesa resterebbe appesa per sempre. La lista
+  /// invece è la cosa che è appena cambiata.
+  WeeklyPlan? _pendingPlan() {
+    final plans = ref.read(weeklyPlansProvider).valueOrNull;
+    for (final plan in plans ?? const <WeeklyPlan>[]) {
+      if (plan.status == WeeklyPlanStatus.generating) {
+        return plan;
+      }
+    }
+    return null;
+  }
+
   void _scheduleNext() {
     if (_disposed) {
       return;
     }
     _timer?.cancel();
     _timer = null;
-    if (ref.read(pendingWeeklyPlanProvider) == null) {
+    if (_pendingPlan() == null) {
       return;
     }
     _timer = Timer(

@@ -251,6 +251,66 @@ class PlanRecipeOption {
   };
 }
 
+/// Un giorno in cui Marco si allena, come lo vede il pianificatore dei pasti.
+///
+/// Non è una scelta del modello e non torna mai indietro dal Mac: gli
+/// allenamenti li decide la settimana delle schede (`routine_weekly_plan`),
+/// qui viaggiano solo per far collocare il pasto proteico DOPO la sessione.
+///
+/// [proteinMeal] lo calcola l'app, non il modello: è il primo pasto richiesto
+/// che cade dopo l'ora in cui Marco si allena davvero (vedi
+/// `post_workout_meal.dart`). Resta nullo quando quell'ora non si conosce
+/// ancora o quando nessun pasto richiesto viene dopo.
+class PlanWorkoutDay {
+  PlanWorkoutDay({
+    required DateTime date,
+    required String name,
+    this.proteinMeal,
+  }) : date = PlanDate.normalize(date),
+       name = _routineName(name);
+
+  factory PlanWorkoutDay.fromJson(Object? value) {
+    if (value is! Map) {
+      throw const FormatException('Ogni allenamento deve essere un oggetto.');
+    }
+    final rawMeal = value['proteinMeal'];
+    return PlanWorkoutDay(
+      date: PlanDate.parse(value['date']),
+      name: _requiredString(value['name'], 'name', maxLength: maxNameLength),
+      proteinMeal: rawMeal == null ? null : PlanMeal.fromStorage(rawMeal),
+    );
+  }
+
+  static const int maxNameLength = 160;
+
+  /// Il giorno di calendario dell'allenamento (dentro il periodo del piano).
+  final DateTime date;
+
+  /// Nome della scheda: al modello serve solo per motivare in italiano.
+  final String name;
+
+  /// Il pasto (fra quelli richiesti) che segue l'allenamento.
+  final PlanMeal? proteinMeal;
+
+  Map<String, Object?> toJson() => {
+    'date': PlanDate.format(date),
+    'name': name,
+    if (proteinMeal case final meal?) 'proteinMeal': meal.storageValue,
+  };
+
+  /// Il nome è uno scatto preso dal database: se è vuoto o lunghissimo non si
+  /// rifiuta la richiesta, si aggiusta. Un piano non si perde per un'etichetta.
+  static String _routineName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return 'Allenamento';
+    }
+    return trimmed.length <= maxNameLength
+        ? trimmed
+        : trimmed.substring(0, maxNameLength);
+  }
+}
+
 /// La richiesta che il client mette nel job: è anche il CONTRATTO con cui il
 /// risultato viene validato (giorni, pasti ammessi, ricette ammesse).
 class WeeklyPlanRequest {
@@ -260,10 +320,15 @@ class WeeklyPlanRequest {
     required Iterable<PlanMeal> meals,
     required this.targets,
     required Iterable<PlanRecipeOption> recipes,
+    Iterable<PlanWorkoutDay> workouts = const <PlanWorkoutDay>[],
     String notes = '',
   }) : startDate = PlanDate.normalize(startDate),
        meals = PlanMeals.normalize(meals),
        recipes = List.unmodifiable(recipes),
+       workouts = List.unmodifiable(
+         workouts.toList()
+           ..sort((first, second) => first.date.compareTo(second.date)),
+       ),
        notes = notes.trim();
 
   /// Rilettura della richiesta salvata in `weekly_plans.request_json`.
@@ -291,6 +356,12 @@ class WeeklyPlanRequest {
     if (rawNotes != null && rawNotes is! String) {
       throw const FormatException('notes deve essere una stringa.');
     }
+    // Chiave aggiunta dopo: una richiesta salvata prima del piano unificato
+    // non ha allenamenti, e deve restare rileggibile senza errori.
+    final rawWorkouts = value['workouts'];
+    if (rawWorkouts != null && rawWorkouts is! List) {
+      throw const FormatException('workouts deve essere una lista.');
+    }
 
     final request = WeeklyPlanRequest(
       startDate: PlanDate.parse(value['startDate']),
@@ -303,6 +374,9 @@ class WeeklyPlanRequest {
         fat: _nonNegative(rawTargets['fat'], 'fat'),
       ),
       recipes: rawRecipes.map(PlanRecipeOption.fromJson),
+      workouts: (rawWorkouts as List? ?? const <Object?>[]).map(
+        PlanWorkoutDay.fromJson,
+      ),
       notes: rawNotes as String? ?? '',
     );
     request.validate();
@@ -323,6 +397,11 @@ class WeeklyPlanRequest {
 
   /// Catalogo REALE inviato all'AI: l'unico insieme di scelte ammesse.
   final List<PlanRecipeOption> recipes;
+
+  /// I giorni in cui Marco si allena, in ordine di data. Non sono una scelta
+  /// del modello: arrivano dalla settimana delle schede e servono solo a
+  /// collocare il pasto proteico dopo la sessione.
+  final List<PlanWorkoutDay> workouts;
 
   /// Le date coperte dal piano, da [startDate] compreso.
   List<DateTime> get dates => List.unmodifiable([
@@ -359,6 +438,26 @@ class WeeklyPlanRequest {
     if (recipeIds.length != recipes.length) {
       throw const FormatException('Il catalogo contiene ricette duplicate.');
     }
+    final planDates = {for (final date in dates) PlanDate.format(date)};
+    final seenWorkouts = <String>{};
+    for (final workout in workouts) {
+      final key = PlanDate.format(workout.date);
+      if (!planDates.contains(key)) {
+        throw FormatException(
+          'L’allenamento del $key non cade nei giorni del piano.',
+        );
+      }
+      if (!seenWorkouts.add(key)) {
+        throw FormatException('Il giorno $key ha due allenamenti.');
+      }
+      final proteinMeal = workout.proteinMeal;
+      if (proteinMeal != null && !meals.contains(proteinMeal)) {
+        throw FormatException(
+          'Il pasto dopo l’allenamento (${proteinMeal.label.toLowerCase()}) '
+          'non è fra quelli da pianificare.',
+        );
+      }
+    }
     targets.validate();
   }
 
@@ -379,6 +478,7 @@ class WeeklyPlanRequest {
       },
       'notes': notes,
       'recipes': [for (final recipe in recipes) recipe.toJson()],
+      'workouts': [for (final workout in workouts) workout.toJson()],
     };
   }
 }

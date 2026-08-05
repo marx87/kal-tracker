@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ import 'package:kal_tracker/features/recipes/domain/recipe_models.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_gateway.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_workout_start.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_providers.dart';
 
@@ -191,6 +193,151 @@ void main() {
     );
     expect(entries, isEmpty);
     expect(find.byKey(Key('plan_slot_done_${lunch.id}')), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('il giorno mostra l\'allenamento previsto accanto ai pasti', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    _tallWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final seed = await _seed(tester, database, gateway);
+    // Il 5 agosto 2026 è mercoledì: la scheda del mercoledì cade lì.
+    await tester.runAsync(
+      () => _planRoutineOn(database, seed.profileId, _startDate.weekday),
+    );
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    expect(find.byKey(const Key('plan_workout_2026-08-05')), findsOneWidget);
+    expect(
+      _textOf(tester, const Key('plan_workout_name_2026-08-05')),
+      'Spinta: petto e tricipiti',
+    );
+    expect(find.text('1 esercizio'), findsOneWidget);
+    // Il giovedì è riposo, e si dice: un giorno senza allenamento non è un
+    // giorno senza informazione.
+    expect(find.byKey(const Key('plan_rest_2026-08-06')), findsOneWidget);
+    // I pasti di quel giorno restano dove erano.
+    expect(
+      find.byKey(Key('plan_slot_${seed.plan.slotsFor(_startDate).first.id}')),
+      findsOneWidget,
+    );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('senza chi apra la sessione il piano porta alla scheda', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    _tallWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final seed = await _seed(tester, database, gateway);
+    await tester.runAsync(
+      () => _planRoutineOn(database, seed.profileId, _startDate.weekday),
+    );
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    // Il piano non promette quello che non può fare.
+    expect(find.text('Apri la scheda'), findsOneWidget);
+    expect(find.text('Inizia allenamento'), findsNothing);
+
+    await _tap(tester, const Key('plan_workout_start_2026-08-05'));
+
+    expect(find.byKey(const Key('routine_editor_list')), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('con la sessione collegata "Inizia" avvia quella scheda', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    _tallWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final seed = await _seed(tester, database, gateway);
+    await tester.runAsync(
+      () => _planRoutineOn(database, seed.profileId, _startDate.weekday),
+    );
+
+    String? requested;
+    await tester.pumpWidget(
+      _app(
+        database,
+        gateway,
+        starter: (routineId) async {
+          requested = routineId;
+          // Caso reale: c'era già una sessione aperta e non ne parte una
+          // seconda (lo vieta un indice unico del database).
+          return const PlanWorkoutNotStarted(
+            'Hai già un allenamento aperto da dieci minuti.',
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    expect(find.text('Inizia allenamento'), findsOneWidget);
+
+    await _tap(tester, const Key('plan_workout_start_2026-08-05'));
+
+    expect(requested, 'routine-spinta');
+    expect(
+      find.text('Hai già un allenamento aperto da dieci minuti.'),
+      findsOneWidget,
+    );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('senza piano dei pasti gli allenamenti si vedono lo stesso', (
+    tester,
+  ) async {
+    // È la promessa: leggibile col Mac spento e senza piano generato.
+    AppTime.initialize();
+    _tallWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    final profile = (await tester.runAsync(
+      () => LocalProfileRepository(database).getOrCreateMarco(),
+    ))!;
+    final today = PlanDate.normalize(AppTime.nowInRome());
+    await tester.runAsync(
+      () => _planRoutineOn(database, profile.id, today.weekday),
+    );
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    expect(find.byKey(const Key('weekly_plan_header')), findsNothing);
+    expect(find.byKey(const Key('weekly_plan_form')), findsOneWidget);
+    expect(
+      find.byKey(const Key('plan_workouts_only_intro')),
+      findsOneWidget,
+      reason: 'si dice che i pasti non ci sono ancora',
+    );
+    expect(
+      find.byKey(Key('plan_workout_${PlanDate.format(today)}')),
+      findsOneWidget,
+    );
+    // Nessun confronto con l'obiettivo dove i pasti non sono pianificati.
+    expect(
+      find.byKey(Key('plan_day_total_${PlanDate.format(today)}')),
+      findsNothing,
+    );
 
     await _disposeApp(tester, database);
   });
@@ -561,14 +708,75 @@ Future<void> _openPlanTab(WidgetTester tester) async {
 String? _textOf(WidgetTester tester, Key key) =>
     tester.widget<Text>(find.byKey(key)).data;
 
-Widget _app(AppDatabase database, WeeklyPlanGateway gateway) => ProviderScope(
+Widget _app(
+  AppDatabase database,
+  WeeklyPlanGateway gateway, {
+  PlanWorkoutStarter? starter,
+}) => ProviderScope(
   overrides: [
     databaseProvider.overrideWithValue(database),
     appConfigProvider.overrideWithValue(const AppConfig.offline()),
     weeklyPlanGatewayProvider.overrideWithValue(gateway),
+    // Senza override il piano non sa avviare una sessione: è il modulo
+    // Palestra a collegare questo provider.
+    if (starter != null) planWorkoutStarterProvider.overrideWithValue(starter),
   ],
   child: const KalTrackerApp(),
 );
+
+/// Una finestra alta: la settimana unificata è lunga, e uno schermo da 600
+/// px non costruirebbe le card in fondo alla lista.
+void _tallWindow(WidgetTester tester) {
+  tester.view.physicalSize = const Size(400, 3000);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+/// Mette una scheda nella settimana degli allenamenti, nel giorno indicato.
+Future<void> _planRoutineOn(
+  AppDatabase database,
+  String profileId,
+  int weekday, {
+  String name = 'Spinta: petto e tricipiti',
+}) async {
+  await database
+      .into(database.routines)
+      .insert(
+        RoutinesCompanion.insert(
+          id: 'routine-spinta',
+          profileId: profileId,
+          name: name,
+          createdAt: _seedClock,
+          updatedAt: _seedClock,
+        ),
+      );
+  await database
+      .into(database.routineExercises)
+      .insert(
+        RoutineExercisesCompanion.insert(
+          id: 'routine-spinta-1',
+          routineId: 'routine-spinta',
+          block: 'main',
+          position: 0,
+          exerciseRefId: 'exercise-1',
+          exerciseNameSnapshot: 'Panca piana',
+        ),
+      );
+  await database
+      .into(database.routineWeeklyPlan)
+      .insert(
+        RoutineWeeklyPlanCompanion.insert(
+          id: 'rwp-1',
+          profileId: profileId,
+          weekday: weekday,
+          routineId: const Value('routine-spinta'),
+          routineExternalId: const Value('routine-spinta'),
+          routineNameSnapshot: Value(name),
+          updatedAt: _seedClock,
+        ),
+      );
+}
 
 Future<void> _disposeApp(WidgetTester tester, AppDatabase database) async {
   // Smaltisce il timer di chiusura forzata delle snackbar con azione

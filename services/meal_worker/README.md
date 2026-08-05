@@ -11,6 +11,31 @@ Non calcola calorie e non conferma il pasto: il modello restituisce soltanto
 alimenti candidati, preparazione, confidenza, fascia di grammi e domande. Marco
 deve confermare alimenti e quantita prima del calcolo nutrizionale.
 
+## Piano settimanale: i giorni di allenamento
+
+La seconda coda (`weekly_plan_jobs`) riceve anche `workouts`, l'elenco dei
+giorni in cui Marco si allena dentro il periodo del piano:
+
+```json
+"workouts": [
+  {"date": "2026-08-06", "name": "Spinta: petto e tricipiti", "proteinMeal": "cena"}
+]
+```
+
+Non e' una scelta del modello e non torna mai indietro: gli allenamenti li
+decide la settimana delle schede dentro l'app. Servono a collocare il pasto
+proteico DOPO la sessione invece che a caso nella giornata.
+
+`proteinMeal` lo calcola l'app dall'ora in cui Marco si allena davvero
+(mediana delle sue sessioni reali), non il modello: e' un dato come i target.
+Puo' mancare — senza storico non si indovina un orario — e allora quel giorno
+non porta nessuna indicazione. Il contratto verifica che ogni allenamento cada
+in un giorno del piano, che non ce ne siano due nello stesso giorno e che
+`proteinMeal` sia fra i pasti richiesti.
+
+La chiave e' facoltativa: una richiesta scritta prima del piano unificato
+resta valida e lo schema resta `1`.
+
 ## Provider di analisi
 
 Il worker supporta due CLI intercambiabili, entrambe senza API key:

@@ -115,7 +115,8 @@ void main() {
     expect(diary.entries.single.foodName, 'Pane v1');
     expect(diary.totals.calories, 125);
     expect(foods, hasLength(12));
-    expect(version, 4);
+    // Copre di fatto l'intera catena v1 → v6.
+    expect(version, 6);
 
     await TargetRepository(database).upsertTarget(
       profileId: 'marco-v1',

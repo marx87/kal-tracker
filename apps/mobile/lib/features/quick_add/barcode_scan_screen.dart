@@ -629,8 +629,8 @@ class _CameraErrorPanel extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             _denied
-                ? 'La fotocamera per Kal Tracker è spenta. Aprila dalle '
-                      'Impostazioni del telefono (Kal Tracker → Fotocamera) '
+                ? 'La fotocamera per Coach360 è spenta. Aprila dalle '
+                      'Impostazioni del telefono (Coach360 → Fotocamera) '
                       'e torna qui: ci metti un attimo.'
                 : 'Non riesco ad aprire la fotocamera. Chiudi questa '
                       'schermata e riprova tra poco.',
@@ -664,7 +664,7 @@ class _CameraErrorPanel extends StatelessWidget {
         const SnackBar(
           content: Text(
             'Apri le Impostazioni del telefono e attiva la fotocamera '
-            'per Kal Tracker.',
+            'per Coach360.',
           ),
         ),
       );

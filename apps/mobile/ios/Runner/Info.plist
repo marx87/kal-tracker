@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Kal Tracker</string>
+	<string>Coach360</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Kal Tracker</string>
+	<string>Coach360</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Kal Tracker usa la fotocamera per fotografare il pasto da analizzare e per leggere i codici a barre dei prodotti.</string>
+	<string>Coach360 usa la fotocamera per fotografare il pasto da analizzare e per leggere i codici a barre dei prodotti.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Kal Tracker legge la foto scelta dalla galleria per proporne l’analisi nel diario.</string>
+	<string>Coach360 legge la foto scelta dalla galleria per proporne l’analisi nel diario.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -33,7 +33,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('previous_day_button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('quick_add_seed-banana')));
@@ -121,7 +121,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
 
     // Il filtro per categoria mostra solo i piatti di quella categoria.

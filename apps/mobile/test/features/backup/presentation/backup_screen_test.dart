@@ -69,7 +69,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('nav_progress')));
+    await tester.tap(find.byKey(const Key('nav_body')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('body_open_progress_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('open_backup_button')));
     await tester.pumpAndSettle();
@@ -113,6 +115,10 @@ void main() {
     await tester.tap(find.byKey(const Key('restore_backup_button')));
     await tester.pumpAndSettle();
 
+    // Senza selettore di sistema il bottone non c'è: uno che non apre niente
+    // sarebbe peggio che nessuno.
+    expect(find.byKey(const Key('restore_browse_button')), findsNothing);
+
     await tester.enterText(
       find.byKey(const Key('restore_source_field')),
       '/tmp/kal-tracker-backup-2026-08-03.json',
@@ -146,6 +152,106 @@ void main() {
 
     await _disposeApp(tester, database);
   });
+
+  testWidgets('«Sfoglia» scrive il percorso nel campo e il ripristino parte', (
+    tester,
+  ) async {
+    // È il difetto vero: su un telefono il backup sta in Download e quel
+    // percorso non lo conosce nessuno, quindi digitarlo non è un'opzione.
+    AppTime.initialize();
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    addTearDown(
+      () => driftRuntimeOptions.dontWarnAboutMultipleDatabases = false,
+    );
+
+    final database = AppDatabase(NativeDatabase.memory());
+    await LocalProfileRepository(database).getOrCreateMarco();
+
+    final other = AppDatabase(NativeDatabase.memory());
+    final otherProfileId = (await LocalProfileRepository(
+      other,
+    ).getOrCreateMarco()).id;
+    await _seedMeal(other, otherProfileId, 'Petto di pollo');
+    final backup = await BackupRepository(
+      other,
+    ).exportBackup(profileId: otherProfileId);
+    await other.close();
+
+    const path = '/storage/emulated/0/Download/kal-tracker-backup.json';
+    final storage = _FakeBackupStorage(canBrowse: true, browsedPath: path)
+      ..restoreSource = backup.encode();
+
+    await _pumpRestoreWithBrowse(tester, database, storage);
+
+    await tester.tap(find.byKey(const Key('restore_browse_button')));
+    await tester.pumpAndSettle();
+
+    expect(storage.browseCalls, 1);
+    // Il percorso finisce nel campo: Marco vede quale file ha preso e può
+    // ancora correggerlo a mano.
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('restore_source_field')))
+          .controller!
+          .text,
+      path,
+    );
+
+    final continueButton = find.byKey(const Key('restore_continue_button'));
+    await tester.ensureVisible(continueButton);
+    await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm_restore_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('restore_summary')), findsOneWidget);
+    final items = await database.select(database.mealItems).get();
+    expect(items.map((row) => row.foodName), ['Petto di pollo']);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('il selettore chiuso senza scegliere lascia il campo com’era', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    final database = AppDatabase(NativeDatabase.memory());
+    final storage = _FakeBackupStorage(canBrowse: true);
+
+    await _pumpRestoreWithBrowse(tester, database, storage);
+
+    await tester.enterText(
+      find.byKey(const Key('restore_source_field')),
+      '/tmp/scritto-a-mano.json',
+    );
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('restore_browse_button')));
+    await tester.pumpAndSettle();
+
+    expect(storage.browseCalls, 1);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('restore_source_field')))
+          .controller!
+          .text,
+      '/tmp/scritto-a-mano.json',
+    );
+
+    await _disposeApp(tester, database);
+  });
+}
+
+Future<void> _pumpRestoreWithBrowse(
+  WidgetTester tester,
+  AppDatabase database,
+  _FakeBackupStorage storage,
+) async {
+  await tester.pumpWidget(_app(database, storage));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('restore_backup_button')));
+  await tester.pumpAndSettle();
 }
 
 Widget _app(AppDatabase database, BackupStorage storage) => ProviderScope(
@@ -214,9 +320,26 @@ Future<void> _seedMeal(
 }
 
 class _FakeBackupStorage implements BackupStorage {
+  _FakeBackupStorage({this.canBrowse = false, this.browsedPath});
+
   String? saved;
   DateTime? savedAt;
   String? restoreSource;
+
+  /// Il percorso che il finto selettore restituisce, e quante volte è stato
+  /// aperto: senza questo conteggio «Sfoglia» potrebbe non aprire niente e il
+  /// test resterebbe verde.
+  final String? browsedPath;
+  int browseCalls = 0;
+
+  @override
+  final bool canBrowse;
+
+  @override
+  Future<String?> browseRestoreSource() async {
+    browseCalls++;
+    return browsedPath;
+  }
 
   @override
   Future<BackupExportResult> saveBackup({

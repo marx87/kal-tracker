@@ -214,6 +214,13 @@ class SyncEngine {
       'food',
       'fit_recipe',
       'meal_template',
+      // Gli slug `cd-*` dei preset di defaticamento non sono uuid: senza
+      // l'alias il pull non ritroverebbe l'esercizio locale che i workout
+      // citano come exercise_ref_id.
+      'exercise',
+      'routine',
+      'workout',
+      'workout_profile_stats',
     };
     var updated = aliases;
     void record(String localId) {
@@ -318,6 +325,32 @@ class SyncEngine {
         return _applyTemplate(p, marcoId, localId);
       case 'meal_template_items':
         return _applyTemplateItem(p, change.operation, localId);
+      case 'exercises':
+        return _applyExercise(p, marcoId, localId);
+      case 'routines':
+        return _applyRoutine(p, marcoId, localId);
+      case 'routine_exercises':
+        return _applyRoutineExercise(p, change.operation, localId);
+      case 'routine_interval_segments':
+        return _applyRoutineSegment(p, change.operation, localId);
+      case 'routine_weekly_plan':
+        return _applyWeeklyPlanDay(p, change.operation, marcoId, localId);
+      case 'workouts':
+        return _applyWorkout(p, marcoId, localId);
+      case 'workout_exercises':
+        return _applyWorkoutExercise(p, change.operation, localId);
+      case 'workout_sets':
+        return _applyWorkoutSet(p, change.operation, localId);
+      case 'workout_pain_points':
+        return _applyPainPoint(p, change.operation, localId);
+      case 'workout_interval_segments':
+        return _applyWorkoutSegment(p, change.operation, localId);
+      case 'workout_profile_stats':
+        return _applyWorkoutStats(p, marcoId);
+      case 'workout_achievements':
+        return _applyAchievement(p, change.operation, marcoId, localId);
+      case 'body_measurement_values':
+        return _applyMeasurementValue(p, change.operation, localId);
       default:
         // profiles, external_workouts, meal_analysis_jobs: niente da fare.
         return false;
@@ -763,6 +796,768 @@ class SyncEngine {
     return true;
   }
 
+  Future<bool> _applyExercise(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final name = _string(p['name']);
+    final muscleGroup = _oneOf(p['muscle_group'], _muscleGroups);
+    final trackingMode = _oneOf(p['tracking_mode'], _trackingModes);
+    if (id.isEmpty ||
+        name == null ||
+        muscleGroup == null ||
+        trackingMode == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.exercises,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    // Conflitti: vince l'updated_at più recente (stessa regola del backup).
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final source = _oneOf(p['source'], _exerciseSources) ?? 'manual';
+    final externalId = _string(p['external_id']);
+    if (await _sourceKeyTaken(id: id, source: source, externalId: externalId)) {
+      return false;
+    }
+    await _database
+        .into(_database.exercises)
+        .insertOnConflictUpdate(
+          ExercisesCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            name: Value(name),
+            muscleGroup: Value(muscleGroup),
+            trackingMode: Value(trackingMode),
+            notes: Value(_string(p['notes'])),
+            imageUrl: Value(_string(p['image_url'])),
+            defaultRestSec: Value(_nullableInt(p['default_rest_sec'])),
+            isPreset: Value(p['is_preset'] == true),
+            isSynthetic: Value(p['is_synthetic'] == true),
+            source: Value(source),
+            externalId: Value(externalId),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  /// La UNIQUE (profile_id, source, external_id) deduplica le importazioni:
+  /// una riga remota che la violerebbe si salta invece di far esplodere la
+  /// scrittura locale, che bloccherebbe il pull su quel cursore per sempre.
+  Future<bool> _sourceKeyTaken({
+    required String id,
+    required String source,
+    required String? externalId,
+  }) async {
+    if (externalId == null) {
+      return false;
+    }
+    final clash =
+        await (_database.select(_database.exercises)..where(
+              (t) =>
+                  t.source.equals(source) &
+                  t.externalId.equals(externalId) &
+                  t.id.equals(id).not(),
+            ))
+            .getSingleOrNull();
+    return clash != null;
+  }
+
+  Future<bool> _applyRoutine(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final name = _string(p['name']);
+    if (id.isEmpty || name == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.routines,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    // Conflitti: vince l'updated_at più recente (stessa regola del backup).
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    await _database
+        .into(_database.routines)
+        .insertOnConflictUpdate(
+          RoutinesCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            name: Value(name),
+            notes: Value(_string(p['notes'])),
+            isCircuit: Value(p['is_circuit'] == true),
+            workSec: Value(_intOr(p['work_sec'], 30)),
+            shortRestSec: Value(_intOr(p['short_rest_sec'], 30)),
+            longRestSec: Value(_intOr(p['long_rest_sec'], 60)),
+            rounds: Value(_intOr(p['rounds'], 3)),
+            warmupWorkSec: Value(_intOr(p['warmup_work_sec'], 30)),
+            warmupRestSec: Value(_intOr(p['warmup_rest_sec'], 15)),
+            source: Value(_oneOf(p['source'], _workoutSources) ?? 'manual'),
+            externalId: Value(_string(p['external_id'])),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyRoutineExercise(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final routineId = localId(p['routine_id']);
+    if (id.isEmpty || routineId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      // I figli localmente non hanno tombstone: si eliminano.
+      await (_database.delete(
+        _database.routineExercises,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final routine = await (_database.select(
+      _database.routines,
+    )..where((t) => t.id.equals(routineId))).getSingleOrNull();
+    final block = _oneOf(p['block'], _blocks);
+    final refId = localId(p['exercise_ref_id']);
+    final name = _string(p['exercise_name_snapshot']);
+    if (routine == null || block == null || refId.isEmpty || name == null) {
+      return false;
+    }
+    final position = _int(p['position']);
+    await (_database.delete(_database.routineExercises)..where(
+          (t) =>
+              t.routineId.equals(routineId) &
+              t.block.equals(block) &
+              t.position.equals(position) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.routineExercises)
+        .insertOnConflictUpdate(
+          RoutineExercisesCompanion(
+            id: Value(id),
+            routineId: Value(routineId),
+            block: Value(block),
+            position: Value(position),
+            exerciseRefId: Value(refId),
+            exerciseId: Value(await _liveExerciseId(p['exercise_id'], localId)),
+            exerciseNameSnapshot: Value(name),
+            inSupersetWithPrevious: Value(
+              position > 0 &&
+                  block == 'main' &&
+                  p['in_superset_with_previous'] == true,
+            ),
+            // Il CHECK lega la durata al blocco: un passo di riscaldamento la
+            // ha sempre, gli altri blocchi mai.
+            warmupDurationSec: Value(
+              block == 'warmup' ? _intOr(p['warmup_duration_sec'], 30) : null,
+            ),
+            prescSets: Value(_nullableInt(p['presc_sets'])),
+            prescReps: Value(_nullableInt(p['presc_reps'])),
+            prescDurationSec: Value(_nullableInt(p['presc_duration_sec'])),
+            prescRestSec: Value(_nullableInt(p['presc_rest_sec'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyRoutineSegment(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final routineId = localId(p['routine_id']);
+    if (id.isEmpty || routineId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.routineIntervalSegments,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final routine = await (_database.select(
+      _database.routines,
+    )..where((t) => t.id.equals(routineId))).getSingleOrNull();
+    final startIdx = _int(p['start_idx']);
+    final endIdx = _int(p['end_idx']);
+    if (routine == null || startIdx < 0 || endIdx <= startIdx) {
+      return false;
+    }
+    final segmentIndex = _int(p['segment_index']);
+    await (_database.delete(_database.routineIntervalSegments)..where(
+          (t) =>
+              t.routineId.equals(routineId) &
+              t.segmentIndex.equals(segmentIndex) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.routineIntervalSegments)
+        .insertOnConflictUpdate(
+          RoutineIntervalSegmentsCompanion(
+            id: Value(id),
+            routineId: Value(routineId),
+            segmentIndex: Value(segmentIndex),
+            startIdx: Value(startIdx),
+            endIdx: Value(endIdx),
+            workSec: Value(_intOr(p['work_sec'], 40)),
+            restSec: Value(_intOr(p['rest_sec'], 20)),
+            longRestSec: Value(_intOr(p['long_rest_sec'], 0)),
+            rounds: Value(_intOr(p['rounds'], 1)),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyWeeklyPlanDay(
+    Map<String, Object?> p,
+    String operation,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final weekday = _int(p['weekday']);
+    if (id.isEmpty || weekday < 1 || weekday > 7) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      // Il giorno assente È l'informazione: riposo.
+      await (_database.delete(
+        _database.routineWeeklyPlan,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final existing = await (_database.select(
+      _database.routineWeeklyPlan,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    // Conflitti: vince l'updated_at più recente (stessa regola del backup).
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final externalId = _string(p['routine_external_id']);
+    await (_database.delete(_database.routineWeeklyPlan)..where(
+          (t) =>
+              t.profileId.equals(marcoId) &
+              t.weekday.equals(weekday) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.routineWeeklyPlan)
+        .insertOnConflictUpdate(
+          RoutineWeeklyPlanCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            weekday: Value(weekday),
+            routineId: Value(await _liveRoutineId(p['routine_id'], localId)),
+            routineExternalId: Value(
+              externalId == null ? null : localId(externalId),
+            ),
+            routineNameSnapshot: Value(_string(p['routine_name_snapshot'])),
+            updatedAt: Value(remoteUpdated),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyWorkout(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final startedAt = _time(p['started_at']);
+    if (id.isEmpty || startedAt == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.workouts,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    // Conflitti: vince l'updated_at più recente (stessa regola del backup).
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final endedAt = _time(p['ended_at']);
+    final deletedAt = _time(p['deleted_at']);
+    if (endedAt == null &&
+        deletedAt == null &&
+        await _hasOtherOpenWorkout(marcoId, id)) {
+      // Una sola sessione aperta per profilo: è un indice unico parziale, e
+      // insistere farebbe fallire ogni pull successivo sullo stesso cursore.
+      return false;
+    }
+    final checkpoint = p['circuit_checkpoint'];
+    await _database
+        .into(_database.workouts)
+        .insertOnConflictUpdate(
+          WorkoutsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            startedAt: Value(startedAt),
+            endedAt: Value(
+              endedAt != null && endedAt.isBefore(startedAt) ? null : endedAt,
+            ),
+            pausedAt: Value(endedAt == null ? _time(p['paused_at']) : null),
+            accumulatedPauseSeconds: Value(
+              _intOr(p['accumulated_pause_seconds'], 0),
+            ),
+            finalDurationSeconds: Value(
+              _nullableInt(p['final_duration_seconds']),
+            ),
+            durationSuspect: Value(p['duration_suspect'] == true),
+            routineId: Value(await _liveRoutineId(p['routine_id'], localId)),
+            routineExternalId: Value(
+              _string(p['routine_external_id']) == null
+                  ? null
+                  : localId(p['routine_external_id']),
+            ),
+            routineNameSnapshot: Value(_string(p['routine_name_snapshot'])),
+            notes: Value(_string(p['notes'])),
+            totalKcal: Value(_nullableDouble(p['total_kcal'])),
+            mood: Value(_nullableInt(p['mood'])),
+            rpe: Value(_nullableInt(p['rpe'])),
+            satisfaction: Value(_nullableInt(p['satisfaction'])),
+            feedbackNotes: Value(_string(p['feedback_notes'])),
+            xpEarned: Value(_nullableInt(p['xp_earned'])),
+            resumePath: Value(_string(p['resume_path'])),
+            // Locale la colonna è testo: il jsonb remoto torna serializzato,
+            // non appiattito in una stringa di `toString()`.
+            circuitCheckpointJson: Value(
+              checkpoint is Map ? jsonEncode(checkpoint) : null,
+            ),
+            syncedToHealthConnect: Value(p['synced_to_health_connect'] == true),
+            healthSyncState: Value(
+              _oneOf(p['health_sync_state'], _healthSyncStates),
+            ),
+            healthSyncClaimId: Value(_string(p['health_sync_claim_id'])),
+            healthSyncAttemptedAt: Value(_time(p['health_sync_attempted_at'])),
+            healthSyncCompletedAt: Value(_time(p['health_sync_completed_at'])),
+            source: Value(_oneOf(p['source'], _workoutSources) ?? 'manual'),
+            externalId: Value(_string(p['external_id'])),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(deletedAt),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _hasOtherOpenWorkout(String profileId, String id) async {
+    final open =
+        await (_database.select(_database.workouts)..where(
+              (t) =>
+                  t.profileId.equals(profileId) &
+                  t.endedAt.isNull() &
+                  t.deletedAt.isNull() &
+                  t.id.equals(id).not(),
+            ))
+            .get();
+    return open.isNotEmpty;
+  }
+
+  Future<bool> _applyWorkoutExercise(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final workoutId = localId(p['workout_id']);
+    if (id.isEmpty || workoutId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.workoutExercises,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final workout = await (_database.select(
+      _database.workouts,
+    )..where((t) => t.id.equals(workoutId))).getSingleOrNull();
+    final refId = localId(p['exercise_ref_id']);
+    final name = _string(p['exercise_name_snapshot']);
+    final trackingMode = _oneOf(p['tracking_mode'], _trackingModes);
+    if (workout == null ||
+        refId.isEmpty ||
+        name == null ||
+        trackingMode == null) {
+      return false;
+    }
+    final position = _int(p['position']);
+    final isWarmup = p['is_warmup'] == true;
+    final isCooldown = !isWarmup && p['is_cooldown'] == true;
+    await (_database.delete(_database.workoutExercises)..where(
+          (t) =>
+              t.workoutId.equals(workoutId) &
+              t.position.equals(position) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.workoutExercises)
+        .insertOnConflictUpdate(
+          WorkoutExercisesCompanion(
+            id: Value(id),
+            workoutId: Value(workoutId),
+            position: Value(position),
+            exerciseRefId: Value(refId),
+            exerciseId: Value(await _liveExerciseId(p['exercise_id'], localId)),
+            exerciseNameSnapshot: Value(name),
+            trackingMode: Value(trackingMode),
+            muscleGroupSnapshot: Value(
+              _oneOf(p['muscle_group_snapshot'], _muscleGroups),
+            ),
+            restSeconds: Value(_nullableInt(p['rest_seconds'])),
+            // I tre blocchi sono esclusivi: il CHECK locale li conta.
+            isWarmup: Value(isWarmup),
+            isCooldown: Value(isCooldown),
+            isFinisher: Value(
+              !isWarmup && !isCooldown && p['is_finisher'] == true,
+            ),
+            isInSupersetWithPrevious: Value(
+              position > 0 && p['is_in_superset_with_previous'] == true,
+            ),
+            intervalSegmentIndex: Value(
+              _nullableInt(p['interval_segment_index']),
+            ),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyWorkoutSet(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final exerciseRowId = localId(p['workout_exercise_id']);
+    if (id.isEmpty || exerciseRowId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.workoutSets,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final parent = await (_database.select(
+      _database.workoutExercises,
+    )..where((t) => t.id.equals(exerciseRowId))).getSingleOrNull();
+    if (parent == null) {
+      return false;
+    }
+    final position = _int(p['position']);
+    await (_database.delete(_database.workoutSets)..where(
+          (t) =>
+              t.workoutExerciseId.equals(exerciseRowId) &
+              t.position.equals(position) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.workoutSets)
+        .insertOnConflictUpdate(
+          WorkoutSetsCompanion(
+            id: Value(id),
+            workoutExerciseId: Value(exerciseRowId),
+            position: Value(position),
+            // Metrica GREZZA: «non inserito» e «zero» restano valori diversi.
+            weightKg: Value(_nullableDouble(p['weight_kg'])),
+            reps: Value(_nullableInt(p['reps'])),
+            durationSec: Value(_nullableInt(p['duration_sec'])),
+            distanceM: Value(_nullableDouble(p['distance_m'])),
+            rpe: Value(_nullableInt(p['rpe'])),
+            isWarmup: Value(p['is_warmup'] == true),
+            completed: Value(p['completed'] == true),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyPainPoint(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final workoutId = localId(p['workout_id']);
+    if (id.isEmpty || workoutId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.workoutPainPoints,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final workout = await (_database.select(
+      _database.workouts,
+    )..where((t) => t.id.equals(workoutId))).getSingleOrNull();
+    final label = _string(p['label']);
+    if (workout == null || label == null) {
+      return false;
+    }
+    await (_database.delete(_database.workoutPainPoints)..where(
+          (t) =>
+              t.workoutId.equals(workoutId) &
+              t.label.equals(label) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.workoutPainPoints)
+        .insertOnConflictUpdate(
+          WorkoutPainPointsCompanion(
+            id: Value(id),
+            workoutId: Value(workoutId),
+            label: Value(label),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyWorkoutSegment(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final workoutId = localId(p['workout_id']);
+    if (id.isEmpty || workoutId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.workoutIntervalSegments,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final workout = await (_database.select(
+      _database.workouts,
+    )..where((t) => t.id.equals(workoutId))).getSingleOrNull();
+    final completed = p['completed_marker'] == true;
+    final partial = p['partial_marker'] == true;
+    // I due marker sono indipendenti, ma una riga senza nessuno dei due non è
+    // un dato: il CHECK locale la rifiuterebbe.
+    if (workout == null || (!completed && !partial)) {
+      return false;
+    }
+    final segmentIndex = _int(p['segment_index']);
+    await (_database.delete(_database.workoutIntervalSegments)..where(
+          (t) =>
+              t.workoutId.equals(workoutId) &
+              t.segmentIndex.equals(segmentIndex) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.workoutIntervalSegments)
+        .insertOnConflictUpdate(
+          WorkoutIntervalSegmentsCompanion(
+            id: Value(id),
+            workoutId: Value(workoutId),
+            segmentIndex: Value(segmentIndex),
+            completedMarker: Value(completed),
+            partialMarker: Value(partial),
+            completionSignature: Value(
+              completed ? _string(p['completion_signature']) : null,
+            ),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyWorkoutStats(
+    Map<String, Object?> p,
+    String marcoId,
+  ) async {
+    // La riga è un singleton per profilo: l'id locale già presente vince su
+    // quello remoto, o la UNIQUE (profile_id) farebbe fallire l'insert.
+    final existing = await (_database.select(
+      _database.workoutProfileStats,
+    )..where((t) => t.profileId.equals(marcoId))).getSingleOrNull();
+    final id = existing?.id ?? _string(p['id']);
+    if (id == null || id.isEmpty) {
+      return false;
+    }
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    // Conflitti: vince l'updated_at più recente (stessa regola del backup).
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final currentStreak = _intOr(p['current_streak'], 0);
+    await _database
+        .into(_database.workoutProfileStats)
+        .insertOnConflictUpdate(
+          WorkoutProfileStatsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            totalXp: Value(_intOr(p['total_xp'], 0)),
+            currentStreak: Value(currentStreak),
+            longestStreak: Value(
+              math.max(_intOr(p['longest_streak'], 0), currentStreak),
+            ),
+            // Colonna remota `date`: si rilegge come mezzanotte di Roma, o il
+            // giorno tornerebbe indietro di due ore a ogni giro.
+            lastWorkoutDay: Value(_calendarDay(p['last_workout_day'])),
+            weeklyWorkoutGoal: Value(_intOr(p['weekly_workout_goal'], 3)),
+            weeklyKcalGoal: Value(_intOr(p['weekly_kcal_goal'], 1500)),
+            reminderEnabled: Value(p['reminder_enabled'] == true),
+            reminderHour: Value(_intOr(p['reminder_hour'], 18)),
+            reminderMinute: Value(_intOr(p['reminder_minute'], 0)),
+            healthConnectEnabled: Value(p['health_connect_enabled'] == true),
+            voiceEnabled: Value(p['voice_enabled'] != false),
+            gymBodyWeightKg: Value(_nullableDouble(p['gym_body_weight_kg'])),
+            gymExportedAt: Value(_time(p['gym_exported_at'])),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyAchievement(
+    Map<String, Object?> p,
+    String operation,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final slug = _string(p['slug']);
+    if (id.isEmpty || slug == null) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.workoutAchievements,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    await (_database.delete(_database.workoutAchievements)..where(
+          (t) =>
+              t.profileId.equals(marcoId) &
+              t.slug.equals(slug) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.workoutAchievements)
+        .insertOnConflictUpdate(
+          WorkoutAchievementsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            slug: Value(slug),
+            unlockedAt: Value(_time(p['unlocked_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyMeasurementValue(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final measurementId = localId(p['measurement_id']);
+    if (id.isEmpty || measurementId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.bodyMeasurementValues,
+      )..where((t) => t.id.equals(id))).go();
+      return true;
+    }
+    final measurement = await (_database.select(
+      _database.bodyMeasurements,
+    )..where((t) => t.id.equals(measurementId))).getSingleOrNull();
+    final label = _string(p['label']);
+    final value = _double(p['value']);
+    if (measurement == null || label == null || value <= 0 || value > 1000) {
+      return false;
+    }
+    await (_database.delete(_database.bodyMeasurementValues)..where(
+          (t) =>
+              t.measurementId.equals(measurementId) &
+              t.label.equals(label) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.bodyMeasurementValues)
+        .insertOnConflictUpdate(
+          BodyMeasurementValuesCompanion(
+            id: Value(id),
+            measurementId: Value(measurementId),
+            label: Value(label),
+            value: Value(value),
+          ),
+        );
+    return true;
+  }
+
+  /// La FK viva vale solo se l'esercizio esiste già qui: `exercise_ref_id`
+  /// conserva comunque l'id originale, che è la chiave di raggruppamento.
+  Future<String?> _liveExerciseId(
+    Object? remoteValue,
+    String Function(Object?) localId,
+  ) async {
+    if (_string(remoteValue) == null) {
+      return null;
+    }
+    final id = localId(remoteValue);
+    final row = await (_database.select(
+      _database.exercises,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    return row == null ? null : id;
+  }
+
+  Future<String?> _liveRoutineId(
+    Object? remoteValue,
+    String Function(Object?) localId,
+  ) async {
+    if (_string(remoteValue) == null) {
+      return null;
+    }
+    final id = localId(remoteValue);
+    final row = await (_database.select(
+      _database.routines,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    return row == null ? null : id;
+  }
+
   /// Il server non conserva i totali delle ricette: si ricalcolano sempre
   /// dagli ingredienti con NutritionCalculator.scale.
   Future<void> _refreshRecipeTotals(String recipeId) async {
@@ -819,6 +1614,72 @@ class SyncEngine {
   }
 
   int _int(Object? value) => value is num ? value.toInt() : 0;
+
+  int _intOr(Object? value, int fallback) =>
+      value is num && value.toDouble().isFinite ? value.toInt() : fallback;
+
+  int? _nullableInt(Object? value) =>
+      value is num && value.toDouble().isFinite ? value.toInt() : null;
+
+  double? _nullableDouble(Object? value) =>
+      value is num && value.toDouble().isFinite ? value.toDouble() : null;
+
+  static const _muscleGroups = {
+    'petto',
+    'schiena',
+    'spalle',
+    'bicipiti',
+    'tricipiti',
+    'gambe',
+    'polpacci',
+    'addome',
+    'cardio',
+    'fullbody',
+    'mobilita',
+    'altro',
+  };
+
+  static const _trackingModes = {
+    'weightReps',
+    'bodyweightReps',
+    'timeOnly',
+    'timed',
+    'distanceTime',
+  };
+
+  static const _blocks = {'warmup', 'main', 'finisher'};
+
+  static const _exerciseSources = {'manual', 'gym_tracker', 'cooldown_preset'};
+
+  static const _workoutSources = {'manual', 'gym_tracker'};
+
+  static const _healthSyncStates = {'writing', 'synced', 'uncertain'};
+
+  /// I CHECK locali sono chiusi quanto quelli remoti: un valore fuori elenco
+  /// farebbe fallire la scrittura e il pull resterebbe fermo su quel cursore.
+  String? _oneOf(Object? value, Set<String> allowed) {
+    final text = _string(value);
+    return allowed.contains(text) ? text : null;
+  }
+
+  /// Le righe figlie non hanno tombstone locale: un `deleted_at` remoto è una
+  /// cancellazione vera.
+  bool _isTombstone(String operation, Map<String, Object?> payload) =>
+      operation == 'delete' || payload['deleted_at'] != null;
+
+  /// Una colonna Postgres `date` torna come '2026-08-04': va riletta come
+  /// mezzanotte di Roma, non come mezzanotte UTC, o il giorno slitta indietro.
+  DateTime? _calendarDay(Object? value) {
+    final raw = _string(value);
+    if (raw == null) {
+      return null;
+    }
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) {
+      return null;
+    }
+    return raw.length == 10 ? AppTime.startOfDayUtc(parsed) : parsed.toUtc();
+  }
 
   DateTime? _time(Object? value) =>
       value is String ? DateTime.tryParse(value)?.toUtc() : null;

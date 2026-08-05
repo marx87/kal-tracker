@@ -176,6 +176,97 @@ class PlanRequestTest(unittest.TestCase):
         self.assertEqual(PlanRequest.from_json(request.to_json()), request)
 
 
+class PlanWorkoutsTest(unittest.TestCase):
+    """I giorni di allenamento: dati dell'app, mai scelte del modello."""
+
+    def test_reads_workouts_in_order_and_survives_a_round_trip(self) -> None:
+        request = valid_request(
+            workouts=[
+                {"date": "2026-08-06", "name": "Gambe", "proteinMeal": "cena"},
+                {"date": "2026-08-05", "name": "Spinta", "proteinMeal": "cena"},
+            ]
+        )
+
+        self.assertEqual(
+            [(workout.date.isoformat(), workout.name) for workout in request.workouts],
+            [("2026-08-05", "Spinta"), ("2026-08-06", "Gambe")],
+        )
+        self.assertEqual(
+            request.workouts_by_date[date(2026, 8, 5)].protein_meal, "cena"
+        )
+        self.assertEqual(PlanRequest.from_json(request.to_json()), request)
+
+    def test_a_request_without_workouts_stays_valid(self) -> None:
+        # Le richieste salvate prima del piano unificato non hanno la chiave:
+        # devono restare rileggibili senza bump di schema.
+        request = valid_request()
+
+        self.assertEqual(request.workouts, ())
+        self.assertEqual(request.to_json()["workouts"], [])
+
+    def test_a_workout_without_protein_meal_is_allowed(self) -> None:
+        # Senza storico non si conosce l'ora dell'allenamento: il giorno
+        # viaggia lo stesso, senza indicazione inventata.
+        request = valid_request(
+            workouts=[{"date": "2026-08-05", "name": "Spinta"}]
+        )
+
+        self.assertIsNone(request.workouts[0].protein_meal)
+        self.assertNotIn("proteinMeal", request.to_json()["workouts"][0])
+
+    def test_rejects_a_workout_outside_the_planned_days(self) -> None:
+        with self.assertRaises(PlanContractError) as context:
+            valid_request(
+                workouts=[{"date": "2026-08-09", "name": "Gambe"}]
+            )
+
+        self.assertEqual(context.exception.error_code, "PLAN_BAD_REQUEST")
+
+    def test_rejects_two_workouts_in_the_same_day(self) -> None:
+        with self.assertRaises(PlanContractError) as context:
+            valid_request(
+                workouts=[
+                    {"date": "2026-08-05", "name": "Spinta"},
+                    {"date": "2026-08-05", "name": "Gambe"},
+                ]
+            )
+
+        self.assertEqual(context.exception.error_code, "PLAN_BAD_REQUEST")
+
+    def test_rejects_a_protein_meal_that_is_not_planned(self) -> None:
+        # Il pasto dopo l'allenamento deve essere uno di quelli richiesti,
+        # altrimenti il modello non potrebbe metterci niente.
+        with self.assertRaises(PlanContractError) as context:
+            valid_request(
+                workouts=[
+                    {
+                        "date": "2026-08-05",
+                        "name": "Spinta",
+                        "proteinMeal": "colazione",
+                    }
+                ]
+            )
+
+        self.assertEqual(context.exception.error_code, "PLAN_BAD_REQUEST")
+
+    def test_rejects_malformed_workouts(self) -> None:
+        cases = {
+            "non una lista": {"workouts": {"date": "2026-08-05"}},
+            "senza nome": {"workouts": [{"date": "2026-08-05"}]},
+            "data non ISO": {"workouts": [{"date": "05/08/2026", "name": "X"}]},
+            "pasto inventato": {
+                "workouts": [
+                    {"date": "2026-08-05", "name": "X", "proteinMeal": "merenda"}
+                ]
+            },
+        }
+        for name, changes in cases.items():
+            with self.subTest(name=name):
+                with self.assertRaises(PlanContractError) as context:
+                    valid_request(**changes)
+                self.assertEqual(context.exception.error_code, "PLAN_BAD_REQUEST")
+
+
 class WeeklyPlanResultTest(unittest.TestCase):
     def test_accepts_a_valid_plan_and_orders_the_slots(self) -> None:
         request = valid_request()

@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/core/updates/update_banner.dart';
+import 'package:kal_tracker/features/body/presentation/body_screen.dart';
+import 'package:kal_tracker/features/checkin/presentation/morning_check_in_card.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/diary/presentation/today_training_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/calorie_progress_card.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/diary_number_field.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/edit_entry_sheet.dart';
@@ -16,6 +19,8 @@ import 'package:kal_tracker/features/diary/presentation/widgets/friendly_day_hea
 import 'package:kal_tracker/features/diary/presentation/widgets/meal_templates_sheet.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/playful_empty_state.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/today_recipes_card.dart';
+import 'package:kal_tracker/features/diary/presentation/widgets/today_training_card.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/water_intake_card.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/wellness_meal_card.dart';
 import 'package:kal_tracker/features/photo_meal/data/photo_meal_repository.dart';
@@ -24,11 +29,20 @@ import 'package:kal_tracker/features/photo_meal/presentation/meal_analysis_resul
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/quick_add/photo_meal_launcher.dart';
 import 'package:kal_tracker/features/quick_add/quick_add_menu.dart';
+import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
-import 'package:kal_tracker/core/presentation/snackbars.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 
 export 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
+
+/// Quanto spazio si lascia in fondo alla lista.
+///
+/// Il FAB esteso galleggia sopra il contenuto e non lo spinge: senza questa
+/// riserva l'ultima cosa scritta — lo stato vuoto compreso — finisce sotto
+/// «Aggiungi alimento». Sono i 56 del FAB, i 16 del suo margine e un po' di
+/// respiro perché il testo non arrivi a sfiorarlo.
+const double kDiaryBottomClearance = 56 + 16 + 40;
 
 class TodayDiaryScreen extends ConsumerWidget {
   const TodayDiaryScreen({super.key});
@@ -45,17 +59,16 @@ class TodayDiaryScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Kal Tracker',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppPalette.forestDark,
-                fontWeight: FontWeight.w900,
-              ),
+              'Coach360',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
             Text(
               'Diario di Marco',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppPalette.mutedInk),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppAccents.of(context).mutedInk,
+              ),
             ),
           ],
         ),
@@ -146,6 +159,7 @@ class _ProfileBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Semantics(
       label: 'Profilo di Marco',
       image: true,
@@ -155,14 +169,14 @@ class _ProfileBadge extends StatelessWidget {
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppPalette.mint,
+            color: scheme.primaryContainer,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppPalette.paper, width: 2),
+            border: Border.all(color: scheme.surfaceContainerLowest, width: 2),
           ),
-          child: const Text(
+          child: Text(
             'M',
             style: TextStyle(
-              color: AppPalette.forestDark,
+              color: scheme.onPrimaryContainer,
               fontWeight: FontWeight.w900,
               fontSize: 17,
             ),
@@ -195,7 +209,7 @@ class _DiaryBody extends ConsumerWidget {
         );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, kDiaryBottomClearance),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -213,30 +227,40 @@ class _DiaryBody extends ConsumerWidget {
             onBackToToday: isToday ? null : () => _selectDay(ref, today),
           ),
           const SizedBox(height: 18),
-          CalorieProgressCard(
-            nutrients: diary.totals,
-            targetCalories: target.calories,
-          ),
+          // 1. Quanto resta. È la prima domanda della giornata e l'unica che
+          // vale la pena leggere da lontano.
+          CalorieProgressCard(nutrients: diary.totals, target: target),
+          // Lo stato vuoto sta QUI e non in fondo: è l'invito a cominciare,
+          // e in fondo alla lista finirebbe fuori dal primo schermo, dietro
+          // al FAB.
+          if (diary.entries.isEmpty) ...[
+            const SizedBox(height: 14),
+            const PlayfulDiaryEmptyState(),
+          ],
+          // Le tre card del «adesso» valgono solo per oggi: guardando ieri
+          // sono rumore, e l'allenamento di ieri non si inizia più.
+          if (isToday) ...[
+            const _TodayTrainingSection(),
+            const _TodayRecipesSection(),
+            const SizedBox(height: 14),
+            MorningCheckInCard(onWeighIn: () => openWeighInSheet(context, ref)),
+          ],
           const SizedBox(height: 14),
-          // L'acqua in evidenza, subito sotto l'anello calorie: segue il
-          // giorno selezionato come tutto il resto del diario.
+          // L'acqua segue il giorno selezionato come tutto il resto del
+          // diario.
           WaterIntakeCard(
             day: day,
             today: today,
             dayLabel: diaryDayLabel(day, today),
           ),
           const SizedBox(height: 22),
-          if (diary.entries.isEmpty) ...[
-            const PlayfulDiaryEmptyState(),
-            const SizedBox(height: 18),
-          ],
           Text('I tuoi pasti', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
           Text(
             'Tutto quello che aggiungi contribuisce al riepilogo.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppAccents.of(context).mutedInk,
+            ),
           ),
           const SizedBox(height: 12),
           // Punto d'ingresso stabile alla revisione: la snackbar dura 8
@@ -555,6 +579,102 @@ class _DiaryBody extends ConsumerWidget {
         const SnackBar(content: Text('Non riesco ad annullare l’aggiunta.')),
       );
     }
+  }
+}
+
+/// L'allenamento di oggi, quando c'è qualcosa da dire.
+///
+/// Legge lo stato e basta: se la lettura fallisce la sezione sparisce invece
+/// di piantare un errore in mezzo al diario. La palestra è un'informazione in
+/// più su questa schermata, non la sua ragione d'essere.
+class _TodayTrainingSection extends ConsumerWidget {
+  const _TodayTrainingSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final training = ref.watch(todayTrainingProvider).valueOrNull;
+    if (training == null || training.isSilent) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: TodayTrainingCard(
+        training: training,
+        onResume: (session) => _resumeWorkout(context, ref, session),
+        onStart: (_) => _openGym(context),
+      ),
+    );
+  }
+}
+
+/// Riprende la sessione aperta.
+///
+/// `liveWorkoutRepositoryProvider` non è ancora collegato all'app — lancia
+/// finché qualcuno non lo sovrascrive con l'implementazione Drift — e la
+/// schermata dal vivo lo legge in `initState`. Senza questo controllo
+/// «Riprendi» aprirebbe una schermata che esplode. Quando il collegamento
+/// arriva, questo ramo smette da solo di scattare.
+void _resumeWorkout(
+  BuildContext context,
+  WidgetRef ref,
+  OpenWorkoutSession session,
+) {
+  if (!_liveWorkoutIsWired(ref)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'La sessione dal vivo non è ancora attiva su questa '
+          'installazione. La sessione aperta resta dov\'è.',
+        ),
+      ),
+    );
+    return;
+  }
+  GoRouter.of(context).push('/workout/${session.id}');
+}
+
+/// L'allenamento si avvia dalla scheda, in Palestra: è l'unico posto che
+/// oggi sa comporre una sessione. Da qui si arriva con un tocco.
+void _openGym(BuildContext context) => GoRouter.of(context).go('/gym');
+
+bool _liveWorkoutIsWired(WidgetRef ref) {
+  try {
+    ref.read(liveWorkoutRepositoryProvider);
+    return true;
+  } on Object {
+    return false;
+  }
+}
+
+/// «Cosa mangio adesso»: il suggeritore per macro rimanenti, promosso dalla
+/// scheda Ricette alla schermata Oggi.
+///
+/// Sparisce quando il budget del giorno è chiuso: proporre da mangiare a chi
+/// è già oltre il riferimento non aiuta nessuno.
+class _TodayRecipesSection extends ConsumerWidget {
+  const _TodayRecipesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final remaining = ref.watch(remainingMacrosProvider);
+    if (remaining.calories <= 0) {
+      return const SizedBox.shrink();
+    }
+    final suggestions = ref.watch(recipeSuggestionsProvider);
+    if (suggestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: TodayRecipesCard(
+        remaining: remaining,
+        suggestions: suggestions,
+        // `go` e non `push`: la ricetta vive nella voce «Cibo», e la barra
+        // in basso deve raccontare la verità su dove si è finiti.
+        onOpenRecipe: (id) => GoRouter.of(context).go('/recipes/$id'),
+        onOpenAll: () => GoRouter.of(context).go('/recipes'),
+      ),
+    );
   }
 }
 

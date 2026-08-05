@@ -1,5 +1,12 @@
 # Collegamento con Gym Tracker
 
+> ⛔ **DOCUMENTO SUPERATO — 5 agosto 2026.** Marco ha scelto la **fusione totale** al posto del bridge:
+> Gym Tracker viene assorbito nell'app unificata e poi spento. Il piano descritto qui sotto
+> (replica continua Firestore → Supabase, credenziale read-only, checkpoint, `external_workouts`)
+> **non va implementato**: l'export completo pesa 351 KB ed è un import una-tantum.
+> Fa fede `ROADMAP.md`, traguardo **M5**. Resta valido di questo documento soltanto il
+> **mapping dei campi** più in basso, utile a scrivere l'importer.
+
 ## Sorgente verificata
 
 - repository: `marx87/gym-tracker-source`;

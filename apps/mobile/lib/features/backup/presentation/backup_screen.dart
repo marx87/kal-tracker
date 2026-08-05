@@ -253,7 +253,8 @@ class _BackupIntro extends StatelessWidget {
                   const SizedBox(height: 3),
                   const Text(
                     'Il backup crea un file con tutto: pasti, obiettivi, '
-                    'acqua, peso, alimenti, ricette e modelli. Salvalo dove '
+                    'acqua, peso, alimenti, ricette, modelli e allenamenti '
+                    '(schede, sessioni, serie, XP e trofei). Salvalo dove '
                     'vuoi e ritrovi tutto anche su un telefono nuovo.',
                   ),
                 ],
@@ -467,13 +468,20 @@ class _BackupHint extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              '2. «Ripristina da file» ti chiede il percorso del file (o il '
-              'suo contenuto) e ti fa scegliere se unire o sostituire.',
+              '2. «Ripristina da file» ti fa sfogliare i file del telefono — '
+              'oppure incollare il percorso — e scegliere se unire o '
+              'sostituire.',
             ),
             const SizedBox(height: 6),
             const Text(
               '3. Prima di scrivere controlliamo che il file sia integro: se '
               'qualcosa non torna, il diario resta com’è.',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              '4. Un backup fatto prima degli allenamenti si può ancora '
+              'unire, ma non può sostituire tutto: te lo diciamo invece di '
+              'cancellarti schede e sessioni.',
             ),
           ],
         ),
@@ -489,17 +497,18 @@ class _RestoreRequest {
   final BackupRestoreMode mode;
 }
 
-class _RestoreSheet extends StatefulWidget {
+class _RestoreSheet extends ConsumerStatefulWidget {
   const _RestoreSheet();
 
   @override
-  State<_RestoreSheet> createState() => _RestoreSheetState();
+  ConsumerState<_RestoreSheet> createState() => _RestoreSheetState();
 }
 
-class _RestoreSheetState extends State<_RestoreSheet> {
+class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
   final _source = TextEditingController();
   BackupRestoreMode _mode = BackupRestoreMode.merge;
   String? _error;
+  bool _browsing = false;
 
   @override
   void dispose() {
@@ -509,6 +518,8 @@ class _RestoreSheetState extends State<_RestoreSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final canBrowse = ref.read(backupStorageProvider).canBrowse;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -526,10 +537,30 @@ class _RestoreSheetState extends State<_RestoreSheet> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 5),
-            const Text(
-              'Incolla il percorso del file di backup oppure il suo '
-              'contenuto: controlliamo tutto prima di toccare il diario.',
+            Text(
+              canBrowse
+                  ? 'Cerca il backup fra i file del telefono — di solito è in '
+                        'Download — oppure incollane il percorso. '
+                        'Controlliamo tutto prima di toccare il diario.'
+                  : 'Incolla il percorso del file di backup oppure il suo '
+                        'contenuto: controlliamo tutto prima di toccare il '
+                        'diario.',
             ),
+            if (canBrowse) ...[
+              const SizedBox(height: 14),
+              // Il percorso di un file in Download non lo conosce nessuno:
+              // senza questo bottone il ripristino sul telefono è di fatto
+              // impraticabile.
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('restore_browse_button'),
+                  onPressed: _browsing ? null : _browse,
+                  icon: const Icon(Icons.folder_open_rounded),
+                  label: const Text('Sfoglia i file'),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             TextField(
               key: const Key('restore_source_field'),
@@ -570,6 +601,31 @@ class _RestoreSheetState extends State<_RestoreSheet> {
         ),
       ),
     );
+  }
+
+  /// Apre il selettore di sistema e scrive il percorso nel campo, invece di
+  /// tenerselo per sé: così Marco vede quale file ha preso prima di
+  /// confermare, e può ancora correggerlo a mano.
+  Future<void> _browse() async {
+    setState(() {
+      _browsing = true;
+      _error = null;
+    });
+    try {
+      final path = await ref.read(backupStorageProvider).browseRestoreSource();
+      if (!mounted || path == null) {
+        return;
+      }
+      setState(() => _source.text = path);
+    } on BackupFormatException catch (error) {
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _browsing = false);
+      }
+    }
   }
 
   void _submit() {
