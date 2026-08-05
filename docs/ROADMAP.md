@@ -126,7 +126,7 @@ Fattibilità verificata sul codice: **solo 10 file di Gym Tracker toccano Firest
 - [x] **M5.3b** migrazione Supabase **`0007`** con le 13 tabelle remote, RLS e trigger, più `supabase/tests/workouts_static_test.sh`; *(5 agosto 2026)*
 - [x] **M5.3c** gateway di sincronizzazione esteso ai quattro entityType nuovi, **con due difetti preesistenti corretti**: un entityType sconosciuto non viene più ingoiato dal `default:` (la riga di outbox veniva cancellata come se fosse stata inviata) e gli errori Postgres 23503/23505 non vengono più scartati ma ritentati; *(5 agosto 2026)*
 - [ ] **M5.4** porting della logica pura, invariata: `superset_flow`, `kcal_estimator`, `personal_records`, `cool_down_sequence`, `rest_timer`, `plate_calculator`;
-- [ ] **M5.5** porting della UI workout (live, circuiti, storico, schede, esercizi) sul tema di Kal;
+- [x] **M5.5** porting della UI workout — live, circuiti, storico, schede, esercizi — **rivestita** col tema di Kal, non trapiantata; più il punto d'ingresso dell'import (`/progress/import-gym`) con anteprima e conferma; *(5 agosto 2026)*
 - [ ] **M5.6** Health Connect push-only per workout e calorie, come già fa Gym (`health` plugin, plugin già collaudato);
 - [ ] **M5.7** peso corporeo per il calcolo MET letto dall'**ultima pesata reale** invece del valore congelato `bodyWeightKg: 94.7` del profilo Gym;
 - [ ] **M5.8** spegnimento di Firebase e archiviazione del repo `gym-tracker-source`.
@@ -143,7 +143,7 @@ La bilancia è `QN-Scale` sul Bluetooth; il protocollo è già decodificato da p
 - [ ] **M6.2** lettura BLE della bilancia (`flutter_blue_plus`), con salvataggio dell'**impedenza grezza**;
 - [ ] **M6.3** formula BIA propria, dichiarata e versionata, con **ricalcolo dello storico** quando la versione cambia;
 - [ ] **M6.4** import del CSV Renpho, per lo storico e per la taratura;
-- [ ] **M6.5** schermata **Corpo**: grafico ad aree impilate **kg di grasso + kg di massa magra** (non la linea del peso), medie mobili a 7 giorni, circonferenze a nastro;
+- [x] **M6.5** schermata **Corpo** *(5 agosto 2026)*: grafico ad aree impilate **kg di grasso + kg di massa magra** (non la linea del peso), medie mobili a 7 giorni, circonferenze a nastro;
 - [ ] **M6.6** regola della pesata del giorno: vale **la prima con impedenza del mattino**; le altre restano nello storico ma non entrano nelle medie.
 
 Taratura: 2–3 settimane di **doppia lettura** (bilancia via BLE + app Renpho in parallelo) prima di abbandonare l'app Renpho. Il CSV `RENPHO Health-Marco.csv` è il primo punto di questa taratura e va conservato.
@@ -204,8 +204,8 @@ Le due app hanno cinque destinazioni ciascuna: fuse non possono diventare dieci.
 | **Corpo** | peso, composizione, misure, record, grafici |
 | **Piano** | settimana di pasti e allenamenti |
 
-- [ ] **M9.1** shell a cinque voci con `StatefulShellRoute` (Kal ne ha già cinque, vanno ridistribuite);
-- [ ] **M9.2** **layout adattivo**: Kal non ha oggi nessun `NavigationRail`, `LayoutBuilder` o breakpoint; il pattern si prende dal codice di Gym, che li ha già;
+- [x] **M9.1** shell a cinque voci — Oggi · Cibo · Palestra · Corpo · Piano — con le rotte esistenti raggruppate invece che spostate, così i collegamenti vecchi restano validi; *(5 agosto 2026)*
+- [x] **M9.2** **layout adattivo**: `app_breakpoints.dart` è l'unico posto che decide compatto/medio/esteso (soglie 840 e 1180) e `AdaptiveLayout` misura lo spazio davvero disponibile, non lo schermo — funziona quindi anche dentro un pannello. Barra in basso sul telefono, guida laterale sul tablet; *(5 agosto 2026)*
 - [ ] **M9.3** tablet come **sala controllo** (Piano e Corpo a due colonne) e telefono come **campo** (workout live e registrazione pasto, una mano sola);
 - [ ] **M9.4** golden test a 390×844, 320 px, testo 150 % e dark mode, come già in Gym.
 

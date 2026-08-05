@@ -31,7 +31,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('main_navigation_bar')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
 
     expect(find.text('Alimenti'), findsWidgets);
@@ -66,7 +66,9 @@ void main() {
   ) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_progress')));
+    await tester.tap(find.byKey(const Key('nav_body')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('body_open_progress_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('2.000'), findsOneWidget);
@@ -114,7 +116,9 @@ void main() {
   ) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_recipes')));
+    await tester.tap(find.byKey(const Key('nav_food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('food_open_recipes_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('Bowl pollo e riso'), findsOneWidget);

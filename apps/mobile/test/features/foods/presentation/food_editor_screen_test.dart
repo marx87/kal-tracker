@@ -46,7 +46,7 @@ void main() {
   Future<void> openMine(WidgetTester tester) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('food_section_mine')));
     await tester.pumpAndSettle();
@@ -57,7 +57,7 @@ void main() {
   ) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('create_food_button')));
     await tester.pumpAndSettle();
@@ -201,7 +201,7 @@ void main() {
   ) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_foods')));
+    await tester.tap(find.byKey(const Key('nav_food')));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('food_search_field')),

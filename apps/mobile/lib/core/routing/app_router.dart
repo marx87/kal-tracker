@@ -3,19 +3,28 @@ import 'package:go_router/go_router.dart';
 import 'package:kal_tracker/core/presentation/app_shell.dart';
 import 'package:kal_tracker/core/sync/sync_engine.dart';
 import 'package:kal_tracker/features/backup/presentation/backup_screen.dart';
+import 'package:kal_tracker/features/body/presentation/body_screen.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
+import 'package:kal_tracker/features/exercises/presentation/exercises_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart';
 import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart';
+import 'package:kal_tracker/features/goal/presentation/goal_screen.dart';
+import 'package:kal_tracker/features/gym_import/presentation/gym_import_screen.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_review_screen.dart';
 import 'package:kal_tracker/features/quick_add/barcode_scan_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_editor_screen.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
+import 'package:kal_tracker/features/routines/presentation/routine_editor_screen.dart';
+import 'package:kal_tracker/features/routines/presentation/routines_screen.dart';
 import 'package:kal_tracker/features/sync/presentation/sync_screen.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/shopping_list_screen.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_screen.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/progress_screen.dart';
+import 'package:kal_tracker/features/workouts/presentation/history/workout_detail_screen.dart';
+import 'package:kal_tracker/features/workouts/presentation/history/workout_history_screen.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/live_workout_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   // Avvia il motore di sync insieme all'app (inerte senza configurazione).
@@ -59,10 +68,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ],
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
+              // Le ricette stanno nella stessa voce degli alimenti: sono due
+              // modi di rispondere alla stessa domanda, «cosa mangio». Restano
+              // una rotta di primo livello per non spezzare i collegamenti
+              // esistenti.
               GoRoute(
                 path: '/recipes',
                 name: 'recipes',
@@ -91,9 +100,97 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Quarto branch: deve restare allineato alla quarta destinazione
-          // ('nav_plan') della barra in app_shell.dart. La lista della spesa
-          // è una sottorotta, quindi conserva la barra in basso.
+          // Terzo branch — «Palestra»: schede, catalogo esercizi e storico.
+          // La sessione dal vivo sta FUORI dalla shell, in fondo al file: in
+          // palestra il telefono deve mostrare una cosa sola.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/gym',
+                name: 'gym',
+                builder: (context, state) => const RoutinesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    name: 'routine-create',
+                    builder: (context, state) => const RoutineEditorScreen(),
+                  ),
+                  GoRoute(
+                    path: ':routineId/edit',
+                    name: 'routine-edit',
+                    builder: (context, state) => RoutineEditorScreen(
+                      routineId: state.pathParameters['routineId'],
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: '/exercises',
+                name: 'exercises',
+                builder: (context, state) => const ExercisesScreen(),
+              ),
+              GoRoute(
+                path: '/workouts',
+                name: 'workout-history',
+                builder: (context, state) => WorkoutHistoryScreen(
+                  onOpenSession: (context, id) => context.pushNamed(
+                    'workout-detail',
+                    pathParameters: {'workoutId': id},
+                  ),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':workoutId',
+                    name: 'workout-detail',
+                    builder: (context, state) => WorkoutDetailScreen(
+                      workoutId: state.pathParameters['workoutId']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Quarto branch — «Corpo»: composizione, obiettivo e le funzioni di
+          // servizio. Il vecchio «Progressi» vive qui: backup, sincronizzazione
+          // e travaso da Gym Tracker riguardano i propri dati, non una sezione
+          // a sé.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/body',
+                name: 'body',
+                builder: (context, state) => const BodyScreen(),
+              ),
+              GoRoute(
+                path: '/goal',
+                name: 'goal',
+                builder: (context, state) => const GoalScreen(),
+              ),
+              GoRoute(
+                path: '/progress',
+                name: 'progress',
+                builder: (context, state) => const ProgressScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'backup',
+                    name: 'backup',
+                    builder: (context, state) => const BackupScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sync',
+                    name: 'sync',
+                    builder: (context, state) => const SyncScreen(),
+                  ),
+                  GoRoute(
+                    path: 'import-gym',
+                    name: 'gym-import',
+                    builder: (context, state) => const GymImportScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Quinto branch — «Piano»: la settimana di pasti e allenamenti.
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -110,28 +207,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/progress',
-                name: 'progress',
-                builder: (context, state) => const ProgressScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'backup',
-                    name: 'backup',
-                    builder: (context, state) => const BackupScreen(),
-                  ),
-                  GoRoute(
-                    path: 'sync',
-                    name: 'sync',
-                    builder: (context, state) => const SyncScreen(),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ],
+      ),
+      // La sessione dal vivo è a schermo intero e senza barra di navigazione:
+      // durante una serie non si cambia sezione per sbaglio, e il vincolo del
+      // database ammette una sola sessione aperta per profilo.
+      GoRoute(
+        path: '/workout/:workoutId',
+        name: 'workout-live',
+        builder: (context, state) => LiveWorkoutScreen(
+          workoutId: state.pathParameters['workoutId']!,
+          // Chiusa la sessione si torna allo storico, dove è appena comparsa,
+          // invece di restare su una schermata che non ha più niente da fare.
+          onClosed: (_) => context.goNamed('workout-history'),
+        ),
       ),
       // Fuori dalla shell: la revisione delle proposte foto è a schermo
       // intero e raggiungibile anche dalla notifica in-app.

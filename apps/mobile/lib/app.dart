@@ -11,8 +11,9 @@ class KalTrackerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Kal Tracker',
+      title: 'Coach360',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       locale: const Locale('it'),
       supportedLocales: const [Locale('it')],
       localizationsDelegates: const [

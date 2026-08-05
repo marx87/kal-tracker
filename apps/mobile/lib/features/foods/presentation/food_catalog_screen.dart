@@ -55,6 +55,18 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
             ),
           ],
         ),
+        // Alimenti e ricette rispondono alla stessa domanda — «cosa mangio» —
+        // e stanno sotto la stessa voce della barra: da qui si passa all'una
+        // o all'altra senza tornare indietro.
+        actions: [
+          IconButton(
+            key: const Key('food_open_recipes_button'),
+            tooltip: 'Ricette',
+            onPressed: () => context.goNamed('recipes'),
+            icon: const Icon(Icons.menu_book_outlined),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [

@@ -24,7 +24,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('nav_recipes')));
+      await tester.tap(find.byKey(const Key('nav_food')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('food_open_recipes_button')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('create_recipe_button')));
       await tester.pumpAndSettle();
@@ -150,7 +152,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav_recipes')));
+    await tester.tap(find.byKey(const Key('nav_food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('food_open_recipes_button')));
     await tester.pumpAndSettle();
 
     final stored = await (database.select(

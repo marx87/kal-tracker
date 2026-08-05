@@ -69,7 +69,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('nav_progress')));
+    await tester.tap(find.byKey(const Key('nav_body')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('body_open_progress_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('open_backup_button')));
     await tester.pumpAndSettle();
