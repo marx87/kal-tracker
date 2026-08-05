@@ -1,6 +1,8 @@
-# Roadmap di Kal Tracker
+# Roadmap di Coach360 (ex Kal Tracker)
 
-Kal Tracker è un'app privata iOS/Android per Marco. Il diario deve continuare a funzionare offline; Supabase sincronizza i dispositivi e il Mac mini elabora in seguito le fotografie tramite un worker Codex o Claude senza API a consumo.
+App privata Android/iOS per Marco: diario alimentare, allenamenti, composizione corporea e coach in un solo prodotto. Il diario deve continuare a funzionare offline; Supabase sincronizza i dispositivi e il Mac mini elabora in seguito foto, piani e analisi tramite un worker Claude senza API a consumo.
+
+> **Svolta del 5 agosto 2026 — fusione con Gym Tracker.** Decisione di Marco: **fusione totale**, non bridge. La base tecnica è Kal Tracker (local-first, cross-platform, infrastruttura già viva); Gym Tracker (`marx87/gym-tracker-source`, Firestore, solo Android) viene assorbito e poi spento. La grafica di riferimento è quella di Kal, il layout adattivo per tablet viene invece preso dal codice di Gym. Priorità Android (telefono + tablet di Marco), iOS più avanti. I traguardi **M5→M11** qui sotto sono nuovi; **M0–M4-bis restano il registro di quanto già fatto** e non cambiano.
 
 > **Stato al 3 agosto 2026 (sera).** Fasi 3 e 4 sviluppate con Claude Code (crediti Codex esauriti). Suite: **154 test Flutter + 47 test Python verdi**, analyze e format puliti. Schema Drift **v3**. Infrastruttura VIVA: chiavi di firma generate (bundle in `~/Documents/KalTracker-Signing/ota-2026-08` — Marco deve ancora fare i 2 backup cifrati), environment GitHub `release` completo di tutti i secret, progetto Supabase reale `kamljzffqwfaluicznti` (eu-central-1) con le 4 migrazioni applicate, registrazioni disabilitate, utente Marco creato e schema `kal_tracker` esposto a PostgREST. Le note di handoff sono in fondo al documento.
 
@@ -10,7 +12,19 @@ Kal Tracker è un'app privata iOS/Android per Marco. Il diario deve continuare a
 2. Calorie e macro derivano sempre da valori nutrizionali per 100 g e quantità.
 3. Drift/SQLite è la fonte operativa sul telefono; Supabase è sincronizzazione e backup.
 4. Nessuna credenziale Codex, Claude, `service_role` o chiave di firma entra nell'app.
-5. Gym Tracker resta indipendente e viene collegato con una replica in sola lettura.
+5. **Si conservano le misure grezze, mai i giudizi altrui.** Dalla bilancia si salva l'impedenza; peso, percentuali e derivati si calcolano con formule nostre, versionate. Così una formula migliore ricalcola tutto lo storico invece di spezzarlo.
+6. **Il coach non produce numeri.** Il motore deterministico calcola TDEE, target e trend; Claude legge quei numeri e scrive soltanto il perché — come già accade per il piano settimanale.
+7. **La composizione corporea si legge a medie mobili di 7 giorni.** La BIA è rumorosa: nei dati reali di Marco il grasso è variato di 0,1 punti in 5 minuti e di 0,7 punti in 15 ore a peso identico. Nessun confronto giorno-su-giorno.
+
+## Profilo di Marco (dati fissati il 5 agosto 2026)
+
+| Dato | Valore | Fonte |
+|---|---|---|
+| Altezza | **182 cm** | confermato da Marco; coerente col BMI Renpho su 3 righe (182,1 / 182,0 / 181,9) |
+| Data di nascita | **13/09/1987** | confermata da Marco |
+| Sesso | **M** | confermato da Marco |
+| Peso di riferimento | 95,80 kg (05/08/2026) | bilancia Renpho |
+| Massa magra | 71,66 kg | bilancia Renpho |
 
 ## Traguardi
 
@@ -97,32 +111,176 @@ Criterio: nessuna proposta AI entra nel diario senza conferma e un Mac spento no
 - [x] **budget di tempo proporzionato agli slot** (5/08): il primo piano reale di Marco (7 giorni x 4 pasti = 28 slot, 158 ricette) falliva 10 volte con `PLAN_CLAUDE_TIMEOUT` perche' il tetto fisso era 170 s mentre la composizione richiede ~210-280 s. Ora il timeout si calcola per richiesta (60 s + 14 s per slot, pavimento 120 s, tetto `--plan-timeout` alzato a 600 s) e non e' piu' vincolato a `--lease-seconds`, dato che il thread di heartbeat rinnova il lease durante il lavoro. Verificato end-to-end: piano da 28 slot completato al primo tentativo in 207 s, 28 ricette diverse, giorni a 1951-2039 kcal su un obiettivo di 2000.
 - [ ] follow-up noti: il piano non entra in backup/sync; niente foglio di condivisione di sistema per la lista (solo copia negli appunti, servirebbe `share_plus`); prompt ancora completo di tutte le ricette anche quando i pasti pianificati sono pochi (filtrarlo accorcerebbe la composizione).
 
-### M5 — Collegamento Gym Tracker
+### M5 — Fusione di Gym Tracker
 
-- bridge idempotente Firestore → Supabase;
-- workout completati, durata, volume, RPE e calorie stimate;
-- vincolo `(owner_id, source, external_id)` contro i duplicati;
-- calorie allenamento mostrate separatamente dal budget alimentare.
+**Sostituisce il bridge.** `docs/GYM_TRACKER_INTEGRATION.md` è superato e va archiviato: prevedeva una replica continua Firestore → Supabase con credenziale read-only, checkpoint e idempotenza su rilettura. Non serve più niente di tutto questo. L'export completo di Gym Tracker (`gym-tracker-export-20260805-1038.json`) pesa **351 KB**: è un import una-tantum, dopo il quale Firebase si spegne per sempre.
 
-### M6 — Beta stabile
+Inventario dell'export del 5 agosto 2026, verificato: **29 workout** (29/04→04/08, tutti con `endedAt`, 28 con kcal, 21 con esercizi dettagliati e 8 registrati a posteriori), **308 esercizi**, **14 schede** (con riscaldamento, superset e circuiti HIIT), **3 misure** di peso (96,2 → 95,7 → 94,5, una con vita 106), profilo con **11.370 XP**, streak, obiettivi settimanali e `healthConnectEnabled`.
 
-- Android e iPhone reali;
+Fattibilità verificata sul codice: **solo 10 file di Gym Tracker toccano Firestore**, tutti coppie modello+repository. La logica pesante è pura e si porta invariata — `superset_flow.dart`, `kcal_estimator.dart` e `personal_records.dart` hanno **zero** riferimenti a Firebase.
+
+- [x] **M5.1** profilo esteso: `heightCm`, `birthDate` e `sex` in `AppProfiles` — Drift **v5** + migrazione Supabase `0006`; *(5 agosto 2026)*
+- [ ] **M5.2** schema allenamento in Drift (`exercises`, `routines`, `workouts`, `workout_exercises`, `workout_sets`) con snapshot del nome esercizio e `trackingMode`, più migrazione Supabase `0006`;
+- [ ] **M5.3** importer one-shot del JSON, idempotente sugli id originali, che porta dentro anche **XP, achievement e streak** (ripartire da zero sarebbe una regressione percepita);
+- [ ] **M5.4** porting della logica pura, invariata: `superset_flow`, `kcal_estimator`, `personal_records`, `cool_down_sequence`, `rest_timer`, `plate_calculator`;
+- [ ] **M5.5** porting della UI workout (live, circuiti, storico, schede, esercizi) sul tema di Kal;
+- [ ] **M5.6** Health Connect push-only per workout e calorie, come già fa Gym (`health` plugin, plugin già collaudato);
+- [ ] **M5.7** peso corporeo per il calcolo MET letto dall'**ultima pesata reale** invece del valore congelato `bodyWeightKg: 94.7` del profilo Gym;
+- [ ] **M5.8** spegnimento di Firebase e archiviazione del repo `gym-tracker-source`.
+
+Criterio: i 29 workout storici sono navigabili nella nuova app, una sessione nuova con superset si registra dall'inizio alla fine, e Firebase non è più nel `pubspec`.
+
+### M6 — Bilancia Renpho e composizione corporea
+
+La bilancia è `QN-Scale` sul Bluetooth; il protocollo è già decodificato da progetti open source (openScale, ble-scale-sync). Si legge **direttamente**, senza l'app Renpho e senza il suo cloud.
+
+- [x] **M6.1** `BodyMeasurements` esteso — Drift **v5**, migrazione Supabase `0006`: *(5 agosto 2026)*
+      `hasImpedance` (bool), `impedanceOhm` (grezzo), `bodyFatPct`, `musclePct`, `skeletalMusclePct`, `bonePct`, `proteinPct`, `waterPct`, `subcutaneousFatPct`, `visceralFatIndex`, `bmrKcal`, `formulaVersion`, `source`, `externalId`.
+      **Le masse in kg non si salvano** (sono peso × percentuale) e nemmeno il BMI (peso / altezza²): si calcolano. `formulaVersion` è stata aggiunta rispetto al piano iniziale: senza, il ricalcolo dello storico di M6.3 non saprebbe quali righe rifare.
+- [ ] **M6.2** lettura BLE della bilancia (`flutter_blue_plus`), con salvataggio dell'**impedenza grezza**;
+- [ ] **M6.3** formula BIA propria, dichiarata e versionata, con **ricalcolo dello storico** quando la versione cambia;
+- [ ] **M6.4** import del CSV Renpho, per lo storico e per la taratura;
+- [ ] **M6.5** schermata **Corpo**: grafico ad aree impilate **kg di grasso + kg di massa magra** (non la linea del peso), medie mobili a 7 giorni, circonferenze a nastro;
+- [ ] **M6.6** regola della pesata del giorno: vale **la prima con impedenza del mattino**; le altre restano nello storico ma non entrano nelle medie.
+
+Taratura: 2–3 settimane di **doppia lettura** (bilancia via BLE + app Renpho in parallelo) prima di abbandonare l'app Renpho. Il CSV `RENPHO Health-Marco.csv` è il primo punto di questa taratura e va conservato.
+
+Onestà dichiarata in UI: la BIA piede-piede misura soprattutto la parte bassa del corpo. **Il valore assoluto è indicativo, il trend è affidabile.**
+
+### M7 — Obiettivo, fasi e motore adattivo
+
+**È il cuore del prodotto, non un accessorio** (richiesta esplicita di Marco, 5 agosto 2026): l'app non deve misurare e basta, deve **portare a un traguardo e poi mantenerlo**. Tutto il resto — diario, ricette, allenamenti, acqua — esiste per servire questo.
+
+**L'obiettivo si esprime in composizione, non in peso.** Un traguardo di peso raggiunto perdendo massa magra è un fallimento travestito da successo.
+
+**Nessun traguardo è cablato nella roadmap: si sceglie nell'app e si può cambiare quando si vuole** (richiesta di Marco). Obiettivo e ritmo sono entrambi parametri vivi, non configurazione iniziale.
+
+- [ ] **M7.1** entità **Obiettivo**: composizione o peso traguardo, ritmo scelto, data stimata, storico degli obiettivi (quelli raggiunti e quelli cambiati per strada);
+- [ ] **M7.1z** **l'obiettivo si cambia in corsa senza ripartire da zero**: cambiandolo si ricalcolano deficit, data stimata e piano, mentre storico, tendenze e TDEE misurato restano — sono proprietà del corpo di Marco, non del traguardo. Cambiare idea a metà percorso è un'operazione normale, non un ricominciare;
+- [ ] **M7.1a** **selettore in linguaggio umano** (richiesta di Marco): non si chiede una percentuale di grasso, si sceglie *come si vuole essere* — «80 kg definito», «86 kg asciutto». Le etichette per uomo adulto: morbido ~24 %, normale ~20 %, asciutto ~17 %, atletico ~14 %, definito ~11 %, molto definito ~9 %.
+      **A massa magra invariata peso e definizione non sono indipendenti: se ne sceglie uno e l'altro segue.** Con i 71,66 kg di massa magra di Marco la curva è: 95 kg morbido → 90 normale → 86 asciutto → 84 atletico → **80 definito** → 78 molto definito. Il selettore è quindi **una manopola sola** con le due etichette che si muovono insieme, più tempo stimato e chili di grasso da perdere aggiornati in diretta;
+- [ ] **M7.1b** **verdetto di fattibilità** su ogni combinazione fuori curva: sotto la curva serve *perdere* muscolo (l'app lo sconsiglia apertamente: 75 kg definito costerebbe 4,9 kg di massa magra), sopra serve *costruirne* (l'app propone prima una fase di massa). È il caso d'uso principale del «coach che sa dire di no»;
+- [ ] **M7.1c** **il ritmo è sempre modificabile dall'app** (richiesta di Marco), non una scelta iniziale irreversibile: cambiandolo si ricalcolano deficit e data stimata, l'obiettivo resta. Il ritmo vive nell'Obiettivo, non in una costante di codice;
+- [ ] **M7.2** **tre fasi con regole distinte** — oggi `NutritionTargets` ha quattro numeri fissi e nessuna nozione di direzione:
+      **1. Avvicinamento** — deficit costante, proteine alte, ricalibrazione settimanale del deficit (mai dell'obiettivo);
+      **2. Consolidamento** — risalita graduale di ~100 kcal/giorno a settimana fino al mantenimento reale; l'aumento di peso da glicogeno va **spiegato**, non subito;
+      **3. Mantenimento** — non un numero ma una **banda** (es. 86,5–88,5 kg): dentro la banda nessun allarme; si rientra solo se la media a 7 giorni ne esce per **due settimane consecutive**;
+- [ ] **M7.3** **limite di sicurezza non negoziabile**: massimo **0,7 % del peso a settimana** (0,67 kg per Marco). Obiettivi più aggressivi vengono **rifiutati** con la spiegazione e la controproposta. Se la massa magra cala per due settimane di fila, il deficit si riduce da solo;
+- [ ] **M7.4** **TDEE adattivo** settimanale dai dati reali, con storico: le prime 2-3 settimane vale la stima da BMR × attività, poi solo il misurato;
+- [ ] **M7.5** target derivati da obiettivo + fase + TDEE, con **proteine per kg di massa magra** (2 g → 143 g/giorno) e non di peso;
+- [ ] **M7.6** **budget settimanale, non giornaliero**: uno sforo si redistribuisce sui giorni rimanenti invece di scontarsi tutto il giorno dopo. È la differenza fra un piano che regge e uno che si molla al primo imprevisto;
+- [ ] **M7.7** **ripartizione del deficit su tre leve** — alimentazione, movimento, e l'acqua come qualità del dato: se il cibo non si comprime, il carico si sposta sugli allenamenti;
+- [ ] **M7.8** **piano settimanale unico**: gli `WeeklyPlanSlots` accolgono anche slot di tipo allenamento, assorbendo il `weeklyPlan` (giorno → scheda) di Gym; il generatore colloca il pasto proteico **dopo** l'allenamento previsto;
+- [ ] **M7.9** forza relativa: i record di `personal_records` rapportati al peso corporeo.
+
+Criterio: Marco imposta un traguardo e l'app risponde con il ritmo, la data stimata e cosa comporta **oggi**; alla fine dell'avvicinamento passa da sola al consolidamento e poi al mantenimento, senza che il piano si spenga.
+
+### M8 — Coach
+
+Il coach **non è una chat dentro l'app**: è un terzo tipo di job sul Mac mini, accanto a `meal_analysis_jobs` e `weekly_plan_jobs`, con la stessa architettura già collaudata (launchd, Claude CLI, nessuna API a consumo).
+
+- [ ] **M8.1** coda `coach_jobs` con RPC a privilegi minimi;
+- [ ] **M8.2** **brief settimanale della domenica**: TDEE aggiornato, aderenza, ricomposizione, andamento carichi;
+- [ ] **M8.3** avvisi incrociati, primo fra tutti il **semaforo del sovrallenamento** (RPE in salita + calo di peso rapido + proteine sotto target + acqua corporea in calo → deload);
+- [ ] **M8.5** **schermata Oggi orientata all'azione**: non grafici ma «cosa faccio adesso» — kcal e proteine rimanenti, allenamento previsto, e le ricette del ricettario che ci stanno. Il suggeritore per macro rimanenti (`recipe_suggestions.dart`) esiste già ed è oggi una funzione secondaria dentro le ricette: **va promosso al centro dell'esperienza**;
+- [ ] **M8.6** **spiegazione dei movimenti falsi**: quando il peso si muove per idratazione e non per grasso, il coach lo dice esplicitamente («ieri 1,1 L d'acqua: il −700 g di stamattina è acqua»). Serve a evitare sia le euforie sia gli scoraggiamenti senza causa reale;
+- [ ] **M8.7** **proiezione del traguardo**: «a questo ritmo arrivi a 87,4 kg il 2 dicembre, due settimane dopo il previsto» — l'aderenza si comunica come distanza dalla data, non come colpa;
+- [ ] **M8.4** **check-in mattutino da 10 secondi**: peso in automatico dalla bilancia, più due soli campi manuali — ore di sonno ed energia percepita 1-5. È qui che entrano i dati dell'orologio Huawei, **a mano** (scelta di Marco: niente Health Sync per ora).
+
+Vincolo: il coach deve funzionare **con dati mancanti**. Nello storico reale RPE e soddisfazione sono compilati in 17 sessioni su 29, l'umore in 11, le note in nessuna.
+
+### M9 — Navigazione a cinque voci e tablet
+
+Le due app hanno cinque destinazioni ciascuna: fuse non possono diventare dieci.
+
+| Voce | Contenuto |
+|---|---|
+| **Oggi** | dashboard: calorie, allenamento del giorno, peso, check-in |
+| **Cibo** | diario, catalogo, ricette, barcode, foto |
+| **Palestra** | workout live, schede, esercizi |
+| **Corpo** | peso, composizione, misure, record, grafici |
+| **Piano** | settimana di pasti e allenamenti |
+
+- [ ] **M9.1** shell a cinque voci con `StatefulShellRoute` (Kal ne ha già cinque, vanno ridistribuite);
+- [ ] **M9.2** **layout adattivo**: Kal non ha oggi nessun `NavigationRail`, `LayoutBuilder` o breakpoint; il pattern si prende dal codice di Gym, che li ha già;
+- [ ] **M9.3** tablet come **sala controllo** (Piano e Corpo a due colonne) e telefono come **campo** (workout live e registrazione pasto, una mano sola);
+- [ ] **M9.4** golden test a 390×844, 320 px, testo 150 % e dark mode, come già in Gym.
+
+### M10 — Beta stabile
+
+- Android telefono e tablet reali;
 - modalità aereo, rete lenta, Mac spento e retry multipli;
-- backup, reinstallazione e ripristino;
+- backup, reinstallazione e ripristino, con lo storico importato integro;
 - accessibilità, dark mode, notifiche ed export;
 - sette giorni di uso reale senza perdita dati o duplicati.
 
+### M11 — iOS
+
+- provisioning iPhone e test su dispositivo reale;
+- HealthKit al posto di Health Connect;
+- verifica del BLE della bilancia su iOS.
+
+## Decisioni tecniche fissate il 5 agosto 2026
+
+**Formule.** Tutte deterministiche, nessuna prodotta da un modello.
+
+| Grandezza | Formula | Nota |
+|---|---|---|
+| BMI | `peso / altezza²` | non si salva |
+| Massa grassa | `peso × grasso% / 100` | non si salva |
+| Massa magra (FFM) | `peso − massa grassa` | **è la metrica guida** |
+| BMR | **Katch-McArdle**: `370 + 21,6 × FFM` | verificata sui dati Renpho reali: riproduce il loro BMR entro **0,1–2,4 kcal** (1917,9 contro 1918). È la formula che usa la bilancia, e dipende dalla massa magra: migliora insieme ai dati |
+| TDEE reale | `kcal medie ingerite − (Δ peso medio 7 gg × 7700 / 7)` | ricalcolato ogni settimana sui dati di Marco, sostituisce ogni stima da tabella |
+| Proteine obiettivo | `g/kg × FFM` | si aggiorna a ogni pesata |
+| Forza relativa | `carico record / peso corporeo` | |
+
+Mifflin-St Jeor è stata scartata: sbaglia di 7–10 kcal sugli stessi dati e non segue la massa magra.
+
+**Dati scartati dalla bilancia**, perché giudizi proprietari e non misure: età metabolica (è il BMR ridipinto), peso ottimale, livello di peso, tipo di corpo. Il "peso ottimale 72,90 kg / Sovrappeso" corrisponde a BMI 22 su 182 cm per una persona con 41,19 kg di muscolo scheletrico: non viene salvato e **il coach non lo vede mai**. Il WHR non è un dato della bilancia ma delle circonferenze inserite a mano, e vive con quelle.
+
+**Identità dell'app.** Il nome scelto da Marco il 5 agosto 2026 è **Coach360**: dichiara il ruolo (guida, non misura) e la copertura completa dello stile di vita — cibo, allenamento, composizione corporea, acqua, sonno. Cambia **solo il nome visualizzato**: il package resta **`it.marcomartelli.kaltracker`**, perché cambiarlo romperebbe l'OTA e imporrebbe una reinstallazione da zero. Da aggiornare: `applicationLabel` Android, `CFBundleDisplayName` iOS, titolo in-app e schermata informazioni; i repository GitHub `kal-tracker` / `kal-tracker-releases` restano con i nomi attuali per non spezzare il manifest OTA già pubblicato.
+
+**Regola OTA sempre valida:** il baseline `21e728b` deve restare nella storia di `main` → merge normale o fast-forward, **mai squash o rebase**.
+
 ## Ordine del prossimo lavoro
 
-1. **(solo Marco)** Due backup cifrati su supporti separati di `~/Documents/KalTracker-Signing` (chiavi di firma + password Supabase: è l'unica copia).
-2. Collaudo end-to-end della sync: build con `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_PUBLISHABLE_KEY=…`, accesso con `marco.mart87@gmail.com` (password in `KalTracker-Signing/supabase/marco-app-password.txt`), giornata offline → sync senza duplicati su due dispositivi.
-3. Installare la `v0.1.0` firmata sul telefono e poi pubblicare una release aggiornata per collaudare il banner OTA.
-4. Acquisizione foto in Flutter (riduzione + rimozione EXIF/GPS), schermata di revisione/conferma, upload sullo Storage.
-5. Installare e provare il servizio `launchd` del worker sul Mac (provider claude, credenziali worker nel Portachiavi).
-6. Lookup barcode Open Food Facts (il campo barcode locale esiste già).
-7. Implementare il bridge Gym Tracker in sola lettura.
+Riscritto il 5 agosto 2026 dopo la decisione di fondere le due app. I vecchi punti su foto, worker launchd e barcode sono stati completati nelle fasi 5-8 e rimossi da questa lista.
 
-Regola sempre valida: il baseline OTA `21e728b` deve restare nella storia di `main` → merge normale o fast-forward, **mai squash o rebase**.
+1. **(solo Marco, ancora aperto)** Due backup cifrati su supporti separati di `~/Documents/KalTracker-Signing` — chiavi di firma e password Supabase: è l'unica copia esistente.
+2. **(solo Marco)** Mettere al sicuro `gym-tracker-export-20260805-1038.json` insieme ai backup: finché Firebase Auth resta anonimo, quel file è l'unica copia dello storico palestra svincolata dall'installazione corrente.
+3. ~~**M5.1 + M6.1** — schema Drift **v5** e migrazione Supabase `0006`.~~ **FATTO il 5 agosto 2026** (branch `agent/coach360-schema-v5`): 466 test Flutter e 4 controlli statici SQL verdi, analyze e format puliti. Note in fondo.
+4. **M5.2 + M5.3** — schema allenamento e importer one-shot del JSON: 29 workout, 308 esercizi, 14 schede, 3 misure, XP e achievement.
+5. **M6.2 + M6.3** — lettura BLE della bilancia con impedenza grezza e prima versione della formula BIA; inizio delle 2-3 settimane di doppia lettura per la taratura.
+6. **M5.4 + M5.5** — porting della logica pura e poi della UI workout. Ordine dal meno al più delicato: `measurements` ed `exercises` prima, `workouts` (superset e circuiti) per ultimo.
+7. **M9** — shell a cinque voci e layout adattivo per il tablet.
+8. **M7** — fase, TDEE adattivo e piano settimanale unico.
+9. **M8** — coda `coach_jobs` e brief della domenica.
+10. **M5.8** — spegnimento di Firebase e archiviazione di `gym-tracker-source`.
+
+Resta aperto da prima della fusione: collaudo end-to-end della sync su dispositivo reale (build con `--dart-define=SUPABASE_URL=… --dart-define=SUPABASE_PUBLISHABLE_KEY=…`, accesso con `marco.mart87@gmail.com`, password in `KalTracker-Signing/supabase/marco-app-password.txt`), giornata offline → sync senza duplicati su due dispositivi.
+
+## Rischi aperti
+
+| Rischio | Stato |
+|---|---|
+| Storico palestra su account **Firebase anonimo** | mitigato dall'export del 5/08, **non ancora risolto**: finché non è importato in Drift, vive in un solo file |
+| Formula BIA diversa da Renpho | atteso e accettato: si salva l'impedenza grezza, quindi lo storico si ricalcola. Taratura in doppia lettura prima di abbandonare l'app Renpho |
+| Porting di `workouts/` (15k righe) | ridotto: la logica è pura, cambia solo il repository sotto. Da fare per ultimo, a fusione già in produzione |
+| Dati dell'orologio Huawei | **rinviato per scelta**: Huawei Health non parla nativamente con Health Connect e servirebbe un ponte di terze parti a pagamento. Per ora sonno ed energia si inseriscono a mano nel check-in |
+| Nome del prodotto | da decidere: "Kal Tracker" non descrive più l'app. Il package Android **non** va toccato |
+
+## Note di handoff (schema v5, 5 agosto 2026)
+
+Cose da sapere prima di scrivere il codice che userà queste colonne.
+
+- **`app_profiles` si estende, non si ricrea.** È referenziata da dieci tabelle, quindi la migrazione usa `addColumn` e le tre colonne nuove sono nullable e **senza CHECK**: i limiti (altezza 50-260, sesso M/F) li impone il dominio. `body_measurements` invece non è referenziata da nessuno, quindi usa `alterTable`/`TableMigration` e i suoi CHECK valgono davvero anche sui telefoni aggiornati — c'è un test che verifica proprio questo confrontando un database migrato con uno appena creato.
+- **Le foreign key durante la migrazione sono già spente**: `beforeOpen` le accende solo dopo, e dentro una transazione il `PRAGMA` non avrebbe effetto. Non aggiungerne uno pensando di proteggersi.
+- **`birthDate` si scrive e si legge in UTC a mezzanotte**, come `WeeklyPlans.startDate`. Drift salva i `DateTime` come istante unix e li rilegge nel fuso locale: senza `toUtc()` nei confronti tornano le 02:00 dell'ora legale.
+- **La policy RLS remota è cambiata.** La `0002` accettava dal client il solo `source = 'kal_tracker'` perché ogni altra provenienza doveva arrivare da un bridge. Con la fusione l'app legge la bilancia da sé, quindi la `0006` sostituisce quelle policy con `body_measurements_insert_client` / `_update_client`, che ammettono anche `manual`, `renpho_ble`, `renpho_csv`, `gym_tracker` e `health_connect`. `kal_tracker` resta ammesso: è il valore delle righe già scritte.
+- **Vocabolario di `source` diverso fra locale e remoto**: in Drift il default è `manual`, sul server le righe storiche hanno `kal_tracker`. La traduzione va fatta in `sync_gateway.dart`, dove vive già tutta la mappatura per entityType. **La sincronizzazione delle nuove colonne non è ancora scritta**: lo schema è pronto da entrambi i lati, il gateway no.
+- **La `0006` non è ancora applicata sul progetto Supabase reale.**
+- Chi porterà lo schema a v6 deve scrivere la propria fixture v5 a mano, con il pattern di `app_database_v5_test.dart`. I test v2/v3/v4 asseriscono ora `user_version = 5`: coprono di fatto l'intera catena.
+- Il controllo statico `supabase/tests/body_composition_static_test.sh` verifica anche ciò che **non** deve esistere (BMI, massa grassa in kg, età metabolica, peso ottimale, tipo di corpo): se un domani qualcuno prova a salvarli, il test glielo impedisce.
 
 ## Note di handoff (fase 3, 3 agosto 2026)
 

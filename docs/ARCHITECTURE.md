@@ -30,4 +30,6 @@ Codex CLI / futuro Claude o modello locale
 - Il worker non conserva `service_role`: usa un utente Auth dedicato, RPC limitate e legge soltanto la foto del job preso in lease.
 - Le foto sono immutabili, verificate per percorso, dimensione, SHA-256, MIME e firma reale del formato prima dell'analisi.
 - Se il Mac è spento, il job resta in coda e tutte le funzioni manuali continuano a funzionare.
-- Gym Tracker resta autorevole per gli allenamenti e verrà replicato in sola lettura verso Supabase.
+- Gym Tracker viene **assorbito** (decisione del 5 agosto 2026): il suo storico entra una volta sola da export JSON, gli allenamenti diventano tabelle Drift come tutto il resto e Firebase si spegne. Non esiste nessuna replica continua.
+- Della bilancia si conserva l'**impedenza grezza**: percentuali e masse sono calcolate con una formula nostra versionata, così un miglioramento della formula ricalcola lo storico invece di spezzarlo.
+- La composizione corporea si confronta solo a **medie mobili di 7 giorni**: la BIA è troppo rumorosa per il giorno-su-giorno.
