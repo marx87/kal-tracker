@@ -26,6 +26,7 @@ class ScaleDevice {
     required this.id,
     required this.name,
     this.serviceUuids = const <String>[],
+    this.knownToSystem = false,
   });
 
   /// L'indirizzo con cui il sistema la richiama. Su Android è il MAC, su iOS
@@ -43,6 +44,16 @@ class ScaleDevice {
   /// guardi il nome, ma dice comunque di parlare `ffe0`. Buttarli via
   /// significava non poterla riconoscere mai.
   final List<String> serviceUuids;
+
+  /// Vero quando il dispositivo arriva dall'elenco di quelli che il telefono
+  /// già conosce, e non da una scansione.
+  ///
+  /// Un dispositivo accoppiato **non si annuncia più**: è già noto al sistema.
+  /// Cercarlo scansionando è tempo perso, e questa è la ragione per cui una
+  /// bilancia accesa e a mezzo metro poteva risultare introvabile. Non avendo
+  /// un annuncio non ha nemmeno servizi da dichiarare, quindi si riconosce dal
+  /// nome — o si scopre solo provando a connettersi.
+  final bool knownToSystem;
 
   @override
   String toString() => name.isEmpty ? id : '$name ($id)';

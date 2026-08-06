@@ -27,7 +27,7 @@ class ScaleReader {
     this._link, {
     ScaleLog? log,
     DateTime Function()? clock,
-    this.scanTimeout = const Duration(seconds: 12),
+    this.scanTimeout = const Duration(seconds: 30),
     this.handshakeTimeout = const Duration(seconds: 5),
     this.stepOnTimeout = const Duration(seconds: 45),
     this.impedanceGrace = const Duration(seconds: 8),
@@ -322,6 +322,14 @@ class ScaleReader {
             // — che moltissimi dispositivi non mettono — una riga con il solo
             // indirizzo non aiuta nessuno a capire cosa fosse.
             final etichetta = device.name.isEmpty ? device.id : device.name;
+            if (device.knownToSystem) {
+              // Un accoppiato non ha annuncio, quindi niente servizi da
+              // leggere: qui si dice solo che c'è, così se la bilancia è fra
+              // questi si vede che il telefono la conosce già.
+              _note('già accoppiato: $etichetta, non sembra una bilancia');
+              _emit(ScalePhase.scanning);
+              return;
+            }
             final servizi = device.serviceUuids.isEmpty
                 ? 'nessun servizio annunciato'
                 : device.serviceUuids.map(_servizioBreve).join(' ');

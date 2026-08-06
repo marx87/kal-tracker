@@ -320,10 +320,18 @@ class _DiaryBody extends ConsumerWidget {
     required bool isToday,
     Widget? emptyState,
   }) => [
-    // 1. Quanto resta. È la prima domanda della giornata e l'unica che
-    // vale la pena leggere da lontano.
+    // A diario vuoto l'invito viene PRIMA di tutto, anche dell'anello.
+    //
+    // Stava sotto, ed era la scelta giusta finché la card delle calorie era
+    // più bassa: da quando le proteine hanno una riga tutta loro, su un
+    // telefono da 844 punti l'invito è scivolato dietro al FAB. Un invito a
+    // cominciare coperto dal bottone per cominciare è il peggiore dei mondi,
+    // e comunque a zero calorie l'anello non ha niente da dire che l'invito
+    // non dica meglio.
+    if (emptyState != null) ...[emptyState, const SizedBox(height: 14)],
+    // Quanto resta. È la prima domanda della giornata e l'unica che vale la
+    // pena leggere da lontano.
     CalorieProgressCard(nutrients: diary.totals, target: target),
-    if (emptyState != null) ...[const SizedBox(height: 14), emptyState],
     // Le tre card del «adesso» valgono solo per oggi: guardando ieri
     // sono rumore, e l'allenamento di ieri non si inizia più.
     if (isToday) ...[

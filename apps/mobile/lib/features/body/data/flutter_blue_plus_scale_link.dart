@@ -70,8 +70,47 @@ class FlutterBluePlusScaleLink implements ScaleLink {
       }
     }
 
+    /// I dispositivi che il telefono conosce già, prima ancora di cercare.
+    ///
+    /// **Questo è il caso che faceva dire «bilancia non trovata» a chi la
+    /// bilancia ce l'aveva accesa davanti.** Un dispositivo BLE già accoppiato
+    /// — per esempio dall'app del costruttore — smette di annunciarsi: è già
+    /// noto al sistema, e nessuna scansione lo troverà mai, per quanto a lungo
+    /// si cerchi. Vanno chiesti al sistema, non aspettati.
+    Future<void> emitKnown() async {
+      final known = <String, BluetoothDevice>{};
+      try {
+        for (final device in await FlutterBluePlus.bondedDevices) {
+          known[device.remoteId.str] = device;
+        }
+      } on Object {
+        // Non c'è su tutte le piattaforme: dove manca, si va di scansione.
+      }
+      try {
+        for (final device in FlutterBluePlus.connectedDevices) {
+          known[device.remoteId.str] = device;
+        }
+      } on Object {
+        // Idem.
+      }
+      for (final device in known.values) {
+        _seen[device.remoteId.str] = device;
+        controller.add(
+          ScaleDevice(
+            id: device.remoteId.str,
+            name: device.platformName,
+            // Un dispositivo accoppiato non ha un annuncio da cui leggere i
+            // servizi: si riconosce dal nome, oppure lo si scopre solo
+            // connettendosi.
+            knownToSystem: true,
+          ),
+        );
+      }
+    }
+
     Future<void> start() async {
       try {
+        await emitKnown();
         results = FlutterBluePlus.onScanResults.listen((found) {
           for (final result in found) {
             controller.add(

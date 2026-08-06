@@ -54,7 +54,11 @@ enum ScalePhase {
   /// Prima di cominciare.
   idle(
     'Pesata dalla bilancia',
-    'Accendi la bilancia salendoci sopra un istante, poi cerca.',
+    // L'ordine conta ed era scritto al contrario: la bilancia resta sveglia
+    // una decina di secondi, e chi ci saliva prima di prendere il telefono
+    // faceva partire la scansione quando lei si era già riaddormentata.
+    'Tocca «Cerca», poi salici sopra: si accende e viene trovata mentre '
+        'cerco.',
     ScaleTone.working,
   ),
 
