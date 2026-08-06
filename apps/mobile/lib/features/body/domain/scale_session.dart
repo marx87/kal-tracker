@@ -168,6 +168,26 @@ enum ScalePhase {
 
   saved('Pesata salvata', 'È nello storico e nelle medie.', ScaleTone.good),
 
+  /// Protocollo sconosciuto: si ascolta e si scrive tutto.
+  ///
+  /// Non è un guasto ed è importante che non lo sembri. La bilancia funziona,
+  /// il collegamento funziona, semplicemente parla una lingua che nessuno ha
+  /// pubblicato — e da qui esce l'unica cosa che permette di impararla.
+  capturing(
+    'Ascolto cosa dice',
+    'Questa bilancia parla un protocollo che non conosco. Sali e resta '
+        'fermo: registro tutto quello che manda, byte per byte.',
+    ScaleTone.working,
+  ),
+
+  captured(
+    'Trame registrate',
+    'Ecco cosa dice la bilancia. Copia il registro con il pulsante «Copia» e '
+        'mandamelo: da questi byte ricavo il peso e l’impedenza, e la volta '
+        'dopo la pesata si salva da sola.',
+    ScaleTone.good,
+  ),
+
   failed(
     'Lettura interrotta',
     'Qualcosa si è messo di mezzo. Il registro qui sotto dice cosa.',
@@ -187,6 +207,7 @@ enum ScalePhase {
     ScalePhase.unsupported ||
     ScalePhase.notFound ||
     ScalePhase.chooseDevice ||
+    ScalePhase.captured ||
     ScalePhase.incomplete ||
     ScalePhase.ready ||
     ScalePhase.saved ||

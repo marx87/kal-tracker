@@ -120,6 +120,15 @@ enum ScaleProtocolKind {
 
   /// *Weight Scale Service* del Bluetooth SIG: il solo peso.
   gattWeight,
+
+  /// **Nessuno di quelli che conosciamo.**
+  ///
+  /// Non è una resa: è la modalità in cui ci si collega lo stesso e si
+  /// registra tutto ciò che la bilancia dice, senza decodificare niente. La
+  /// R-MSC02 di Marco parla `1a10`, un servizio che non sta nello standard e
+  /// che nessuno ha pubblicato — l'unico modo onesto di scriverne il
+  /// decodificatore è guardare i byte veri, e l'unico modo di averli è questo.
+  unknown,
 }
 
 /// Una trama arrivata dalla bilancia, con l'indicazione di **da dove**.
@@ -131,10 +140,17 @@ enum ScaleProtocolKind {
 /// sensata: il modo migliore per registrare un peso inventato.
 @immutable
 class ScaleFrame {
-  const ScaleFrame(this.bytes, this.source);
+  const ScaleFrame(this.bytes, this.source, {this.label});
 
   final List<int> bytes;
   final ScaleProtocolKind source;
+
+  /// Da quale caratteristica arriva, in forma corta (`2a9c`, `2a11`…).
+  ///
+  /// In cattura è l'informazione principale: senza sapere da quale
+  /// caratteristica viene una trama, i byte da soli non bastano a ricostruire
+  /// un protocollo.
+  final String? label;
 }
 
 /// Un collegamento aperto con la bilancia.

@@ -180,21 +180,16 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         timeout: const Duration(seconds: 15),
       );
       final services = await target.discoverServices();
-      final profile = _profileOf(services);
-      if (profile == null) {
-        await target.disconnect();
-        // L'elenco di ciò che il dispositivo espone davvero, servizio per
-        // servizio. Prima si diceva soltanto quali due servizi mancavano, che
-        // è l'unica cosa già nota: il collegamento era riuscito e la scoperta
-        // pure, quindi la risposta alla domanda «e allora cosa parla?» era in
-        // mano nostra e la buttavamo via. Senza, ogni protocollo nuovo costa
-        // un giro di pubblicazione solo per sapere che nome ha.
-        throw ScaleLinkException(
-          ScaleLinkFailure.connection,
-          'Il dispositivo non parla nessuno dei protocolli che conosco. '
-          'Espone: ${_descriviServizi(services)}',
-        );
-      }
+      // Un protocollo sconosciuto **non è più un vicolo cieco**.
+      //
+      // La bilancia di Marco è una R-MSC02 e parla `1a10`, un servizio che non
+      // sta nello standard e che nessuno ha pubblicato. Prima ci si fermava
+      // qui con un «non lo conosco», e ogni ipotesi sul formato delle trame
+      // costava un giro di pubblicazione per essere smentita. Ma se non si sa
+      // *cosa* dice, si può sempre registrare *quello che dice*: ci si collega
+      // lo stesso, si ascolta tutto ciò che è ascoltabile, e i byte finiscono
+      // nel registro. Da lì il protocollo si ricava una volta sola.
+      final profile = _profileOf(services) ?? _captureProfile(services);
       // L'ascolto si apre PRIMA di accendere le notifiche: la bilancia manda
       // la sua presentazione appena la sottoscrizione è attiva, e sottoscrivere
       // dopo perderebbe proprio la trama che dichiara la scala del peso.
@@ -202,13 +197,22 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         device: target,
         profile: profile,
       );
-      await profile.notify.setNotifyValue(true);
-      // `0x2A9C` e `0x2A9D` viaggiano per *indication* e non per notifica; il
-      // plugin sceglie da sé quale abilitare guardando le proprietà della
-      // caratteristica, quindi qui non c'è niente da distinguere.
-      final anche = profile.alsoNotify;
-      if (anche != null) {
-        await anche.setNotifyValue(true);
+      // Le caratteristiche standard viaggiano per *indication* e non per
+      // notifica; il plugin sceglie da sé quale abilitare guardando le
+      // proprietà, quindi qui non c'è niente da distinguere.
+      for (final ascoltata in profile.notified) {
+        try {
+          await ascoltata.characteristic.setNotifyValue(true);
+        } on Object {
+          // In cattura si prova tutto: qualche caratteristica rifiuterà, e
+          // rinunciare all'intera sessione per una sola sarebbe assurdo.
+          if (profile.kind != ScaleProtocolKind.unknown) {
+            rethrow;
+          }
+        }
+      }
+      if (profile.kind == ScaleProtocolKind.unknown) {
+        unawaited(_dumpDiagnostics(connection, services));
       }
       return connection;
     } on ScaleLinkException {
@@ -257,6 +261,65 @@ class FlutterBluePlusScaleLink implements ScaleLink {
     return clean;
   }
 
+  /// L'ultima risorsa: ci si collega a un protocollo che non si conosce e si
+  /// ascolta **tutto**.
+  ///
+  /// Non decodifica niente e non può farlo. Serve a una cosa sola: portare in
+  /// schermata i byte veri di una bilancia vera, così il protocollo si scrive
+  /// una volta e giusto invece di indovinarlo a distanza.
+  static _QnProfile _captureProfile(List<BluetoothService> services) {
+    final ascoltabili = <_Notified>[];
+    final leggibili = <_Notified>[];
+    for (final service in services) {
+      // I servizi di sistema si saltano: `1800`, `1801` e `180a` ci sono su
+      // ogni dispositivo Bluetooth del mondo e non hanno mai pesato nessuno.
+      // L'aggiornamento firmware Nordic idem — e scriverci sopra per sbaglio
+      // è l'unico modo di rompere una bilancia da un'app.
+      final uuid = _breve(service.serviceUuid.str128);
+      if (uuid == '1800' || uuid == '1801' || uuid == '180a') {
+        continue;
+      }
+      if (service.serviceUuid.str128.toLowerCase().startsWith('00001530-')) {
+        continue;
+      }
+      for (final c in service.characteristics) {
+        final etichetta = _breve(c.characteristicUuid.str128);
+        if (c.properties.notify || c.properties.indicate) {
+          ascoltabili.add(_Notified(c, ScaleProtocolKind.unknown, etichetta));
+        }
+        if (c.properties.read) {
+          leggibili.add(_Notified(c, ScaleProtocolKind.unknown, etichetta));
+        }
+      }
+    }
+    return _QnProfile(
+      notified: ascoltabili,
+      kind: ScaleProtocolKind.unknown,
+      readable: leggibili,
+      description: _descriviServizi(services),
+    );
+  }
+
+  /// Mette nel flusso, come se fossero trame, ciò che si sa senza aspettare:
+  /// l'elenco dei servizi e il contenuto di ogni caratteristica leggibile.
+  ///
+  /// Spesso è già metà della risposta — numero di serie, versione del
+  /// firmware, unità impostata — e comunque arriva anche se poi la bilancia
+  /// non dice una parola.
+  static Future<void> _dumpDiagnostics(
+    _FlutterBluePlusConnection connection,
+    List<BluetoothService> services,
+  ) async {
+    for (final leggibile in connection.profile.readable) {
+      try {
+        final value = await leggibile.characteristic.read();
+        connection.pushCapture(leggibile.label, value);
+      } on Object {
+        // Una caratteristica che si rifiuta di farsi leggere non è una notizia.
+      }
+    }
+  }
+
   static String _nameOf(ScanResult result) {
     final advertised = result.advertisementData.advName.trim();
     return advertised.isNotEmpty ? advertised : result.device.platformName;
@@ -297,10 +360,16 @@ class FlutterBluePlusScaleLink implements ScaleLink {
     }
     if (bodyComposition != null) {
       return _QnProfile(
-        notify: bodyComposition,
+        notified: [
+          _Notified(
+            bodyComposition,
+            ScaleProtocolKind.gattBodyComposition,
+            '2a9c',
+          ),
+          if (weight != null)
+            _Notified(weight, ScaleProtocolKind.gattWeight, '2a9d'),
+        ],
         kind: ScaleProtocolKind.gattBodyComposition,
-        alsoNotify: weight,
-        alsoNotifyKind: weight == null ? null : ScaleProtocolKind.gattWeight,
       );
     }
 
@@ -310,7 +379,7 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         final config = _find(service, QnScale.writeUuid);
         if (notify != null && config != null) {
           return _QnProfile(
-            notify: notify,
+            notified: [_Notified(notify, ScaleProtocolKind.qingniu, 'ffe1')],
             kind: ScaleProtocolKind.qingniu,
             config: config,
             time: _find(service, QnScale.timeUuid) ?? config,
@@ -324,7 +393,7 @@ class FlutterBluePlusScaleLink implements ScaleLink {
           // Nel profilo «tipo 2» orologio e unità viaggiano sulla stessa
           // caratteristica.
           return _QnProfile(
-            notify: notify,
+            notified: [_Notified(notify, ScaleProtocolKind.qingniu, 'fff1')],
             kind: ScaleProtocolKind.qingniu,
             config: write,
             time: write,
@@ -334,7 +403,10 @@ class FlutterBluePlusScaleLink implements ScaleLink {
     }
 
     if (weight != null) {
-      return _QnProfile(notify: weight, kind: ScaleProtocolKind.gattWeight);
+      return _QnProfile(
+        notified: [_Notified(weight, ScaleProtocolKind.gattWeight, '2a9d')],
+        kind: ScaleProtocolKind.gattWeight,
+      );
     }
     return null;
   }
@@ -389,25 +461,38 @@ class FlutterBluePlusScaleLink implements ScaleLink {
 /// niente, non c'è nessun orologio da sincronizzare e nessuna unità da
 /// imporre. Per questo [config] e [time] sono nulle lì — e chiunque provi a
 /// scrivere se ne accorge subito invece di mandare byte nel vuoto.
+/// Una caratteristica da ascoltare, con l'etichetta da mettere nel registro.
+class _Notified {
+  const _Notified(this.characteristic, this.kind, this.label);
+
+  final BluetoothCharacteristic characteristic;
+  final ScaleProtocolKind kind;
+  final String label;
+}
+
 class _QnProfile {
   const _QnProfile({
-    required this.notify,
+    required this.notified,
     required this.kind,
     this.config,
     this.time,
-    this.alsoNotify,
-    this.alsoNotifyKind,
+    this.readable = const <_Notified>[],
+    this.description,
   });
 
-  final BluetoothCharacteristic notify;
+  /// Tutto ciò che si ascolta. Sono più di una quando la bilancia espone
+  /// insieme il *Body Composition* e il *Weight Scale*, e sono tante in
+  /// cattura.
+  final List<_Notified> notified;
   final ScaleProtocolKind kind;
   final BluetoothCharacteristic? config;
   final BluetoothCharacteristic? time;
 
-  /// La seconda caratteristica da ascoltare, quando c'è: il *Weight Scale*
-  /// accanto al *Body Composition*.
-  final BluetoothCharacteristic? alsoNotify;
-  final ScaleProtocolKind? alsoNotifyKind;
+  /// Solo in cattura: le caratteristiche da leggere una volta all'apertura.
+  final List<_Notified> readable;
+
+  /// Solo in cattura: cosa espone il dispositivo, per il registro.
+  final String? description;
 }
 
 class _FlutterBluePlusConnection implements ScaleConnection {
@@ -417,26 +502,33 @@ class _FlutterBluePlusConnection implements ScaleConnection {
     // broadcast, quindi accumula) e il lettore le trova appena si mette in
     // ascolto. Senza questo cuscinetto la presentazione della bilancia
     // andrebbe persa a ogni collegamento fortunato.
-    _tap = profile.notify.onValueReceived.listen(
-      (bytes) => _buffer.add(ScaleFrame(bytes, profile.kind)),
-      onError: _buffer.addError,
-    );
-    final anche = profile.alsoNotify;
-    final ancheKind = profile.alsoNotifyKind;
-    if (anche != null && ancheKind != null) {
-      _second = anche.onValueReceived.listen(
-        (bytes) => _buffer.add(ScaleFrame(bytes, ancheKind)),
-        onError: _buffer.addError,
+    for (final ascoltata in profile.notified) {
+      _taps.add(
+        ascoltata.characteristic.onValueReceived.listen(
+          (bytes) => _buffer.add(
+            ScaleFrame(bytes, ascoltata.kind, label: ascoltata.label),
+          ),
+          onError: _buffer.addError,
+        ),
       );
     }
   }
+
+  /// Mette nel flusso una riga di diagnostica, come se fosse una trama.
+  void pushCapture(String label, List<int> bytes) {
+    if (!_buffer.isClosed) {
+      _buffer.add(ScaleFrame(bytes, ScaleProtocolKind.unknown, label: label));
+    }
+  }
+
+  /// Cosa espone il dispositivo, quando il protocollo non si conosce.
+  String? get description => profile.description;
 
   final BluetoothDevice device;
   final _QnProfile profile;
 
   final _buffer = StreamController<ScaleFrame>();
-  late final StreamSubscription<List<int>> _tap;
-  StreamSubscription<List<int>>? _second;
+  final _taps = <StreamSubscription<List<int>>>[];
 
   @override
   Stream<ScaleFrame> get incoming => _buffer.stream;
@@ -467,8 +559,9 @@ class _FlutterBluePlusConnection implements ScaleConnection {
 
   @override
   Future<void> close() async {
-    await _tap.cancel();
-    await _second?.cancel();
+    for (final tap in _taps) {
+      await tap.cancel();
+    }
     if (!_buffer.isClosed) {
       await _buffer.close();
     }

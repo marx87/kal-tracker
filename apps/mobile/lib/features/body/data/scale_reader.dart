@@ -226,6 +226,9 @@ class ScaleReader {
     // sincronizzare, non c'è unità da imporre, e le trame hanno un'altra
     // forma. Innestarlo qui dentro a colpi di `if` avrebbe reso illeggibili
     // due dialoghi invece di uno.
+    if (connection.kind == ScaleProtocolKind.unknown) {
+      return _converseCapture(connection);
+    }
     if (connection.kind != ScaleProtocolKind.qingniu) {
       return _converseGatt(connection, device);
     }
@@ -373,6 +376,105 @@ class ScaleReader {
       handshakeTimer.cancel();
       stepOnTimer.cancel();
       graceTimer?.cancel();
+      await subscription.cancel();
+      await connection.close();
+      _session = null;
+    }
+  }
+
+  /// Non un dialogo: un **ascolto**.
+  ///
+  /// Quando il protocollo non si conosce non c'è niente da decodificare e non
+  /// si deve fingere il contrario. Si registra e basta: ogni trama con la
+  /// caratteristica da cui è arrivata e i byte in esadecimale. La bilancia di
+  /// Marco parla `1a10`, un servizio che non sta nello standard e che nessuno
+  /// ha pubblicato — le ipotesi sul formato costano un giro di pubblicazione
+  /// ciascuna, i byte veri lo risolvono una volta sola.
+  ///
+  /// Non c'è nessuna scadenza breve: si ascolta per tutto il tempo di salita,
+  /// perché più trame ci sono più il protocollo è ricostruibile. E l'esito è
+  /// **buono** anche se non si è capito niente — la cattura è riuscita.
+  Future<ScaleStatus> _converseCapture(ScaleConnection connection) async {
+    final session = _session = Completer<ScaleStatus>();
+    var trame = 0;
+    _note(
+      'protocollo sconosciuto: registro tutto quello che manda, '
+      'senza interpretarlo',
+    );
+
+    Timer? ascolto;
+
+    void finish(ScaleStatus status) {
+      if (!session.isCompleted) {
+        session.complete(status);
+      }
+    }
+
+    // Le trame **distinte**, con quante volte ognuna si è ripetuta.
+    //
+    // Una bilancia che trasmette in continuo manda lo stesso peso decine di
+    // volte mentre uno sta fermo: scritte tutte riempirebbero il registro di
+    // righe identiche e caccerebbero fuori proprio le prime, che sono quelle
+    // che dichiarano il protocollo. E per ricostruire un formato servono le
+    // trame **diverse** fra loro — quante volte si ripetono è un'altra
+    // informazione, che si conserva a parte invece di duplicare la riga.
+    final viste = <String, int>{};
+
+    final subscription = connection.incoming.listen(
+      (frame) {
+        trame++;
+        final chiave = '${frame.label ?? '?'}:${gattHex(frame.bytes)}';
+        final ripetizioni = (viste[chiave] ?? 0) + 1;
+        viste[chiave] = ripetizioni;
+        if (ripetizioni > 1) {
+          // Già scritta. Si aggiorna solo il conteggio in schermata.
+          _emit(ScalePhase.capturing);
+          return;
+        }
+        _note(
+          'da ${frame.label ?? 'caratteristica ignota'}: '
+          '${frame.bytes.length} byte',
+          hex: gattHex(frame.bytes),
+        );
+        _emit(ScalePhase.capturing);
+      },
+      onError: (Object error) {
+        _note('errore dal collegamento: $error', isProblem: true);
+      },
+      onDone: () {
+        // La bilancia che si scollega non interrompe niente: quello che ha
+        // detto è già registrato, ed è tutto ciò che serviva.
+        if (trame > 0) {
+          _note('catturate $trame trame, ${viste.length} diverse fra loro');
+        }
+        finish(_emit(trame == 0 ? ScalePhase.failed : ScalePhase.captured));
+      },
+      cancelOnError: false,
+    );
+
+    _emit(ScalePhase.capturing);
+    ascolto = Timer(stepOnTimeout, () {
+      if (trame == 0) {
+        finish(
+          _emit(
+            ScalePhase.failed,
+            errorDetail:
+                'La bilancia non ha mandato niente in '
+                '${stepOnTimeout.inSeconds} secondi. Se il display si è '
+                'acceso, forse aspetta un comando che non conosco: mandami '
+                'comunque il registro, l’elenco dei servizi è già una pista.',
+          ),
+        );
+        return;
+      }
+      _note('catturate $trame trame, ${viste.length} diverse fra loro');
+      finish(_emit(ScalePhase.captured));
+    });
+
+    try {
+      return await session.future;
+    } finally {
+      ascolto.cancel();
       await subscription.cancel();
       await connection.close();
       _session = null;

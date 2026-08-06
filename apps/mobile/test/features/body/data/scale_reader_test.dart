@@ -694,6 +694,65 @@ void main() {
       expect(status.reading!.rawPayloadHex, contains(' | '));
     });
 
+    test('protocollo sconosciuto: si registra tutto, e conta come '
+        'successo', () async {
+      // La R-MSC02 parla `1a10`, un servizio che non sta nello standard e che
+      // nessuno ha pubblicato. Fermarsi a «non lo conosco» significava pagare
+      // un giro di pubblicazione per ogni ipotesi sul formato; registrare i
+      // byte veri lo risolve una volta sola. Perciò l'esito è **buono**: la
+      // cattura è riuscita, anche se non si è capito niente.
+      final link = linkStandard(ScaleProtocolKind.unknown);
+      final reader = readerFor(link);
+      final result = reader.connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emitFrom(ScaleProtocolKind.unknown, const [
+        0x01,
+        0x02,
+        0x03,
+      ]);
+      // La stessa trama tre volte: una bilancia che trasmette in continuo lo
+      // fa in continuazione, e scriverle tutte caccerebbe fuori dal registro
+      // proprio le prime — quelle che dichiarano il protocollo.
+      await connection.emitFrom(ScaleProtocolKind.unknown, const [
+        0x01,
+        0x02,
+        0x03,
+      ]);
+      await connection.emitFrom(ScaleProtocolKind.unknown, const [0xaa, 0xbb]);
+      await connection.dropConnection();
+
+      final status = await result;
+      expect(status.phase, ScalePhase.captured);
+      final registro = status.log.map((entry) => entry.hex).toList();
+      expect(registro, contains('01 02 03'));
+      expect(registro, contains('aa bb'));
+      // Scritta una volta sola, non tre.
+      expect(registro.where((hex) => hex == '01 02 03'), hasLength(1));
+      expect(
+        status.log.map((entry) => entry.message).join('\n'),
+        allOf(contains('3 trame'), contains('2 diverse')),
+      );
+    });
+
+    test(
+      'protocollo sconosciuto che non dice niente resta un guasto',
+      () async {
+        // Nessuna trama vuol dire nessuna pista, e chiamarlo «riuscito» sarebbe
+        // una bugia. Ma il messaggio deve dire cosa farne lo stesso: l'elenco
+        // dei servizi, che c'è comunque, è già qualcosa.
+        final link = linkStandard(ScaleProtocolKind.unknown);
+        final reader = readerFor(link);
+        final result = reader.connectTo(renpho);
+
+        final connection = await link.opened;
+        await connection.dropConnection();
+
+        final status = await result;
+        expect(status.phase, ScalePhase.failed);
+      },
+    );
+
     test('la bilancia che dichiara la pesata non riuscita lo dice', () async {
       // `0xFFFF` nel grasso non vuol dire «campo assente»: vuol dire che la
       // pesata è fallita (BCS 1.0.1 §3.2.1.2). È un esito della bilancia, non
