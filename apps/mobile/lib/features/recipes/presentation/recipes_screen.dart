@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/foods/presentation/adaptive_card_rows.dart';
 import 'package:kal_tracker/features/recipes/domain/recipe_models.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart';
 
@@ -35,63 +36,93 @@ class RecipesScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 6, 16, 10),
-            child: _RecipeFilters(),
-          ),
-          Expanded(
-            child: recipes.when(
-              data: (items) => ListView(
-                key: const Key('recipes_list'),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-                children: [
-                  const _RecipeIntroCard(),
-                  const SizedBox(height: 18),
-                  if (!hasFilters) const _SuggestionsSection(),
-                  Text(
-                    hasFilters ? 'Risultati' : 'Pronte da provare',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  if (items.isEmpty)
-                    _NoRecipesFound(
-                      onReset: () => _resetFilters(ref),
-                      hasFilters: hasFilters,
-                    )
-                  else
-                    for (final (index, recipe) in items.indexed) ...[
-                      _RecipeCard(
-                        recipe: recipe,
-                        color: index.isEven
-                            ? AppPalette.coralSoft
-                            : AppPalette.lilacSoft,
-                        accent: index.isEven
-                            ? AppPalette.coral
-                            : AppPalette.lilac,
-                        onOpen: () => _openDetails(context, recipe.id),
-                        onFavorite: () => _toggleFavorite(context, ref, recipe),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                ],
+      // Come il catalogo, il ricettario è fatto di card: su tablet due o tre
+      // colonne mostrano il doppio delle ricette invece di una fila di card
+      // larghe mezzo metro. La colonna leggibile la impongo dove c'è del
+      // testo da leggere — la ricerca e lo stato vuoto — non alla pagina.
+      body: AdaptiveLayout(
+        builder: (context, size) {
+          final page = AppBreakpoints.pagePadding(size);
+          final gutter = AppBreakpoints.gutter(size);
+          final columns = AppBreakpoints.columns(size);
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(page.left, 6, page.right, 10),
+                child: const _RecipeFilters(),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) => Center(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    ref.invalidate(starterRecipesProvider);
-                    ref.invalidate(recipesProvider);
-                    ref.invalidate(visibleRecipesProvider);
-                  },
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Riprova'),
+              Expanded(
+                child: recipes.when(
+                  data: (items) => ListView(
+                    key: const Key('recipes_list'),
+                    // Margini di pagina più lo spazio del FAB in fondo.
+                    padding: page.copyWith(top: 0, bottom: page.bottom + 88),
+                    children: [
+                      const _RecipeIntroCard(),
+                      const SizedBox(height: 18),
+                      if (!hasFilters)
+                        _SuggestionsSection(columns: columns, gutter: gutter),
+                      Text(
+                        hasFilters ? 'Risultati' : 'Pronte da provare',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 10),
+                      if (items.isEmpty)
+                        // Lo stato vuoto è una frase: centrata e stretta si
+                        // legge, larga quanto la griglia no.
+                        AdaptiveContent(
+                          child: _NoRecipesFound(
+                            onReset: () => _resetFilters(ref),
+                            hasFilters: hasFilters,
+                          ),
+                        )
+                      else
+                        for (
+                          var row = 0;
+                          row < AdaptiveCardRow.rowCount(items.length, columns);
+                          row++
+                        ) ...[
+                          AdaptiveCardRow(
+                            rowIndex: row,
+                            itemCount: items.length,
+                            columns: columns,
+                            gutter: gutter,
+                            itemBuilder: (context, index) => _RecipeCard(
+                              recipe: items[index],
+                              color: index.isEven
+                                  ? AppPalette.coralSoft
+                                  : AppPalette.lilacSoft,
+                              accent: index.isEven
+                                  ? AppPalette.coral
+                                  : AppPalette.lilac,
+                              onOpen: () =>
+                                  _openDetails(context, items[index].id),
+                              onFavorite: () =>
+                                  _toggleFavorite(context, ref, items[index]),
+                            ),
+                          ),
+                          SizedBox(height: gutter),
+                        ],
+                    ],
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stackTrace) => Center(
+                    child: FilledButton.tonalIcon(
+                      onPressed: () {
+                        ref.invalidate(starterRecipesProvider);
+                        ref.invalidate(recipesProvider);
+                        ref.invalidate(visibleRecipesProvider);
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Riprova'),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('create_recipe_button'),
@@ -174,14 +205,19 @@ class _RecipeFiltersState extends ConsumerState<_RecipeFilters> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          key: const Key('recipe_search_field'),
-          controller: _search,
-          onChanged: (value) =>
-              ref.read(recipeSearchQueryProvider.notifier).state = value,
-          decoration: const InputDecoration(
-            hintText: 'Cerca per nome o ingrediente',
-            prefixIcon: Icon(Icons.search_rounded),
+        // Il campo di ricerca si ferma alla colonna leggibile e resta
+        // allineato a sinistra con la prima colonna di card.
+        AdaptiveContent(
+          alignment: AlignmentDirectional.topStart,
+          child: TextField(
+            key: const Key('recipe_search_field'),
+            controller: _search,
+            onChanged: (value) =>
+                ref.read(recipeSearchQueryProvider.notifier).state = value,
+            decoration: const InputDecoration(
+              hintText: 'Cerca per nome o ingrediente',
+              prefixIcon: Icon(Icons.search_rounded),
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -255,7 +291,12 @@ class _RecipeFiltersState extends ConsumerState<_RecipeFilters> {
 }
 
 class _SuggestionsSection extends ConsumerWidget {
-  const _SuggestionsSection();
+  const _SuggestionsSection({required this.columns, required this.gutter});
+
+  /// Le stesse colonne della griglia sotto: i tre suggerimenti stanno
+  /// affiancati su tablet, incolonnati sul telefono.
+  final int columns;
+  final double gutter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -311,30 +352,43 @@ class _SuggestionsSection extends ConsumerWidget {
             ),
           )
         else
-          for (final suggestion in suggestions) ...[
-            Card(
-              color: AppPalette.mintSoft,
-              child: ListTile(
-                key: Key('recipe_suggestion_${suggestion.recipe.id}'),
-                onTap: () => context.pushNamed(
-                  'recipe-details',
-                  pathParameters: {'recipeId': suggestion.recipe.id},
-                ),
-                leading: const CircleAvatar(
-                  backgroundColor: AppPalette.mint,
-                  foregroundColor: AppPalette.forest,
-                  child: Icon(Icons.auto_awesome_rounded),
-                ),
-                title: Text(suggestion.recipe.name),
-                subtitle: Text(
-                  '${number.format(suggestion.recipe.nutrition.perServing.calories.round())} kcal · '
-                  '${suggestion.recipe.nutrition.perServing.protein.toStringAsFixed(1)} g di proteine '
-                  'a porzione',
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-              ),
+          for (
+            var row = 0;
+            row < AdaptiveCardRow.rowCount(suggestions.length, columns);
+            row++
+          ) ...[
+            AdaptiveCardRow(
+              rowIndex: row,
+              itemCount: suggestions.length,
+              columns: columns,
+              gutter: gutter,
+              itemBuilder: (context, index) {
+                final suggestion = suggestions[index];
+                return Card(
+                  color: AppPalette.mintSoft,
+                  child: ListTile(
+                    key: Key('recipe_suggestion_${suggestion.recipe.id}'),
+                    onTap: () => context.pushNamed(
+                      'recipe-details',
+                      pathParameters: {'recipeId': suggestion.recipe.id},
+                    ),
+                    leading: const CircleAvatar(
+                      backgroundColor: AppPalette.mint,
+                      foregroundColor: AppPalette.forest,
+                      child: Icon(Icons.auto_awesome_rounded),
+                    ),
+                    title: Text(suggestion.recipe.name),
+                    subtitle: Text(
+                      '${number.format(suggestion.recipe.nutrition.perServing.calories.round())} kcal · '
+                      '${suggestion.recipe.nutrition.perServing.protein.toStringAsFixed(1)} g di proteine '
+                      'a porzione',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: gutter),
           ],
         const SizedBox(height: 12),
       ],

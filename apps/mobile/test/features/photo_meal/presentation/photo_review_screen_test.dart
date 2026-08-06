@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
@@ -534,6 +535,70 @@ void main() {
     expect(find.text('Risultato non leggibile'), findsOneWidget);
     expect(find.byKey(const Key('confirm_review_button')), findsNothing);
     expect(await database.select(database.mealItems).get(), isEmpty);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('sul tablet largo la revisione resta in una colonna leggibile', (
+    tester,
+  ) async {
+    // Un modulo da correggere voce per voce: a 1706 dp senza limite i campi
+    // dei valori per 100 g diventerebbero righe da un bordo all'altro.
+    AppTime.initialize();
+    tester.view.physicalSize = const Size(1706, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [_twoFoodsJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+
+    await tester.pumpWidget(
+      _app(database: database, gateway: gateway, store: store),
+    );
+    await tester.pumpAndSettle();
+
+    final body = find.byKey(const Key('photo_review_body'));
+    final width = tester.getSize(body).width;
+    expect(
+      width,
+      AppBreakpoints.contentMaxWidth(AppWindowSize.expanded),
+      reason: 'la colonna deve fermarsi alla larghezza leggibile',
+    );
+    expect(width, lessThan(1706));
+    // Centrata: lo spazio avanzato sta a sinistra e a destra, in parti uguali.
+    expect(tester.getTopLeft(body).dx, closeTo((1706 - width) / 2, 0.5));
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('anche il messaggio di attesa si ferma alla colonna leggibile', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    tester.view.physicalSize = const Size(1706, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = FakePhotoJobsGateway([
+      [buildActiveJob()],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+
+    await tester.pumpWidget(
+      _app(database: database, gateway: gateway, store: store),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Analisi in attesa'), findsOneWidget);
+    final message = find.textContaining('Il Mac analizza la foto');
+    expect(
+      tester.getSize(message).width,
+      lessThanOrEqualTo(AppBreakpoints.contentMaxWidth(AppWindowSize.expanded)),
+    );
 
     await _disposeApp(tester, database);
   });

@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
@@ -212,6 +213,76 @@ void main() {
     await _dispose(tester, database);
   });
 
+  testWidgets('sul tablet largo la lista si ferma alla colonna leggibile', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    _wideWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    await _seedPlan(database);
+
+    await tester.pumpWidget(_app(database, _FakeChecksStore()));
+    await tester.pumpAndSettle();
+
+    final width = tester.getSize(find.byKey(const Key('shopping_list'))).width;
+    expect(width, AppBreakpoints.contentMaxWidth(AppWindowSize.expanded));
+    expect(width, lessThan(1706));
+
+    await _dispose(tester, database);
+  });
+
+  testWidgets('sul tablet largo i reparti stanno affiancati, in ordine di '
+      'giro', (tester) async {
+    // È l'eccezione del gruppo: qui affiancare serve davvero, perché le voci
+    // sono corte e camminare fra gli scaffali con metà scorrimento è meglio.
+    AppTime.initialize();
+    _wideWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    await _seedPlan(database);
+
+    await tester.pumpWidget(_app(database, _FakeChecksStore()));
+    await tester.pumpAndSettle();
+
+    expect(
+      _departmentHeaders.evaluate().length,
+      greaterThanOrEqualTo(2),
+      reason: 'servono almeno due reparti per verificare l’affiancamento',
+    );
+    final first = tester.getTopLeft(_departmentHeaders.at(0));
+    final second = tester.getTopLeft(_departmentHeaders.at(1));
+    expect(
+      second.dy,
+      first.dy,
+      reason: 'i primi due reparti sono sulla stessa riga',
+    );
+    expect(
+      second.dx,
+      greaterThan(first.dx),
+      reason: 'il secondo reparto del giro sta a destra del primo',
+    );
+
+    await _dispose(tester, database);
+  });
+
+  testWidgets('sul telefono i reparti restano incolonnati', (tester) async {
+    AppTime.initialize();
+    tester.view.physicalSize = const Size(400, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final database = AppDatabase(NativeDatabase.memory());
+    await _seedPlan(database);
+
+    await tester.pumpWidget(_app(database, _FakeChecksStore()));
+    await tester.pumpAndSettle();
+
+    final first = tester.getTopLeft(_departmentHeaders.at(0));
+    final second = tester.getTopLeft(_departmentHeaders.at(1));
+    expect(second.dx, first.dx);
+    expect(second.dy, greaterThan(first.dy));
+
+    await _dispose(tester, database);
+  });
+
   testWidgets('se tutte le ricette sono sparite resta la spiegazione', (
     tester,
   ) async {
@@ -234,6 +305,22 @@ void main() {
     await _dispose(tester, database);
   });
 }
+
+/// Il tablet di Marco in orizzontale, alto abbastanza da costruire i primi
+/// reparti senza scorrere.
+void _wideWindow(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1706, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
+/// Le intestazioni di reparto, nell'ordine in cui sono nell'albero: la loro
+/// posizione dice se sono incolonnate o affiancate.
+Finder get _departmentHeaders => find.byWidgetPredicate((widget) {
+  final key = widget.key;
+  return key is ValueKey<String> &&
+      key.value.startsWith('shopping_department_');
+});
 
 /// La lista è pigra: una voce in fondo esiste solo dopo che ci si è scrollati.
 Finder get _scrollable => find.descendant(

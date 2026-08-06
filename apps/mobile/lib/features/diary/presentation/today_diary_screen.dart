@@ -208,86 +208,172 @@ class _DiaryBody extends ConsumerWidget {
           orElse: () => const NutritionTarget.standard(),
         );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, kDiaryBottomClearance),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const UpdateBanner(),
-          const SizedBox(height: 12),
-          FriendlyDayHeader(
-            greeting: _greetingFor(AppTime.nowInRome()),
-            name: 'Marco',
-            dateLabel: diaryDayLabel(day, today),
-            onPreviousDay: () => _selectDay(ref, DiaryDay.shift(day, -1)),
-            onNextDay: isToday
-                ? null
-                : () => _selectDay(ref, DiaryDay.shift(day, 1)),
-            onPickDay: () => _pickDay(context, ref),
-            onBackToToday: isToday ? null : () => _selectDay(ref, today),
-          ),
-          const SizedBox(height: 18),
-          // 1. Quanto resta. È la prima domanda della giornata e l'unica che
-          // vale la pena leggere da lontano.
-          CalorieProgressCard(nutrients: diary.totals, target: target),
-          // Lo stato vuoto sta QUI e non in fondo: è l'invito a cominciare,
-          // e in fondo alla lista finirebbe fuori dal primo schermo, dietro
-          // al FAB.
-          if (diary.entries.isEmpty) ...[
-            const SizedBox(height: 14),
-            const PlayfulDiaryEmptyState(),
-          ],
-          // Le tre card del «adesso» valgono solo per oggi: guardando ieri
-          // sono rumore, e l'allenamento di ieri non si inizia più.
-          if (isToday) ...[
-            const _TodayTrainingSection(),
-            const _TodayRecipesSection(),
-            const SizedBox(height: 14),
-            MorningCheckInCard(onWeighIn: () => openWeighInSheet(context, ref)),
-          ],
-          const SizedBox(height: 14),
-          // L'acqua segue il giorno selezionato come tutto il resto del
-          // diario.
-          WaterIntakeCard(
-            day: day,
-            today: today,
-            dayLabel: diaryDayLabel(day, today),
-          ),
-          const SizedBox(height: 22),
-          Text('I tuoi pasti', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 4),
-          Text(
-            'Tutto quello che aggiungi contribuisce al riepilogo.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppAccents.of(context).mutedInk,
+    // Oggi non è una lista di testo lungo: è una pila di card che rispondono
+    // a due domande diverse — «come sta andando la giornata» e «cosa ho
+    // mangiato». Su un tablet largo una colonna sola e centrata risponderebbe
+    // a una domanda alla volta lasciando mezzo schermo vuoto, quindi da
+    // `expanded` in su le due domande stanno affiancate: a sinistra il
+    // riepilogo e le azioni di adesso, a destra il diario dei pasti.
+    //
+    // Su `medium` (tablet in verticale) due colonne scenderebbero sotto i 400
+    // punti l'una nella parte bassa della taglia: l'anello delle calorie
+    // accanto al «ti restano», e i tre pulsanti dell'acqua in fila, ci
+    // starebbero a stento. Lì basta una colonna sola, centrata e limitata.
+    //
+    // La misura arriva da `AdaptiveLayout`, non da `MediaQuery`: qui dentro
+    // c'è già la guida laterale che si mangia la sua fetta di schermo.
+    return AdaptiveLayout(
+      builder: (context, size) {
+        final padding = AppBreakpoints.pagePadding(size);
+        final header = _header(context, ref, isToday: isToday);
+        final meals = _mealCards(context, ref);
+
+        if (size.isExpanded) {
+          return _TwoColumnDiary(
+            padding: padding,
+            gutter: AppBreakpoints.gutter(size),
+            header: header,
+            summary: _summaryCards(
+              context,
+              ref,
+              target: target,
+              isToday: isToday,
+            ),
+            meals: [
+              // A due colonne l'invito a cominciare apre la colonna dei
+              // pasti: è lì che il vuoto si vede, ed è lì che il FAB
+              // «Aggiungi alimento» galleggia.
+              if (diary.entries.isEmpty) ...[
+                const PlayfulDiaryEmptyState(),
+                const SizedBox(height: 14),
+              ],
+              ...meals,
+            ],
+          );
+        }
+
+        return AdaptiveContent(
+          child: SingleChildScrollView(
+            key: const Key('diary_single_column'),
+            // La riserva per il FAB si somma ai margini di pagina: il FAB
+            // galleggia sopra il contenuto e non lo spinge.
+            padding: padding.copyWith(
+              bottom: padding.bottom + kDiaryBottomClearance,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header,
+                const SizedBox(height: 18),
+                ..._summaryCards(
+                  context,
+                  ref,
+                  target: target,
+                  isToday: isToday,
+                  // In colonna unica lo stato vuoto sta QUI e non in fondo: è
+                  // l'invito a cominciare, e in fondo alla lista finirebbe
+                  // fuori dal primo schermo, dietro al FAB.
+                  emptyState: diary.entries.isEmpty
+                      ? const PlayfulDiaryEmptyState()
+                      : null,
+                ),
+                const SizedBox(height: 22),
+                ...meals,
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          // Punto d'ingresso stabile alla revisione: la snackbar dura 8
-          // secondi, il badge resta finché ci sono proposte pronte.
-          const PhotoProposalsBadge(),
-          for (final mealType in MealType.values) ...[
-            WellnessMealCard(
-              title: mealType.label,
-              icon: mealType.icon,
-              accent: mealType.accent,
-              softColor: mealType.softColor,
-              menuKey: Key('meal_menu_${mealType.storageValue}'),
-              entries: diary.entriesFor(mealType),
-              onDelete: (entry) => _deleteEntry(context, ref, entry),
-              onEdit: (entry) => _editEntry(context, entry),
-              onDuplicate: (entry) => _duplicateEntry(context, ref, entry),
-              onCopyFromAnotherDay: () => _copyMeal(context, ref, mealType),
-              onSaveAsTemplate: () => _saveTemplate(context, ref, mealType),
-              onApplyTemplate: () => _applyTemplate(context, ref, mealType),
-            ),
-            _PhotoMealSection(mealType: mealType, day: day),
-            const SizedBox(height: 12),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
+
+  /// Il saluto e il giorno scelto. Comanda tutto quello che sta sotto — le
+  /// due colonne comprese — quindi non appartiene a nessuna delle due.
+  Widget _header(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isToday,
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const UpdateBanner(),
+      const SizedBox(height: 12),
+      FriendlyDayHeader(
+        greeting: _greetingFor(AppTime.nowInRome()),
+        name: 'Marco',
+        dateLabel: diaryDayLabel(day, today),
+        onPreviousDay: () => _selectDay(ref, DiaryDay.shift(day, -1)),
+        onNextDay: isToday
+            ? null
+            : () => _selectDay(ref, DiaryDay.shift(day, 1)),
+        onPickDay: () => _pickDay(context, ref),
+        onBackToToday: isToday ? null : () => _selectDay(ref, today),
+      ),
+    ],
+  );
+
+  /// Come sta andando la giornata: quanto resta, cosa c'è da fare adesso.
+  List<Widget> _summaryCards(
+    BuildContext context,
+    WidgetRef ref, {
+    required NutritionTarget target,
+    required bool isToday,
+    Widget? emptyState,
+  }) => [
+    // 1. Quanto resta. È la prima domanda della giornata e l'unica che
+    // vale la pena leggere da lontano.
+    CalorieProgressCard(nutrients: diary.totals, target: target),
+    if (emptyState != null) ...[const SizedBox(height: 14), emptyState],
+    // Le tre card del «adesso» valgono solo per oggi: guardando ieri
+    // sono rumore, e l'allenamento di ieri non si inizia più.
+    if (isToday) ...[
+      const _TodayTrainingSection(),
+      const _TodayRecipesSection(),
+      const SizedBox(height: 14),
+      MorningCheckInCard(onWeighIn: () => openWeighInSheet(context, ref)),
+    ],
+    const SizedBox(height: 14),
+    // L'acqua segue il giorno selezionato come tutto il resto del diario.
+    WaterIntakeCard(
+      day: day,
+      today: today,
+      dayLabel: diaryDayLabel(day, today),
+    ),
+  ];
+
+  /// Cosa ho mangiato: l'intestazione della sezione e i quattro pasti.
+  List<Widget> _mealCards(BuildContext context, WidgetRef ref) => [
+    Text('I tuoi pasti', style: Theme.of(context).textTheme.titleLarge),
+    const SizedBox(height: 4),
+    Text(
+      'Tutto quello che aggiungi contribuisce al riepilogo.',
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: AppAccents.of(context).mutedInk),
+    ),
+    const SizedBox(height: 12),
+    // Punto d'ingresso stabile alla revisione: la snackbar dura 8
+    // secondi, il badge resta finché ci sono proposte pronte.
+    const PhotoProposalsBadge(),
+    for (final mealType in MealType.values) ...[
+      WellnessMealCard(
+        title: mealType.label,
+        icon: mealType.icon,
+        accent: mealType.accent,
+        softColor: mealType.softColor,
+        menuKey: Key('meal_menu_${mealType.storageValue}'),
+        entries: diary.entriesFor(mealType),
+        onDelete: (entry) => _deleteEntry(context, ref, entry),
+        onEdit: (entry) => _editEntry(context, entry),
+        onDuplicate: (entry) => _duplicateEntry(context, ref, entry),
+        onCopyFromAnotherDay: () => _copyMeal(context, ref, mealType),
+        onSaveAsTemplate: () => _saveTemplate(context, ref, mealType),
+        onApplyTemplate: () => _applyTemplate(context, ref, mealType),
+      ),
+      _PhotoMealSection(mealType: mealType, day: day),
+      const SizedBox(height: 12),
+    ],
+  ];
 
   void _selectDay(WidgetRef ref, DateTime value) {
     ref.read(selectedDayProvider.notifier).state = value;
@@ -579,6 +665,109 @@ class _DiaryBody extends ConsumerWidget {
         const SnackBar(content: Text('Non riesco ad annullare l’aggiunta.')),
       );
     }
+  }
+}
+
+/// Oltre questa larghezza le due colonne smetterebbero di essere leggibili:
+/// sono due colonne di contenuto piene più il corridoio fra loro. Sul tablet
+/// di Marco (1706 punti, meno la guida laterale) non morde: serve a non far
+/// degenerare la schermata su un monitor.
+final double _twoColumnMaxWidth =
+    AppBreakpoints.contentMaxWidth(AppWindowSize.expanded) * 2 +
+    AppBreakpoints.gutter(AppWindowSize.expanded);
+
+/// Il diario su schermo largo: riepilogo a sinistra, pasti a destra.
+///
+/// Le due colonne scorrono separate di proposito. Sono lunghe in modo molto
+/// diverso — il riepilogo è corto, i pasti crescono con la giornata — e
+/// scorrendo i pasti si vuole tenere sotto gli occhi quante calorie e quante
+/// proteine restano: è il motivo per cui si guarda questa schermata.
+///
+/// Il FAB «Aggiungi alimento» resta in basso a destra, cioè sopra la colonna
+/// dei pasti: è esattamente dove finisce quello che aggiunge. Per questo la
+/// riserva in fondo ([kDiaryBottomClearance]) tocca solo quella colonna.
+class _TwoColumnDiary extends StatelessWidget {
+  const _TwoColumnDiary({
+    required this.padding,
+    required this.gutter,
+    required this.header,
+    required this.summary,
+    required this.meals,
+  });
+
+  final EdgeInsets padding;
+  final double gutter;
+  final Widget header;
+  final List<Widget> summary;
+  final List<Widget> meals;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: _twoColumnMaxWidth),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // L'intestazione non scorre con nessuna delle due colonne: il
+            // giorno scelto vale per entrambe, e chi scorre i pasti deve
+            // continuare a vedere di che giorno sta parlando.
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                padding.left,
+                padding.top,
+                padding.right,
+                0,
+              ),
+              child: header,
+            ),
+            SizedBox(height: gutter),
+            Expanded(
+              child: Row(
+                // `stretch` e non `start`: così ogni colonna riceve
+                // l'altezza della finestra e scorre dentro di sé, invece di
+                // traboccare.
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      key: const Key('diary_summary_column'),
+                      padding: EdgeInsets.fromLTRB(
+                        padding.left,
+                        0,
+                        0,
+                        padding.bottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: summary,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: gutter),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      key: const Key('diary_meals_column'),
+                      padding: EdgeInsets.fromLTRB(
+                        0,
+                        0,
+                        padding.right,
+                        padding.bottom + kDiaryBottomClearance,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: meals,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

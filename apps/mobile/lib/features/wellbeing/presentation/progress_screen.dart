@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
@@ -71,72 +72,81 @@ class ProgressScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        key: const Key('progress_list'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        children: [
-          const _ProgressIntro(),
-          const SizedBox(height: 18),
-          target.when(
-            data: (value) => _TargetCard(
-              target: value,
-              onEdit: () => _editTarget(context, ref, value),
-            ),
-            loading: () => const _LoadingCard(),
-            error: (error, stackTrace) => _ErrorCard(
-              label: 'Ricarica obiettivi',
-              onRetry: () => ref.invalidate(nutritionTargetProvider),
-            ),
-          ),
-          const SizedBox(height: 14),
-          water.when(
-            data: (value) => _WaterCard(
-              intake: value,
-              goal: waterGoal,
-              onAdd250: () => _addWater(context, ref, 250),
-              onAdd500: () => _addWater(context, ref, 500),
-            ),
-            loading: () => const _LoadingCard(),
-            error: (error, stackTrace) => _ErrorCard(
-              label: 'Ricarica acqua',
-              onRetry: () => ref.invalidate(todayWaterProvider),
-            ),
-          ),
-          const SizedBox(height: 14),
-          weights.when(
-            data: (value) => _WeightCard(
-              measurements: value,
-              onAdd: () => _addWeight(context, ref),
-            ),
-            loading: () => const _LoadingCard(),
-            error: (error, stackTrace) => _ErrorCard(
-              label: 'Ricarica peso',
-              onRetry: () => ref.invalidate(recentWeightsProvider),
-            ),
-          ),
-          const SizedBox(height: 14),
-          // Altezza, nascita e sesso. È l'unica porta per tornarci dopo aver
-          // saltato il benvenuto del primo avvio: senza, «lo faccio dopo»
-          // sarebbe un vicolo cieco, perché quei tre dati non si inseriscono
-          // da nessun'altra parte.
-          Card(
-            child: ListTile(
-              key: const Key('open_personal_details_button'),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 10,
+      // UNA colonna leggibile e centrata, non due. Qui si legge in ordine —
+      // prima gli obiettivi, poi com'è andata oggi con acqua e peso — e
+      // affiancare le card romperebbe quella sequenza senza mostrare nulla di
+      // più: la barra dell'acqua larga un metro non dice niente in più di una
+      // larga quanto una riga di testo.
+      body: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: ListView(
+            key: const Key('progress_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            children: [
+              const _ProgressIntro(),
+              const SizedBox(height: 18),
+              target.when(
+                data: (value) => _TargetCard(
+                  target: value,
+                  onEdit: () => _editTarget(context, ref, value),
+                ),
+                loading: () => const _LoadingCard(),
+                error: (error, stackTrace) => _ErrorCard(
+                  label: 'Ricarica obiettivi',
+                  onRetry: () => ref.invalidate(nutritionTargetProvider),
+                ),
               ),
-              leading: const Icon(Icons.straighten_rounded),
-              title: const Text('Dati personali'),
-              subtitle: const Text(
-                'Altezza, nascita e sesso: senza, BMI, metabolismo e '
-                'composizione restano a metà.',
+              const SizedBox(height: 14),
+              water.when(
+                data: (value) => _WaterCard(
+                  intake: value,
+                  goal: waterGoal,
+                  onAdd250: () => _addWater(context, ref, 250),
+                  onAdd500: () => _addWater(context, ref, 500),
+                ),
+                loading: () => const _LoadingCard(),
+                error: (error, stackTrace) => _ErrorCard(
+                  label: 'Ricarica acqua',
+                  onRetry: () => ref.invalidate(todayWaterProvider),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => context.pushNamed('personal-details'),
-            ),
+              const SizedBox(height: 14),
+              weights.when(
+                data: (value) => _WeightCard(
+                  measurements: value,
+                  onAdd: () => _addWeight(context, ref),
+                ),
+                loading: () => const _LoadingCard(),
+                error: (error, stackTrace) => _ErrorCard(
+                  label: 'Ricarica peso',
+                  onRetry: () => ref.invalidate(recentWeightsProvider),
+                ),
+              ),
+              const SizedBox(height: 14),
+              // Altezza, nascita e sesso. È l'unica porta per tornarci dopo
+              // aver saltato il benvenuto del primo avvio: senza, «lo faccio
+              // dopo» sarebbe un vicolo cieco, perché quei tre dati non si
+              // inseriscono da nessun'altra parte.
+              Card(
+                child: ListTile(
+                  key: const Key('open_personal_details_button'),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  leading: const Icon(Icons.straighten_rounded),
+                  title: const Text('Dati personali'),
+                  subtitle: const Text(
+                    'Altezza, nascita e sesso: senza, BMI, metabolismo e '
+                    'composizione restano a metà.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.pushNamed('personal-details'),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -585,52 +595,56 @@ class _TargetEditorSheetState extends State<_TargetEditorSheet> {
         20,
         MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'I tuoi obiettivi',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 5),
-              const Text('Potrai cambiarli quando vuoi.'),
-              const SizedBox(height: 18),
-              _DecimalField(
-                key: const Key('target_calories_field'),
-                controller: _calories,
-                label: 'Calorie (kcal)',
-                mustBePositive: true,
-              ),
-              const SizedBox(height: 10),
-              _DecimalField(
-                key: const Key('target_protein_field'),
-                controller: _protein,
-                label: 'Proteine (g)',
-              ),
-              const SizedBox(height: 10),
-              _DecimalField(
-                key: const Key('target_carbs_field'),
-                controller: _carbs,
-                label: 'Carboidrati (g)',
-              ),
-              const SizedBox(height: 10),
-              _DecimalField(
-                key: const Key('target_fat_field'),
-                controller: _fat,
-                label: 'Grassi (g)',
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                key: const Key('save_targets_button'),
-                onPressed: _save,
-                icon: const Icon(Icons.check_rounded),
-                label: const Text('Salva obiettivi'),
-              ),
-            ],
+      // Anche il foglio nasce largo quanto la finestra: quattro campi numerici
+      // stirati su un tablet non si compilano meglio, si leggono peggio.
+      child: AdaptiveContent(
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'I tuoi obiettivi',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 5),
+                const Text('Potrai cambiarli quando vuoi.'),
+                const SizedBox(height: 18),
+                _DecimalField(
+                  key: const Key('target_calories_field'),
+                  controller: _calories,
+                  label: 'Calorie (kcal)',
+                  mustBePositive: true,
+                ),
+                const SizedBox(height: 10),
+                _DecimalField(
+                  key: const Key('target_protein_field'),
+                  controller: _protein,
+                  label: 'Proteine (g)',
+                ),
+                const SizedBox(height: 10),
+                _DecimalField(
+                  key: const Key('target_carbs_field'),
+                  controller: _carbs,
+                  label: 'Carboidrati (g)',
+                ),
+                const SizedBox(height: 10),
+                _DecimalField(
+                  key: const Key('target_fat_field'),
+                  controller: _fat,
+                  label: 'Grassi (g)',
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  key: const Key('save_targets_button'),
+                  onPressed: _save,
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Salva obiettivi'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -679,38 +693,41 @@ class _WeightEditorSheetState extends State<_WeightEditorSheet> {
         20,
         MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Registra il peso',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 5),
-            const Text('Una misurazione alla volta, senza giudizi.'),
-            const SizedBox(height: 18),
-            _DecimalField(
-              key: const Key('weight_field'),
-              controller: _weight,
-              label: 'Peso (kg)',
-              minimum: 20,
-              maximum: 500,
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              key: const Key('save_weight_button'),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  Navigator.pop(context, _parse(_weight.text));
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Registra'),
-            ),
-          ],
+      // Un campo solo: sul tablet resta largo quanto una riga leggibile.
+      child: AdaptiveContent(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Registra il peso',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 5),
+              const Text('Una misurazione alla volta, senza giudizi.'),
+              const SizedBox(height: 18),
+              _DecimalField(
+                key: const Key('weight_field'),
+                controller: _weight,
+                label: 'Peso (kg)',
+                minimum: 20,
+                maximum: 500,
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                key: const Key('save_weight_button'),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    Navigator.pop(context, _parse(_weight.text));
+                  }
+                },
+                icon: const Icon(Icons.check_rounded),
+                label: const Text('Registra'),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/app.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
+import 'package:kal_tracker/core/presentation/app_shell.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/data/diary_repository.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
@@ -567,6 +569,77 @@ void main() {
 
     await _disposeApp(tester, database);
   });
+
+  testWidgets('sul tablet largo la settimana si legge a due giorni per riga', (
+    tester,
+  ) async {
+    // Due difetti in un colpo: senza limite le card andrebbero da un bordo
+    // all'altro dei 1706 dp, e sette giorni incolonnati sarebbero sette
+    // schermate di scorrimento per una settimana sola.
+    AppTime.initialize();
+    _wideWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    await _seed(tester, database, gateway);
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    final width = tester
+        .getSize(find.byKey(const Key('weekly_plan_list')))
+        .width;
+    expect(
+      width,
+      AppBreakpoints.contentMaxWidth(AppWindowSize.expanded),
+      reason: 'la colonna deve fermarsi alla larghezza leggibile',
+    );
+    expect(width, lessThan(1706));
+
+    final first = tester.getTopLeft(
+      find.byKey(const Key('plan_day_2026-08-05')),
+    );
+    final second = tester.getTopLeft(
+      find.byKey(const Key('plan_day_2026-08-06')),
+    );
+    expect(
+      second.dy,
+      first.dy,
+      reason: 'i due giorni stanno sulla stessa riga',
+    );
+    expect(
+      second.dx,
+      greaterThan(first.dx),
+      reason: 'il secondo giorno sta a destra del primo, come sul calendario',
+    );
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('sul telefono i giorni restano uno sotto l’altro', (
+    tester,
+  ) async {
+    AppTime.initialize();
+    _tallWindow(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final gateway = _FakeGateway();
+    await _seed(tester, database, gateway);
+
+    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpAndSettle();
+    await _openPlanTab(tester);
+
+    final first = tester.getTopLeft(
+      find.byKey(const Key('plan_day_2026-08-05')),
+    );
+    final second = tester.getTopLeft(
+      find.byKey(const Key('plan_day_2026-08-06')),
+    );
+    expect(second.dx, first.dx);
+    expect(second.dy, greaterThan(first.dy));
+
+    await _disposeApp(tester, database);
+  });
 }
 
 typedef _Seed = ({
@@ -701,7 +774,17 @@ Future<void> _tap(WidgetTester tester, Key key) async {
 }
 
 Future<void> _openPlanTab(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('nav_plan')));
+  // Sul telefono si tocca la barra in basso; sul tablet quella barra non
+  // esiste più e al suo posto c'è la guida laterale, che espone le icone.
+  final bottomBarTab = find.byKey(const Key('nav_plan'));
+  await tester.tap(
+    bottomBarTab.evaluate().isNotEmpty
+        ? bottomBarTab
+        : find.descendant(
+            of: find.byKey(const Key('main_navigation_rail')),
+            matching: find.byIcon(AppDestination.plan.icon),
+          ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -723,6 +806,15 @@ Widget _app(
   ],
   child: const KalTrackerApp(),
 );
+
+/// Il tablet di Marco in orizzontale: 1706 dp, e alto abbastanza da costruire
+/// tutta la settimana senza scorrere.
+void _wideWindow(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1706, 2400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
 
 /// Una finestra alta: la settimana unificata è lunga, e uno schermo da 600
 /// px non costruirebbe le card in fondo alla lista.

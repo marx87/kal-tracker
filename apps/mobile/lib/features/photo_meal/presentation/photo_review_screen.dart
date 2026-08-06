@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
@@ -155,56 +156,66 @@ class _PhotoReviewScreenState extends ConsumerState<PhotoReviewScreen> {
 
   Widget _reviewBody(PhotoMealJob job) {
     final result = job.result!;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _AnalysisHeader(result: result, userNote: job.userNote),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<MealType>(
-            key: const Key('review_meal_type'),
-            initialValue: _mealType,
-            decoration: const InputDecoration(labelText: 'Pasto'),
-            items: [
-              for (final type in MealType.values)
-                DropdownMenuItem(value: type, child: Text(type.label)),
+    // Un modulo da correggere voce per voce: colonna sola, centrata. Le
+    // proposte si controllano in ordine, e il totale in cima deve restare
+    // sotto l'occhio mentre si scende — affiancare due voci su schermo largo
+    // farebbe perdere il segno proprio dove serve attenzione, e i campi dei
+    // valori per 100 g non guadagnano nulla a essere più larghi.
+    return AdaptiveLayout(
+      builder: (context, size) => AdaptiveContent(
+        child: SingleChildScrollView(
+          key: const Key('photo_review_body'),
+          padding: AppBreakpoints.pagePadding(size),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _AnalysisHeader(result: result, userNote: job.userNote),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<MealType>(
+                key: const Key('review_meal_type'),
+                initialValue: _mealType,
+                decoration: const InputDecoration(labelText: 'Pasto'),
+                items: [
+                  for (final type in MealType.values)
+                    DropdownMenuItem(value: type, child: Text(type.label)),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (value) => setState(() => _mealType = value!),
+              ),
+              const SizedBox(height: 12),
+              // Il totale sta IN ALTO e si ricalcola a ogni modifica: con le
+              // stime da foto è la prima cosa che Marco vede.
+              _TotalsCard(label: _totalsLabel()),
+              const SizedBox(height: 12),
+              for (final (index, row) in _rows.indexed) ...[
+                _proposalCard(index, row),
+                const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                key: const Key('confirm_review_button'),
+                onPressed: _busy || !_rows.any((row) => row.selected)
+                    ? null
+                    : () => _confirm(job),
+                icon: _busy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: Text(_busy ? 'Salvataggio…' : 'Aggiungi al diario'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const Key('discard_review_button'),
+                onPressed: _busy ? null : () => _discard(job),
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Scarta tutto'),
+              ),
             ],
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _mealType = value!),
           ),
-          const SizedBox(height: 12),
-          // Il totale sta IN ALTO e si ricalcola a ogni modifica: con le
-          // stime da foto è la prima cosa che Marco vede.
-          _TotalsCard(label: _totalsLabel()),
-          const SizedBox(height: 12),
-          for (final (index, row) in _rows.indexed) ...[
-            _proposalCard(index, row),
-            const SizedBox(height: 12),
-          ],
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            key: const Key('confirm_review_button'),
-            onPressed: _busy || !_rows.any((row) => row.selected)
-                ? null
-                : () => _confirm(job),
-            icon: _busy
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-            label: Text(_busy ? 'Salvataggio…' : 'Aggiungi al diario'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            key: const Key('discard_review_button'),
-            onPressed: _busy ? null : () => _discard(job),
-            icon: const Icon(Icons.delete_outline_rounded),
-            label: const Text('Scarta tutto'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -790,7 +801,11 @@ class _InfoBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Un messaggio con due pulsanti: centrato in verticale, ma anche largo
+    // quanto una riga leggibile — su tablet «Il Mac analizza la foto appena è
+    // acceso…» su una riga sola da un bordo all'altro non si legge.
+    return AdaptiveContent(
+      alignment: Alignment.center,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

@@ -52,6 +52,14 @@ class BodyScreen extends ConsumerWidget {
           // L'obiettivo vive accanto alla composizione perché è lì che si
           // legge se ci si sta arrivando; backup, sincronizzazione e travaso
           // da Gym Tracker riguardano gli stessi dati personali.
+          // La bilancia prima di tutto: è il modo normale di registrare una
+          // pesata, e il foglio manuale è la strada di riserva.
+          IconButton(
+            key: const Key('body_open_scale_button'),
+            tooltip: 'Leggi dalla bilancia',
+            onPressed: () => context.goNamed('scale'),
+            icon: const Icon(Icons.bluetooth_searching_rounded),
+          ),
           IconButton(
             key: const Key('body_open_coach_button'),
             tooltip: 'Rapporto del coach',

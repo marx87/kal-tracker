@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:kal_tracker/core/sync/sync_auth.dart';
 import 'package:kal_tracker/core/sync/sync_engine.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 
@@ -46,36 +47,45 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
           ],
         ),
       ),
-      body: ListView(
-        key: const Key('sync_list'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        children: [
-          if (!auth.configured)
-            const _DisabledCard()
-          else ...[
-            _StatusCard(status: status, auth: auth),
-            const SizedBox(height: 14),
-            if (status.error != null || auth.error != null) ...[
-              _ErrorCard(message: status.error ?? auth.error!),
-              const SizedBox(height: 14),
+      // Uno stato da leggere e, al massimo, due campi da compilare: la
+      // colonna centrata è tutto quello che serve. Un campo email largo 1706
+      // dp non aiuta nessuno a digitare, e non c'è una seconda cosa da
+      // guardare mentre si accede.
+      body: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: ListView(
+            key: const Key('sync_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            children: [
+              if (!auth.configured)
+                const _DisabledCard()
+              else ...[
+                _StatusCard(status: status, auth: auth),
+                const SizedBox(height: 14),
+                if (status.error != null || auth.error != null) ...[
+                  _ErrorCard(message: status.error ?? auth.error!),
+                  const SizedBox(height: 14),
+                ],
+                if (auth.signedIn)
+                  _SyncActionsCard(
+                    status: status,
+                    busy: auth.busy,
+                    onSyncNow: () =>
+                        ref.read(syncControllerProvider.notifier).syncNow(),
+                    onSignOut: () =>
+                        ref.read(syncAuthProvider.notifier).signOut(),
+                  )
+                else
+                  _SignInCard(
+                    email: _email,
+                    password: _password,
+                    busy: auth.busy,
+                    onSignIn: _signIn,
+                  ),
+              ],
             ],
-            if (auth.signedIn)
-              _SyncActionsCard(
-                status: status,
-                busy: auth.busy,
-                onSyncNow: () =>
-                    ref.read(syncControllerProvider.notifier).syncNow(),
-                onSignOut: () => ref.read(syncAuthProvider.notifier).signOut(),
-              )
-            else
-              _SignInCard(
-                email: _email,
-                password: _password,
-                busy: auth.busy,
-                onSignIn: _signIn,
-              ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }

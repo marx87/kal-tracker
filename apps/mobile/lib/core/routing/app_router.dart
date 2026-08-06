@@ -4,6 +4,7 @@ import 'package:kal_tracker/core/presentation/app_shell.dart';
 import 'package:kal_tracker/core/sync/sync_engine.dart';
 import 'package:kal_tracker/features/backup/presentation/backup_screen.dart';
 import 'package:kal_tracker/features/body/presentation/body_screen.dart';
+import 'package:kal_tracker/features/body/presentation/scale_screen.dart';
 import 'package:kal_tracker/features/coach/presentation/coach_screen.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercises_screen.dart';
@@ -182,6 +183,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/coach',
                 name: 'coach',
                 builder: (context, state) => const CoachScreen(),
+              ),
+              // La bilancia sta sotto Corpo perché è lì che finisce quello che
+              // misura. Rotta a sé e non foglio modale: la scansione può
+              // durare, e una schermata intera regge stati e messaggi meglio
+              // di un foglio che si chiude per sbaglio.
+              GoRoute(
+                path: '/scale',
+                name: 'scale',
+                builder: (context, state) => const ScaleScreen(),
               ),
               GoRoute(
                 path: '/progress',

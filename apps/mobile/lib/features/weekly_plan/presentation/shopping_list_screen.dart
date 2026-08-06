@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/shopping_checks.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/shopping_list_builder.dart';
@@ -42,60 +43,132 @@ class ShoppingListScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: ListView(
-        key: const Key('shopping_list'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        children: switch (shoppingList) {
-          AsyncData(:final value?) => _loaded(
-            ref,
-            value,
-            checks.forPlan(value.planId),
+      // L'eccezione del gruppo: qui NON si legge, si cammina fra gli scaffali.
+      // Le voci sono corte (nome + quantità), quindi su uno schermo largo i
+      // reparti stanno affiancati due per riga invece che uno sotto l'altro:
+      // metà scorrimento davanti al banco, e il giro del supermercato resta
+      // nell'ordine giusto perché si legge da sinistra a destra.
+      body: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: ListView(
+            key: const Key('shopping_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            children: switch (shoppingList) {
+              AsyncData(:final value?) => _loaded(
+                ref,
+                size,
+                value,
+                checks.forPlan(value.planId),
+              ),
+              AsyncData() => const [_EmptyCard()],
+              AsyncError() => const [_ErrorCard()],
+              _ => const [_LoadingCard()],
+            },
           ),
-          AsyncData() => const [_EmptyCard()],
-          AsyncError() => const [_ErrorCard()],
-          _ => const [_LoadingCard()],
-        },
+        ),
       ),
     );
   }
 
   List<Widget> _loaded(
     WidgetRef ref,
+    AppWindowSize size,
     ShoppingList list,
     Set<String> checkedKeys,
-  ) => [
-    // Un piano fatto di sole ricette sparite non ha niente da comprare, ma la
-    // spiegazione deve restare: sotto al vuoto si dice comunque cosa manca.
-    if (list.isEmpty)
-      const _EmptyCard()
-    else
-      _SummaryCard(list: list, checkedKeys: checkedKeys),
-    if (list.unavailableRecipes.isNotEmpty) ...[
-      const SizedBox(height: 14),
-      _MissingRecipesCard(names: list.unavailableRecipes),
-    ],
-    for (final department in list.departments) ...[
-      const SizedBox(height: 18),
-      _DepartmentHeader(department: department),
-      const SizedBox(height: 8),
-      Card(
-        child: Column(
+  ) {
+    final blocks = [
+      for (final department in list.departments)
+        _DepartmentBlock(
+          department: department,
+          checkedKeys: checkedKeys,
+          onToggle: (key) => ref
+              .read(shoppingChecksProvider.notifier)
+              .toggle(planId: list.planId, key: key),
+        ),
+    ];
+    return [
+      // Un piano fatto di sole ricette sparite non ha niente da comprare, ma
+      // la spiegazione deve restare: sotto al vuoto si dice comunque cosa
+      // manca.
+      if (list.isEmpty)
+        const _EmptyCard()
+      else
+        _SummaryCard(list: list, checkedKeys: checkedKeys),
+      if (list.unavailableRecipes.isNotEmpty) ...[
+        const SizedBox(height: 14),
+        _MissingRecipesCard(names: list.unavailableRecipes),
+      ],
+      ..._departmentRows(size, blocks),
+    ];
+  }
+
+  /// I reparti: in fila sul telefono, due per riga da `medium` in su.
+  ///
+  /// Restano appaiati nell'ordine del giro (ortofrutta accanto a macelleria,
+  /// poi la coppia dopo): affiancarli in due colonne indipendenti
+  /// costringerebbe a scendere tutta la prima e risalire, che è esattamente
+  /// il contrario di come si gira fra gli scaffali.
+  List<Widget> _departmentRows(AppWindowSize size, List<Widget> blocks) {
+    if (size.isCompact) {
+      return blocks;
+    }
+    final gutter = AppBreakpoints.gutter(size);
+    return [
+      for (var index = 0; index < blocks.length; index += 2)
+        Row(
+          // Reparti con un numero diverso di voci: si allineano in alto.
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final (index, item) in department.items.indexed) ...[
-              if (index > 0) const Divider(height: 1, indent: 56),
-              _ShoppingItemTile(
-                item: item,
-                checked: checkedKeys.contains(item.key),
-                onChanged: () => ref
-                    .read(shoppingChecksProvider.notifier)
-                    .toggle(planId: list.planId, key: item.key),
-              ),
-            ],
+            Expanded(child: blocks[index]),
+            SizedBox(width: gutter),
+            Expanded(
+              child: index + 1 < blocks.length
+                  ? blocks[index + 1]
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
-      ),
-    ],
-  ];
+    ];
+  }
+}
+
+/// Un reparto: la sua intestazione e la card con le voci da spuntare.
+class _DepartmentBlock extends StatelessWidget {
+  const _DepartmentBlock({
+    required this.department,
+    required this.checkedKeys,
+    required this.onToggle,
+  });
+
+  final ShoppingListDepartment department;
+  final Set<String> checkedKeys;
+  final void Function(String itemKey) onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 18),
+        _DepartmentHeader(department: department),
+        const SizedBox(height: 8),
+        Card(
+          child: Column(
+            children: [
+              for (final (index, item) in department.items.indexed) ...[
+                if (index > 0) const Divider(height: 1, indent: 56),
+                _ShoppingItemTile(
+                  item: item,
+                  checked: checkedKeys.contains(item.key),
+                  onChanged: () => onToggle(item.key),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Intestazione: quante voci sono già nel carrello, più copia e azzeramento.

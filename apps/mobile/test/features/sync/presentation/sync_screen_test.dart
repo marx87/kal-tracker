@@ -11,6 +11,7 @@ import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/core/sync/sync_engine.dart';
 import 'package:kal_tracker/core/sync/sync_gateway.dart';
 import 'package:kal_tracker/core/sync/sync_state_store.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
@@ -248,6 +249,42 @@ void main() {
       'Connesso come marco@test.it',
     );
     expect(find.byKey(const Key('sync_sign_out_button')), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('sul tablet largo i campi restano in una colonna leggibile', (
+    tester,
+  ) async {
+    // Email e password larghe 1706 dp non aiutano nessuno: il contenuto si
+    // ferma alla colonna leggibile e si centra.
+    AppTime.initialize();
+    tester.view.physicalSize = const Size(1706, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    final stateDir = Directory.systemTemp.createTempSync('kal-sync-screen');
+    addTearDown(() => stateDir.deleteSync(recursive: true));
+
+    await tester.pumpWidget(
+      _app(
+        database: database,
+        config: _cloudConfig,
+        gateway: FakeSyncGateway(),
+        stateDir: stateDir,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final width = tester.getSize(find.byKey(const Key('sync_list'))).width;
+    expect(width, AppBreakpoints.contentMaxWidth(AppWindowSize.expanded));
+    expect(width, lessThan(1706));
+    // Centrata, non appiccicata al bordo sinistro.
+    expect(
+      tester.getTopLeft(find.byKey(const Key('sync_list'))).dx,
+      greaterThan(0),
+    );
 
     await _disposeApp(tester, database);
   });

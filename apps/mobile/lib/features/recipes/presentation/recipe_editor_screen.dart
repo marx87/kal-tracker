@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
@@ -129,176 +129,186 @@ class _RecipeEditorScreenState extends ConsumerState<RecipeEditorScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _missing
           ? const Center(child: Text('Questa ricetta non è più disponibile.'))
+          // Anche questo è un modulo: nome, porzioni, tag, ingredienti con i
+          // grammi, istruzioni. Su schermo largo la colonna resta leggibile e
+          // centrata — le card degli ingredienti sono righe del modulo, non
+          // un catalogo da sfogliare, e affiancarle non aiuterebbe nessuno.
           : Form(
               key: _formKey,
-              child: SingleChildScrollView(
-                key: const Key('recipe_editor_list'),
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _EditorIntroCard(),
-                    const SizedBox(height: 18),
-                    Text(
-                      'La ricetta',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      key: const Key('recipe_name_field'),
-                      controller: _name,
-                      enabled: !_saving,
-                      textCapitalization: TextCapitalization.sentences,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome ricetta',
-                      ),
-                      validator: (value) {
-                        final clean = value?.trim() ?? '';
-                        if (clean.isEmpty) {
-                          return 'Inserisci un nome';
-                        }
-                        if (clean.length > 160) {
-                          return 'Massimo 160 caratteri';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      key: const Key('recipe_description_field'),
-                      controller: _description,
-                      enabled: !_saving,
-                      textCapitalization: TextCapitalization.sentences,
-                      maxLength: 600,
-                      minLines: 1,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Descrizione (facoltativa)',
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
+              child: AdaptiveLayout(
+                builder: (context, size) => AdaptiveContent(
+                  child: SingleChildScrollView(
+                    key: const Key('recipe_editor_list'),
+                    padding: AppBreakpoints.pagePadding(size),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: _IntegerField(
-                            key: const Key('recipe_servings_field'),
-                            controller: _servings,
-                            label: 'Porzioni',
-                            minimum: 1,
-                            maximum: 100,
-                            enabled: !_saving,
-                            onChanged: (_) => setState(() {}),
-                          ),
+                        const _EditorIntroCard(),
+                        const SizedBox(height: 18),
+                        Text(
+                          'La ricetta',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _IntegerField(
-                            key: const Key('recipe_prep_minutes_field'),
-                            controller: _prepMinutes,
-                            label: 'Tempo (min)',
-                            minimum: 0,
-                            maximum: 10080,
-                            enabled: !_saving,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    _TagsEditor(
-                      tags: _tags,
-                      controller: _tagInput,
-                      enabled: !_saving,
-                      onSubmitted: _addTags,
-                      onRemove: _removeTag,
-                    ),
-                    const SizedBox(height: 4),
-                    SwitchListTile(
-                      key: const Key('recipe_favorite_switch'),
-                      contentPadding: EdgeInsets.zero,
-                      value: _isFavorite,
-                      onChanged: _saving
-                          ? null
-                          : (value) => setState(() => _isFavorite = value),
-                      title: const Text('Tienila tra le preferite'),
-                      secondary: Icon(
-                        _isFavorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: AppPalette.coral,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Ingredienti',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          key: const Key('add_recipe_ingredient_button'),
-                          onPressed: _saving ? null : _pickIngredient,
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Aggiungi'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_ingredients.isEmpty)
-                      _IngredientEmptyState(showError: _showIngredientError)
-                    else
-                      for (final ingredient in _ingredients) ...[
-                        _IngredientEditorCard(
-                          ingredient: ingredient,
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          key: const Key('recipe_name_field'),
+                          controller: _name,
                           enabled: !_saving,
-                          onChanged: () => setState(() {}),
-                          onRemove: () => _removeIngredient(ingredient),
+                          textCapitalization: TextCapitalization.sentences,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Nome ricetta',
+                          ),
+                          validator: (value) {
+                            final clean = value?.trim() ?? '';
+                            if (clean.isEmpty) {
+                              return 'Inserisci un nome';
+                            }
+                            if (clean.length > 160) {
+                              return 'Massimo 160 caratteri';
+                            }
+                            return null;
+                          },
                         ),
-                        const SizedBox(height: 9),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          key: const Key('recipe_description_field'),
+                          controller: _description,
+                          enabled: !_saving,
+                          textCapitalization: TextCapitalization.sentences,
+                          maxLength: 600,
+                          minLines: 1,
+                          maxLines: 2,
+                          decoration: const InputDecoration(
+                            labelText: 'Descrizione (facoltativa)',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _IntegerField(
+                                key: const Key('recipe_servings_field'),
+                                controller: _servings,
+                                label: 'Porzioni',
+                                minimum: 1,
+                                maximum: 100,
+                                enabled: !_saving,
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _IntegerField(
+                                key: const Key('recipe_prep_minutes_field'),
+                                controller: _prepMinutes,
+                                label: 'Tempo (min)',
+                                minimum: 0,
+                                maximum: 10080,
+                                enabled: !_saving,
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        _TagsEditor(
+                          tags: _tags,
+                          controller: _tagInput,
+                          enabled: !_saving,
+                          onSubmitted: _addTags,
+                          onRemove: _removeTag,
+                        ),
+                        const SizedBox(height: 4),
+                        SwitchListTile(
+                          key: const Key('recipe_favorite_switch'),
+                          contentPadding: EdgeInsets.zero,
+                          value: _isFavorite,
+                          onChanged: _saving
+                              ? null
+                              : (value) => setState(() => _isFavorite = value),
+                          title: const Text('Tienila tra le preferite'),
+                          secondary: Icon(
+                            _isFavorite
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: AppPalette.coral,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Ingredienti',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('add_recipe_ingredient_button'),
+                              onPressed: _saving ? null : _pickIngredient,
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Aggiungi'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (_ingredients.isEmpty)
+                          _IngredientEmptyState(showError: _showIngredientError)
+                        else
+                          for (final ingredient in _ingredients) ...[
+                            _IngredientEditorCard(
+                              ingredient: ingredient,
+                              enabled: !_saving,
+                              onChanged: () => setState(() {}),
+                              onRemove: () => _removeIngredient(ingredient),
+                            ),
+                            const SizedBox(height: 9),
+                          ],
+                        const SizedBox(height: 12),
+                        _NutritionPreview(preview: preview),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Preparazione',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          key: const Key('recipe_instructions_field'),
+                          controller: _instructions,
+                          enabled: !_saving,
+                          textCapitalization: TextCapitalization.sentences,
+                          minLines: 4,
+                          maxLines: 8,
+                          maxLength: 4000,
+                          decoration: const InputDecoration(
+                            labelText: 'Istruzioni (facoltative)',
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        FilledButton.icon(
+                          key: const Key('save_recipe_button'),
+                          onPressed: _saving ? null : _save,
+                          icon: _saving
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_rounded),
+                          label: Text(
+                            _saving
+                                ? 'Salvataggio…'
+                                : _isEditing
+                                ? 'Salva modifiche'
+                                : 'Salva ricetta',
+                          ),
+                        ),
                       ],
-                    const SizedBox(height: 12),
-                    _NutritionPreview(preview: preview),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Preparazione',
-                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      key: const Key('recipe_instructions_field'),
-                      controller: _instructions,
-                      enabled: !_saving,
-                      textCapitalization: TextCapitalization.sentences,
-                      minLines: 4,
-                      maxLines: 8,
-                      maxLength: 4000,
-                      decoration: const InputDecoration(
-                        labelText: 'Istruzioni (facoltative)',
-                        alignLabelWithHint: true,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FilledButton.icon(
-                      key: const Key('save_recipe_button'),
-                      onPressed: _saving ? null : _save,
-                      icon: _saving
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check_rounded),
-                      label: Text(
-                        _saving
-                            ? 'Salvataggio…'
-                            : _isEditing
-                            ? 'Salva modifiche'
-                            : 'Salva ricetta',
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -856,6 +866,11 @@ class _IntegerField extends StatelessWidget {
   }
 }
 
+/// Il catalogo in un foglio, per pescare un ingrediente.
+///
+/// Qui non serve nessun adattamento: i fogli modali di Material 3 si fermano
+/// da soli a 640 dp anche su un tablet da 1706, quindi la lista è già stretta
+/// quanto va bene per leggerla.
 class _FoodPickerSheet extends ConsumerStatefulWidget {
   const _FoodPickerSheet();
 

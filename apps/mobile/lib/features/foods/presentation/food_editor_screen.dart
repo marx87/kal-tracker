@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
@@ -85,148 +85,160 @@ class _FoodEditorScreenState extends ConsumerState<FoodEditorScreen> {
         ? null
         : AtwaterCalculator.check(per100g).warning;
 
+    // Questo è un modulo, non un elenco: campi larghi 1700 dp si compilano
+    // male (l'occhio deve rimbalzare dall'etichetta al valore) e le due
+    // coppie proteine/carboidrati e grassi/porzione perderebbero il senso di
+    // stare appaiate. Quindi colonna leggibile e centrata, sempre.
     return Form(
       key: _formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      child: SingleChildScrollView(
-        key: const Key('food_editor_list'),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_isBuiltIn) ...[
-              const _SeedNotice(),
-              const SizedBox(height: 16),
-            ],
-            Text("L'alimento", style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 10),
-            TextFormField(
-              key: const Key('food_editor_name_field'),
-              controller: _name,
-              enabled: !_saving,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Nome'),
-              validator: (value) {
-                final clean = value?.trim() ?? '';
-                if (clean.isEmpty) {
-                  return 'Inserisci il nome';
-                }
-                if (clean.length > 160) {
-                  return 'Massimo 160 caratteri';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 10),
-            TextFormField(
-              key: const Key('food_editor_brand_field'),
-              controller: _brand,
-              enabled: !_saving,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Marca (facoltativa)',
-              ),
-              validator: (value) => (value?.trim().length ?? 0) > 120
-                  ? 'Massimo 120 caratteri'
-                  : null,
-            ),
-            const SizedBox(height: 10),
-            TextFormField(
-              key: const Key('food_editor_barcode_field'),
-              controller: _barcode,
-              enabled: !_saving,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Codice a barre (facoltativo)',
-              ),
-              validator: (value) =>
-                  (value?.trim().length ?? 0) > 32 ? 'Massimo 32 cifre' : null,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Valori per 100 g',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 10),
-            _DecimalField(
-              key: const Key('food_editor_calories_field'),
-              controller: _calories,
-              label: 'Calorie (kcal)',
-              enabled: !_saving,
-              onChanged: () => setState(() {}),
-            ),
-            const SizedBox(height: 10),
-            Row(
+      child: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: SingleChildScrollView(
+            key: const Key('food_editor_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: _DecimalField(
-                    key: const Key('food_editor_protein_field'),
-                    controller: _protein,
-                    label: 'Proteine (g)',
-                    enabled: !_saving,
-                    onChanged: () => setState(() {}),
-                  ),
+                if (_isBuiltIn) ...[
+                  const _SeedNotice(),
+                  const SizedBox(height: 16),
+                ],
+                Text(
+                  "L'alimento",
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DecimalField(
-                    key: const Key('food_editor_carbs_field'),
-                    controller: _carbs,
-                    label: 'Carboidrati (g)',
-                    enabled: !_saving,
-                    onChanged: () => setState(() {}),
+                const SizedBox(height: 10),
+                TextFormField(
+                  key: const Key('food_editor_name_field'),
+                  controller: _name,
+                  enabled: !_saving,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                  validator: (value) {
+                    final clean = value?.trim() ?? '';
+                    if (clean.isEmpty) {
+                      return 'Inserisci il nome';
+                    }
+                    if (clean.length > 160) {
+                      return 'Massimo 160 caratteri';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  key: const Key('food_editor_brand_field'),
+                  controller: _brand,
+                  enabled: !_saving,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Marca (facoltativa)',
                   ),
+                  validator: (value) => (value?.trim().length ?? 0) > 120
+                      ? 'Massimo 120 caratteri'
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  key: const Key('food_editor_barcode_field'),
+                  controller: _barcode,
+                  enabled: !_saving,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Codice a barre (facoltativo)',
+                  ),
+                  validator: (value) => (value?.trim().length ?? 0) > 32
+                      ? 'Massimo 32 cifre'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Valori per 100 g',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 10),
+                _DecimalField(
+                  key: const Key('food_editor_calories_field'),
+                  controller: _calories,
+                  label: 'Calorie (kcal)',
+                  enabled: !_saving,
+                  onChanged: () => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DecimalField(
+                        key: const Key('food_editor_protein_field'),
+                        controller: _protein,
+                        label: 'Proteine (g)',
+                        enabled: !_saving,
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _DecimalField(
+                        key: const Key('food_editor_carbs_field'),
+                        controller: _carbs,
+                        label: 'Carboidrati (g)',
+                        enabled: !_saving,
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DecimalField(
+                        key: const Key('food_editor_fat_field'),
+                        controller: _fat,
+                        label: 'Grassi (g)',
+                        enabled: !_saving,
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _DecimalField(
+                        key: const Key('food_editor_serving_field'),
+                        controller: _serving,
+                        label: 'Porzione abituale (g)',
+                        enabled: !_saving,
+                        mustBePositive: true,
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _ServingPreview(grams: serving, nutrients: preview),
+                if (warning != null) ...[
+                  const SizedBox(height: 12),
+                  _AtwaterWarning(message: warning),
+                ],
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  key: const Key('save_food_editor_button'),
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check_rounded),
+                  label: Text(_saving ? 'Salvataggio…' : 'Salva nel catalogo'),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _DecimalField(
-                    key: const Key('food_editor_fat_field'),
-                    controller: _fat,
-                    label: 'Grassi (g)',
-                    enabled: !_saving,
-                    onChanged: () => setState(() {}),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _DecimalField(
-                    key: const Key('food_editor_serving_field'),
-                    controller: _serving,
-                    label: 'Porzione abituale (g)',
-                    enabled: !_saving,
-                    mustBePositive: true,
-                    onChanged: () => setState(() {}),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _ServingPreview(grams: serving, nutrients: preview),
-            if (warning != null) ...[
-              const SizedBox(height: 12),
-              _AtwaterWarning(message: warning),
-            ],
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              key: const Key('save_food_editor_button'),
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check_rounded),
-              label: Text(_saving ? 'Salvataggio…' : 'Salva nel catalogo'),
-            ),
-          ],
+          ),
         ),
       ),
     );

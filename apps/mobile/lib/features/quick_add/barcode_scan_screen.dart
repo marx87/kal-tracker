@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
@@ -51,6 +51,9 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
       appBar: AppBar(title: const Text('Scansiona il codice')),
       body: Column(
         children: [
+          // Il mirino resta a tutto schermo anche sul tablet: qui più pixel
+          // significano un codice a barre più grande e più facile da
+          // agganciare, quindi limitarne la larghezza sarebbe un danno.
           Expanded(
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
@@ -63,29 +66,34 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-              child: _searching
-                  ? Row(
-                      key: const Key('barcode_lookup_progress'),
-                      children: [
-                        const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+              // La didascalia invece è testo: si ferma alla colonna
+              // leggibile e si centra sotto il mirino.
+              child: AdaptiveContent(
+                child: _searching
+                    ? Row(
+                        key: const Key('barcode_lookup_progress'),
+                        children: [
+                          const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Cerco il prodotto…',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppPalette.mutedInk),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        key: const Key('barcode_scan_hint'),
+                        'Inquadra il codice a barre: guardo prima nel tuo '
+                        'catalogo, poi su Open Food Facts.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppPalette.mutedInk,
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Cerco il prodotto…',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppPalette.mutedInk),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      'Inquadra il codice a barre: guardo prima nel tuo '
-                      'catalogo, poi su Open Food Facts.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppPalette.mutedInk,
                       ),
-                    ),
+              ),
             ),
           ),
         ],
@@ -215,6 +223,9 @@ class _BarcodeScanScreenState extends ConsumerState<BarcodeScanScreen> {
 /// Scheda di conferma del prodotto scansionato: valori modificabili e
 /// porzione. Serve anche da editor «gentile» quando OFF non conosce il
 /// codice o si è offline. Ritorna il [FoodCatalogItem] appena salvato.
+///
+/// È un modulo, ma non gli serve [AdaptiveContent]: vive in un foglio modale,
+/// e i fogli di Material 3 si fermano da soli a 640 dp anche sul tablet.
 class BarcodeFoodSheet extends ConsumerStatefulWidget {
   const BarcodeFoodSheet({required this.product, this.message, super.key});
 
@@ -618,34 +629,39 @@ class _CameraErrorPanel extends StatelessWidget {
       key: const Key('barcode_camera_error'),
       color: AppPalette.cream,
       padding: const EdgeInsets.all(28),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.no_photography_outlined,
-            size: 44,
-            color: AppPalette.mutedInk,
-          ),
-          const SizedBox(height: 14),
-          Text(
-            _denied
-                ? 'La fotocamera per Coach360 è spenta. Aprila dalle '
-                      'Impostazioni del telefono (Coach360 → Fotocamera) '
-                      'e torna qui: ci metti un attimo.'
-                : 'Non riesco ad aprire la fotocamera. Chiudi questa '
-                      'schermata e riprova tra poco.',
-            textAlign: TextAlign.center,
-          ),
-          if (_denied) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              key: const Key('barcode_open_settings_button'),
-              onPressed: () => _openSettings(context),
-              icon: const Icon(Icons.settings_outlined),
-              label: const Text('Apri le impostazioni'),
+      // Il pannello prende il posto del mirino, ma è tutto testo: qui la
+      // colonna leggibile serve, e centrata verticalmente com'era prima.
+      child: AdaptiveContent(
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.no_photography_outlined,
+              size: 44,
+              color: AppPalette.mutedInk,
             ),
+            const SizedBox(height: 14),
+            Text(
+              _denied
+                  ? 'La fotocamera per Coach360 è spenta. Aprila dalle '
+                        'Impostazioni del telefono (Coach360 → Fotocamera) '
+                        'e torna qui: ci metti un attimo.'
+                  : 'Non riesco ad aprire la fotocamera. Chiudi questa '
+                        'schermata e riprova tra poco.',
+              textAlign: TextAlign.center,
+            ),
+            if (_denied) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                key: const Key('barcode_open_settings_button'),
+                onPressed: () => _openSettings(context),
+                icon: const Icon(Icons.settings_outlined),
+                label: const Text('Apri le impostazioni'),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

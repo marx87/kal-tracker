@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/app.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/backup/data/backup_repository.dart';
@@ -207,6 +208,30 @@ void main() {
     expect(find.byKey(const Key('restore_summary')), findsOneWidget);
     final items = await database.select(database.mealItems).get();
     expect(items.map((row) => row.foodName), ['Petto di pollo']);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('sul tablet largo il contenuto si ferma alla colonna leggibile', (
+    tester,
+  ) async {
+    // A 1706 dp senza limite le istruzioni del «Come funziona» diventerebbero
+    // righe lunghe mezzo schermo: questo test cade se qualcuno toglie
+    // l'adattamento.
+    AppTime.initialize();
+    tester.view.physicalSize = const Size(1706, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final database = AppDatabase(NativeDatabase.memory());
+    await LocalProfileRepository(database).getOrCreateMarco();
+
+    await tester.pumpWidget(_app(database, _FakeBackupStorage()));
+    await tester.pumpAndSettle();
+
+    final width = tester.getSize(find.byKey(const Key('backup_list'))).width;
+    expect(width, AppBreakpoints.contentMaxWidth(AppWindowSize.expanded));
+    expect(width, lessThan(1706));
 
     await _disposeApp(tester, database);
   });

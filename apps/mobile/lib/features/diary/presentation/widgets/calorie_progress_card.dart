@@ -342,7 +342,13 @@ class _ProteinFocus extends StatelessWidget {
                 ],
               ),
             const SizedBox(height: 8),
-            _ProgressBar(value: covered),
+            // La barra è larga quanto la card: è la card che deve stare in
+            // una colonna leggibile, non la barra a difendersi da sola. La
+            // chiave serve al test che lo verifica sul tablet.
+            _ProgressBar(
+              key: const Key('protein_progress_bar'),
+              value: covered,
+            ),
             const SizedBox(height: 6),
             Text(
               '${eaten.round()} g su ${target.round()} — è il macro che '
@@ -359,7 +365,7 @@ class _ProteinFocus extends StatelessWidget {
 }
 
 class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.value});
+  const _ProgressBar({required this.value, super.key});
 
   final double value;
 

@@ -120,107 +120,149 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
           ),
         ],
       ),
-      body: AdaptiveContent(
-        child: ListView(
-          key: const Key('weekly_plan_list'),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-          children: [
-            // Il messaggio d'errore sta dove Marco ha appena toccato: dentro
-            // il modulo se è aperto, in cima alla lista se il modulo è chiuso.
-            if (ui.error case final message? when !formOpen) ...[
-              _MessageCard(
-                key: const Key('weekly_plan_error'),
-                icon: Icons.error_outline_rounded,
-                color: accents.criticalSurface,
-                iconColor: accents.critical,
-                title: 'Non ci siamo',
-                message: message,
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (pending != null) ...[
-              _MessageCard(
-                key: const Key('plan_generating_card'),
-                icon: Icons.hourglass_top_rounded,
-                color: accents.warningSurface,
-                iconColor: accents.warning,
-                title: 'Il Mac sta preparando il piano',
-                message:
-                    'Ci vuole qualche minuto. Puoi uscire e tornare: appena è '
-                    'pronto lo trovi qui. Se il Mac è spento non arriverà '
-                    'nulla, e te lo dirò senza girarci intorno.',
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (failed != null && pending == null) ...[
-              _MessageCard(
-                key: const Key('plan_failed_card'),
-                icon: Icons.cloud_off_rounded,
-                color: accents.criticalSurface,
-                iconColor: accents.critical,
-                title: 'Piano non arrivato',
-                message:
-                    failed.notes ??
-                    'Il Mac non ha risposto: riprova quando è acceso.',
-                action: OutlinedButton.icon(
-                  key: const Key('plan_retry_button'),
-                  onPressed: () => setState(() => _formOpen = true),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Riprova'),
+      // La testata (moduli e messaggi) resta una colonna leggibile e centrata,
+      // ma i GIORNI no: sette giorni incolonnati su un tablet sono sette
+      // schermate di scorrimento per vedere una settimana che è UNA cosa
+      // sola. Da `medium` in su i giorni vanno a due per riga — si leggono
+      // ancora nell'ordine naturale (lun-mar, mer-gio…) e la settimana si
+      // abbraccia in un colpo d'occhio.
+      body: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: ListView(
+            key: const Key('weekly_plan_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            children: [
+              // Il messaggio d'errore sta dove Marco ha appena toccato: dentro
+              // il modulo se è aperto, in cima alla lista se è chiuso.
+              if (ui.error case final message? when !formOpen) ...[
+                _MessageCard(
+                  key: const Key('weekly_plan_error'),
+                  icon: Icons.error_outline_rounded,
+                  color: accents.criticalSurface,
+                  iconColor: accents.critical,
+                  title: 'Non ci siamo',
+                  message: message,
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
+              if (pending != null) ...[
+                _MessageCard(
+                  key: const Key('plan_generating_card'),
+                  icon: Icons.hourglass_top_rounded,
+                  color: accents.warningSurface,
+                  iconColor: accents.warning,
+                  title: 'Il Mac sta preparando il piano',
+                  message:
+                      'Ci vuole qualche minuto. Puoi uscire e tornare: appena '
+                      'è pronto lo trovi qui. Se il Mac è spento non arriverà '
+                      'nulla, e te lo dirò senza girarci intorno.',
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (failed != null && pending == null) ...[
+                _MessageCard(
+                  key: const Key('plan_failed_card'),
+                  icon: Icons.cloud_off_rounded,
+                  color: accents.criticalSurface,
+                  iconColor: accents.critical,
+                  title: 'Piano non arrivato',
+                  message:
+                      failed.notes ??
+                      'Il Mac non ha risposto: riprova quando è acceso.',
+                  action: OutlinedButton.icon(
+                    key: const Key('plan_retry_button'),
+                    onPressed: () => setState(() => _formOpen = true),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Riprova'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (formOpen) ...[
+                _PlanForm(
+                  meals: _meals,
+                  days: _days,
+                  dayOptions: _dayOptions,
+                  startDate: _startDate ?? _tomorrow,
+                  notes: _notes,
+                  error: ui.error,
+                  busy: ui.busy,
+                  waiting: pending != null,
+                  canClose: plan != null,
+                  onMealToggled: _toggleMeal,
+                  onDaysChanged: (value) => setState(() => _days = value),
+                  onPickStartDate: _pickStartDate,
+                  onGenerate: _generate,
+                  onClose: () => setState(() => _formOpen = false),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (plan != null)
+                _PlanHeader(
+                  plan: plan,
+                  showNewPlanButton: !formOpen,
+                  onShoppingList: () => context.goNamed('plan-shopping'),
+                  onNewPlan: () => setState(() => _formOpen = true),
+                ),
+              // Senza piano dei pasti la settimana è solo palestra: si dice,
+              // così l'elenco che segue non sembra un piano a metà.
+              if (plan == null && days.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                _WorkoutsOnlyIntro(count: days.length),
+              ],
+              ..._weekRows(size, [
+                for (final day in days)
+                  _PlanDay(
+                    day: day,
+                    recipesById: recipesById,
+                    target: target,
+                    showTotals: plan != null,
+                    busySlotId: ui.busySlotId,
+                    canStartWorkout:
+                        ref.watch(planWorkoutStarterProvider) != null,
+                    onDone: _markDone,
+                    onUndo: _undo,
+                    onReplace: _replace,
+                    onOpenRecipe: _openRecipe,
+                    onStartWorkout: _startWorkout,
+                  ),
+              ]),
             ],
-            if (formOpen) ...[
-              _PlanForm(
-                meals: _meals,
-                days: _days,
-                dayOptions: _dayOptions,
-                startDate: _startDate ?? _tomorrow,
-                notes: _notes,
-                error: ui.error,
-                busy: ui.busy,
-                waiting: pending != null,
-                canClose: plan != null,
-                onMealToggled: _toggleMeal,
-                onDaysChanged: (value) => setState(() => _days = value),
-                onPickStartDate: _pickStartDate,
-                onGenerate: _generate,
-                onClose: () => setState(() => _formOpen = false),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (plan != null)
-              _PlanHeader(
-                plan: plan,
-                showNewPlanButton: !formOpen,
-                onShoppingList: () => context.goNamed('plan-shopping'),
-                onNewPlan: () => setState(() => _formOpen = true),
-              ),
-            // Senza piano dei pasti la settimana è solo palestra: si dice, così
-            // l'elenco che segue non sembra un piano a metà.
-            if (plan == null && days.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              _WorkoutsOnlyIntro(count: days.length),
-            ],
-            for (final day in days)
-              _PlanDay(
-                day: day,
-                recipesById: recipesById,
-                target: target,
-                showTotals: plan != null,
-                busySlotId: ui.busySlotId,
-                canStartWorkout: ref.watch(planWorkoutStarterProvider) != null,
-                onDone: _markDone,
-                onUndo: _undo,
-                onReplace: _replace,
-                onOpenRecipe: _openRecipe,
-                onStartWorkout: _startWorkout,
-              ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  /// I giorni: uno sotto l'altro sul telefono, due per riga da `medium` in su.
+  ///
+  /// Le coppie seguono il calendario (lunedì accanto a martedì, non due
+  /// colonne indipendenti da leggere in verticale): l'ordine di lettura resta
+  /// quello con cui si vive la settimana.
+  List<Widget> _weekRows(AppWindowSize size, List<Widget> days) {
+    if (size.isCompact) {
+      return days;
+    }
+    final gutter = AppBreakpoints.gutter(size);
+    return [
+      for (var index = 0; index < days.length; index += 2)
+        Row(
+          // I giorni hanno altezze diverse (chi ha l'allenamento, chi tre
+          // pasti): si allineano in alto, non si stirano l'uno sull'altro.
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: days[index]),
+            SizedBox(width: gutter),
+            // Con un numero dispari di giorni l'ultimo resta largo come gli
+            // altri invece di prendersi tutta la riga.
+            Expanded(
+              child: index + 1 < days.length
+                  ? days[index + 1]
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+    ];
   }
 
   void _toggleMeal(PlanMeal meal, bool selected) {
@@ -1143,42 +1185,46 @@ class _ReplaceSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accents = AppAccents.of(context);
+    // Anche il foglio nasce largo quanto la finestra: l'elenco delle ricette
+    // si legge in colonna, non da un bordo all'altro del tablet.
     return SafeArea(
-      child: ListView(
-        key: const Key('plan_replace_sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-        shrinkWrap: true,
-        children: [
-          Text(
-            'Cosa metti a ${meal.label.toLowerCase()}?',
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Solo ricette del tuo ricettario.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: accents.mutedInk,
+      child: AdaptiveContent(
+        child: ListView(
+          key: const Key('plan_replace_sheet'),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+          shrinkWrap: true,
+          children: [
+            Text(
+              'Cosa metti a ${meal.label.toLowerCase()}?',
+              style: theme.textTheme.titleLarge,
             ),
-          ),
-          const SizedBox(height: 10),
-          for (final recipe in [...suggested, ...others])
-            ListTile(
-              key: Key('plan_replace_option_${recipe.id}'),
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                recipe.id == currentRecipeId
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: theme.colorScheme.primary,
+            const SizedBox(height: 4),
+            Text(
+              'Solo ricette del tuo ricettario.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accents.mutedInk,
               ),
-              title: Text(recipe.name),
-              subtitle: Text(
-                '${_round(recipe.nutrition.perServing.calories)} kcal a '
-                'porzione',
-              ),
-              onTap: () => Navigator.of(context).pop(recipe.id),
             ),
-        ],
+            const SizedBox(height: 10),
+            for (final recipe in [...suggested, ...others])
+              ListTile(
+                key: Key('plan_replace_option_${recipe.id}'),
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  recipe.id == currentRecipeId
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+                title: Text(recipe.name),
+                subtitle: Text(
+                  '${_round(recipe.nutrition.perServing.calories)} kcal a '
+                  'porzione',
+                ),
+                onTap: () => Navigator.of(context).pop(recipe.id),
+              ),
+          ],
+        ),
       ),
     );
   }

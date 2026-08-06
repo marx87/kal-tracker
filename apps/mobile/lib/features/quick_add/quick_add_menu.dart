@@ -8,6 +8,10 @@ enum QuickAddAction { manual, catalog, photo, barcode }
 
 /// Menu smart del FAB «Aggiungi alimento»: un bottom sheet con le quattro
 /// azioni, tutte a portata di pollice. Ritorna null se Marco chiude.
+///
+/// Sul tablet non si allarga: i fogli modali di Material 3 si fermano a
+/// 640 dp da soli, quindi qui non serve nessun limite di larghezza in più —
+/// il test `quick_add_width_test` lo tiene fermo.
 Future<QuickAddAction?> showQuickAddMenu(BuildContext context) =>
     showModalBottomSheet<QuickAddAction>(
       context: context,

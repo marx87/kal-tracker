@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart';
 import 'package:kal_tracker/features/foods/domain/catalog_asset.dart';
 import 'package:kal_tracker/features/foods/domain/food_models.dart';
+import 'package:kal_tracker/features/foods/presentation/adaptive_card_rows.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_providers.dart';
 
 class FoodCatalogScreen extends ConsumerStatefulWidget {
@@ -68,119 +69,149 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: TextField(
-              key: const Key('food_search_field'),
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onChanged: (value) =>
-                  ref.read(foodSearchQueryProvider.notifier).state = value,
-              decoration: InputDecoration(
-                hintText: 'Cerca pollo, banana, yogurt…',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: searchQuery.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Cancella ricerca',
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(foodSearchQueryProvider.notifier).state = '';
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      ),
+      // Il catalogo è un elenco di card, non un testo da leggere: su tablet
+      // una colonna sola centrata lascerebbe metà schermo vuoto senza far
+      // vedere un alimento in più. Quindi la griglia prende tutte le colonne
+      // che lo spazio regge e a fermarsi alla colonna leggibile è solo il
+      // campo di ricerca, che è l'unico pezzo di testo della schermata.
+      body: AdaptiveLayout(
+        builder: (context, size) {
+          final page = AppBreakpoints.pagePadding(size);
+          final gutter = AppBreakpoints.gutter(size);
+          final columns = AppBreakpoints.columns(size);
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(page.left, 4, page.right, 12),
+                child: AdaptiveContent(
+                  // A sinistra e non centrato: parte dove parte la prima
+                  // colonna di card, così la pagina ha un bordo solo.
+                  alignment: AlignmentDirectional.topStart,
+                  child: TextField(
+                    key: const Key('food_search_field'),
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onChanged: _search,
+                    decoration: InputDecoration(
+                      hintText: 'Cerca pollo, banana, yogurt…',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: searchQuery.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Cancella ricerca',
+                              onPressed: _clearSearch,
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _SectionChip(
-                  key: const Key('food_section_all'),
-                  label: 'Tutti',
-                  icon: Icons.grid_view_rounded,
-                  selected: selectedSection == FoodCatalogSection.all,
-                  onSelected: () => _select(FoodCatalogSection.all),
-                ),
-                const SizedBox(width: 8),
-                _SectionChip(
-                  key: const Key('food_section_mine'),
-                  label: 'Solo i miei',
-                  icon: Icons.person_rounded,
-                  selected: selectedSection == FoodCatalogSection.mine,
-                  onSelected: () => _select(FoodCatalogSection.mine),
-                ),
-                const SizedBox(width: 8),
-                _SectionChip(
-                  key: const Key('food_section_favorites'),
-                  label: 'Preferiti',
-                  icon: Icons.favorite_rounded,
-                  selected: selectedSection == FoodCatalogSection.favorites,
-                  onSelected: () => _select(FoodCatalogSection.favorites),
-                ),
-                const SizedBox(width: 8),
-                _SectionChip(
-                  key: const Key('food_section_recent'),
-                  label: 'Recenti',
-                  icon: Icons.history_rounded,
-                  selected: selectedSection == FoodCatalogSection.recent,
-                  onSelected: () => _select(FoodCatalogSection.recent),
-                ),
-              ],
-            ),
-          ),
-          if (categories.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  for (final category in categories) ...[
-                    if (category != categories.first) const SizedBox(width: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: page.left),
+                child: Row(
+                  children: [
                     _SectionChip(
-                      key: Key(
-                        'food_category_${CatalogSearchIndex.slugify(category)}',
-                      ),
-                      label: category,
-                      selected: selectedCategory == category,
-                      onSelected: () => _selectCategory(category),
+                      key: const Key('food_section_all'),
+                      label: 'Tutti',
+                      icon: Icons.grid_view_rounded,
+                      selected: selectedSection == FoodCatalogSection.all,
+                      onSelected: () => _select(FoodCatalogSection.all),
+                    ),
+                    const SizedBox(width: 8),
+                    _SectionChip(
+                      key: const Key('food_section_mine'),
+                      label: 'Solo i miei',
+                      icon: Icons.person_rounded,
+                      selected: selectedSection == FoodCatalogSection.mine,
+                      onSelected: () => _select(FoodCatalogSection.mine),
+                    ),
+                    const SizedBox(width: 8),
+                    _SectionChip(
+                      key: const Key('food_section_favorites'),
+                      label: 'Preferiti',
+                      icon: Icons.favorite_rounded,
+                      selected: selectedSection == FoodCatalogSection.favorites,
+                      onSelected: () => _select(FoodCatalogSection.favorites),
+                    ),
+                    const SizedBox(width: 8),
+                    _SectionChip(
+                      key: const Key('food_section_recent'),
+                      label: 'Recenti',
+                      icon: Icons.history_rounded,
+                      selected: selectedSection == FoodCatalogSection.recent,
+                      onSelected: () => _select(FoodCatalogSection.recent),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Expanded(
-            child: foods.when(
-              data: (items) => items.isEmpty
-                  ? _CatalogEmptyState(section: selectedSection)
-                  : ListView.separated(
-                      key: const Key('food_catalog_list'),
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (context, index) => _FoodCard(
-                        food: items[index],
-                        onFavorite: () => _toggleFavorite(items[index]),
-                        onAdd: () => _addFood(items[index]),
-                        onEdit: () => _editFood(items[index]),
-                        onDelete: () => _deleteFood(items[index]),
-                      ),
-                    ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) => _CatalogError(
-                onRetry: () => ref.invalidate(visibleFoodsProvider),
+              if (categories.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: page.left),
+                  child: Row(
+                    children: [
+                      for (final category in categories) ...[
+                        if (category != categories.first)
+                          const SizedBox(width: 8),
+                        _SectionChip(
+                          key: Key(
+                            'food_category_'
+                            '${CatalogSearchIndex.slugify(category)}',
+                          ),
+                          label: category,
+                          selected: selectedCategory == category,
+                          onSelected: () => _selectCategory(category),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Expanded(
+                child: foods.when(
+                  data: (items) => items.isEmpty
+                      ? _CatalogEmptyState(section: selectedSection)
+                      : ListView.separated(
+                          key: const Key('food_catalog_list'),
+                          // In fondo servono i margini di pagina più lo
+                          // spazio del FAB, altrimenti copre l'ultima card.
+                          padding: page.copyWith(
+                            top: 0,
+                            bottom: page.bottom + 88,
+                          ),
+                          itemCount: AdaptiveCardRow.rowCount(
+                            items.length,
+                            columns,
+                          ),
+                          separatorBuilder: (context, index) =>
+                              SizedBox(height: gutter),
+                          itemBuilder: (context, rowIndex) => AdaptiveCardRow(
+                            rowIndex: rowIndex,
+                            itemCount: items.length,
+                            columns: columns,
+                            gutter: gutter,
+                            itemBuilder: (context, index) => _FoodCard(
+                              food: items[index],
+                              onFavorite: () => _toggleFavorite(items[index]),
+                              onAdd: () => _addFood(items[index]),
+                              onEdit: () => _editFood(items[index]),
+                              onDelete: () => _deleteFood(items[index]),
+                            ),
+                          ),
+                        ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stackTrace) => _CatalogError(
+                    onRetry: () => ref.invalidate(visibleFoodsProvider),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('create_food_button'),
@@ -189,6 +220,14 @@ class _FoodCatalogScreenState extends ConsumerState<FoodCatalogScreen> {
         label: const Text('Nuovo alimento'),
       ),
     );
+  }
+
+  void _search(String query) =>
+      ref.read(foodSearchQueryProvider.notifier).state = query;
+
+  void _clearSearch() {
+    _searchController.clear();
+    _search('');
   }
 
   void _select(FoodCatalogSection section) {
@@ -380,6 +419,9 @@ class _FoodCard extends StatelessWidget {
     final number = NumberFormat.decimalPattern('it');
 
     return Card(
+      // La chiave è sulla card intera, non su un bottone dentro: serve a
+      // misurarne la larghezza nel test della griglia adattiva.
+      key: Key('food_card_${food.id}'),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
         child: Row(

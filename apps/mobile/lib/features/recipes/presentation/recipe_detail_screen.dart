@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
@@ -242,243 +242,262 @@ class _RecipeDetailsBody extends StatelessWidget {
       grams: basis.gramsFor(selectedServings),
     );
 
-    return ListView(
-      key: const Key('recipe_detail_list'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-      children: [
-        Card(
-          color: AppPalette.coralSoft,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    // Qui non serve il master-detail con l'elenco ricette a fianco: dopo che
+    // hai aperto una ricetta quello che fai è leggerne ingredienti e
+    // preparazione e decidere pasto e porzioni — la lista non serve più, e
+    // tenerla a fianco ruberebbe metà larghezza a un contenuto che è tutto
+    // testo. Quindi colonna leggibile e centrata: ingredienti e istruzioni
+    // restano righe di lunghezza umana anche su un tablet da 1706 dp.
+    return AdaptiveLayout(
+      builder: (context, size) => AdaptiveContent(
+        child: ListView(
+          key: const Key('recipe_detail_list'),
+          padding: AppBreakpoints.pagePadding(size),
+          children: [
+            Card(
+              color: AppPalette.coralSoft,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                    const Icon(
-                      Icons.ramen_dining_rounded,
-                      size: 54,
-                      color: AppPalette.coral,
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            summary.name,
-                            style: Theme.of(context).textTheme.headlineSmall,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.ramen_dining_rounded,
+                          size: 54,
+                          color: AppPalette.coral,
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                summary.name,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall,
+                              ),
+                              if (summary.description
+                                  case final description?) ...[
+                                const SizedBox(height: 5),
+                                Text(description),
+                              ],
+                            ],
                           ),
-                          if (summary.description case final description?) ...[
-                            const SizedBox(height: 5),
-                            Text(description),
-                          ],
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          tooltip: summary.isFavorite
+                              ? 'Rimuovi dai preferiti'
+                              : 'Aggiungi ai preferiti',
+                          onPressed: onFavorite,
+                          icon: Icon(
+                            summary.isFavorite
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: AppPalette.coral,
+                          ),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: summary.isFavorite
-                          ? 'Rimuovi dai preferiti'
-                          : 'Aggiungi ai preferiti',
-                      onPressed: onFavorite,
-                      icon: Icon(
-                        summary.isFavorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: AppPalette.coral,
-                      ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _NutritionFact(
+                            value: calorieLabel,
+                            label: 'kcal',
+                            color: AppPalette.forest,
+                          ),
+                        ),
+                        Expanded(
+                          child: _NutritionFact(
+                            value: perServing.protein.toStringAsFixed(1),
+                            label: 'proteine',
+                            color: AppPalette.coral,
+                          ),
+                        ),
+                        Expanded(
+                          child: _NutritionFact(
+                            value: perServing.carbs.toStringAsFixed(1),
+                            label: 'carbo',
+                            color: AppPalette.yellow,
+                          ),
+                        ),
+                        Expanded(
+                          child: _NutritionFact(
+                            value: perServing.fat.toStringAsFixed(1),
+                            label: 'grassi',
+                            color: AppPalette.lilac,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _NutritionFact(
-                        value: calorieLabel,
-                        label: 'kcal',
-                        color: AppPalette.forest,
-                      ),
+              ),
+            ),
+            if (summary.tags.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final tag in summary.tags)
+                    Chip(
+                      key: Key('recipe_detail_tag_$tag'),
+                      label: Text(tag),
+                      backgroundColor: AppPalette.mintSoft,
                     ),
-                    Expanded(
-                      child: _NutritionFact(
-                        value: perServing.protein.toStringAsFixed(1),
-                        label: 'proteine',
-                        color: AppPalette.coral,
-                      ),
-                    ),
-                    Expanded(
-                      child: _NutritionFact(
-                        value: perServing.carbs.toStringAsFixed(1),
-                        label: 'carbo',
-                        color: AppPalette.yellow,
-                      ),
-                    ),
-                    Expanded(
-                      child: _NutritionFact(
-                        value: perServing.fat.toStringAsFixed(1),
-                        label: 'grassi',
-                        color: AppPalette.lilac,
-                      ),
-                    ),
-                  ],
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('edit_recipe_button'),
+                    onPressed: duplicating ? null : onEdit,
+                    icon: const Icon(Icons.edit_rounded),
+                    label: const Text('Modifica'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('duplicate_recipe_button'),
+                    onPressed: duplicating ? null : onDuplicate,
+                    icon: duplicating
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.copy_all_rounded),
+                    label: const Text('Duplica'),
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-        if (summary.tags.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final tag in summary.tags)
-                Chip(
-                  key: Key('recipe_detail_tag_$tag'),
-                  label: Text(tag),
-                  backgroundColor: AppPalette.mintSoft,
-                ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('edit_recipe_button'),
-                onPressed: duplicating ? null : onEdit,
-                icon: const Icon(Icons.edit_rounded),
-                label: const Text('Modifica'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('duplicate_recipe_button'),
-                onPressed: duplicating ? null : onDuplicate,
-                icon: duplicating
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.copy_all_rounded),
-                label: const Text('Duplica'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text('Ingredienti', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Card(
-          child: Column(
-            children: [
-              for (final (index, ingredient) in details.ingredients.indexed)
-                Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(
-                        Icons.check_circle_rounded,
-                        color: AppPalette.leaf,
-                      ),
-                      title: Text(ingredient.name),
-                      trailing: Text(
-                        '${NumberFormat.decimalPattern('it').format(ingredient.grams)} g',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    if (index != details.ingredients.length - 1)
-                      const Divider(indent: 56),
-                  ],
-                ),
-            ],
-          ),
-        ),
-        if (details.instructions case final instructions?) ...[
-          const SizedBox(height: 20),
-          Text('Preparazione', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(17),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 20),
+            Text('Ingredienti', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Card(
+              child: Column(
                 children: [
-                  const Icon(Icons.timer_outlined, color: AppPalette.lilac),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(instructions)),
+                  for (final (index, ingredient) in details.ingredients.indexed)
+                    Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppPalette.leaf,
+                          ),
+                          title: Text(ingredient.name),
+                          trailing: Text(
+                            '${NumberFormat.decimalPattern('it').format(ingredient.grams)} g',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        if (index != details.ingredients.length - 1)
+                          const Divider(indent: 56),
+                      ],
+                    ),
                 ],
               ),
             ),
-          ),
-        ],
-        const SizedBox(height: 20),
-        Text(
-          'Dove la aggiungiamo?',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final meal in MealType.values)
-              ChoiceChip(
-                label: Text(_mealLabel(meal)),
-                selected: selectedMeal == meal,
-                onSelected: (_) => onMealChanged(meal),
-                selectedColor: AppPalette.mint,
+            if (details.instructions case final instructions?) ...[
+              const SizedBox(height: 20),
+              Text(
+                'Preparazione',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: 8),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(17),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.timer_outlined, color: AppPalette.lilac),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(instructions)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Text(
+              'Dove la aggiungiamo?',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final meal in MealType.values)
+                  ChoiceChip(
+                    label: Text(_mealLabel(meal)),
+                    selected: selectedMeal == meal,
+                    onSelected: (_) => onMealChanged(meal),
+                    selectedColor: AppPalette.mint,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Quante porzioni?',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final option in _servingOptions)
+                  ChoiceChip(
+                    key: Key('serving_option_${_servingKey(option)}'),
+                    label: Text(_formatServings(option)),
+                    selected: selectedServings == option,
+                    onSelected: (_) => onServingsChanged(option),
+                    selectedColor: AppPalette.mint,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              key: const Key('recipe_add_preview'),
+              '${_servingsLabel(selectedServings)} · '
+              '${preview.calories.round()} kcal · '
+              'P ${preview.protein.toStringAsFixed(1)} · '
+              'C ${preview.carbs.toStringAsFixed(1)} · '
+              'G ${preview.fat.toStringAsFixed(1)}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              key: const Key('add_recipe_serving_button'),
+              onPressed: adding ? null : onAdd,
+              icon: adding
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_rounded),
+              label: Text(
+                adding
+                    ? 'Aggiunta…'
+                    : 'Aggiungi ${_servingsLabel(selectedServings)} al diario',
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 20),
-        Text('Quante porzioni?', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final option in _servingOptions)
-              ChoiceChip(
-                key: Key('serving_option_${_servingKey(option)}'),
-                label: Text(_formatServings(option)),
-                selected: selectedServings == option,
-                onSelected: (_) => onServingsChanged(option),
-                selectedColor: AppPalette.mint,
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          key: const Key('recipe_add_preview'),
-          '${_servingsLabel(selectedServings)} · '
-          '${preview.calories.round()} kcal · '
-          'P ${preview.protein.toStringAsFixed(1)} · '
-          'C ${preview.carbs.toStringAsFixed(1)} · '
-          'G ${preview.fat.toStringAsFixed(1)}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppPalette.mutedInk),
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          key: const Key('add_recipe_serving_button'),
-          onPressed: adding ? null : onAdd,
-          icon: adding
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.add_rounded),
-          label: Text(
-            adding
-                ? 'Aggiunta…'
-                : 'Aggiungi ${_servingsLabel(selectedServings)} al diario',
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:kal_tracker/core/theme/app_breakpoints.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/backup/data/backup_storage.dart';
@@ -47,25 +48,34 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           ],
         ),
       ),
-      body: ListView(
-        key: const Key('backup_list'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-        children: [
-          const _BackupIntro(),
-          const SizedBox(height: 14),
-          _LastExportCard(
-            state: state,
-            busy: _busy,
-            onExport: _export,
-            onRestore: _restore,
+      // Colonna sola, centrata: qui si legge una spiegazione e si premono due
+      // pulsanti in sequenza (esporta, poi eventualmente ripristina). Su un
+      // tablet largo il testo del «Come funziona» a tutta larghezza sarebbe
+      // illeggibile, e due colonne farebbero solo perdere il filo delle
+      // istruzioni numerate.
+      body: AdaptiveLayout(
+        builder: (context, size) => AdaptiveContent(
+          child: ListView(
+            key: const Key('backup_list'),
+            padding: AppBreakpoints.pagePadding(size),
+            children: [
+              const _BackupIntro(),
+              const SizedBox(height: 14),
+              _LastExportCard(
+                state: state,
+                busy: _busy,
+                onExport: _export,
+                onRestore: _restore,
+              ),
+              if (_summary != null) ...[
+                const SizedBox(height: 14),
+                _SummaryCard(summary: _summary!),
+              ],
+              const SizedBox(height: 14),
+              const _BackupHint(),
+            ],
           ),
-          if (_summary != null) ...[
-            const SizedBox(height: 14),
-            _SummaryCard(summary: _summary!),
-          ],
-          const SizedBox(height: 14),
-          const _BackupHint(),
-        ],
+        ),
       ),
     );
   }
@@ -527,77 +537,82 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
         20,
         MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Ripristina da file',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              canBrowse
-                  ? 'Cerca il backup fra i file del telefono — di solito è in '
-                        'Download — oppure incollane il percorso. '
-                        'Controlliamo tutto prima di toccare il diario.'
-                  : 'Incolla il percorso del file di backup oppure il suo '
-                        'contenuto: controlliamo tutto prima di toccare il '
-                        'diario.',
-            ),
-            if (canBrowse) ...[
-              const SizedBox(height: 14),
-              // Il percorso di un file in Download non lo conosce nessuno:
-              // senza questo bottone il ripristino sul telefono è di fatto
-              // impraticabile.
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('restore_browse_button'),
-                  onPressed: _browsing ? null : _browse,
-                  icon: const Icon(Icons.folder_open_rounded),
-                  label: const Text('Sfoglia i file'),
+      // Il foglio nasce largo quanto la finestra: su tablet il campo del
+      // percorso diventerebbe una riga da un bordo all'altro. Anche qui vale
+      // la colonna leggibile.
+      child: AdaptiveContent(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Ripristina da file',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                canBrowse
+                    ? 'Cerca il backup fra i file del telefono — di solito è '
+                          'in Download — oppure incollane il percorso. '
+                          'Controlliamo tutto prima di toccare il diario.'
+                    : 'Incolla il percorso del file di backup oppure il suo '
+                          'contenuto: controlliamo tutto prima di toccare il '
+                          'diario.',
+              ),
+              if (canBrowse) ...[
+                const SizedBox(height: 14),
+                // Il percorso di un file in Download non lo conosce nessuno:
+                // senza questo bottone il ripristino sul telefono è di fatto
+                // impraticabile.
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: const Key('restore_browse_button'),
+                    onPressed: _browsing ? null : _browse,
+                    icon: const Icon(Icons.folder_open_rounded),
+                    label: const Text('Sfoglia i file'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextField(
+                key: const Key('restore_source_field'),
+                controller: _source,
+                minLines: 2,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  labelText: 'Percorso o contenuto del backup',
+                  errorText: _error,
                 ),
               ),
-            ],
-            const SizedBox(height: 16),
-            TextField(
-              key: const Key('restore_source_field'),
-              controller: _source,
-              minLines: 2,
-              maxLines: 5,
-              decoration: InputDecoration(
-                labelText: 'Percorso o contenuto del backup',
-                errorText: _error,
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                children: [
+                  for (final mode in BackupRestoreMode.values)
+                    ChoiceChip(
+                      key: Key('restore_mode_${mode.storageValue}'),
+                      label: Text(mode.label),
+                      selected: _mode == mode,
+                      onSelected: (_) => setState(() => _mode = mode),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              children: [
-                for (final mode in BackupRestoreMode.values)
-                  ChoiceChip(
-                    key: Key('restore_mode_${mode.storageValue}'),
-                    label: Text(mode.label),
-                    selected: _mode == mode,
-                    onSelected: (_) => setState(() => _mode = mode),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _mode.description,
-              style: const TextStyle(color: AppPalette.mutedInk),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              key: const Key('restore_continue_button'),
-              onPressed: _submit,
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text('Continua'),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                _mode.description,
+                style: const TextStyle(color: AppPalette.mutedInk),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: const Key('restore_continue_button'),
+                onPressed: _submit,
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: const Text('Continua'),
+              ),
+            ],
+          ),
         ),
       ),
     );
