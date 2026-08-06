@@ -121,6 +121,11 @@ enum ScaleProtocolKind {
   /// *Weight Scale Service* del Bluetooth SIG: il solo peso.
   gattWeight,
 
+  /// La **Renpho R-MSC02**: servizio `1a10`, proprietario e non documentato.
+  /// Il formato delle trame è stato ricavato da una cattura sulla bilancia
+  /// vera, non da una specifica — perché una specifica non esiste.
+  renphoMsc,
+
   /// **Nessuno di quelli che conosciamo.**
   ///
   /// Non è una resa: è la modalità in cui ci si collega lo stesso e si

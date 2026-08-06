@@ -694,6 +694,81 @@ void main() {
       expect(status.reading!.rawPayloadHex, contains(' | '));
     });
 
+    test('Renpho R-MSC02: il peso si consegna subito e si resta in '
+        'ascolto', () async {
+      // Le trame sono quelle vere del 6 agosto. Due cose insieme: il peso è
+      // disponibile da salvare appena arriva il `0x24`, e la sessione NON si
+      // chiude lì — l'impedenza in questo protocollo non si è ancora vista, e
+      // l'unico modo di trovarla è restare in ascolto oltre il peso.
+      final link = linkStandard(ScaleProtocolKind.renphoMsc);
+      final reader = readerFor(link);
+      final fasi = <ScalePhase>[];
+      final result = reader.connectTo(
+        renpho,
+        onStatus: (status) => fasi.add(status.phase),
+      );
+
+      final connection = await link.opened;
+      await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+        0x55,
+        0xaa,
+        0x21,
+        0x00,
+        0x05,
+        0x01,
+        0x00,
+        0x00,
+        0x24,
+        0x9f,
+        0xe9,
+      ]);
+      expect(fasi.last, ScalePhase.reading);
+      expect(connection.closed, isFalse);
+
+      await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+        0x55,
+        0xaa,
+        0x24,
+        0x00,
+        0x06,
+        0x01,
+        0x11,
+        0x00,
+        0x00,
+        0x25,
+        0xb2,
+        0x12,
+      ]);
+      // Il peso c'è già, e il collegamento è ancora aperto: è il punto.
+      expect(fasi.last, ScalePhase.incomplete);
+      expect(connection.closed, isFalse);
+
+      // Una trama mai vista arriva DOPO il peso: senza restare in ascolto
+      // sarebbe andata persa, ed è lì che l'impedenza va cercata.
+      await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+        0x55,
+        0xaa,
+        0x2f,
+        0x00,
+        0x04,
+        0x01,
+        0x02,
+        0x03,
+        0x04,
+        0x38,
+      ]);
+      await connection.dropConnection();
+
+      final status = await result;
+      expect(status.phase, ScalePhase.incomplete);
+      expect(status.reading!.weightKg, closeTo(96.50, 0.001));
+      expect(status.phase.hasReading, isTrue);
+      final registro = status.log.map((entry) => entry.hex).toList();
+      expect(registro, contains('55 aa 2f 00 04 01 02 03 04 38'));
+      // Il grezzo salvato tiene tutte le trame, non solo l'ultima.
+      expect(status.reading!.rawPayloadHex, contains(' | '));
+    });
+
     test('protocollo sconosciuto: si registra tutto, e conta come '
         'successo', () async {
       // La R-MSC02 parla `1a10`, un servizio che non sta nello standard e che

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
+import 'package:kal_tracker/features/body/domain/renpho_msc_protocol.dart';
 import 'package:kal_tracker/features/body/domain/scale_log.dart';
 import 'package:kal_tracker/features/body/domain/scale_session.dart';
 
@@ -229,6 +230,9 @@ class ScaleReader {
     if (connection.kind == ScaleProtocolKind.unknown) {
       return _converseCapture(connection);
     }
+    if (connection.kind == ScaleProtocolKind.renphoMsc) {
+      return _converseRenpho(connection, device);
+    }
     if (connection.kind != ScaleProtocolKind.qingniu) {
       return _converseGatt(connection, device);
     }
@@ -376,6 +380,135 @@ class ScaleReader {
       handshakeTimer.cancel();
       stepOnTimer.cancel();
       graceTimer?.cancel();
+      await subscription.cancel();
+      await connection.close();
+      _session = null;
+    }
+  }
+
+  /// Il dialogo con la Renpho R-MSC02.
+  ///
+  /// Due cose insieme, e la seconda è il motivo per cui questo metodo non
+  /// somiglia agli altri.
+  ///
+  /// **La prima**: il peso si legge e si consegna. Appena arriva il `0x24` la
+  /// pesata è disponibile da salvare — non c'è nessuna ragione di far
+  /// aspettare Marco per un'impedenza che potrebbe non arrivare mai.
+  ///
+  /// **La seconda**: la sessione **non si chiude lì**. L'impedenza in questo
+  /// protocollo non si è ancora vista, e l'unico modo di trovarla è restare in
+  /// ascolto oltre il peso, scrivendo per intero ogni trama sconosciuta. La
+  /// cattura che ha permesso di arrivare fin qui si era fermata undici secondi
+  /// dopo l'ultima trama utile: fermarsi di nuovo lì significherebbe non
+  /// scoprirlo mai. Quindi si consegna il peso **e** si continua ad ascoltare,
+  /// e il registro cresce mentre Marco decide se salvare.
+  Future<ScaleStatus> _converseRenpho(
+    ScaleConnection connection,
+    ScaleDevice device,
+  ) async {
+    final session = _session = Completer<ScaleStatus>();
+    _note('protocollo Renpho R-MSC02, ricavato dalle sue trame');
+
+    Timer? stepOnTimer;
+    Timer? codaTimer;
+    final grezzo = <String>[];
+    ScaleReading? pesata;
+
+    void finish(ScaleStatus status) {
+      if (!session.isCompleted) {
+        session.complete(status);
+      }
+    }
+
+    void onFrame(ScaleFrame incoming) {
+      final frame = decodeRenphoFrame(incoming.bytes);
+      if (frame == null) {
+        _note(
+          'da ${incoming.label ?? '?'}: trama che non è di questo protocollo',
+          hex: renphoHex(incoming.bytes),
+          isProblem: true,
+        );
+        return;
+      }
+      _note(
+        frame.checksumOk ? '$frame' : '$frame — somma di controllo sbagliata',
+        hex: frame.hex,
+        // Una trama mai vista è la cosa più interessante che possa succedere:
+        // finché l'impedenza non si trova, è lì che va cercata.
+        isProblem: !frame.checksumOk || frame is RenphoUnknownFrame,
+      );
+      grezzo.add(frame.hex);
+
+      switch (frame) {
+        case RenphoWeightFrame(stable: false):
+          _emit(ScalePhase.reading);
+        case RenphoWeightFrame(stable: true, weightKg: final kg):
+          stepOnTimer?.cancel();
+          pesata = ScaleReading(
+            measuredAt: _clock().toUtc(),
+            weightKg: kg,
+            deviceName: device.name,
+            rawPayloadHex: grezzo.join(' | '),
+          );
+          // Consegnata subito: da qui il pulsante «Salva» c'è già.
+          _emit(ScalePhase.incomplete, reading: pesata);
+          // E si resta in ascolto: l'impedenza, se esiste, arriva dopo.
+          codaTimer ??= Timer(stepOnTimeout, () {
+            _note('nessun’altra trama: chiudo con il solo peso');
+            finish(_emit(ScalePhase.incomplete, reading: pesata));
+          });
+        case RenphoStatusFrame():
+        case RenphoUnknownFrame():
+          if (pesata == null) {
+            _emit(ScalePhase.stepOn);
+          }
+      }
+    }
+
+    _emit(ScalePhase.stepOn);
+    final subscription = connection.incoming.listen(
+      onFrame,
+      onError: (Object error) {
+        _note('errore dal collegamento: $error', isProblem: true);
+        finish(_emit(ScalePhase.failed, errorDetail: '$error'));
+      },
+      onDone: () {
+        if (session.isCompleted) {
+          return;
+        }
+        final letta = pesata;
+        if (letta != null) {
+          _note('la bilancia si è scollegata: tengo la pesata che ho');
+          finish(_emit(ScalePhase.incomplete, reading: letta));
+          return;
+        }
+        _note('la bilancia si è scollegata', isProblem: true);
+        finish(
+          _emit(
+            ScalePhase.failed,
+            errorDetail:
+                'La bilancia si è scollegata prima di dare un peso stabile.',
+          ),
+        );
+      },
+      cancelOnError: false,
+    );
+
+    stepOnTimer = Timer(stepOnTimeout, () {
+      finish(
+        _emit(
+          ScalePhase.failed,
+          errorDetail:
+              'Nessun peso stabile in ${stepOnTimeout.inSeconds} secondi.',
+        ),
+      );
+    });
+
+    try {
+      return await session.future;
+    } finally {
+      stepOnTimer.cancel();
+      codaTimer?.cancel();
       await subscription.cancel();
       await connection.close();
       _session = null;

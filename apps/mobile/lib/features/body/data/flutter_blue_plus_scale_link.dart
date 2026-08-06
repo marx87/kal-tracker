@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
+import 'package:kal_tracker/features/body/domain/renpho_msc_protocol.dart';
 
 /// L'unico punto dell'app che sa che esiste `flutter_blue_plus`.
 ///
@@ -345,6 +346,30 @@ class FlutterBluePlusScaleLink implements ScaleLink {
   /// arriverebbe l'impedenza senza mai un peso, e la pesata morirebbe per
   /// scadenza del tempo con il numero già pubblicato dall'altra parte.
   static _QnProfile? _profileOf(List<BluetoothService> services) {
+    // La R-MSC02 per prima, e non per favoritismo: è l'unica bilancia vera che
+    // questo codice abbia mai avuto sotto i piedi, e il suo formato è stato
+    // ricavato dalle sue trame invece che da un documento. Se un giorno
+    // esponesse anche uno dei servizi standard, quello resterebbe comunque un
+    // ripiego rispetto a un protocollo verificato sul campo.
+    for (final service in services) {
+      if (service.serviceUuid == Guid(RenphoMsc.serviceUuid)) {
+        final live = _find(service, RenphoMsc.liveUuid);
+        final status = _find(service, RenphoMsc.statusUuid);
+        if (live != null || status != null) {
+          return _QnProfile(
+            notified: [
+              if (live != null)
+                _Notified(live, ScaleProtocolKind.renphoMsc, '2a10'),
+              if (status != null)
+                _Notified(status, ScaleProtocolKind.renphoMsc, '2a12'),
+            ],
+            kind: ScaleProtocolKind.renphoMsc,
+            config: _find(service, RenphoMsc.writeUuid),
+          );
+        }
+      }
+    }
+
     BluetoothCharacteristic? bodyComposition;
     BluetoothCharacteristic? weight;
     for (final service in services) {
