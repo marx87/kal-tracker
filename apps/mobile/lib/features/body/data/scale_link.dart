@@ -22,14 +22,27 @@ enum ScaleRadioState {
 /// Una bilancia vista durante la scansione.
 @immutable
 class ScaleDevice {
-  const ScaleDevice({required this.id, required this.name});
+  const ScaleDevice({
+    required this.id,
+    required this.name,
+    this.serviceUuids = const <String>[],
+  });
 
   /// L'indirizzo con cui il sistema la richiama. Su Android è il MAC, su iOS
   /// un identificatore locale: non è un dato da mostrare, serve a riconnettersi.
   final String id;
 
-  /// Come si è annunciata.
+  /// Come si è annunciata. **Spesso è vuoto**: in un annuncio BLE ci stanno
+  /// 31 byte, e chi ha qualcosa di meglio da metterci il nome lo omette.
   final String name;
+
+  /// I servizi dichiarati nell'annuncio, in minuscolo.
+  ///
+  /// Sono l'altra metà del riconoscimento, e per molte bilance l'unica: una
+  /// che si presenta col solo indirizzo è invisibile a un controllo che
+  /// guardi il nome, ma dice comunque di parlare `ffe0`. Buttarli via
+  /// significava non poterla riconoscere mai.
+  final List<String> serviceUuids;
 
   @override
   String toString() => name.isEmpty ? id : '$name ($id)';

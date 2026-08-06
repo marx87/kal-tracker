@@ -19,8 +19,10 @@ import 'package:flutter/foundation.dart';
 /// resistenze; le percentuali le calcola `bia_formula.dart`, con una formula
 /// nostra e versionata.
 abstract final class QnScale {
-  /// Il nome con cui la bilancia si annuncia. Serve a filtrare la scansione:
-  /// senza filtro, in un condominio, si trovano trenta dispositivi.
+  /// Il nome con cui la bilancia si annuncia, quando lo annuncia: in un
+  /// pacchetto BLE ci stanno 31 byte e moltissimi dispositivi il nome lo
+  /// omettono. Non è quindi un filtro sufficiente — vedi [looksLikeQnScale],
+  /// che guarda anche i servizi dichiarati.
   static const advertisedName = 'QN-Scale';
 
   /// Profilo «tipo 1», il più diffuso e quello della bilancia di Marco.
@@ -56,13 +58,6 @@ abstract final class QnScale {
   static const opcodeConfigReply = 0x13;
 }
 
-/// Riconosce la bilancia dal nome con cui si annuncia.
-///
-/// Il filtro della scansione lavora anche sull'UUID del servizio, ma `ffe0` è
-/// un servizio generico che monta mezzo mondo (moduli seriali, lampadine): la
-/// parola finale la dà il nome. Le QN si chiamano `QN-Scale`, con qualche
-/// variante di suffisso a seconda del modello, quindi si guarda il prefisso e
-/// non l'uguaglianza.
 /// Vero quando il nome annunciato è quello di una bilancia che parla il
 /// protocollo QN.
 ///
@@ -90,6 +85,45 @@ bool isQnScaleName(String? name) {
   ];
   return prefissi.any(clean.startsWith);
 }
+
+/// Vero quando fra i servizi annunciati c'è quello della bilancia.
+///
+/// Serve perché il nome, da solo, non basta: in un annuncio BLE ci stanno 31
+/// byte e moltissimi dispositivi il nome lo omettono — nel registro di Marco
+/// erano più della metà, presenti col solo indirizzo. Una bilancia muta è
+/// comunque riconoscibile da `ffe0` (o `fff0` sui modelli più recenti), che
+/// è esattamente il servizio da cui poi si leggono le trame.
+bool hasQnScaleService(Iterable<String> serviceUuids) {
+  const famiglie = [QnScale.serviceUuid, QnScale.altServiceUuid];
+  for (final uuid in serviceUuids) {
+    final clean = uuid.trim().toLowerCase();
+    if (clean.isEmpty) {
+      continue;
+    }
+    for (final famiglia in famiglie) {
+      // Il confronto è sull'UUID lungo e sulla sua forma corta a 4 cifre:
+      // Android annuncia `0000ffe0-0000-1000-8000-00805f9b34fb`, altri
+      // stack accorciano in `ffe0`, ed è lo stesso servizio.
+      final corto = famiglia.substring(4, 8);
+      if (clean == famiglia ||
+          clean == corto ||
+          clean.startsWith('0000$corto')) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// Se questo dispositivo vale un tentativo di connessione.
+///
+/// Nome **oppure** servizio: basta uno dei due. Un falso positivo costa una
+/// connessione fallita e una riga nel registro; un falso negativo costa una
+/// bilancia che «non si trova» mentre è a un metro di distanza.
+bool looksLikeQnScale({
+  String? name,
+  Iterable<String> serviceUuids = const [],
+}) => isQnScaleName(name) || hasQnScaleService(serviceUuids);
 
 /// La somma dei byte, modulo 256, nell'ultimo byte della trama.
 ///

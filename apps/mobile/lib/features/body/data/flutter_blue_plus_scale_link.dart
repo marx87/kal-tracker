@@ -78,6 +78,12 @@ class FlutterBluePlusScaleLink implements ScaleLink {
               ScaleDevice(
                 id: result.device.remoteId.str,
                 name: _nameOf(result),
+                // I servizi annunciati sono l'unico appiglio quando il nome
+                // manca, che è il caso di buona parte dei dispositivi in giro.
+                serviceUuids: [
+                  for (final uuid in result.advertisementData.serviceUuids)
+                    uuid.str128.toLowerCase(),
+                ],
               ),
             );
             _seen[result.device.remoteId.str] = result.device;

@@ -305,17 +305,27 @@ class ScaleReader {
             if (found.isCompleted || !seen.add(device.id)) {
               return;
             }
-            if (isQnScaleName(device.name)) {
-              _note('trovata ${device.name}');
+            if (looksLikeQnScale(
+              name: device.name,
+              serviceUuids: device.serviceUuids,
+            )) {
+              _note(
+                'trovata ${device.name.isEmpty ? device.id : device.name}'
+                '${device.name.isEmpty ? ' (riconosciuta dal servizio)' : ''}',
+              );
               found.complete(device);
               return;
             }
-            // I vicini scartati sono la prima cosa da guardare quando la bilancia
-            // «non si trova»: dicono se la scansione stava funzionando.
-            _note(
-              'visto ${device.name.isEmpty ? device.id : device.name}, non è '
-              'una bilancia',
-            );
+            // I vicini scartati sono la prima cosa da guardare quando la
+            // bilancia «non si trova»: dicono se la scansione stava
+            // funzionando. Con i servizi annunciati, perché senza il nome
+            // — che moltissimi dispositivi non mettono — una riga con il solo
+            // indirizzo non aiuta nessuno a capire cosa fosse.
+            final etichetta = device.name.isEmpty ? device.id : device.name;
+            final servizi = device.serviceUuids.isEmpty
+                ? 'nessun servizio annunciato'
+                : device.serviceUuids.map(_servizioBreve).join(' ');
+            _note('visto $etichetta [$servizi], non è una bilancia');
             _emit(ScalePhase.scanning);
           },
           onError: (Object error) {
@@ -375,4 +385,17 @@ class ScaleReader {
       _ => ScalePhase.failed,
     }, errorDetail: error.message);
   }
+}
+
+/// La forma corta di un UUID di servizio, per il registro.
+///
+/// `0000ffe0-0000-1000-8000-00805f9b34fb` diventa `ffe0`: è l'unica parte che
+/// cambia fra un servizio e l'altro, e il resto riempirebbe la riga senza
+/// dire niente.
+String _servizioBreve(String uuid) {
+  final clean = uuid.trim().toLowerCase();
+  if (clean.length == 36 && clean.startsWith('0000')) {
+    return clean.substring(4, 8);
+  }
+  return clean;
 }

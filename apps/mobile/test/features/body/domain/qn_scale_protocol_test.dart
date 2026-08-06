@@ -31,6 +31,41 @@ void main() {
       expect(isQnScaleName('AirPods di Marco'), isFalse);
       expect(isQnScaleName('TV Samsung'), isFalse);
     });
+
+    test('riconosce una bilancia muta dal servizio che annuncia', () {
+      // Il registro di Marco: su venticinque dispositivi visti, più della
+      // metà si presentava col solo indirizzo. Un riconoscimento che guardi
+      // il nome, lì, è cieco — e la bilancia era a un metro.
+      expect(
+        hasQnScaleService(['0000ffe0-0000-1000-8000-00805f9b34fb']),
+        isTrue,
+      );
+      expect(
+        hasQnScaleService(['0000fff0-0000-1000-8000-00805f9b34fb']),
+        isTrue,
+      );
+      // Alcuni stack accorciano l'UUID: è lo stesso servizio.
+      expect(hasQnScaleService(['ffe0']), isTrue);
+      expect(hasQnScaleService(['FFE0']), isTrue);
+      expect(
+        hasQnScaleService(['0000180f-0000-1000-8000-00805f9b34fb']),
+        isFalse,
+      );
+      expect(hasQnScaleService(const <String>[]), isFalse);
+    });
+
+    test('basta il nome oppure il servizio, non servono entrambi', () {
+      expect(looksLikeQnScale(name: 'QN-Scale'), isTrue);
+      expect(looksLikeQnScale(serviceUuids: const ['ffe0']), isTrue);
+      // Il caso che ha fatto dire «bilancia non trovata»: niente nome, ma il
+      // servizio c'è.
+      expect(looksLikeQnScale(name: '', serviceUuids: const ['ffe0']), isTrue);
+      expect(
+        looksLikeQnScale(name: 'TV Samsung', serviceUuids: const ['180f']),
+        isFalse,
+      );
+      expect(looksLikeQnScale(), isFalse);
+    });
   });
 
   group('somma di controllo', () {
