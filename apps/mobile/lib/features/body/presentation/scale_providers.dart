@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kal_tracker/core/database/local_settings_store.dart';
 import 'package:kal_tracker/features/body/data/flutter_blue_plus_scale_link.dart';
 import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/data/scale_reader.dart';
@@ -20,6 +21,33 @@ final scaleReaderProvider = Provider<ScaleReader>((ref) {
   ref.onDispose(reader.cancel);
   return reader;
 });
+
+final localSettingsProvider = Provider<LocalSettingsStore>(
+  (ref) => LocalSettingsStore(ref.watch(databaseProvider)),
+);
+
+/// La bilancia scelta a mano, se c'è già stata una volta.
+final rememberedScaleProvider = FutureProvider<RememberedScale?>((ref) async {
+  final store = ref.watch(localSettingsProvider);
+  final id = await store.read(LocalSettingsStore.scaleDeviceId);
+  if (id == null || id.isEmpty) {
+    return null;
+  }
+  final name = await store.read(LocalSettingsStore.scaleDeviceName);
+  return RememberedScale(id: id, name: name ?? '');
+});
+
+/// La bilancia che Marco ha indicato una volta, e che da lì in poi si cerca
+/// per indirizzo invece che per indovinello.
+@immutable
+class RememberedScale {
+  const RememberedScale({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  String get label => name.isEmpty ? id : name;
+}
 
 final scaleSessionProvider =
     NotifierProvider<ScaleSessionController, ScaleStatus>(
@@ -51,12 +79,88 @@ class ScaleSessionController extends Notifier<ScaleStatus> {
     return const ScaleStatus.idle();
   }
 
+  /// Vero mentre un gesto è stato raccolto ma la sessione che ne nasce non è
+  /// ancora partita.
+  ///
+  /// `state.isBusy` non basta più. Prima bastava, perché `read()` emetteva la
+  /// prima fase in modo sincrono e al secondo tocco lo stato era già occupato;
+  /// da quando in mezzo c'è la lettura della bilancia ricordata — che gira su
+  /// un isolate di sfondo, quindi un giro di messaggi vero — la fase resta
+  /// `idle` per tutto quel tempo, il pulsante resta premibile e due tocchi
+  /// aprono due sessioni. È esattamente il momento in cui Marco tocca
+  /// «Cerca», non vede succedere niente e ritocca.
+  bool _handling = false;
+
   Future<void> start() async {
-    if (state.isBusy) {
+    if (_handling || state.isBusy) {
       return;
     }
-    final reader = ref.read(scaleReaderProvider);
-    await reader.read(onStatus: _emit);
+    _handling = true;
+    final ScaleReader reader;
+    final RememberedScale? remembered;
+    try {
+      reader = ref.read(scaleReaderProvider);
+      remembered = await ref.read(rememberedScaleProvider.future);
+    } finally {
+      _handling = false;
+    }
+    // Nessun `await` fra qui e la riga sotto: `read()` emette `checkingRadio`
+    // prima di sospendersi, quindi da questo punto in poi è `isBusy` a fare
+    // la guardia e la staffetta si chiude senza buchi.
+    await reader.read(onStatus: _emit, preferredDeviceId: remembered?.id);
+  }
+
+  /// Marco ha indicato quale dei dispositivi visti è la bilancia.
+  ///
+  /// La scelta si **ricorda subito**, prima ancora di provare a collegarsi:
+  /// se il collegamento fallisce per un motivo qualsiasi — è sceso dalla
+  /// bilancia, è passato un microonde — la risposta a «qual è la tua
+  /// bilancia?» resta valida lo stesso, e non ha senso richiederla.
+  Future<void> choose(ScaleDevice device) async {
+    // La stessa regola che decide se l'elenco è in schermata: scegliere ha
+    // senso solo finché c'è qualcosa da scegliere. Il secondo tocco di una
+    // doppietta arriva quando la sessione è già partita, e va lasciato cadere.
+    if (_handling || !state.phase.canChooseDevice) {
+      return;
+    }
+    _handling = true;
+    // La fase cambia **subito e in modo sincrono**, prima di qualunque
+    // attesa. Non è cosmesi: l'elenco dei candidati si disegna solo nelle fasi
+    // `scanning` e `chooseDevice`, quindi da questa riga in poi non c'è più
+    // niente da toccare. Senza, fra il tocco e il collegamento restavano due
+    // scritture su database — su un isolate di sfondo, quindi tempo vero — con
+    // le righe ancora lì: un secondo tocco apriva una seconda sessione sulla
+    // stessa bilancia, che è precisamente ciò che fa fallire anche la prima,
+    // perché la Renpho accetta un collegamento solo.
+    _emit(state.copyWith(phase: ScalePhase.connecting));
+
+    final ScaleReader reader;
+    final bool raccolta;
+    try {
+      final store = ref.read(localSettingsProvider);
+      await store.write(LocalSettingsStore.scaleDeviceId, device.id);
+      await store.write(LocalSettingsStore.scaleDeviceName, device.name);
+      ref.invalidate(rememberedScaleProvider);
+      reader = ref.read(scaleReaderProvider);
+      // Se la scansione è ancora aperta la scelta la raccoglie lei, e la
+      // lettura già in volo prosegue da sola: ricollegarsi qui vorrebbe dire
+      // aprire due sessioni sulla stessa bilancia.
+      raccolta = reader.chooseWhileScanning(device);
+    } finally {
+      _handling = false;
+    }
+    if (raccolta) {
+      return;
+    }
+    await reader.connectTo(device, onStatus: _emit);
+  }
+
+  /// Dimentica la bilancia scelta: si torna a riconoscerla da sola.
+  Future<void> forget() async {
+    final store = ref.read(localSettingsProvider);
+    await store.remove(LocalSettingsStore.scaleDeviceId);
+    await store.remove(LocalSettingsStore.scaleDeviceName);
+    ref.invalidate(rememberedScaleProvider);
   }
 
   /// Torna al punto di partenza, senza toccare quello che è già stato salvato.

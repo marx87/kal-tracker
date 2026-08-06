@@ -24,12 +24,50 @@ class FakeScaleLink implements ScaleLink {
     this.connectException,
     this.autoFrames = const <List<int>>[],
     this.frameDelay = const Duration(milliseconds: 10),
+    this.keepScanning = false,
+    this.connectDelay = Duration.zero,
   }) : devices =
            devices ??
            const [ScaleDevice(id: 'aa:bb:cc', name: QnScale.advertisedName)];
 
   ScaleRadioState radio;
+
+  /// Quello che si annuncia, nell'ordine in cui si annuncia. L'ordine conta:
+  /// chi arriva prima ha la prima possibilità di essere riconosciuto, ed è
+  /// così che si prova che una scelta esplicita di Marco batte un dispositivo
+  /// che *sembra* una bilancia e si è fatto vedere per primo.
   final List<ScaleDevice> devices;
+
+  /// Se vero la scansione **non si chiude** dopo aver annunciato i
+  /// dispositivi, come quella vera che dura mezzo minuto.
+  ///
+  /// Serve a riprodurre l'unico istante che conta: Marco è già in piedi sulla
+  /// bilancia, la ricerca è ancora in corso, e la riga giusta compare adesso.
+  /// Con una scansione che si spegne appena finiti i dispositivi quell'istante
+  /// non esisterebbe, e la scelta a mano si potrebbe provare solo a ricerca
+  /// finita — cioè nel caso meno interessante dei due.
+  final bool keepScanning;
+
+  /// Quanto ci mette il collegamento ad aprirsi.
+  ///
+  /// Serve a riprodurre l'istante in cui la schermata si chiude **mentre** il
+  /// Bluetooth sta agganciando: una richiesta di collegamento non si può
+  /// richiamare indietro, quindi è l'unico modo di provare che la sessione
+  /// interrotta chiude subito quello che ha aperto invece di lasciare la
+  /// bilancia occupata per tre quarti di minuto.
+  final Duration connectDelay;
+
+  /// Annuncia un dispositivo a scansione già in corso.
+  ///
+  /// È la bilancia che compare quando Marco ci sale sopra, mezzo minuto dopo
+  /// l'inizio della ricerca — l'unico momento in cui la Renpho esiste per la
+  /// radio. Richiede [keepScanning].
+  void announce(ScaleDevice device) {
+    final controller = _scanController;
+    if (controller != null && !controller.isClosed) {
+      controller.add(device);
+    }
+  }
 
   /// Trame mandate da sola appena qualcuno si collega, una ogni [frameDelay].
   ///
@@ -59,6 +97,28 @@ class FakeScaleLink implements ScaleLink {
   /// cominciare a mandare trame.
   Future<FakeScaleConnection> get opened => _opened.future;
 
+  final _announced = Completer<void>();
+
+  /// Si completa quando tutti i dispositivi sono stati annunciati.
+  ///
+  /// È il segnale che dice al test «adesso l'elenco è pieno»: senza,
+  /// scegliere a scansione aperta vorrebbe dire aspettare un numero di
+  /// millisecondi scelto a caso e sperare.
+  Future<void> get announced => _announced.future;
+
+  StreamController<ScaleDevice>? _scanController;
+
+  /// Fa scadere la scansione tenuta aperta da [keepScanning].
+  Future<void> endScan() async {
+    final controller = _scanController;
+    // A scansione già disdetta chiudere non serve e non si può: chi cercava ha
+    // trovato e se n'è andato per i fatti suoi.
+    if (controller == null || controller.isClosed || scanStopped) {
+      return;
+    }
+    await controller.close();
+  }
+
   @override
   Future<ScaleRadioState> radioState() async {
     final failure = radioException;
@@ -71,6 +131,7 @@ class FakeScaleLink implements ScaleLink {
   @override
   Stream<ScaleDevice> scan({required Duration timeout}) {
     final controller = StreamController<ScaleDevice>();
+    _scanController = controller;
     controller.onListen = () async {
       final failure = scanException;
       if (failure != null) {
@@ -85,9 +146,13 @@ class FakeScaleLink implements ScaleLink {
         controller.add(device);
         await Future<void>.delayed(Duration.zero);
       }
-      if (!controller.isClosed) {
-        await controller.close();
+      if (!_announced.isCompleted) {
+        _announced.complete();
       }
+      if (keepScanning || controller.isClosed) {
+        return;
+      }
+      await controller.close();
     };
     controller.onCancel = () => scanStopped = true;
     return controller.stream;
@@ -98,6 +163,9 @@ class FakeScaleLink implements ScaleLink {
     final failure = connectException;
     if (failure != null) {
       throw failure;
+    }
+    if (connectDelay > Duration.zero) {
+      await Future<void>.delayed(connectDelay);
     }
     final connection = FakeScaleConnection();
     connections.add(connection);

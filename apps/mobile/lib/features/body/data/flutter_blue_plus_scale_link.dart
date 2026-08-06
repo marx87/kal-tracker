@@ -123,6 +123,13 @@ class FlutterBluePlusScaleLink implements ScaleLink {
                   for (final uuid in result.advertisementData.serviceUuids)
                     uuid.str128.toLowerCase(),
                 ],
+                // L'altro campo dove cercare, e quello che mancava: le bilance
+                // che non dichiarano servizi mettono qui dentro il modello e
+                // la misura in corso.
+                manufacturerData: Map<int, List<int>>.unmodifiable(
+                  result.advertisementData.manufacturerData,
+                ),
+                rssi: result.rssi,
               ),
             );
             _seen[result.device.remoteId.str] = result.device;

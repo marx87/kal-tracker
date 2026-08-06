@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/domain/scale_log.dart';
 
 /// Quello che la bilancia ha davvero prodotto: peso, impedenza e la trama
@@ -54,11 +55,13 @@ enum ScalePhase {
   /// Prima di cominciare.
   idle(
     'Pesata dalla bilancia',
-    // L'ordine conta ed era scritto al contrario: la bilancia resta sveglia
-    // una decina di secondi, e chi ci saliva prima di prendere il telefono
-    // faceva partire la scansione quando lei si era già riaddormentata.
-    'Tocca «Cerca», poi salici sopra: si accende e viene trovata mentre '
-        'cerco.',
+    // Terza stesura di questa riga, e stavolta dalla bocca di chi la usa: la
+    // bilancia **si annuncia soltanto mentre misura**. Non è «spenta e da
+    // svegliare» — appena scendi smette di esistere per il Bluetooth, ed è per
+    // questo che una scansione fatta a bilancia libera non trovava niente per
+    // quanto durasse.
+    'Tocca «Cerca» e sali subito sulla bilancia, restandoci sopra: si fa '
+        'vedere solo mentre pesa.',
     ScaleTone.working,
   ),
 
@@ -90,14 +93,35 @@ enum ScalePhase {
 
   scanning(
     'Cerco la bilancia',
-    'Sali sulla bilancia per svegliarla: spenta non si annuncia.',
+    'Sali ora e resta fermo. Se compare qui sotto prima che la riconosca, '
+        'toccala pure: faccio da lì.',
     ScaleTone.working,
   ),
 
+  /// La scansione ha visto dei dispositivi ma nessuno si dichiara bilancia.
+  ///
+  /// **È l'esito più utile che ci sia**, e prima non esisteva: si diceva «non
+  /// trovata» anche quando la bilancia era lì, semplicemente sotto un nome che
+  /// non conoscevamo o senza dichiarare i suoi servizi. Riconoscere un
+  /// dispositivo BLE dall'annuncio è un'euristica, e un'euristica sbagliata non
+  /// deve poter chiudere la strada: se non ci arrivo io, sceglie Marco — che
+  /// la bilancia ce l'ha sotto i piedi e sa benissimo qual è.
+  chooseDevice(
+    'Quale di questi è la bilancia?',
+    'Non l’ho riconosciuta da sola. Tocca quello giusto: me lo ricordo e da '
+        'domani ci vado dritto.',
+    ScaleTone.warning,
+  ),
+
   notFound(
-    'Bilancia non trovata',
-    'Nessuna QN-Scale nel raggio. Salici sopra per accenderla e riprova: '
-        'resta sveglia una manciata di secondi.',
+    'Nessun dispositivo nel raggio',
+    // Niente «controlla che il Bluetooth sia acceso»: qui ci si arriva solo
+    // dopo che la radio è risultata accesa, quindi sarebbe un consiglio già
+    // smentito da noi stessi. Quello che resta davvero da controllare è
+    // l'altra app.
+    'Non ho visto niente, nemmeno i vicini: succede quando l’app Renpho è '
+        'aperta e tiene lei il collegamento — mentre ce l’ha, la bilancia non '
+        'parla con nessun altro. Chiudila del tutto e riprova.',
     ScaleTone.warning,
   ),
 
@@ -162,6 +186,7 @@ enum ScalePhase {
     ScalePhase.permissionDenied ||
     ScalePhase.unsupported ||
     ScalePhase.notFound ||
+    ScalePhase.chooseDevice ||
     ScalePhase.incomplete ||
     ScalePhase.ready ||
     ScalePhase.saved ||
@@ -176,6 +201,20 @@ enum ScalePhase {
   /// Vero quando c'è una pesata da salvare.
   bool get hasReading =>
       this == ScalePhase.ready || this == ScalePhase.incomplete;
+
+  /// Vero quando l'elenco dei dispositivi è in schermata e sceglierne uno ha
+  /// un senso.
+  ///
+  /// Sta qui, e non nella schermata, perché **due posti che decidono la stessa
+  /// cosa prima o poi decidono cose diverse**. Quando la regola era scritta
+  /// due volte, l'elenco si disegnava in tre fasi e il controllore ne
+  /// riconosceva una sola: due tocchi ravvicinati passavano entrambi e
+  /// aprivano due collegamenti sulla stessa bilancia — che sulla Renpho, che
+  /// ne accetta uno solo, fa fallire anche il primo.
+  bool get canChooseDevice =>
+      this == ScalePhase.scanning ||
+      this == ScalePhase.chooseDevice ||
+      this == ScalePhase.failed;
 }
 
 /// Lo stato completo della sessione: la fase, quello che si è letto e il
@@ -187,6 +226,7 @@ class ScaleStatus {
     this.reading,
     this.errorDetail,
     this.log = const <ScaleLogEntry>[],
+    this.candidates = const <ScaleDevice>[],
   });
 
   const ScaleStatus.idle() : this(phase: ScalePhase.idle);
@@ -203,6 +243,14 @@ class ScaleStatus {
 
   final List<ScaleLogEntry> log;
 
+  /// I dispositivi visti finora, i più promettenti per primi.
+  ///
+  /// Si aggiorna **durante** la scansione e non solo alla fine, ed è
+  /// deliberato: la bilancia compare nell'istante in cui Marco ci sale, e
+  /// mentre lui è già in piedi lì sopra deve poterla toccare subito, senza
+  /// aspettare che scadano trenta secondi di ricerca.
+  final List<ScaleDevice> candidates;
+
   String get title => phase.title;
 
   String get detail => phase.detail;
@@ -216,10 +264,12 @@ class ScaleStatus {
     ScaleReading? reading,
     String? errorDetail,
     List<ScaleLogEntry>? log,
+    List<ScaleDevice>? candidates,
   }) => ScaleStatus(
     phase: phase ?? this.phase,
     reading: reading ?? this.reading,
     errorDetail: errorDetail ?? this.errorDetail,
     log: log ?? this.log,
+    candidates: candidates ?? this.candidates,
   );
 }

@@ -81,14 +81,19 @@ void main() {
     await tester.pump();
   }
 
-  /// Fa girare la sessione: il tempo dei test è finto e avanza solo con i
-  /// fotogrammi, quindi la bilancia finta recita mentre si pompa.
-  Future<void> runSession(WidgetTester tester) async {
-    await tester.tap(find.byKey(const Key('scale_start_button')));
+  /// Lascia recitare la bilancia finta: il tempo dei test è finto e avanza
+  /// solo con i fotogrammi, quindi le trame arrivano mentre si pompa.
+  Future<void> runFrames(WidgetTester tester) async {
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }
     await tester.pump();
+  }
+
+  /// Fa girare la sessione dall'inizio: si tocca «Cerca» e si lascia andare.
+  Future<void> runSession(WidgetTester tester) async {
+    await tester.tap(find.byKey(const Key('scale_start_button')));
+    await runFrames(tester);
   }
 
   testWidgets('all’apertura invita ad accendere la bilancia', (tester) async {
@@ -119,11 +124,181 @@ void main() {
     expect(find.textContaining('Dispositivi nelle vicinanze'), findsOneWidget);
   });
 
-  testWidgets('bilancia non trovata: spiega che va svegliata', (tester) async {
+  testWidgets('niente nel raggio: lo dice e non mostra un elenco vuoto', (
+    tester,
+  ) async {
     await open(tester, FakeScaleLink(devices: const []));
     await runSession(tester);
 
-    expect(find.text('Bilancia non trovata'), findsOneWidget);
+    expect(find.text('Nessun dispositivo nel raggio'), findsOneWidget);
+    // Una card «scegli il dispositivo» senza dispositivi sarebbe un vicolo
+    // cieco travestito da scelta.
+    expect(find.byKey(const Key('scale_picker_card')), findsNothing);
+  });
+
+  testWidgets('non la riconosce: si sceglie a mano, e poi non lo chiede più', (
+    tester,
+  ) async {
+    await completeProfile();
+    final link = FakeScaleLink(
+      devices: const [
+        ScaleDevice(id: 'muta', name: '', rssi: -47),
+        ScaleDevice(id: 'tv', name: 'TV Salotto', rssi: -80),
+      ],
+      autoFrames: [
+        fakeHandshakeFrame(),
+        fakeWeightFrame(weightKg: 95.8, stable: true, resistance1: 442),
+      ],
+    );
+    await open(tester, link);
+    await runSession(tester);
+
+    expect(find.text('Quale di questi è la bilancia?'), findsOneWidget);
+    expect(find.byKey(const Key('scale_picker_card')), findsOneWidget);
+    // Una riga per ognuno, anche per chi non ha un nome: quello anonimo è
+    // spesso proprio la bilancia.
+    expect(find.byKey(const Key('scale_candidate_muta')), findsOneWidget);
+    expect(find.byKey(const Key('scale_candidate_tv')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('scale_candidate_muta')));
+    await runFrames(tester);
+
+    expect(find.text('Pesata completa'), findsOneWidget);
+    expect(find.text('95,8'), findsOneWidget);
+    expect(link.connections, hasLength(1));
+    // La scelta si ricorda: la domanda si fa una volta sola.
+    expect(find.byKey(const Key('scale_remembered_note')), findsOneWidget);
+    expect(find.textContaining('Vado dritto su muta'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('scale_forget_button')));
+    await runFrames(tester);
+
+    expect(find.byKey(const Key('scale_remembered_note')), findsNothing);
+  });
+
+  testWidgets('due tocchi non aprono due sessioni sulla stessa bilancia', (
+    tester,
+  ) async {
+    // Fra il tocco e il collegamento ci sono due scritture su database, che in
+    // produzione girano su un isolate di sfondo: tempo vero, con le righe
+    // ancora in schermata e toccabili. Un secondo tocco apriva una seconda
+    // sessione — e sulla Renpho, che accetta un collegamento solo, è proprio
+    // ciò che fa fallire anche la prima.
+    await completeProfile();
+    final link = FakeScaleLink(
+      devices: const [
+        ScaleDevice(id: 'muta', name: '', rssi: -47),
+        ScaleDevice(id: 'tv', name: 'TV Salotto', rssi: -80),
+      ],
+      autoFrames: [
+        fakeHandshakeFrame(),
+        fakeWeightFrame(weightKg: 95.8, stable: true, resistance1: 442),
+      ],
+    );
+    await open(tester, link);
+    await runSession(tester);
+    expect(find.byKey(const Key('scale_picker_card')), findsOneWidget);
+
+    // Due tocchi senza un fotogramma in mezzo: è il doppio tocco vero, quello
+    // di chi non vede reagire lo schermo e ribatte.
+    await tester.tap(find.byKey(const Key('scale_candidate_muta')));
+    await tester.tap(
+      find.byKey(const Key('scale_candidate_tv')),
+      warnIfMissed: false,
+    );
+    await runFrames(tester);
+
+    expect(link.connections, hasLength(1));
+    // E il secondo tocco non ha nemmeno sovrascritto la scelta.
+    expect(find.textContaining('Vado dritto su muta'), findsOneWidget);
+  });
+
+  testWidgets('due tocchi su «Cerca» non avviano due ricerche', (tester) async {
+    // La guardia era `state.isBusy`, e funzionava finché `read()` emetteva la
+    // prima fase in modo sincrono. Da quando in mezzo c'è la lettura della
+    // bilancia ricordata, per tutta quella attesa la fase resta `idle` e il
+    // pulsante resta premibile.
+    await completeProfile();
+    final link = FakeScaleLink(
+      autoFrames: [
+        fakeHandshakeFrame(),
+        fakeWeightFrame(weightKg: 95.8, stable: true, resistance1: 442),
+      ],
+    );
+    await open(tester, link);
+
+    final cerca = find.byKey(const Key('scale_start_button'));
+    await tester.tap(cerca);
+    await tester.tap(cerca, warnIfMissed: false);
+    await runFrames(tester);
+
+    expect(link.connections, hasLength(1));
+    expect(find.text('Pesata completa'), findsOneWidget);
+  });
+
+  testWidgets('sbagliare dispositivo non è un vicolo cieco', (tester) async {
+    // Chi sbagliava riga si ritrovava quel dispositivo salvato come «la mia
+    // bilancia», l'elenco sparito, e un «Cerca di nuovo» che lo riportava
+    // dritto sullo stesso errore. La via d'uscita dev'essere dove l'errore è
+    // stato fatto.
+    await completeProfile();
+    final link =
+        FakeScaleLink(
+            devices: const [
+              ScaleDevice(id: 'muta', name: '', rssi: -47),
+              ScaleDevice(id: 'tv', name: 'TV Salotto', rssi: -80),
+            ],
+          )
+          ..connectException = ScaleLinkException(
+            ScaleLinkFailure.connection,
+            'GATT error 133',
+          );
+    await open(tester, link);
+    await runSession(tester);
+
+    await tester.tap(find.byKey(const Key('scale_candidate_tv')));
+    await runFrames(tester);
+
+    expect(find.text('Lettura interrotta'), findsOneWidget);
+    // L'elenco è ancora lì, con l'invito a cambiare idea.
+    expect(find.byKey(const Key('scale_picker_card')), findsOneWidget);
+    expect(find.text('Non era quella?'), findsOneWidget);
+    expect(find.byKey(const Key('scale_candidate_muta')), findsOneWidget);
+  });
+
+  testWidgets('l’elenco compare già mentre cerca, e toccarlo basta', (
+    tester,
+  ) async {
+    // È il punto di tutta la funzione: Marco è in piedi sulla bilancia, che si
+    // annuncia solo mentre misura. Se la riga comparisse solo a ricerca finita
+    // lui sarebbe già sceso, e la bilancia sparita.
+    await completeProfile();
+    final link = FakeScaleLink(
+      keepScanning: true,
+      devices: const [ScaleDevice(id: 'muta', name: '', rssi: -47)],
+      autoFrames: [
+        fakeHandshakeFrame(),
+        fakeWeightFrame(weightKg: 95.8, stable: true, resistance1: 442),
+      ],
+    );
+    await open(tester, link);
+    await tester.tap(find.byKey(const Key('scale_start_button')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Cerco la bilancia'), findsOneWidget);
+    expect(find.byKey(const Key('scale_picker_card')), findsOneWidget);
+    expect(find.byKey(const Key('scale_candidate_muta')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('scale_candidate_muta')));
+    await runFrames(tester);
+
+    expect(find.text('Pesata completa'), findsOneWidget);
+    expect(find.text('95,8'), findsOneWidget);
+    // Una sola: la scelta arrivata a scansione aperta la raccoglie la lettura
+    // già in volo, e collegarsi di nuovo aprirebbe due sessioni sulla stessa
+    // bilancia.
+    expect(link.connections, hasLength(1));
   });
 
   testWidgets('pesata completa: mostra misura, composizione e la salva', (

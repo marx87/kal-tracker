@@ -56,10 +56,48 @@ class ScaleReader {
 
   Completer<ScaleStatus>? _session;
 
+  /// I dispositivi visti nella scansione in corso, per indirizzo.
+  final _candidates = <String, ScaleDevice>{};
+
+  /// La scelta ancora aperta, quando la scansione è in corso. Completarla da
+  /// fuori è ciò che permette a Marco di toccare la bilancia appena compare,
+  /// senza aspettare che la ricerca finisca.
+  Completer<ScaleDevice?>? _selection;
+
+  /// L'indirizzo scelto a mano una volta e ricordato. Vince su qualunque
+  /// riconoscimento: se Marco ha già detto «è questa», non c'è euristica che
+  /// debba poterlo smentire.
+  String? _preferredDeviceId;
+
+  /// Vero da quando [cancel] è stata chiamata fino alla lettura successiva.
+  ///
+  /// Serve perché il collegamento Bluetooth, una volta chiesto, non si può
+  /// richiamare indietro: se la schermata si chiude proprio in quell'istante,
+  /// l'unica cosa onesta è aprirlo e chiuderlo subito, invece di lasciare la
+  /// bilancia agganciata a un'app che non la ascolta più.
+  bool _cancelled = false;
+
   /// Interrompe la sessione in corso, se c'è. La chiama la schermata quando
   /// viene chiusa: senza, il collegamento Bluetooth resterebbe aperto fino
   /// allo scadere dei timeout.
   void cancel() {
+    // L'interruzione va segnata prima di tutto: fra la scelta del dispositivo
+    // e il collegamento aperto c'è un `await` sul Bluetooth che non si può
+    // interrompere a metà, e senza questa memoria la sessione andrebbe avanti
+    // a collegarsi a schermata già chiusa.
+    _cancelled = true;
+
+    // La scansione era il buco: `_session` esiste solo dentro `_converse`,
+    // quindi chiudere la schermata mentre si cercava non fermava proprio
+    // niente. La ricerca proseguiva per i suoi trenta secondi, poi si
+    // collegava lo stesso a una bilancia che nessuno stava più guardando, e
+    // il collegamento restava aperto fino allo scadere del tempo di salita.
+    final selection = _selection;
+    if (selection != null && !selection.isCompleted) {
+      _note('sessione interrotta durante la ricerca');
+      selection.complete(null);
+    }
+
     final session = _session;
     if (session != null && !session.isCompleted) {
       _note('sessione interrotta');
@@ -74,9 +112,16 @@ class ScaleReader {
   /// disegnare quello che le arriva.
   Future<ScaleStatus> read({
     void Function(ScaleStatus status)? onStatus,
+    String? preferredDeviceId,
   }) async {
     _log.clear();
     _onStatus = onStatus;
+    _preferredDeviceId = preferredDeviceId;
+    _candidates.clear();
+    _cancelled = false;
+    if (preferredDeviceId != null) {
+      _note('bilancia già scelta una volta: cerco $preferredDeviceId');
+    }
 
     final radio = await _radioState();
     if (radio != ScaleRadioState.on) {
@@ -95,11 +140,42 @@ class ScaleReader {
       return _fail(error);
     }
     if (device == null) {
-      return _emit(ScalePhase.notFound);
+      // Interrotta a mano: non è «non trovata» e non è «scegli tu». Chiedere
+      // di scegliere a chi ha appena chiuso la schermata sarebbe assurdo, e
+      // per giunta lascerebbe l'ultima parola a un elenco raccolto a metà.
+      if (_cancelled) {
+        return _emit(ScalePhase.failed, errorDetail: 'Sessione interrotta.');
+      }
+      // Due esiti diversi, e distinguerli è il punto: se qualcosa si è visto,
+      // la radio funziona e la bilancia è probabilmente lì sotto un nome che
+      // non conosco — allora sceglie Marco. Se non si è visto nulla, il
+      // problema è a monte e un elenco vuoto non aiuterebbe nessuno.
+      return _emit(
+        _candidates.isEmpty ? ScalePhase.notFound : ScalePhase.chooseDevice,
+      );
     }
 
+    return connectTo(device);
+  }
+
+  /// Si collega a un dispositivo già scelto e porta avanti la pesata.
+  ///
+  /// La usa la scelta manuale: quando il riconoscimento automatico ha
+  /// fallito, la scansione è finita e non c'è più niente da cercare — c'è solo
+  /// un indirizzo su cui andare.
+  Future<ScaleStatus> connectTo(
+    ScaleDevice device, {
+    void Function(ScaleStatus status)? onStatus,
+  }) async {
+    // Chi arriva da una scansione ha già il suo ascoltatore: si sovrascrive
+    // solo se ne viene passato uno nuovo, altrimenti gli avanzamenti del
+    // collegamento non arriverebbero a nessuno.
+    _onStatus = onStatus ?? _onStatus;
+    if (_cancelled) {
+      return _emit(ScalePhase.failed, errorDetail: 'Sessione interrotta.');
+    }
     _emit(ScalePhase.connecting);
-    _note('mi collego a ${device.name}');
+    _note('mi collego a ${_etichetta(device)}');
     final ScaleConnection connection;
     try {
       connection = await _link.connect(device);
@@ -108,8 +184,32 @@ class ScaleReader {
     } on Object catch (error) {
       return _emit(ScalePhase.failed, errorDetail: '$error');
     }
+    if (_cancelled) {
+      // Chiuso mentre il collegamento si apriva. Non c'era modo di fermarlo
+      // prima: lo si chiude subito, che è l'unica differenza che conta per la
+      // bilancia — resta libera per il prossimo tentativo invece di restare
+      // agganciata per tre quarti di minuto.
+      _note('interrotta a collegamento aperto: chiudo subito');
+      unawaited(connection.close());
+      return _emit(ScalePhase.failed, errorDetail: 'Sessione interrotta.');
+    }
 
     return _converse(connection, device);
+  }
+
+  /// Sceglie a mano un dispositivo **mentre la scansione è ancora in corso**.
+  ///
+  /// Torna vero quando la scelta è stata raccolta: da lì in poi ci pensa la
+  /// [read] già in volo, che prosegue col collegamento. Torna falso quando non
+  /// c'è nessuna scansione aperta — allora tocca a [connectTo].
+  bool chooseWhileScanning(ScaleDevice device) {
+    final selection = _selection;
+    if (selection == null || selection.isCompleted) {
+      return false;
+    }
+    _note('scelta a mano: ${_etichetta(device)}');
+    selection.complete(device);
+    return true;
   }
 
   // -------------------------------------------------------------------
@@ -292,7 +392,10 @@ class ScaleReader {
   Future<ScaleDevice?> _findScale() async {
     _emit(ScalePhase.scanning);
     final seen = <String>{};
-    final found = Completer<ScaleDevice?>();
+    final found = _selection = Completer<ScaleDevice?>();
+    // Una che *sembra* una bilancia mentre però se ne aspetta una scelta già
+    // fatta: si tiene da parte invece di prenderla subito.
+    ScaleDevice? ripiego;
     // Si ascolta invece di usare `await for`, e la disiscrizione non si
     // aspetta: uscire da un `await for` significa attendere il `cancel` dello
     // stream, e se la sorgente ci mette un istante a chiudersi la sessione
@@ -302,15 +405,61 @@ class ScaleReader {
         .scan(timeout: scanTimeout)
         .listen(
           (device) {
-            if (found.isCompleted || !seen.add(device.id)) {
+            if (found.isCompleted) {
+              return;
+            }
+            // Ogni dispositivo entra nell'elenco, riconosciuto o no: è quello
+            // che la schermata mostra mentre cerca, ed è l'unica via d'uscita
+            // quando il riconoscimento automatico non ce la fa.
+            //
+            // L'aggiornamento avviene PRIMA del filtro sui doppioni, e non è
+            // un dettaglio: la radio ripubblica lo stesso dispositivo a ogni
+            // giro con la potenza aggiornata, e scartarlo come «già visto»
+            // congelava i dBm al primo avvistamento. Attraverso un corpo
+            // bagnato quel numero oscilla di quindici decibel, quindi un
+            // campione solo non dice niente — ed è l'unico appiglio che ha
+            // Marco per distinguere la bilancia da un indirizzo anonimo.
+            // Riassegnare una chiave che esiste già non sposta la sua
+            // posizione nella mappa: l'ordine dell'elenco non cambia.
+            final noto = _candidates[device.id];
+            _candidates[device.id] = device;
+            if (!seen.add(device.id)) {
+              // Già raccontato nel registro. Si ridisegna solo se la potenza
+              // si è mossa abbastanza da cambiare la riga: sotto i cinque
+              // decibel è rumore, e ridisegnare a ogni annuncio farebbe
+              // tremolare l'elenco senza dire niente di nuovo.
+              if (noto != null && (noto.rssi - device.rssi).abs() >= 5) {
+                _emit(ScalePhase.scanning);
+              }
+              return;
+            }
+            if (device.id == _preferredDeviceId) {
+              _note('è la bilancia scelta la volta scorsa: vado dritto');
+              found.complete(device);
               return;
             }
             if (looksLikeQnScale(
               name: device.name,
               serviceUuids: device.serviceUuids,
             )) {
+              if (_preferredDeviceId != null) {
+                // Marco ha già risposto alla domanda «qual è la tua
+                // bilancia», e il riconoscimento è largo per scelta: «QN-»,
+                // «RENPHO», i nomi di modello. Un altro apparecchio della
+                // stessa famiglia — o il vicino di casa — che si annuncia un
+                // istante prima non deve poter dirottare la sessione su di
+                // sé. Resta un ripiego per il caso in cui la bilancia scelta
+                // oggi non si faccia proprio vedere.
+                ripiego ??= device;
+                _note(
+                  'sembra una bilancia ma non è quella scelta: '
+                  '${_etichetta(device)} la tengo da parte',
+                );
+                _emit(ScalePhase.scanning);
+                return;
+              }
               _note(
-                'trovata ${device.name.isEmpty ? device.id : device.name}'
+                'trovata ${_etichetta(device)}'
                 '${device.name.isEmpty ? ' (riconosciuta dal servizio)' : ''}',
               );
               found.complete(device);
@@ -321,7 +470,7 @@ class ScaleReader {
             // funzionando. Con i servizi annunciati, perché senza il nome
             // — che moltissimi dispositivi non mettono — una riga con il solo
             // indirizzo non aiuta nessuno a capire cosa fosse.
-            final etichetta = device.name.isEmpty ? device.id : device.name;
+            final etichetta = _etichetta(device);
             if (device.knownToSystem) {
               // Un accoppiato non ha annuncio, quindi niente servizi da
               // leggere: qui si dice solo che c'è, così se la bilancia è fra
@@ -331,9 +480,16 @@ class ScaleReader {
               return;
             }
             final servizi = device.serviceUuids.isEmpty
-                ? 'nessun servizio annunciato'
+                ? 'nessun servizio'
                 : device.serviceUuids.map(_servizioBreve).join(' ');
-            _note('visto $etichetta [$servizi], non è una bilancia');
+            // I dati del costruttore vanno scritti perché sono **l'altra metà
+            // dell'annuncio**, e finché non li guardavamo un dispositivo
+            // «senza servizi» era indistinguibile da un frigorifero. Una
+            // bilancia che si annuncia solo così si riconosce da qui.
+            _note(
+              'visto $etichetta [$servizi] ${device.rssi} dBm',
+              hex: _datiCostruttore(device),
+            );
             _emit(ScalePhase.scanning);
           },
           onError: (Object error) {
@@ -343,13 +499,17 @@ class ScaleReader {
           },
           onDone: () {
             if (!found.isCompleted) {
-              found.complete(null);
+              // La bilancia scelta non è comparsa: se intanto se n'è vista una
+              // che le somiglia, meglio provarci che mandare Marco a scegliere
+              // di nuovo da un elenco.
+              found.complete(ripiego);
             }
           },
         );
     try {
       return await found.future;
     } finally {
+      _selection = null;
       unawaited(subscription.cancel());
     }
   }
@@ -372,7 +532,27 @@ class ScaleReader {
     reading: reading,
     errorDetail: errorDetail,
     log: _log.entries,
+    candidates: _ordinati(),
   );
+
+  /// I candidati nell'ordine in cui sono comparsi, e **mai riordinati**.
+  ///
+  /// La prima versione li ordinava per nome e potenza, e sembrava sensato
+  /// finché non si è provato il gesto vero: Marco è in piedi sulla bilancia,
+  /// la sua Renpho è l'unica riga — anonima, perché non annuncia nessun nome —
+  /// e il dito parte. Nel frattempo il televisore di là si annuncia per la
+  /// prima volta; ha un nome, quindi l'ordinamento lo mette sopra, la bilancia
+  /// scivola alla riga due e il tocco atterra sul televisore. Che poi viene
+  /// salvato come «la bilancia di Marco».
+  ///
+  /// Nessun criterio di ordinamento sopravvive a questo, perché il problema
+  /// non è quale sia l'ordine giusto: è che l'ordine **cambia** mentre lui
+  /// mira. L'ordine di comparsa è l'unico che non si riordina mai — i nuovi si
+  /// accodano in fondo e ciò che ha già sotto gli occhi resta fermo. Ed è
+  /// anche l'ordine più informativo che ci sia: la bilancia si annuncia solo
+  /// mentre misura, quindi è quella comparsa **adesso**, mentre lui ci saliva.
+  List<ScaleDevice> _ordinati() =>
+      List<ScaleDevice>.unmodifiable(_candidates.values);
 
   ScaleStatus _emit(
     ScalePhase phase, {
@@ -393,6 +573,30 @@ class ScaleReader {
       _ => ScalePhase.failed,
     }, errorDetail: error.message);
   }
+}
+
+/// Come chiamare un dispositivo in una riga di registro o in un elenco.
+String _etichetta(ScaleDevice device) =>
+    device.name.isEmpty ? device.id : device.name;
+
+/// I dati del costruttore in esadecimale, azienda per azienda.
+///
+/// Torna `null` quando non ce ne sono, così la riga di registro resta pulita.
+/// L'identificatore d'azienda è quello assegnato dal Bluetooth SIG e da solo
+/// dice spesso di che apparecchio si tratta.
+String? _datiCostruttore(ScaleDevice device) {
+  if (device.manufacturerData.isEmpty) {
+    return null;
+  }
+  final parti = <String>[];
+  for (final entry in device.manufacturerData.entries) {
+    final id = entry.key.toRadixString(16).padLeft(4, '0');
+    final bytes = entry.value
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
+    parti.add('$id:$bytes');
+  }
+  return parti.join(' ');
 }
 
 /// La forma corta di un UUID di servizio, per il registro.

@@ -1297,6 +1297,22 @@ class BodyImpedanceReadings extends Table {
   ];
 }
 
+/// Le impostazioni che valgono su **questo telefono** e non si sincronizzano.
+///
+/// Esiste separata da `app_profiles` per una ragione precisa: l'indirizzo
+/// Bluetooth della bilancia è il MAC visto da questo dispositivo, e su un
+/// altro telefono non significherebbe niente — sincronizzarlo vorrebbe dire
+/// spedire al tablet l'istruzione di collegarsi a un indirizzo che lì non
+/// esiste. Tutto ciò che dipende dall'apparecchio, e non da Marco, sta qui.
+class LocalSettings extends Table {
+  TextColumn get key => text().withLength(min: 1, max: 60)();
+  TextColumn get value => text()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}
+
 @DriftDatabase(
   tables: [
     AppProfiles,
@@ -1332,6 +1348,8 @@ class BodyImpedanceReadings extends Table {
     DailyCheckIns,
     Goals,
     BodyImpedanceReadings,
+    // v8 — impostazioni legate all'apparecchio, fuori dalla sincronizzazione
+    LocalSettings,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1348,7 +1366,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1468,6 +1486,11 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(dailyCheckIns);
         await migrator.createTable(goals);
         await migrator.createTable(bodyImpedanceReadings);
+      }
+      // La v8 è una tabella sola e nessuno la referenzia: nessuna guardia
+      // serve, e chi arriva da qualsiasi versione precedente la riceve uguale.
+      if (from < 8) {
+        await migrator.createTable(localSettings);
       }
       // Fuori dalla guardia di proposito: ripara anche gli indici delle
       // versioni 2-5, che nessun database migrato ha mai avuto.

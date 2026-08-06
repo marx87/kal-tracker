@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
+import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/domain/bia_formula.dart';
 import 'package:kal_tracker/features/body/domain/scale_log.dart';
 import 'package:kal_tracker/features/body/domain/scale_session.dart';
@@ -55,6 +56,17 @@ class ScaleScreen extends ConsumerWidget {
         children: [
           _StatusCard(status: status),
           const SizedBox(height: 14),
+          // L'elenco resta anche dopo un guasto, ed è una correzione: prima
+          // spariva al primo tocco e non tornava più. Chi sbagliava riga si
+          // ritrovava con quel dispositivo salvato come «la mia bilancia»,
+          // quarantacinque secondi di attesa, e poi un «Cerca di nuovo» che lo
+          // riportava dritto sullo stesso errore — senza mai rivedere
+          // l'elenco. La via d'uscita da una scelta sbagliata dev'essere lì
+          // dove la scelta è stata fatta.
+          if (status.candidates.isNotEmpty && status.phase.canChooseDevice) ...[
+            _DevicePickerCard(status: status),
+            const SizedBox(height: 14),
+          ],
           if (status.reading case final reading?) ...[
             _ReadingCard(reading: reading, status: status),
             const SizedBox(height: 14),
@@ -158,9 +170,181 @@ class _StatusCard extends ConsumerWidget {
                     : 'Cerca di nuovo',
               ),
             ),
+          // Non mentre si sta chiedendo quale sia: «vado dritto su X» e «non
+          // l'ho riconosciuta, dimmi qual è» nello stesso riquadro sono due
+          // frasi che si smentiscono a vicenda. Se siamo arrivati a chiedere,
+          // vuol dire che quella ricordata oggi non si è fatta vedere — e
+          // dirlo è compito della card dell'elenco, non di questa riga.
+          if (ref.watch(rememberedScaleProvider).valueOrNull
+              case final remembered?
+              when status.phase != ScalePhase.chooseDevice) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(
+                  Icons.push_pin_outlined,
+                  size: 16,
+                  color: accents.mutedInk,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Vado dritto su ${remembered.label}',
+                    key: const Key('scale_remembered_note'),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: accents.mutedInk,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: const Key('scale_forget_button'),
+                  onPressed: () =>
+                      ref.read(scaleSessionProvider.notifier).forget(),
+                  child: const Text('Dimentica'),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+/// L'elenco dei dispositivi visti, da cui scegliere a mano.
+///
+/// È la via d'uscita da un problema che non si può risolvere indovinando:
+/// riconoscere una bilancia dal suo annuncio Bluetooth è un'euristica, le
+/// bilance sono decine di modelli e molte non dichiarano niente di
+/// riconoscibile. Chi invece sa con certezza qual è la bilancia è la persona
+/// che ci sta sopra. Le si chiede, una volta sola, e non si torna sull'argomento.
+class _DevicePickerCard extends ConsumerWidget {
+  const _DevicePickerCard({required this.status});
+
+  final ScaleStatus status;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final scanning = status.phase == ScalePhase.scanning;
+    final dopoUnGuasto = status.phase == ScalePhase.failed;
+
+    return SectionCard(
+      key: const Key('scale_picker_card'),
+      title: dopoUnGuasto
+          ? 'Non era quella?'
+          : (scanning ? 'Visti finora' : 'Dispositivi visti'),
+      subtitle: scanning
+          ? 'Tocca la tua bilancia appena compare'
+          : '${status.candidates.length} in tutto',
+      icon: Icons.list_alt_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            switch (status.phase) {
+              ScalePhase.scanning =>
+                'Se la riconosco vado avanti da solo. Se la vedi tu prima, '
+                    'non aspettarmi.',
+              ScalePhase.failed =>
+                'Scegline un’altra: quella che tocchi prende il posto della '
+                    'precedente, senza passare da «Dimentica».',
+              // L'ordine è quello di comparsa, e vale la pena dirlo: la
+              // bilancia si annuncia solo mentre misura, quindi è comparsa
+              // proprio mentre lui ci saliva — è l'ultima, non la prima.
+              _ =>
+                'Nessuno di questi si dichiara bilancia, ma uno di loro '
+                    'probabilmente lo è. Sono in ordine di comparsa: la tua è '
+                    'quella spuntata mentre ci salivi sopra, quindi guarda in '
+                    'fondo.',
+            },
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: accents.mutedInk,
+              height: 1.35,
+            ),
+          ),
+          // Se una bilancia era già stata scelta e oggi non è comparsa, va
+          // detto qui: altrimenti la domanda «quale di questi è la bilancia?»
+          // sembra un ripensamento, e chi risponde sovrascrive senza saperlo
+          // una scelta che andava benissimo.
+          if (ref.watch(rememberedScaleProvider).valueOrNull
+              case final remembered?
+              when status.phase == ScalePhase.chooseDevice) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${remembered.label} non si è fatta vedere: forse sei sceso '
+              'troppo presto. Riprova prima di cambiare — quella che tocchi '
+              'prende il suo posto.',
+              key: const Key('scale_remembered_absent'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.info,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          for (final device in status.candidates)
+            ListTile(
+              key: Key('scale_candidate_${device.id}'),
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                device.knownToSystem
+                    ? Icons.link_rounded
+                    : Icons.bluetooth_rounded,
+                color: accents.mutedInk,
+              ),
+              title: Text(
+                device.name.isEmpty ? 'Senza nome' : device.name,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontStyle: device.name.isEmpty ? FontStyle.italic : null,
+                ),
+              ),
+              subtitle: Text(
+                _sottotitolo(device),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: accents.mutedInk,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _choose(context, ref, device),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Quel poco che si sa del dispositivo, e che aiuta a riconoscerlo:
+  /// l'indirizzo, quanto arriva forte, e se ha annunciato qualcosa.
+  static String _sottotitolo(ScaleDevice device) {
+    final parti = <String>[device.id];
+    if (device.rssi != 0) {
+      parti.add('${device.rssi} dBm');
+    }
+    if (device.manufacturerData.isNotEmpty) {
+      parti.add('dati costruttore');
+    }
+    if (device.knownToSystem) {
+      parti.add('già accoppiato');
+    }
+    return parti.join(' · ');
+  }
+
+  Future<void> _choose(
+    BuildContext context,
+    WidgetRef ref,
+    ScaleDevice device,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(scaleSessionProvider.notifier).choose(device);
+    } on Object catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Non riesco a collegarmi: $error')),
+      );
+    }
   }
 }
 

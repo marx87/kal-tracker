@@ -26,6 +26,8 @@ class ScaleDevice {
     required this.id,
     required this.name,
     this.serviceUuids = const <String>[],
+    this.manufacturerData = const <int, List<int>>{},
+    this.rssi = 0,
     this.knownToSystem = false,
   });
 
@@ -44,6 +46,22 @@ class ScaleDevice {
   /// guardi il nome, ma dice comunque di parlare `ffe0`. Buttarli via
   /// significava non poterla riconoscere mai.
   final List<String> serviceUuids;
+
+  /// I dati del costruttore nell'annuncio, per identificatore d'azienda.
+  ///
+  /// **È qui che moltissime bilance mettono tutto**, e non fra i servizi: un
+  /// annuncio BLE ha 31 byte, e chi ci infila peso e stato della misura non ha
+  /// posto per dichiarare anche gli UUID. Un dispositivo che nel registro
+  /// risultava «nessun servizio annunciato» poteva benissimo essere la
+  /// bilancia che stavamo cercando — semplicemente stavamo guardando il campo
+  /// sbagliato.
+  final Map<int, List<int>> manufacturerData;
+
+  /// Quanto arriva forte, in dBm. È negativo: −40 è appoggiato al telefono,
+  /// −95 è al limite della portata. Serve a ordinare l'elenco quando tocca a
+  /// Marco scegliere — la bilancia è quella sotto i suoi piedi, quindi è fra
+  /// le più forti.
+  final int rssi;
 
   /// Vero quando il dispositivo arriva dall'elenco di quelli che il telefono
   /// già conosce, e non da una scansione.

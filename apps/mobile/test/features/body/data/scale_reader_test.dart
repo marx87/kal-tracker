@@ -64,29 +64,141 @@ void main() {
 
   group('scansione', () {
     test(
-      'nessuna bilancia in giro: lo dice e spiega perché può succedere',
+      'non si è visto proprio niente: solo allora è «non trovata»',
       () async {
         final link = FakeScaleLink(devices: const []);
         final status = await readerFor(link).read();
         expect(status.phase, ScalePhase.notFound);
-        expect(status.detail, contains('Salici sopra'));
+        // Elenco vuoto: non c'è niente da far scegliere, e mostrare una card
+        // vuota sarebbe un vicolo cieco travestito da scelta.
+        expect(status.candidates, isEmpty);
+        expect(status.detail, contains('nemmeno i vicini'));
       },
     );
 
-    test('i vicini scartati finiscono nel registro', () async {
+    test(
+      'dispositivi visti ma nessuno si dichiara bilancia: sceglie Marco',
+      () async {
+        // La differenza fra questo caso e quello sopra è tutta la funzione: se
+        // qualcosa si è visto, la radio funziona e la bilancia è probabilmente
+        // lì sotto un nome che non conosciamo. Dire «non trovata» chiuderebbe
+        // la strada per un'euristica sbagliata.
+        final link = FakeScaleLink(
+          devices: const [
+            ScaleDevice(id: '1', name: 'Cuffie di Luca', rssi: -71),
+            ScaleDevice(id: '2', name: 'Lampadina', rssi: -83),
+          ],
+        );
+        final status = await readerFor(link).read();
+        expect(status.phase, ScalePhase.chooseDevice);
+        expect(status.candidates.map((device) => device.id), ['1', '2']);
+        expect(
+          status.log.map((entry) => entry.message).join('\n'),
+          allOf(contains('Cuffie di Luca'), contains('Lampadina')),
+        );
+      },
+    );
+
+    test('l’elenco è in ordine di comparsa e non si riordina mai', () async {
+      // La prima versione ordinava per nome e potenza, e sembrava sensato
+      // finché non si è provato il gesto vero. Marco è in piedi sulla
+      // bilancia; la sua Renpho non annuncia nessun nome, quindi con quel
+      // criterio finiva nel blocco di sotto. Bastava che il televisore di là
+      // si annunciasse per la prima volta — ha un nome, quindi saliva in cima
+      // — per far scivolare la bilancia di una riga **mentre il dito era già
+      // per aria**. Il tocco atterrava sul televisore, che veniva salvato
+      // come «la bilancia di Marco».
+      //
+      // Il difetto non era quale ordine scegliere: era che l'ordine cambiasse
+      // mentre lui mirava. Questo test fissa l'unica proprietà che conta —
+      // ciò che è già in schermata non si muove.
       final link = FakeScaleLink(
         devices: const [
-          ScaleDevice(id: '1', name: 'Cuffie di Luca'),
-          ScaleDevice(id: '2', name: 'Lampadina'),
+          ScaleDevice(id: 'muto-lontano', name: '', rssi: -88),
+          ScaleDevice(id: 'tv', name: 'TV Salotto', rssi: -74),
+          ScaleDevice(id: 'muto-vicino', name: '', rssi: -45),
+          ScaleDevice(id: 'cuffie', name: 'Cuffie di Luca', rssi: -59),
+        ],
+      );
+      // Ogni avanzamento, non solo l'ultimo: il riordino colpevole avveniva
+      // proprio fra un fotogramma e l'altro, e guardare solo l'esito finale
+      // non l'avrebbe mai visto.
+      final elenchi = <List<String>>[];
+      final status = await readerFor(link).read(
+        onStatus: (status) =>
+            elenchi.add([for (final device in status.candidates) device.id]),
+      );
+      expect(status.candidates.map((device) => device.id), [
+        'muto-lontano',
+        'tv',
+        'muto-vicino',
+        'cuffie',
+      ]);
+      // Nessun elenco intermedio smentisce quello dopo: ogni stato è un
+      // prefisso del successivo, cioè i nuovi si accodano e basta.
+      for (var i = 1; i < elenchi.length; i++) {
+        final prima = elenchi[i - 1];
+        final dopo = elenchi[i];
+        expect(
+          dopo.take(prima.length),
+          prima,
+          reason:
+              'l’elenco si è riordinato fra il passo ${i - 1} e il passo $i: '
+              'una riga si è spostata sotto il dito di Marco',
+        );
+      }
+    });
+
+    test('la potenza si aggiorna, la posizione no', () async {
+      // Due ragioni per volerlo. La prima: il valore in dBm è l'unico appiglio
+      // per distinguere la bilancia da un indirizzo anonimo, e attraverso un
+      // corpo oscilla di quindici decibel — un campione solo, preso al primo
+      // avvistamento, non dice niente. La seconda: aggiornarlo non deve
+      // rimettere in fila l'elenco, o si torna al difetto di sopra.
+      final link = FakeScaleLink(
+        devices: const [
+          ScaleDevice(id: 'muta', name: '', rssi: -91),
+          ScaleDevice(id: 'tv', name: 'TV Salotto', rssi: -74),
+          // La radio ripubblica lo stesso dispositivo a ogni giro: qui la
+          // bilancia si è avvicinata di cinquanta decibel perché Marco ci è
+          // salito sopra.
+          ScaleDevice(id: 'muta', name: '', rssi: -42),
         ],
       );
       final status = await readerFor(link).read();
-      expect(status.phase, ScalePhase.notFound);
+      expect(status.candidates.map((device) => device.id), ['muta', 'tv']);
       expect(
-        status.log.map((entry) => entry.message).join('\n'),
-        allOf(contains('Cuffie di Luca'), contains('Lampadina')),
+        status.candidates.firstWhere((device) => device.id == 'muta').rssi,
+        -42,
       );
     });
+
+    test(
+      'i dati del costruttore finiscono nel registro in esadecimale',
+      () async {
+        // Era il campo che si buttava via, ed è quello in cui moltissime bilance
+        // mettono tutto: senza, un dispositivo «senza servizi» nel registro era
+        // indistinguibile da un frigorifero.
+        final link = FakeScaleLink(
+          devices: const [
+            ScaleDevice(
+              id: 'muta',
+              name: '',
+              manufacturerData: {
+                0x0157: [0x01, 0xff, 0x5a],
+              },
+              rssi: -52,
+            ),
+          ],
+        );
+        final status = await readerFor(link).read();
+        expect(status.phase, ScalePhase.chooseDevice);
+        expect(
+          status.log.map((entry) => entry.hex).whereType<String>(),
+          contains('0157:01ff5a'),
+        );
+      },
+    );
 
     test(
       'il permesso che salta fuori solo cercando resta un permesso',
@@ -118,6 +230,180 @@ void main() {
         expect(status.errorDetail, contains('gatt error 133'));
       },
     );
+  });
+
+  group('la scelta a mano', () {
+    /// Il dialogo che porta la bilancia dal collegamento alla pesata buona.
+    Future<void> pesa(FakeScaleLink link) async {
+      final connection = await link.opened;
+      await connection.emit(fakeHandshakeFrame());
+      await connection.emit(
+        fakeWeightFrame(weightKg: 95.8, stable: true, resistance1: 442),
+      );
+    }
+
+    test('l’indirizzo già scelto vince su nome e servizi che non dicono '
+        'niente', () async {
+      final link = FakeScaleLink(
+        devices: const [
+          ScaleDevice(id: 'frigo', name: 'Frigorifero', rssi: -77),
+          // Nessun nome, un servizio che non c'entra niente: da sola
+          // l'euristica non la guarderebbe mai.
+          ScaleDevice(id: 'ff:ee:dd', name: '', serviceUuids: ['180f']),
+        ],
+      );
+      final reader = readerFor(link);
+      final result = reader.read(preferredDeviceId: 'ff:ee:dd');
+      await pesa(link);
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(
+        status.log.map((entry) => entry.message).join('\n'),
+        contains('ff:ee:dd'),
+      );
+    });
+
+    test(
+      'l’indirizzo già scelto vince anche su chi sembra una QN-Scale',
+      () async {
+        // Il riconoscimento è largo per scelta — «QN-», «RENPHO», i nomi di
+        // modello — e quindi può prendere in pieno un altro apparecchio della
+        // stessa famiglia. Se Marco ha già detto qual è la sua bilancia, quella
+        // risposta non deve poter essere smentita da un indovinello, nemmeno se
+        // l'indovinello si annuncia per primo.
+        final link = FakeScaleLink(
+          devices: const [
+            ScaleDevice(id: 'sosia', name: QnScale.advertisedName, rssi: -80),
+            ScaleDevice(id: 'quella-di-marco', name: '', rssi: -48),
+          ],
+        );
+        final reader = readerFor(link);
+        final result = reader.read(preferredDeviceId: 'quella-di-marco');
+        await pesa(link);
+
+        final status = await result;
+        expect(status.phase, ScalePhase.ready);
+        expect(status.reading!.deviceName, isEmpty);
+        expect(
+          status.log.map((entry) => entry.message).join('\n'),
+          contains('mi collego a quella-di-marco'),
+        );
+      },
+    );
+
+    test('la bilancia scelta che non compare lascia il posto a chi le '
+        'somiglia', () async {
+      // L'altra faccia della regola sopra: aspettare l'indirizzo scelto non
+      // deve diventare un'ostinazione. Se quello non si fa vedere — telefono
+      // nuovo, bilancia cambiata — e nel frattempo ne è passata una che si
+      // dichiara bilancia, tanto vale provarci invece di rimandare Marco a
+      // scegliere da un elenco.
+      final link = FakeScaleLink(
+        devices: const [
+          ScaleDevice(id: 'sosia', name: QnScale.advertisedName, rssi: -80),
+          ScaleDevice(id: 'frigo', name: 'Frigorifero', rssi: -77),
+        ],
+      );
+      final reader = readerFor(link);
+      final result = reader.read(preferredDeviceId: 'mai-vista');
+      await pesa(link);
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.deviceName, QnScale.advertisedName);
+    });
+
+    test('la scelta fatta mentre cerca prosegue fino alla pesata', () async {
+      // Il momento vero: la scansione è ancora aperta, Marco è sulla bilancia
+      // e tocca la riga appena compare. Da lì in poi deve andare avanti la
+      // lettura già in volo, senza aspettare che scadano i trenta secondi.
+      const muta = ScaleDevice(id: 'muta', name: '', rssi: -47);
+      final link = FakeScaleLink(keepScanning: true, devices: const [muta]);
+      final reader = readerFor(link);
+      final phases = <ScalePhase>[];
+      final result = reader.read(
+        onStatus: (status) => phases.add(status.phase),
+      );
+
+      await link.announced;
+      expect(reader.chooseWhileScanning(muta), isTrue);
+      await pesa(link);
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      // La ricerca si spegne: continuare a cercare una bilancia a cui si è
+      // già collegati brucerebbe radio e batteria per niente.
+      expect(link.scanStopped, isTrue);
+      expect(
+        phases,
+        containsAllInOrder([
+          ScalePhase.scanning,
+          ScalePhase.connecting,
+          ScalePhase.ready,
+        ]),
+      );
+      expect(
+        status.log.map((entry) => entry.message).join('\n'),
+        contains('scelta a mano'),
+      );
+    });
+
+    test('senza una scansione aperta la scelta non ha dove andare', () async {
+      const muta = ScaleDevice(id: 'muta', name: '', rssi: -47);
+      final link = FakeScaleLink(keepScanning: true, devices: const [muta]);
+      final reader = readerFor(link);
+      // Prima ancora di cercare non c'è nessuna scelta da completare.
+      expect(reader.chooseWhileScanning(muta), isFalse);
+
+      final result = reader.read();
+      await link.announced;
+      await link.endScan();
+
+      final status = await result;
+      expect(status.phase, ScalePhase.chooseDevice);
+      // Scansione finita: da qui in poi la strada è `connectTo`, e dirlo con
+      // un `false` è ciò che impedisce alla scelta di sparire nel nulla.
+      expect(reader.chooseWhileScanning(status.candidates.single), isFalse);
+    });
+
+    test('un dispositivo mai riconosciuto, scelto a mano, arriva alla '
+        'pesata', () async {
+      final link = FakeScaleLink(devices: const []);
+      final reader = readerFor(link);
+      final phases = <ScalePhase>[];
+      final result = reader.connectTo(
+        const ScaleDevice(id: 'muta', name: '', rssi: -47),
+        onStatus: (status) => phases.add(status.phase),
+      );
+      await pesa(link);
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.impedanceOhm, 442);
+      expect(
+        phases,
+        containsAllInOrder([ScalePhase.connecting, ScalePhase.ready]),
+      );
+    });
+
+    test('un collegamento rifiutato dopo la scelta resta un guasto '
+        'leggibile', () async {
+      // La scelta di Marco è comunque valida: qui fallisce il collegamento,
+      // non la risposta alla domanda «qual è la tua bilancia».
+      final link = FakeScaleLink(devices: const [])
+        ..connectException = ScaleLinkException(
+          ScaleLinkFailure.connection,
+          'gatt error 133',
+        );
+      final status = await readerFor(
+        link,
+      ).connectTo(const ScaleDevice(id: 'muta', name: ''));
+      expect(status.phase, ScalePhase.failed);
+      expect(status.errorDetail, contains('gatt error 133'));
+    });
   });
 
   group('pesata completa', () {
@@ -371,4 +657,71 @@ void main() {
       expect(second.log.length, first.log.length);
     });
   });
+
+  group('la schermata che si chiude a metà', () {
+    test('interrompere durante la ricerca ferma davvero la ricerca', () async {
+      // Era un buco vero: `cancel()` guardava solo la sessione di dialogo, che
+      // nasce dentro `_converse`. Durante la scansione non esisteva ancora,
+      // quindi chiudere la schermata non fermava niente — la ricerca andava
+      // avanti per i suoi trenta secondi e poi si collegava lo stesso a una
+      // bilancia che nessuno stava più guardando.
+      final link = FakeScaleLink(
+        keepScanning: true,
+        devices: const [ScaleDevice(id: 'muta', name: '', rssi: -60)],
+      );
+      final reader = readerFor(link);
+      final sessione = reader.read();
+      await link.announced;
+
+      reader.cancel();
+      // Ora la bilancia si annuncia: senza la correzione la ricerca era ancora
+      // viva, la riconosceva e ci si collegava a schermata chiusa.
+      link.announce(
+        const ScaleDevice(id: 'bilancia', name: QnScale.advertisedName),
+      );
+
+      final status = await sessione;
+      expect(status.phase, ScalePhase.failed);
+      expect(link.scanStopped, isTrue);
+      expect(link.connections, isEmpty);
+      expect(
+        status.log.map((entry) => entry.message),
+        anyElement(contains('interrotta durante la ricerca')),
+      );
+    });
+
+    test('interrompere mentre si aggancia chiude subito il collegamento', () {
+      // Una richiesta di collegamento non si può richiamare indietro. L'unica
+      // cosa onesta è aprirlo e chiuderlo all'istante: la bilancia resta
+      // libera per il tentativo dopo, invece di restare occupata fino allo
+      // scadere del tempo di salita.
+      return fakeAsyncTest((elapse) async {
+        final link = FakeScaleLink(
+          connectDelay: const Duration(milliseconds: 50),
+        );
+        final reader = readerFor(link);
+        final sessione = reader.read();
+        // Quanto basta perché la ricerca finisca e il collegamento parta, non
+        // abbastanza perché si apra.
+        await elapse(const Duration(milliseconds: 20));
+
+        reader.cancel();
+        await elapse(const Duration(milliseconds: 100));
+
+        final status = await sessione;
+        expect(status.phase, ScalePhase.failed);
+        expect(link.connections, hasLength(1));
+        expect(link.connections.single.closed, isTrue);
+      });
+    });
+  });
 }
+
+/// Esegue [body] lasciando avanzare il tempo davvero, in piccoli passi.
+///
+/// I tempi qui in gioco sono decine di millisecondi veri e non fotogrammi
+/// finti: il lettore non è un widget e non ha un `pump` che lo faccia
+/// procedere.
+Future<void> fakeAsyncTest(
+  Future<void> Function(Future<void> Function(Duration) elapse) body,
+) => body((duration) => Future<void>.delayed(duration));
