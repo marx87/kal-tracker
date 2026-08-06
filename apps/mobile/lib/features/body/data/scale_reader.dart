@@ -429,6 +429,28 @@ class ScaleReader {
     Timer? codaTimer;
     final grezzo = <String>[];
     ScaleReading? pesata;
+    // Il contatore che la bilancia porta nel suo battito. **Se cresce durante
+    // la sessione, la composizione corporea è stata calcolata e archiviata
+    // dentro la bilancia** — e non trasmessa. È la differenza fra «non è
+    // riuscita a misurare» e «ha misurato e non me lo dice», che sono due cose
+    // opposte da raccontare a chi è appena sceso.
+    int? contatoreIniziale;
+    int? contatoreCorrente;
+
+    /// Cosa dire a fine sessione quando l'impedenza non è arrivata.
+    String dettaglioFinale() {
+      final prima = contatoreIniziale;
+      final dopo = contatoreCorrente;
+      if (prima != null && dopo != null && dopo > prima) {
+        return 'La bilancia il body scan lo ha fatto: mentre eri sopra ha '
+            'archiviato una misura nuova (da $prima a $dopo). Semplicemente '
+            'non la manda a nessuno finché non gliela si chiede, e il comando '
+            'per chiederla non lo conosco ancora. Il peso però è buono.';
+      }
+      return 'Il body scan non è partito. Serve il circuito chiuso: piedi '
+          'nudi sugli angoli e maniglia in mano con le braccia tese, senza '
+          'scendere, fino a quando il display ha finito.';
+    }
 
     void finish(ScaleStatus status) {
       if (!session.isCompleted) {
@@ -481,9 +503,22 @@ class ScaleReader {
           // E si resta in ascolto: l'impedenza, se esiste, arriva dopo.
           codaTimer ??= Timer(bodyCompositionTimeout, () {
             _note('nessun’altra trama: chiudo con il solo peso');
-            finish(_emit(ScalePhase.incomplete, reading: pesata));
+            finish(
+              _emit(
+                ScalePhase.incomplete,
+                reading: pesata,
+                errorDetail: dettaglioFinale(),
+              ),
+            );
           });
-        case RenphoStatusFrame():
+        case RenphoStatusFrame(counter: final valore):
+          if (valore != null) {
+            contatoreIniziale ??= valore;
+            contatoreCorrente = valore;
+          }
+          if (pesata == null) {
+            _emit(ScalePhase.stepOn);
+          }
         case RenphoUnknownFrame():
           if (pesata == null) {
             _emit(ScalePhase.stepOn);
@@ -505,7 +540,13 @@ class ScaleReader {
         final letta = pesata;
         if (letta != null) {
           _note('la bilancia si è scollegata: tengo la pesata che ho');
-          finish(_emit(ScalePhase.incomplete, reading: letta));
+          finish(
+            _emit(
+              ScalePhase.incomplete,
+              reading: letta,
+              errorDetail: dettaglioFinale(),
+            ),
+          );
           return;
         }
         _note('la bilancia si è scollegata', isProblem: true);

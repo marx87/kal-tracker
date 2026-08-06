@@ -775,6 +775,129 @@ void main() {
       expect(status.reading!.rawPayloadHex, contains(' | '));
     });
 
+    test(
+      'il contatore che cresce dice «ha misurato e non me lo manda»',
+      () async {
+        // La differenza fra i due modi di non avere l'impedenza, e sono opposti:
+        // «non è riuscita a misurare» manda Marco a rifare la pesata, «ha
+        // misurato e se lo tiene» dice che il problema è nostro, non suo. Il
+        // contatore nel battito della bilancia distingue i due casi — nella
+        // sessione del 6 agosto è passato da 4 a 5 esattamente quando il body
+        // scan è finito sul display.
+        final link = linkStandard(ScaleProtocolKind.renphoMsc);
+        final reader = readerFor(link);
+        final result = reader.connectTo(renpho);
+
+        final connection = await link.opened;
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x20,
+          0x00,
+          0x05,
+          0x00,
+          0x01,
+          0x01,
+          0x04,
+          0x00,
+          0x2a,
+        ]);
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x24,
+          0x00,
+          0x06,
+          0x01,
+          0x11,
+          0x00,
+          0x00,
+          0x26,
+          0x11,
+          0x72,
+        ]);
+        // Il body scan finisce: il contatore sale.
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x20,
+          0x00,
+          0x05,
+          0x04,
+          0x05,
+          0x01,
+          0x05,
+          0x00,
+          0x33,
+        ]);
+        await connection.dropConnection();
+
+        final status = await result;
+        expect(status.phase, ScalePhase.incomplete);
+        expect(status.reading!.weightKg, closeTo(97.45, 0.001));
+        expect(status.errorDetail, contains('body scan lo ha fatto'));
+        expect(status.errorDetail, contains('da 4 a 5'));
+      },
+    );
+
+    test(
+      'senza body scan si dice cosa manca, non si dà la colpa alle calze',
+      () async {
+        // Il contatore resta fermo: la misura non è stata proprio fatta, e
+        // l'unica cosa utile da dire è come chiudere il circuito.
+        final link = linkStandard(ScaleProtocolKind.renphoMsc);
+        final reader = readerFor(link);
+        final result = reader.connectTo(renpho);
+
+        final connection = await link.opened;
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x20,
+          0x00,
+          0x05,
+          0x00,
+          0x01,
+          0x01,
+          0x04,
+          0x00,
+          0x2a,
+        ]);
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x24,
+          0x00,
+          0x06,
+          0x01,
+          0x11,
+          0x00,
+          0x00,
+          0x26,
+          0x11,
+          0x72,
+        ]);
+        await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [
+          0x55,
+          0xaa,
+          0x20,
+          0x00,
+          0x05,
+          0x04,
+          0x05,
+          0x01,
+          0x04,
+          0x00,
+          0x32,
+        ]);
+        await connection.dropConnection();
+
+        final status = await result;
+        expect(status.errorDetail, contains('circuito chiuso'));
+        expect(status.errorDetail, isNot(contains('body scan lo ha fatto')));
+      },
+    );
+
     test('protocollo sconosciuto: si registra tutto, e conta come '
         'successo', () async {
       // La R-MSC02 parla `1a10`, un servizio che non sta nello standard e che
