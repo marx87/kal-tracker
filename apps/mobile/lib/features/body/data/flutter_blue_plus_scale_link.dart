@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kal_tracker/features/body/data/scale_link.dart';
+import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
 
 /// L'unico punto dell'app che sa che esiste `flutter_blue_plus`.
@@ -182,10 +183,16 @@ class FlutterBluePlusScaleLink implements ScaleLink {
       final profile = _profileOf(services);
       if (profile == null) {
         await target.disconnect();
+        // L'elenco di ciò che il dispositivo espone davvero, servizio per
+        // servizio. Prima si diceva soltanto quali due servizi mancavano, che
+        // è l'unica cosa già nota: il collegamento era riuscito e la scoperta
+        // pure, quindi la risposta alla domanda «e allora cosa parla?» era in
+        // mano nostra e la buttavamo via. Senza, ogni protocollo nuovo costa
+        // un giro di pubblicazione solo per sapere che nome ha.
         throw ScaleLinkException(
           ScaleLinkFailure.connection,
-          'Il dispositivo non espone il servizio della bilancia '
-          '(${QnScale.serviceUuid} né ${QnScale.altServiceUuid}).',
+          'Il dispositivo non parla nessuno dei protocolli che conosco. '
+          'Espone: ${_descriviServizi(services)}',
         );
       }
       // L'ascolto si apre PRIMA di accendere le notifiche: la bilancia manda
@@ -196,6 +203,13 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         profile: profile,
       );
       await profile.notify.setNotifyValue(true);
+      // `0x2A9C` e `0x2A9D` viaggiano per *indication* e non per notifica; il
+      // plugin sceglie da sé quale abilitare guardando le proprietà della
+      // caratteristica, quindi qui non c'è niente da distinguere.
+      final anche = profile.alsoNotify;
+      if (anche != null) {
+        await anche.setNotifyValue(true);
+      }
       return connection;
     } on ScaleLinkException {
       rethrow;
@@ -209,12 +223,87 @@ class FlutterBluePlusScaleLink implements ScaleLink {
     }
   }
 
+  /// Cosa espone il dispositivo, in una riga che si può copiare e mandare.
+  ///
+  /// I servizi standard del Bluetooth SIG occupano i quattro caratteri di
+  /// mezzo (`0000XXXX-0000-1000-8000-00805f9b34fb`), quindi si scrivono corti;
+  /// quelli di un costruttore sono UUID interi e vanno per esteso, perché è
+  /// esattamente il numero da cercare per capire che apparecchio si ha
+  /// davanti.
+  static String _descriviServizi(List<BluetoothService> services) {
+    if (services.isEmpty) {
+      return 'nessun servizio.';
+    }
+    final parti = <String>[];
+    for (final service in services) {
+      final caratteristiche = service.characteristics
+          .map((c) => _breve(c.characteristicUuid.str128))
+          .join(' ');
+      parti.add(
+        '${_breve(service.serviceUuid.str128)}'
+        '${caratteristiche.isEmpty ? '' : ' [$caratteristiche]'}',
+      );
+    }
+    return parti.join(', ');
+  }
+
+  static String _breve(String uuid) {
+    final clean = uuid.toLowerCase();
+    if (clean.length == 36 &&
+        clean.startsWith('0000') &&
+        clean.endsWith('-0000-1000-8000-00805f9b34fb')) {
+      return clean.substring(4, 8);
+    }
+    return clean;
+  }
+
   static String _nameOf(ScanResult result) {
     final advertised = result.advertisementData.advName.trim();
     return advertised.isNotEmpty ? advertised : result.device.platformName;
   }
 
+  /// Cosa si può ascoltare su questo dispositivo, in ordine di preferenza.
+  ///
+  /// L'ordine è `181B` → Qingniu → `181D`, e ognuno dei tre posti è motivato:
+  ///
+  /// - Il *Body Composition* standard viene per primo perché dà tutto (peso e
+  ///   impedenza) ed è **pubblicato**, mentre il dialogo di Qingniu è stato
+  ///   ricavato per tentativi da chi l'ha decodificato.
+  /// - Il *Weight Scale* standard viene per **ultimo**, dopo Qingniu, ed è una
+  ///   correzione: dà il solo peso, quindi anteporlo a Qingniu su una bilancia
+  ///   che espone entrambi sarebbe stato un peggioramento garantito — niente
+  ///   impedenza significa niente composizione, per sempre. «Pubblicato batte
+  ///   indovinato» vale finché il pubblicato non dà **meno**.
+  ///
+  /// Le due caratteristiche standard si ascoltano **insieme** quando ci sono
+  /// entrambe: nel *Body Composition* il peso è un campo opzionale proprio
+  /// perché è previsto che un dispositivo che espone anche il *Weight Scale*
+  /// lo mandi di là. Ascoltandone una sola, da una bilancia fatta così
+  /// arriverebbe l'impedenza senza mai un peso, e la pesata morirebbe per
+  /// scadenza del tempo con il numero già pubblicato dall'altra parte.
   static _QnProfile? _profileOf(List<BluetoothService> services) {
+    BluetoothCharacteristic? bodyComposition;
+    BluetoothCharacteristic? weight;
+    for (final service in services) {
+      if (service.serviceUuid == Guid(GattScale.bodyCompositionService)) {
+        bodyComposition ??= _find(
+          service,
+          GattScale.bodyCompositionMeasurement,
+        );
+      }
+      if (service.serviceUuid == Guid(GattScale.weightScaleService)) {
+        weight ??= _find(service, GattScale.weightMeasurement);
+      }
+    }
+    if (bodyComposition != null) {
+      return _QnProfile(
+        notify: bodyComposition,
+        kind: ScaleProtocolKind.gattBodyComposition,
+        alsoNotify: weight,
+        alsoNotifyKind: weight == null ? null : ScaleProtocolKind.gattWeight,
+      );
+    }
+
     for (final service in services) {
       if (service.serviceUuid == Guid(QnScale.serviceUuid)) {
         final notify = _find(service, QnScale.notifyUuid);
@@ -222,6 +311,7 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         if (notify != null && config != null) {
           return _QnProfile(
             notify: notify,
+            kind: ScaleProtocolKind.qingniu,
             config: config,
             time: _find(service, QnScale.timeUuid) ?? config,
           );
@@ -233,9 +323,18 @@ class FlutterBluePlusScaleLink implements ScaleLink {
         if (notify != null && write != null) {
           // Nel profilo «tipo 2» orologio e unità viaggiano sulla stessa
           // caratteristica.
-          return _QnProfile(notify: notify, config: write, time: write);
+          return _QnProfile(
+            notify: notify,
+            kind: ScaleProtocolKind.qingniu,
+            config: write,
+            time: write,
+          );
         }
       }
+    }
+
+    if (weight != null) {
+      return _QnProfile(notify: weight, kind: ScaleProtocolKind.gattWeight);
     }
     return null;
   }
@@ -284,17 +383,31 @@ class FlutterBluePlusScaleLink implements ScaleLink {
   }
 }
 
-/// Le tre caratteristiche che servono, già trovate.
+/// Le caratteristiche che servono, già trovate, e che protocollo sono.
+///
+/// Il profilo standard ha la sola caratteristica di notifica: non si scrive
+/// niente, non c'è nessun orologio da sincronizzare e nessuna unità da
+/// imporre. Per questo [config] e [time] sono nulle lì — e chiunque provi a
+/// scrivere se ne accorge subito invece di mandare byte nel vuoto.
 class _QnProfile {
   const _QnProfile({
     required this.notify,
-    required this.config,
-    required this.time,
+    required this.kind,
+    this.config,
+    this.time,
+    this.alsoNotify,
+    this.alsoNotifyKind,
   });
 
   final BluetoothCharacteristic notify;
-  final BluetoothCharacteristic config;
-  final BluetoothCharacteristic time;
+  final ScaleProtocolKind kind;
+  final BluetoothCharacteristic? config;
+  final BluetoothCharacteristic? time;
+
+  /// La seconda caratteristica da ascoltare, quando c'è: il *Weight Scale*
+  /// accanto al *Body Composition*.
+  final BluetoothCharacteristic? alsoNotify;
+  final ScaleProtocolKind? alsoNotifyKind;
 }
 
 class _FlutterBluePlusConnection implements ScaleConnection {
@@ -305,28 +418,46 @@ class _FlutterBluePlusConnection implements ScaleConnection {
     // ascolto. Senza questo cuscinetto la presentazione della bilancia
     // andrebbe persa a ogni collegamento fortunato.
     _tap = profile.notify.onValueReceived.listen(
-      _buffer.add,
+      (bytes) => _buffer.add(ScaleFrame(bytes, profile.kind)),
       onError: _buffer.addError,
     );
+    final anche = profile.alsoNotify;
+    final ancheKind = profile.alsoNotifyKind;
+    if (anche != null && ancheKind != null) {
+      _second = anche.onValueReceived.listen(
+        (bytes) => _buffer.add(ScaleFrame(bytes, ancheKind)),
+        onError: _buffer.addError,
+      );
+    }
   }
 
   final BluetoothDevice device;
   final _QnProfile profile;
 
-  final _buffer = StreamController<List<int>>();
+  final _buffer = StreamController<ScaleFrame>();
   late final StreamSubscription<List<int>> _tap;
+  StreamSubscription<List<int>>? _second;
 
   @override
-  Stream<List<int>> get incoming => _buffer.stream;
+  Stream<ScaleFrame> get incoming => _buffer.stream;
 
   @override
-  Future<void> send(List<int> bytes) {
+  ScaleProtocolKind get kind => profile.kind;
+
+  @override
+  Future<void> send(List<int> bytes) async {
     // L'instradamento dipende dall'opcode: nel profilo «tipo 1» l'orologio ha
     // una caratteristica sua. È conoscenza di trasporto, non di dominio, e per
     // questo sta qui e non nel lettore.
     final target = bytes.isNotEmpty && bytes.first == QnScale.opcodeTimeReply
         ? profile.time
         : profile.config;
+    if (target == null) {
+      // Il profilo standard non ha niente a cui scrivere, e non è un guasto:
+      // non chiede presentazioni e non si configura. Chi manda comandi qui li
+      // manda per abitudine, e il posto giusto per fermarli è questo.
+      return;
+    }
     // Con risposta quando la caratteristica la prevede: l'ack è dello stack
     // Bluetooth, non della bilancia, quindi non c'è niente da aspettare che
     // possa non arrivare. Se la caratteristica ammette solo la scrittura senza
@@ -337,6 +468,7 @@ class _FlutterBluePlusConnection implements ScaleConnection {
   @override
   Future<void> close() async {
     await _tap.cancel();
+    await _second?.cancel();
     if (!_buffer.isClosed) {
       await _buffer.close();
     }

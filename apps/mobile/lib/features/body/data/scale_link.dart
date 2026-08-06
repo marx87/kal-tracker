@@ -103,10 +103,48 @@ class ScaleLinkException implements Exception {
   String toString() => 'ScaleLinkException(${failure.name}): $message';
 }
 
+/// Quale linguaggio parla la bilancia che abbiamo davanti.
+///
+/// Non è un dettaglio del trasporto: cambia il dialogo (il profilo standard
+/// non vuole nessuna presentazione né comandi di configurazione) e cambia il
+/// decodificatore. Chi apre il collegamento lo scopre guardando i servizi, e
+/// deve dirlo a chi legge — altrimenti l'unica alternativa sarebbe provare a
+/// decodificare le trame in tutti i modi e tenere quella che sembra sensata,
+/// che è il modo migliore per registrare un peso inventato.
+enum ScaleProtocolKind {
+  /// Il dialogo proprietario di Qingniu, sui servizi `ffe0`/`fff0`.
+  qingniu,
+
+  /// *Body Composition Service* del Bluetooth SIG: peso e impedenza.
+  gattBodyComposition,
+
+  /// *Weight Scale Service* del Bluetooth SIG: il solo peso.
+  gattWeight,
+}
+
+/// Una trama arrivata dalla bilancia, con l'indicazione di **da dove**.
+///
+/// La provenienza serve perché una bilancia può esporre due caratteristiche
+/// standard insieme — il peso su `0x2A9D` e l'impedenza su `0x2A9C` — e le due
+/// trame hanno formati diversi. Senza l'etichetta l'unica alternativa sarebbe
+/// provare a decodificarle in tutti i modi e tenere quella che sembra
+/// sensata: il modo migliore per registrare un peso inventato.
+@immutable
+class ScaleFrame {
+  const ScaleFrame(this.bytes, this.source);
+
+  final List<int> bytes;
+  final ScaleProtocolKind source;
+}
+
 /// Un collegamento aperto con la bilancia.
 abstract class ScaleConnection {
+  /// Il protocollo principale, quello che decide come si conduce il dialogo.
+  /// Le singole trame dicono da sé da quale caratteristica arrivano.
+  ScaleProtocolKind get kind;
+
   /// Le trame che arrivano, così come arrivano.
-  Stream<List<int>> get incoming;
+  Stream<ScaleFrame> get incoming;
 
   /// Manda una trama. Dove scriverla lo decide l'implementazione: il
   /// protocollo QN ha due caratteristiche di scrittura e la scelta dipende

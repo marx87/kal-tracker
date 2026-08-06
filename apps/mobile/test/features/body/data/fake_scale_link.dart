@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:kal_tracker/features/body/data/scale_link.dart';
+import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
 
 /// **La bilancia finta.**
@@ -26,6 +27,7 @@ class FakeScaleLink implements ScaleLink {
     this.frameDelay = const Duration(milliseconds: 10),
     this.keepScanning = false,
     this.connectDelay = Duration.zero,
+    this.protocol = ScaleProtocolKind.qingniu,
   }) : devices =
            devices ??
            const [ScaleDevice(id: 'aa:bb:cc', name: QnScale.advertisedName)];
@@ -56,6 +58,9 @@ class FakeScaleLink implements ScaleLink {
   /// interrotta chiude subito quello che ha aperto invece di lasciare la
   /// bilancia occupata per tre quarti di minuto.
   final Duration connectDelay;
+
+  /// Il protocollo che la bilancia finta dichiara al collegamento.
+  final ScaleProtocolKind protocol;
 
   /// Annuncia un dispositivo a scansione già in corso.
   ///
@@ -167,7 +172,7 @@ class FakeScaleLink implements ScaleLink {
     if (connectDelay > Duration.zero) {
       await Future<void>.delayed(connectDelay);
     }
-    final connection = FakeScaleConnection();
+    final connection = FakeScaleConnection(kind: protocol);
     connections.add(connection);
     if (!_opened.isCompleted) {
       _opened.complete(connection);
@@ -190,7 +195,16 @@ class FakeScaleLink implements ScaleLink {
 }
 
 class FakeScaleConnection implements ScaleConnection {
-  final _incoming = StreamController<List<int>>();
+  FakeScaleConnection({this.kind = ScaleProtocolKind.qingniu});
+
+  /// Che protocollo finge di parlare. Il valore di partenza è quello di
+  /// Qingniu perché è la bilancia che i test avevano quando sono stati
+  /// scritti: cambiarlo di default vorrebbe dire riscriverli tutti per una
+  /// ragione che non è la loro.
+  @override
+  final ScaleProtocolKind kind;
+
+  final _incoming = StreamController<ScaleFrame>();
 
   /// Le trame che l'app ha mandato alla bilancia, in ordine.
   final sent = <List<int>>[];
@@ -198,7 +212,7 @@ class FakeScaleConnection implements ScaleConnection {
   bool closed = false;
 
   @override
-  Stream<List<int>> get incoming => _incoming.stream;
+  Stream<ScaleFrame> get incoming => _incoming.stream;
 
   @override
   Future<void> send(List<int> bytes) async => sent.add(List<int>.of(bytes));
@@ -211,10 +225,18 @@ class FakeScaleConnection implements ScaleConnection {
     }
   }
 
-  /// Manda una trama, senza aspettare.
-  void emitRaw(List<int> frame) {
+  /// Manda una trama, senza aspettare. Arriva dalla caratteristica principale.
+  void emitRaw(List<int> frame) => emitRawFrom(kind, frame);
+
+  /// Manda una trama fingendo che venga da una caratteristica precisa.
+  ///
+  /// Serve alla bilancia che espone insieme il *Body Composition* e il *Weight
+  /// Scale*: il peso arriva da una parte, l'impedenza dall'altra, e senza
+  /// questo non si potrebbe riprodurre l'unico caso in cui ascoltarne una sola
+  /// farebbe morire la pesata per scadenza.
+  void emitRawFrom(ScaleProtocolKind source, List<int> frame) {
     if (!_incoming.isClosed) {
-      _incoming.add(frame);
+      _incoming.add(ScaleFrame(frame, source));
     }
   }
 
@@ -222,6 +244,12 @@ class FakeScaleConnection implements ScaleConnection {
   /// scrivere il dialogo riga per riga invece di aspettare a caso.
   Future<void> emit(List<int> frame) async {
     emitRaw(frame);
+    await _settle();
+  }
+
+  /// Come [emit], ma dichiarando da quale caratteristica arriva.
+  Future<void> emitFrom(ScaleProtocolKind source, List<int> frame) async {
+    emitRawFrom(source, frame);
     await _settle();
   }
 
@@ -329,4 +357,62 @@ List<int> fakeAlternateWeightFrame({
   ];
   frame[frame.length - 1] = qnChecksum(frame.take(frame.length - 1));
   return frame;
+}
+
+/// `0x2A9C` — *Body Composition Measurement*, la trama della R-MSC02.
+///
+/// Due cose la rendono diversa dalle trame QN qui sopra, e sono quelle che i
+/// test devono poter riprodurre. La prima: i numeri viaggiano **little
+/// endian**, al contrario del protocollo proprietario. La seconda: i campi
+/// opzionali esistono solo se il loro bit è acceso, e stanno in un ordine
+/// fisso — scriverli in un ordine comodo qui vorrebbe dire far leggere al
+/// decodificatore l'impedenza dove c'è il peso, con la trama che continua a
+/// sembrare valida.
+///
+/// Il peso è opzionale davvero: [weightKg] a `null` è la trama che porta la
+/// sola misura elettrica, ed è il caso per cui il dialogo accumula i pezzi.
+List<int> fakeGattBodyFrame({
+  double? weightKg,
+  double? impedanceOhm,
+  double bodyFatPct = 22.4,
+  bool split = false,
+}) {
+  var flags = 0;
+  final campi = <int>[];
+  void uint16(int value) {
+    campi.add(value & 0xFF);
+    campi.add((value >> 8) & 0xFF);
+  }
+
+  // Il grasso non ha un bit suo: sta sempre subito dopo i flag.
+  uint16((bodyFatPct * 10).round());
+  if (impedanceOhm != null) {
+    flags |= 0x0200;
+    uint16((impedanceOhm * 10).round());
+  }
+  if (weightKg != null) {
+    flags |= 0x0400;
+    uint16((weightKg / GattScale.massResolutionSiKg).round());
+  }
+  if (split) {
+    // Bit 12. Va acceso su ENTRAMBI i pacchetti di una misura spezzata, non
+    // solo sul primo: descrive la misura, non il pacchetto. Un finto che lo
+    // accendesse solo sul primo riprodurrebbe una bilancia che non esiste, e
+    // il test passerebbe su un comportamento che sul campo non capita mai.
+    flags |= 0x1000;
+  }
+  return <int>[flags & 0xFF, (flags >> 8) & 0xFF, ...campi];
+}
+
+/// `0x2A9C` con `0xFFFF` nel grasso: la bilancia dichiara che la pesata **non
+/// è riuscita**. La specifica impone che in quel caso i campi opzionali siano
+/// assenti, quindi la trama è tutta qui.
+List<int> fakeGattFailedFrame() => const <int>[0x00, 0x00, 0xff, 0xff];
+
+/// `0x2A9D` — *Weight Measurement*: un byte di flag, il peso, e basta. Il bit
+/// 0 dichiara le libbre, e resta spento perché la bilancia di Marco pesa in
+/// chilogrammi.
+List<int> fakeGattWeightFrame({required double weightKg}) {
+  final raw = (weightKg / GattScale.massResolutionSiKg).round();
+  return <int>[0x00, raw & 0xFF, (raw >> 8) & 0xFF];
 }

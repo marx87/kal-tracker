@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:kal_tracker/features/body/data/scale_link.dart';
+import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/scale_log.dart';
 import 'package:kal_tracker/features/body/domain/scale_session.dart';
@@ -220,6 +221,14 @@ class ScaleReader {
     ScaleConnection connection,
     ScaleDevice device,
   ) async {
+    // Il profilo standard è un'altra conversazione, non una variante di
+    // questa: non c'è presentazione da aspettare, non c'è orologio da
+    // sincronizzare, non c'è unità da imporre, e le trame hanno un'altra
+    // forma. Innestarlo qui dentro a colpi di `if` avrebbe reso illeggibili
+    // due dialoghi invece di uno.
+    if (connection.kind != ScaleProtocolKind.qingniu) {
+      return _converseGatt(connection, device);
+    }
     final session = _session = Completer<ScaleStatus>();
     var scaleFactor = 100.0;
     var protocolType = QnScale.defaultProtocolType;
@@ -261,7 +270,8 @@ class ScaleReader {
       _emit(ScalePhase.stepOn);
     }
 
-    void onFrame(List<int> bytes) {
+    void onFrame(ScaleFrame incoming) {
+      final bytes = incoming.bytes;
       final frame = decodeQnFrame(bytes, weightScaleFactor: scaleFactor);
       if (frame == null) {
         _note('trama vuota o illeggibile', hex: qnHex(bytes), isProblem: true);
@@ -361,6 +371,190 @@ class ScaleReader {
       return await session.future;
     } finally {
       handshakeTimer.cancel();
+      stepOnTimer.cancel();
+      graceTimer?.cancel();
+      await subscription.cancel();
+      await connection.close();
+      _session = null;
+    }
+  }
+
+  /// Il dialogo con una bilancia che parla il profilo standard.
+  ///
+  /// È molto più corto dell'altro, e la ragione è che lo standard fa quasi
+  /// tutto da sé: la bilancia manda una misura **solo quando ha finito**, con
+  /// dentro tutto quello che ha. Non c'è nessuna trama «instabile» da
+  /// scartare, quindi non c'è nessun momento in cui decidere se il peso si è
+  /// assestato.
+  ///
+  /// Resta un caso da trattare: nel *Body Composition* il peso è un campo
+  /// **opzionale**, e una bilancia può mandare l'impedenza in una trama e il
+  /// peso in un'altra. Per questo i pezzi si accumulano invece di essere letti
+  /// uno per uno, e si chiude quando c'è abbastanza per una pesata.
+  Future<ScaleStatus> _converseGatt(
+    ScaleConnection connection,
+    ScaleDevice device,
+  ) async {
+    final session = _session = Completer<ScaleStatus>();
+    final soloPeso = connection.kind == ScaleProtocolKind.gattWeight;
+    _note(
+      'protocollo standard del Bluetooth: '
+      '${soloPeso ? 'solo peso' : 'peso e impedenza'}',
+    );
+
+    Timer? stepOnTimer;
+    Timer? graceTimer;
+    double? weightKg;
+    double? impedanceOhm;
+    // Tutte le trame della sessione, non solo l'ultima. Una misura spezzata su
+    // due pacchetti — o un peso che arriva da una caratteristica e
+    // un'impedenza dall'altra — è ricostruibile solo se si conservano
+    // entrambi: tenere il solo pacchetto di coda avrebbe archiviato un grezzo
+    // che il peso salvato non ce l'ha dentro, e sarebbe stata una bugia
+    // rispetto a ciò che `rawPayloadHex` promette.
+    final grezzo = <String>[];
+    // Se l'impedenza può ancora arrivare da qualche parte. Su una bilancia che
+    // espone il solo *Weight Scale* non arriverà mai, e concedere otto secondi
+    // a un esito già deciso è solo tempo passato in piedi a fissare una rotella.
+    final impedenzaPossibile =
+        connection.kind == ScaleProtocolKind.gattBodyComposition;
+
+    void finish(ScaleStatus status) {
+      if (!session.isCompleted) {
+        session.complete(status);
+      }
+    }
+
+    ScaleReading? buildReading() {
+      if (weightKg == null) {
+        return null;
+      }
+      return ScaleReading(
+        measuredAt: _clock().toUtc(),
+        weightKg: weightKg!,
+        deviceName: device.name,
+        rawPayloadHex: grezzo.join(' | '),
+        impedanceOhm: impedanceOhm,
+      );
+    }
+
+    /// Chiude se c'è abbastanza per una pesata.
+    ///
+    /// La decisione si prende **sui pezzi raccolti**, mai sui flag della
+    /// trama: il bit «misura spezzata» è acceso su entrambi i pacchetti, e
+    /// usarlo come «aspetta il prossimo» significava non chiudere mai.
+    void valuta() {
+      final reading = buildReading();
+      if (reading == null) {
+        // Impedenza senza peso: capita, e non è un guasto. Il peso può
+        // arrivare nel pacchetto dopo, o dall'altra caratteristica.
+        _emit(ScalePhase.reading);
+        return;
+      }
+      stepOnTimer?.cancel();
+      if (reading.hasImpedance || !impedenzaPossibile) {
+        graceTimer?.cancel();
+        finish(
+          _emit(
+            reading.hasImpedance ? ScalePhase.ready : ScalePhase.incomplete,
+            reading: reading,
+          ),
+        );
+        return;
+      }
+      _emit(ScalePhase.reading, reading: reading);
+      graceTimer ??= Timer(impedanceGrace, () {
+        _note('impedenza non arrivata: chiudo con il solo peso');
+        finish(_emit(ScalePhase.incomplete, reading: buildReading()));
+      });
+    }
+
+    void onFrame(ScaleFrame incoming) {
+      final frame = decodeGattFrame(
+        incoming.bytes,
+        characteristic: incoming.source == ScaleProtocolKind.gattWeight
+            ? GattScaleCharacteristic.weight
+            : GattScaleCharacteristic.bodyComposition,
+      );
+      if (frame == null) {
+        _note(
+          'trama vuota o illeggibile',
+          hex: gattHex(incoming.bytes),
+          isProblem: true,
+        );
+        return;
+      }
+      _note('$frame', hex: frame.hex);
+      if (frame.failed) {
+        // La bilancia dice che la pesata non è riuscita. È un esito suo, non
+        // un guasto nostro, e insistere ad aspettare non porterebbe niente.
+        stepOnTimer?.cancel();
+        graceTimer?.cancel();
+        finish(
+          _emit(
+            ScalePhase.failed,
+            errorDetail:
+                'La bilancia dichiara che la pesata non è riuscita. Succede '
+                'quando ci si muove o si sale male: riprova stando fermo.',
+          ),
+        );
+        return;
+      }
+      grezzo.add(frame.hex);
+      if (frame.hasWeight) {
+        weightKg = frame.weightKg;
+      }
+      if (frame.hasImpedance) {
+        impedanceOhm = frame.impedanceOhm;
+      }
+      valuta();
+    }
+
+    _emit(ScalePhase.stepOn);
+    final subscription = connection.incoming.listen(
+      onFrame,
+      onError: (Object error) {
+        _note('errore dal collegamento: $error', isProblem: true);
+        finish(_emit(ScalePhase.failed, errorDetail: '$error'));
+      },
+      onDone: () {
+        if (!session.isCompleted) {
+          // Una pesata parziale vale più del nulla: se il peso c'è, si chiude
+          // con quello invece di buttare via la salita.
+          final reading = buildReading();
+          if (reading != null) {
+            _note('collegamento chiuso: tengo la pesata che ho');
+            finish(_emit(ScalePhase.incomplete, reading: reading));
+            return;
+          }
+          _note('la bilancia si è scollegata', isProblem: true);
+          finish(
+            _emit(
+              ScalePhase.failed,
+              errorDetail:
+                  'La bilancia si è scollegata prima di mandare una misura.',
+            ),
+          );
+        }
+      },
+      cancelOnError: false,
+    );
+
+    stepOnTimer = Timer(stepOnTimeout, () {
+      finish(
+        _emit(
+          ScalePhase.failed,
+          errorDetail:
+              'Nessuna misura in ${stepOnTimeout.inSeconds} secondi. Con il '
+              'protocollo standard la bilancia manda tutto insieme a fine '
+              'pesata: resta fermo finché il peso non si ferma sul display.',
+        ),
+      );
+    });
+
+    try {
+      return await session.future;
+    } finally {
       stepOnTimer.cancel();
       graceTimer?.cancel();
       await subscription.cancel();

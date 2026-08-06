@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/features/body/data/scale_link.dart';
 import 'package:kal_tracker/features/body/data/scale_reader.dart';
+import 'package:kal_tracker/features/body/domain/gatt_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/qn_scale_protocol.dart';
 import 'package:kal_tracker/features/body/domain/scale_session.dart';
 
@@ -549,6 +550,237 @@ void main() {
         expect(status.reading!.impedanceOhm, 442);
       },
     );
+  });
+
+  group('il profilo standard del Bluetooth', () {
+    // La bilancia vera di Marco, la R-MSC02: ci si collega, ma di `ffe0` e
+    // `fff0` non c'è traccia — parla il profilo pubblicato dal SIG. Il nome
+    // non la fa riconoscere da nessuna euristica, quindi la strada vera è
+    // quella di `connectTo`: Marco la sceglie a mano dall'elenco.
+    const renpho = ScaleDevice(id: 'r-msc02', name: 'R-MSC02', rssi: -46);
+
+    FakeScaleLink linkStandard(ScaleProtocolKind protocol) =>
+        FakeScaleLink(devices: const [], protocol: protocol);
+
+    test('peso e impedenza nella stessa trama: pesata completa', () async {
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final reader = readerFor(link);
+      final phases = <ScalePhase>[];
+      final result = reader.connectTo(
+        renpho,
+        onStatus: (status) => phases.add(status.phase),
+      );
+
+      final connection = await link.opened;
+      // Lo standard manda la misura **solo a pesata finita**: non c'è nessuna
+      // trama instabile da scartare prima, e questa è già quella buona.
+      await connection.emit(
+        fakeGattBodyFrame(weightKg: 95.8, impedanceOhm: 442),
+      );
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.impedanceOhm, closeTo(442, 0.001));
+      expect(status.reading!.deviceName, 'R-MSC02');
+      expect(status.reading!.measuredAt, moment);
+      expect(
+        status.reading!.rawPayloadHex,
+        gattHex(fakeGattBodyFrame(weightKg: 95.8, impedanceOhm: 442)),
+      );
+      expect(
+        phases,
+        containsAllInOrder([
+          ScalePhase.connecting,
+          ScalePhase.stepOn,
+          ScalePhase.ready,
+        ]),
+      );
+    });
+
+    test('alla bilancia non si scrive niente', () async {
+      // Il dialogo QN comincia sincronizzando l'orologio e imponendo i
+      // chilogrammi. Qui quei comandi non hanno nessun posto dove andare: lo
+      // standard non ha caratteristiche di scrittura che li aspettino, e
+      // spedirli lo stesso vorrebbe dire farsi chiudere il collegamento in
+      // faccia prima ancora di leggere il peso.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final result = readerFor(link).connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(
+        fakeGattBodyFrame(weightKg: 95.8, impedanceOhm: 442),
+      );
+
+      expect((await result).phase, ScalePhase.ready);
+      expect(connection.sent, isEmpty);
+      expect(connection.closed, isTrue);
+    });
+
+    test('la bilancia che sa solo pesare chiude con il solo peso', () async {
+      // `0x181D` è il ripiego: peso e nient'altro, per costruzione. Non è un
+      // guasto e non va raccontato come tale — il peso vale ed entra nelle
+      // medie, la composizione no.
+      final link = linkStandard(ScaleProtocolKind.gattWeight);
+      final result = readerFor(link).connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattWeightFrame(weightKg: 95.8));
+
+      final status = await result;
+      expect(status.phase, ScalePhase.incomplete);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.hasImpedance, isFalse);
+      expect(status.detail, contains('calze'));
+      expect(
+        status.log.map((entry) => entry.message).join('\n'),
+        contains('solo peso'),
+      );
+    });
+
+    test('impedenza in una trama e peso in quella dopo: i pezzi si '
+        'sommano', () async {
+      // Nel *Body Composition* il peso è un campo **opzionale**, e una
+      // bilancia può mandare la misura elettrica per prima. È l'intera ragione
+      // per cui il dialogo accumula invece di decidere su una trama sola:
+      // guardando una trama per volta, qui non si concluderebbe mai niente.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final result = readerFor(link).connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattBodyFrame(impedanceOhm: 442));
+      await connection.emit(fakeGattBodyFrame(weightKg: 95.8));
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.impedanceOhm, closeTo(442, 0.001));
+    });
+
+    test('una misura spezzata in due pacchetti si chiude lo stesso', () async {
+      // **Il difetto che questo test fissa.** Il bit 12 era stato letto come
+      // «dopo di me ne arriva un altro», e su quella lettura il dialogo si
+      // fermava aspettando il seguito. Ma la specifica (BCS 1.0.1 §3.2.1)
+      // impone il bit acceso in ENTRAMBI i pacchetti: descrive la misura, non
+      // il pacchetto. Quindi anche l'ultimo ce l'ha, si aspettava un terzo che
+      // non esiste, e la pesata moriva per scadenza del tempo di salita con
+      // peso e impedenza già in mano.
+      //
+      // Qui i due pacchetti sono come li manda una bilancia conforme: bit
+      // acceso su tutti e due, impedenza nel primo e peso nel secondo.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final reader = readerFor(link);
+      final phases = <ScalePhase>[];
+      final result = reader.connectTo(
+        renpho,
+        onStatus: (status) => phases.add(status.phase),
+      );
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattBodyFrame(impedanceOhm: 442, split: true));
+      // Senza peso non c'è ancora niente da chiudere, ed è giusto aspettare.
+      expect(connection.closed, isFalse);
+      expect(phases.last, ScalePhase.reading);
+
+      await connection.emit(fakeGattBodyFrame(weightKg: 95.8, split: true));
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.impedanceOhm, closeTo(442, 0.001));
+      // Il grezzo tiene TUTTI i pacchetti: con il solo secondo, la coppia
+      // peso-impedenza non sarebbe più ricostruibile, e `rawPayloadHex`
+      // prometterebbe una cosa che non mantiene.
+      expect(status.reading!.rawPayloadHex, contains(' | '));
+    });
+
+    test('la bilancia che dichiara la pesata non riuscita lo dice', () async {
+      // `0xFFFF` nel grasso non vuol dire «campo assente»: vuol dire che la
+      // pesata è fallita (BCS 1.0.1 §3.2.1.2). È un esito della bilancia, non
+      // un guasto nostro, e mostrarlo come «misura vuota» lascerebbe Marco a
+      // fissare uno spinner fino allo scadere del tempo.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final reader = readerFor(link);
+      final result = reader.connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattFailedFrame());
+
+      final status = await result;
+      expect(status.phase, ScalePhase.failed);
+      expect(status.errorDetail, contains('non è riuscita'));
+      expect(status.reading, isNull);
+    });
+
+    test('peso da una caratteristica, impedenza dall’altra', () async {
+      // Nel *Body Composition* il peso è opzionale, e il motivo è proprio
+      // questo: una bilancia che espone anche il *Weight Scale* lo manda di
+      // là. Ascoltandone una sola arriverebbe l'impedenza senza mai un peso, e
+      // la pesata morirebbe per scadenza con il numero già pubblicato
+      // dall'altra parte.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final reader = readerFor(link);
+      final result = reader.connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattBodyFrame(impedanceOhm: 442));
+      await connection.emitFrom(
+        ScaleProtocolKind.gattWeight,
+        fakeGattWeightFrame(weightKg: 95.8),
+      );
+
+      final status = await result;
+      expect(status.phase, ScalePhase.ready);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.impedanceOhm, closeTo(442, 0.001));
+    });
+
+    test('il collegamento che cade dopo il solo peso non butta via la '
+        'salita', () async {
+      // La bilancia si spegne appena si scende, e l'impedenza è l'ultima cosa
+      // che manda: la caduta a metà è il caso normale, non l'incidente.
+      // Trattarla come un guasto vorrebbe dire far risalire Marco per un peso
+      // che era già arrivato.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final reader = readerFor(
+        link,
+        impedanceGrace: const Duration(seconds: 5),
+      );
+      final result = reader.connectTo(renpho);
+
+      final connection = await link.opened;
+      await connection.emit(fakeGattBodyFrame(weightKg: 95.8));
+      await connection.dropConnection();
+
+      final status = await result;
+      expect(status.phase, ScalePhase.incomplete);
+      expect(status.reading!.weightKg, closeTo(95.8, 0.001));
+      expect(status.reading!.hasImpedance, isFalse);
+      expect(
+        status.log.map((entry) => entry.message),
+        anyElement(contains('tengo la pesata che ho')),
+      );
+    });
+
+    test('il registro nomina il protocollo riconosciuto', () async {
+      // Senza questa riga, un registro raccolto sul campo non distingue «la
+      // bilancia non ha mandato niente» da «le abbiamo parlato nella lingua
+      // sbagliata» — che è esattamente il dubbio da cui è nato questo file.
+      final link = linkStandard(ScaleProtocolKind.gattBodyComposition);
+      final result = readerFor(link).connectTo(renpho);
+
+      final connection = await link.opened;
+      final trama = fakeGattBodyFrame(weightKg: 95.8, impedanceOhm: 442);
+      await connection.emit(trama);
+
+      final status = await result;
+      final text = status.log.map((entry) => entry.toString()).join('\n');
+      expect(text, contains('protocollo standard del Bluetooth'));
+      expect(text, contains('peso e impedenza'));
+      expect(text, contains('95.80 kg'));
+      expect(text, contains('442 Ω'));
+      expect(text, contains(gattHex(trama)));
+    });
   });
 
   group('quando va storto a metà', () {
