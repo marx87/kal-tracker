@@ -14,6 +14,23 @@ void main() {
       expect(isQnScaleName(''), isFalse);
       expect(isQnScaleName(null), isFalse);
     });
+
+    test('accetta i marchi che rimarchiano la stessa elettronica', () {
+      // Marco ha una Renpho e la scansione tornava «bilancia non trovata»:
+      // lo stesso protocollo gira sotto nomi diversi, e alcune si annunciano
+      // col modello invece che con la famiglia. Riconoscerne una di troppo
+      // costa un tentativo di connessione fallito; riconoscerne una di meno
+      // vuol dire che l'app non trova la bilancia che hai in casa.
+      expect(isQnScaleName('Renpho'), isTrue);
+      expect(isQnScaleName('RENPHO ES-CS20M'), isTrue);
+      expect(isQnScaleName('ES-CS20M-B'), isTrue);
+      expect(isQnScaleName('ES-26BB-B'), isTrue);
+      expect(isQnScaleName('FITINDEX ES-26BB'), isTrue);
+      expect(isQnScaleName('Kamtron CS20M'), isTrue);
+      // E il condominio resta fuori.
+      expect(isQnScaleName('AirPods di Marco'), isFalse);
+      expect(isQnScaleName('TV Samsung'), isFalse);
+    });
   });
 
   group('somma di controllo', () {

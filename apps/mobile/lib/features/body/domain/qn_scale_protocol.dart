@@ -63,9 +63,32 @@ abstract final class QnScale {
 /// parola finale la dà il nome. Le QN si chiamano `QN-Scale`, con qualche
 /// variante di suffisso a seconda del modello, quindi si guarda il prefisso e
 /// non l'uguaglianza.
+/// Vero quando il nome annunciato è quello di una bilancia che parla il
+/// protocollo QN.
+///
+/// L'elenco è più largo del solo «QN-Scale» perché lo stesso protocollo gira
+/// sotto marchi e modelli diversi: Renpho, FITINDEX, Kamtron e altri
+/// rimarchiano la stessa elettronica, e alcune si annunciano col nome del
+/// modello invece che con quello della famiglia. Riconoscerne una in più
+/// costa un tentativo di connessione fallito; riconoscerne una in meno
+/// significa che l'app non trova la bilancia che hai in bagno.
 bool isQnScaleName(String? name) {
   final clean = name?.trim().toUpperCase() ?? '';
-  return clean.startsWith('QN-SCALE') || clean.startsWith('QN SCALE');
+  if (clean.isEmpty) {
+    return false;
+  }
+  const prefissi = [
+    'QN-SCALE',
+    'QN SCALE',
+    'QN-',
+    'RENPHO',
+    'ES-CS20M',
+    'ES-26BB',
+    'ES-30M',
+    'FITINDEX',
+    'KAMTRON',
+  ];
+  return prefissi.any(clean.startsWith);
 }
 
 /// La somma dei byte, modulo 256, nell'ultimo byte della trama.

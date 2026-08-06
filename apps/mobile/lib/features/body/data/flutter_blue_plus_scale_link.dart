@@ -83,18 +83,18 @@ class FlutterBluePlusScaleLink implements ScaleLink {
             _seen[result.device.remoteId.str] = result.device;
           }
         }, onError: (Object error) => controller.addError(_translate(error)));
-        // I filtri della libreria sono in OR: si prende sia chi si annuncia
-        // col servizio sia chi si annuncia col nome. Serve, perché non tutte
-        // le QN mettono l'UUID nell'annuncio, e `ffe0` da solo tirerebbe su
-        // mezzo condominio.
-        await FlutterBluePlus.startScan(
-          withServices: [
-            Guid(QnScale.serviceUuid),
-            Guid(QnScale.altServiceUuid),
-          ],
-          withNames: [QnScale.advertisedName],
-          timeout: timeout,
-        );
+        // NESSUN filtro, di proposito, ed è una correzione: prima si chiedeva
+        // alla libreria solo chi annunciava gli UUID `ffe0`/`fff0` o il nome
+        // esatto «QN-Scale». Sembrava prudente e invece rendeva l'app cieca —
+        // una bilancia che si annuncia col nome del modello non arrivava mai,
+        // e nemmeno finiva fra i «visti e scartati» del registro, che è
+        // proprio la riga che dice come si chiama davvero.
+        //
+        // Filtrare tocca a chi legge (`ScaleReader`), come dichiara il
+        // contratto di `ScaleLink.scan`. Sì, così passa mezzo condominio: sono
+        // una manciata di righe in un registro che si guarda solo quando
+        // qualcosa non va, ed è un prezzo bassissimo per non essere ciechi.
+        await FlutterBluePlus.startScan(timeout: timeout);
         // `startScan` torna subito: la scansione finisce da sé allo scadere
         // del timeout, e questo è il momento in cui lo stream si chiude.
         await FlutterBluePlus.isScanning.where((value) => !value).first;
