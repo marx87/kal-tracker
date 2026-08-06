@@ -124,6 +124,10 @@ class PhotoJobsController extends Notifier<PhotoJobsState> {
     }
     _refreshing = true;
     try {
+      // Prima le chiusure in sospeso, poi la lettura: così un job chiuso
+      // offline sparisce dal server nello stesso giro in cui si torna online,
+      // invece di ripresentarsi ancora una volta.
+      await _retryPendingResolves();
       await _retryPendingPhotoDeletes();
       final handled = await ref
           .read(photoReviewLocalStoreProvider)
@@ -171,6 +175,17 @@ class PhotoJobsController extends Notifier<PhotoJobsState> {
   }) async {
     final store = ref.read(photoReviewLocalStoreProvider);
     await store.markHandled(jobId: job.id, outcome: outcome);
+    // E poi si dice al server, perché «gestita» deve valere su tutti gli
+    // apparecchi e non solo su quello che l'ha toccata. Se non parte resta in
+    // coda: sparire in silenzio è ciò che lasciava il banner acceso sul tablet
+    // per una foto registrata dal telefono.
+    try {
+      await ref
+          .read(photoJobsGatewayProvider)
+          .resolveJob(jobId: job.id, outcome: outcome);
+    } on Object {
+      await store.addPendingResolve(jobId: job.id, outcome: outcome);
+    }
     try {
       await ref.read(photoMealJobsProvider.notifier).remove(job.id);
     } on Object {
@@ -193,6 +208,31 @@ class PhotoJobsController extends Notifier<PhotoJobsState> {
       clearError: true,
     );
     _scheduleNext();
+  }
+
+  /// Ritenta le chiusure che il server non ha ancora accettato.
+  ///
+  /// La RPC è idempotente — chiudere un job già chiuso torna lo stato che ha
+  /// senza toccarlo — quindi ritentare non ha nessun costo e non c'è niente da
+  /// distinguere fra «non era partita» e «era partita e non l'ho saputo».
+  Future<void> _retryPendingResolves() async {
+    final store = ref.read(photoReviewLocalStoreProvider);
+    final gateway = ref.read(photoJobsGatewayProvider);
+    try {
+      for (final pending in await store.pendingResolves()) {
+        try {
+          await gateway.resolveJob(
+            jobId: pending.jobId,
+            outcome: pending.outcome,
+          );
+          await store.removePendingResolve(pending.jobId);
+        } on Object {
+          // Ancora offline: si riprova al prossimo giro.
+        }
+      }
+    } on Object {
+      // Il registro pending non deve mai bloccare il polling.
+    }
   }
 
   /// Ritenta le delete di foto rimaste sul bucket (chiusure avvenute

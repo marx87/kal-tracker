@@ -15,8 +15,12 @@ class FakePhotoJobsGateway implements PhotoJobsGateway {
   final List<List<PhotoMealJob>> responses;
   int fetchCount = 0;
   final List<String> deletedPhotos = [];
+
+  /// Le chiusure arrivate al server, in ordine: job → esito.
+  final List<({String jobId, String outcome})> resolved = [];
   Object? fetchError;
   Object? deleteError;
+  Object? resolveError;
 
   @override
   Future<List<PhotoMealJob>> fetchJobs({int limit = 30}) async {
@@ -42,6 +46,17 @@ class FakePhotoJobsGateway implements PhotoJobsGateway {
   }
 
   @override
+  Future<void> resolveJob({
+    required String jobId,
+    required String outcome,
+  }) async {
+    if (resolveError case final error?) {
+      throw error;
+    }
+    resolved.add((jobId: jobId, outcome: outcome));
+  }
+
+  @override
   Future<void> deletePhoto(String storageObject) async {
     if (deleteError case final error?) {
       throw error;
@@ -54,6 +69,7 @@ class FakePhotoJobsGateway implements PhotoJobsGateway {
 class InMemoryPhotoReviewLocalStore implements PhotoReviewLocalStore {
   final Map<String, String> outcomes = {};
   final List<String> pendingDeletes = [];
+  final List<PendingJobResolve> pendingJobResolves = [];
   Object? markHandledError;
 
   @override
@@ -73,6 +89,26 @@ class InMemoryPhotoReviewLocalStore implements PhotoReviewLocalStore {
   @override
   Future<void> unmarkHandled({required String jobId}) async {
     outcomes.remove(jobId);
+  }
+
+  @override
+  Future<List<PendingJobResolve>> pendingResolves() async => [
+    ...pendingJobResolves,
+  ];
+
+  @override
+  Future<void> addPendingResolve({
+    required String jobId,
+    required String outcome,
+  }) async {
+    pendingJobResolves
+      ..removeWhere((entry) => entry.jobId == jobId)
+      ..add(PendingJobResolve(jobId: jobId, outcome: outcome));
+  }
+
+  @override
+  Future<void> removePendingResolve(String jobId) async {
+    pendingJobResolves.removeWhere((entry) => entry.jobId == jobId);
   }
 
   @override

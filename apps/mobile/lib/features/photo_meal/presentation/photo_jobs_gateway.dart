@@ -18,6 +18,14 @@ abstract class PhotoJobsGateway {
   /// Best-effort: la foto va rimossa dopo conferma o scarto, ma un errore
   /// di rete non deve bloccare la chiusura locale.
   Future<void> deletePhoto(String storageObject);
+
+  /// Chiude il job sul server: `confirmed` o `discarded`.
+  ///
+  /// È la metà mancante di «già gestita». Senza, quel fatto restava un file
+  /// dentro un apparecchio solo e ogni altro dispositivo continuava a vedere
+  /// la proposta aperta — il tablet mostrava «Proposta pronta da rivedere» per
+  /// una foto registrata dal telefono mezz'ora prima.
+  Future<void> resolveJob({required String jobId, required String outcome});
 }
 
 class SupabasePhotoJobsGateway implements PhotoJobsGateway {
@@ -89,6 +97,21 @@ class SupabasePhotoJobsGateway implements PhotoJobsGateway {
     } on Object catch (error) {
       throw _wrap(error);
     }
+  }
+
+  @override
+  Future<void> resolveJob({
+    required String jobId,
+    required String outcome,
+  }) async {
+    // Una RPC e non un UPDATE: al client il permesso di scrivere su questa
+    // tabella è tolto di proposito, perché con l'UPDATE potrebbe riscriversi
+    // il risultato dell'analisi e fingersi il worker. Qui può fare una cosa
+    // sola, e solo su un job suo già arrivato in revisione.
+    await _client.rpc<Object?>(
+      'resolve_meal_analysis_job',
+      params: {'p_job_id': jobId, 'p_outcome': outcome},
+    );
   }
 
   @override

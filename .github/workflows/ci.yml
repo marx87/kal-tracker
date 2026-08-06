@@ -35,6 +35,8 @@ jobs:
         run: supabase/tests/coach_jobs_static_test.sh
       - name: Test coach binding probe database safeguards
         run: supabase/tests/coach_binding_probe_static_test.sh
+      - name: Test meal job resolve database safeguards
+        run: supabase/tests/meal_job_resolve_static_test.sh
 
   meal-worker:
     runs-on: ubuntu-latest

@@ -223,6 +223,78 @@ void main() {
     );
   });
 
+  test('chiudere una proposta la chiude anche sul server', () async {
+    // **Il difetto del tablet.** «Già gestita» era un file JSON dentro un
+    // apparecchio solo: il telefono registrava la foto, il tablet continuava a
+    // leggere dal server un job ancora in `needs_review` e mostrava «Proposta
+    // pronta da rivedere» per ore. La chiusura deve arrivare al server, o non
+    // è una chiusura — è un'opinione locale.
+    final job = buildReviewJob();
+    final gateway = FakePhotoJobsGateway([
+      [job],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+    final container = _container(gateway: gateway, store: store);
+    addTearDown(container.dispose);
+    final subscription = container.listen(
+      photoJobsControllerProvider,
+      (previous, next) {},
+    );
+    addTearDown(subscription.close);
+
+    await _until(
+      () => container.read(photoJobsControllerProvider).jobs.length == 1,
+    );
+
+    await container
+        .read(photoJobsControllerProvider.notifier)
+        .closeJobLocally(job, outcome: 'confirmed');
+
+    expect(gateway.resolved, [(jobId: 'job-1', outcome: 'confirmed')]);
+    expect(store.pendingJobResolves, isEmpty);
+  });
+
+  test('una chiusura che non parte resta in coda e viene ritentata', () async {
+    // Sparire in silenzio è quello che lasciava il banner acceso: se la
+    // chiamata non arriva, il fatto deve restare da spedire.
+    final job = buildReviewJob();
+    final gateway = FakePhotoJobsGateway([
+      [job],
+    ]);
+    final store = InMemoryPhotoReviewLocalStore();
+    final container = _container(gateway: gateway, store: store);
+    addTearDown(container.dispose);
+    final subscription = container.listen(
+      photoJobsControllerProvider,
+      (previous, next) {},
+    );
+    addTearDown(subscription.close);
+
+    await _until(
+      () => container.read(photoJobsControllerProvider).jobs.length == 1,
+    );
+
+    gateway.resolveError = const SyncGatewayException(
+      'Connessione assente: riproverò più tardi.',
+      retryable: true,
+    );
+    final notifier = container.read(photoJobsControllerProvider.notifier);
+    await notifier.closeJobLocally(job, outcome: 'confirmed');
+
+    // Qui la proposta è chiusa, ma il server non lo sa ancora.
+    expect(store.outcomes, {'job-1': 'confirmed'});
+    expect(gateway.resolved, isEmpty);
+    expect(store.pendingJobResolves.single.jobId, 'job-1');
+    expect(store.pendingJobResolves.single.outcome, 'confirmed');
+
+    // Tornata la rete, il giro dopo lo dice — e da quel momento anche il
+    // tablet smette di vedere la proposta.
+    gateway.resolveError = null;
+    await notifier.refreshNow();
+    expect(gateway.resolved, [(jobId: 'job-1', outcome: 'confirmed')]);
+    expect(store.pendingJobResolves, isEmpty);
+  });
+
   test('una delete foto fallita resta registrata e viene ritentata '
       'al poll successivo', () async {
     final job = buildReviewJob();

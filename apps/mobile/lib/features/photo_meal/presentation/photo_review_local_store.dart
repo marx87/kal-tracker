@@ -22,12 +22,36 @@ abstract class PhotoReviewLocalStore {
   /// diario non riesce dopo la registrazione dell'esito).
   Future<void> unmarkHandled({required String jobId});
 
+  /// Chiusure che il server non ha ancora saputo, da ritentare.
+  ///
+  /// Il registro locale dice «gestita» **su questo apparecchio**: è quello che
+  /// serve a non riproporre subito la stessa foto qui. Ma finché il server non
+  /// lo sa, il tablet continua a vedere il job aperto — ed è esattamente il
+  /// difetto che si trascinava. Quindi la chiusura si spedisce, e se non parte
+  /// resta in coda invece di sparire.
+  Future<List<PendingJobResolve>> pendingResolves();
+
+  Future<void> addPendingResolve({
+    required String jobId,
+    required String outcome,
+  });
+
+  Future<void> removePendingResolve(String jobId);
+
   /// Foto rimaste sul bucket dopo una delete fallita, da ritentare.
   Future<List<String>> pendingPhotoDeletes();
 
   Future<void> addPendingPhotoDelete(String storageObject);
 
   Future<void> removePendingPhotoDelete(String storageObject);
+}
+
+/// Una chiusura decisa qui e non ancora accettata dal server.
+class PendingJobResolve {
+  const PendingJobResolve({required this.jobId, required this.outcome});
+
+  final String jobId;
+  final String outcome;
 }
 
 class FilePhotoReviewLocalStore implements PhotoReviewLocalStore {
@@ -74,6 +98,61 @@ class FilePhotoReviewLocalStore implements PhotoReviewLocalStore {
   }
 
   @override
+  Future<List<PendingJobResolve>> pendingResolves() async {
+    final decoded = await _readState();
+    final raw = decoded['pending_resolves'];
+    if (raw is! List) {
+      return [];
+    }
+    return [
+      for (final entry in raw)
+        if (entry is Map &&
+            entry['job_id'] is String &&
+            entry['outcome'] is String)
+          PendingJobResolve(
+            jobId: entry['job_id']! as String,
+            outcome: entry['outcome']! as String,
+          ),
+    ];
+  }
+
+  @override
+  Future<void> addPendingResolve({
+    required String jobId,
+    required String outcome,
+  }) async {
+    if (jobId.isEmpty) {
+      return;
+    }
+    final pending = await pendingResolves()
+      ..removeWhere((entry) => entry.jobId == jobId);
+    pending.add(PendingJobResolve(jobId: jobId, outcome: outcome));
+    final trimmed = pending.length > maximumEntries
+        ? pending.sublist(pending.length - maximumEntries)
+        : pending;
+    await _writeState(
+      handled: await _readEntries(),
+      pendingDeletes: await _readPending(),
+      pendingResolves: trimmed,
+    );
+  }
+
+  @override
+  Future<void> removePendingResolve(String jobId) async {
+    final pending = await pendingResolves();
+    final prima = pending.length;
+    pending.removeWhere((entry) => entry.jobId == jobId);
+    if (pending.length == prima) {
+      return;
+    }
+    await _writeState(
+      handled: await _readEntries(),
+      pendingDeletes: await _readPending(),
+      pendingResolves: pending,
+    );
+  }
+
+  @override
   Future<List<String>> pendingPhotoDeletes() => _readPending();
 
   @override
@@ -104,12 +183,22 @@ class FilePhotoReviewLocalStore implements PhotoReviewLocalStore {
   Future<void> _writeState({
     required List<Map<String, Object?>> handled,
     required List<String> pendingDeletes,
+    List<PendingJobResolve>? pendingResolves,
   }) async {
+    // Le tre liste vivono in un file solo, quindi chi ne riscrive una deve
+    // ricopiare le altre: passarne una sola le cancellerebbe. Quando il
+    // chiamante non nomina le chiusure in sospeso si rileggono da disco, che è
+    // il caso di tutte le scritture preesistenti.
+    final resolves = pendingResolves ?? await this.pendingResolves();
     final file = await _stateFile();
     await file.writeAsString(
       jsonEncode({
         'handled_jobs': handled,
         'pending_photo_deletes': pendingDeletes,
+        'pending_resolves': [
+          for (final entry in resolves)
+            {'job_id': entry.jobId, 'outcome': entry.outcome},
+        ],
       }),
       flush: true,
     );
