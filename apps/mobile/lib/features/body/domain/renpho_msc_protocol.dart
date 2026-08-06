@@ -109,10 +109,24 @@ class RenphoStatusFrame extends RenphoFrame {
 
   final List<int> payload;
 
+  /// Il contatore che cresce a ogni trama, dentro una stessa sessione.
+  int? get sequence => payload.isEmpty ? null : payload[0];
+
+  /// Il byte che in **due sessioni diverse** ha percorso la stessa identica
+  /// sequenza `01 09 11 05`, con gli stessi intervalli. Non è quindi un
+  /// avanzamento della misura: è un battito periodico della bilancia.
+  int? get state => payload.length > 1 ? payload[1] : null;
+
+  /// Il byte che è passato da 0 a 1 dopo la prima pesata e da 2 a 3 dopo la
+  /// seconda. **Sembra** il numero di pesate che la bilancia tiene in
+  /// memoria — sembra, e finché è solo un'ipotesi si scrive così.
+  int? get counter => payload.length > 3 ? payload[3] : null;
+
   @override
   String toString() =>
-      'avanzamento della bilancia (${payload.length} byte, '
-      'significato ancora da capire)';
+      'battito della bilancia (passo $sequence, stato '
+      '0x${(state ?? 0).toRadixString(16).padLeft(2, '0')}, '
+      'contatore $counter)';
 }
 
 /// Una trama con un opcode mai visto. **Va mostrata per intero**: è la sola

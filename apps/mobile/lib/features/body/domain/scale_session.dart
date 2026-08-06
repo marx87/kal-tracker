@@ -150,6 +150,21 @@ enum ScalePhase {
     ScaleTone.working,
   ),
 
+  /// Il peso c'è, ma non è finita: **non scendere**.
+  ///
+  /// È il momento che era stato raccontato male. La bilancia manda il peso
+  /// appena si assesta, e mostrarlo come esito faceva scendere Marco — mentre
+  /// l'impedenza si misura proprio dopo, e solo finché i piedi sono ancora
+  /// sugli elettrodi. Nella prima cattura l'impedenza non è mai arrivata, e
+  /// questa è la spiegazione più probabile: non è che la bilancia non la
+  /// mandi, è che le si toglievano i piedi da sotto.
+  holdStill(
+    'Peso preso — non scendere',
+    'Ci siamo quasi: ora misura l’impedenza, e per farlo le servono i piedi '
+        'ancora sugli elettrodi. Resta fermo finché non ti dico io.',
+    ScaleTone.working,
+  ),
+
   /// Il caso reale: peso sì, impedenza no.
   incomplete(
     'Solo il peso',
@@ -221,7 +236,9 @@ enum ScalePhase {
 
   /// Vero quando c'è una pesata da salvare.
   bool get hasReading =>
-      this == ScalePhase.ready || this == ScalePhase.incomplete;
+      this == ScalePhase.ready ||
+      this == ScalePhase.incomplete ||
+      this == ScalePhase.holdStill;
 
   /// Vero quando l'elenco dei dispositivi è in schermata e sceglierne uno ha
   /// un senso.

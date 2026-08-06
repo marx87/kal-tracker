@@ -430,8 +430,14 @@ class ScaleReader {
         );
         return;
       }
+      // Da quale caratteristica arriva fa parte della trama quanto i byte:
+      // il peso corrente veniva da `2a10` e il resto da `2a12`, e senza
+      // quell'etichetta due protocolli diversi sullo stesso collegamento
+      // sarebbero indistinguibili. Era andata persa passando dalla cattura
+      // grezza a questo dialogo.
       _note(
-        frame.checksumOk ? '$frame' : '$frame — somma di controllo sbagliata',
+        'da ${incoming.label ?? '?'}: '
+        '${frame.checksumOk ? '$frame' : '$frame — somma sbagliata'}',
         hex: frame.hex,
         // Una trama mai vista è la cosa più interessante che possa succedere:
         // finché l'impedenza non si trova, è lì che va cercata.
@@ -450,8 +456,12 @@ class ScaleReader {
             deviceName: device.name,
             rawPayloadHex: grezzo.join(' | '),
           );
-          // Consegnata subito: da qui il pulsante «Salva» c'è già.
-          _emit(ScalePhase.incomplete, reading: pesata);
+          // Consegnata subito — il pulsante «Salva» c'è già — ma la fase dice
+          // **non scendere**, non «finito». È la correzione che conta: la
+          // bilancia misura l'impedenza dopo il peso, e solo finché i piedi
+          // sono sugli elettrodi. Mostrare «solo il peso» qui equivaleva a
+          // dirgli di scendere un istante prima del dato che serviva.
+          _emit(ScalePhase.holdStill, reading: pesata);
           // E si resta in ascolto: l'impedenza, se esiste, arriva dopo.
           codaTimer ??= Timer(stepOnTimeout, () {
             _note('nessun’altra trama: chiudo con il solo peso');

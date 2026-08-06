@@ -739,8 +739,13 @@ void main() {
         0xb2,
         0x12,
       ]);
-      // Il peso c'è già, e il collegamento è ancora aperto: è il punto.
-      expect(fasi.last, ScalePhase.incomplete);
+      // Il peso c'è già, il collegamento è ancora aperto, e la fase dice
+      // «non scendere» invece di «finito». È tutto il punto: l'impedenza si
+      // misura DOPO il peso, e solo finché i piedi sono sugli elettrodi —
+      // mostrare un esito qui equivaleva a dirgli di scendere un istante
+      // prima del dato che serve.
+      expect(fasi.last, ScalePhase.holdStill);
+      expect(ScalePhase.holdStill.hasReading, isTrue);
       expect(connection.closed, isFalse);
 
       // Una trama mai vista arriva DOPO il peso: senza restare in ascolto
