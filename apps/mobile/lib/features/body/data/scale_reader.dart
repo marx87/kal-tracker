@@ -33,6 +33,7 @@ class ScaleReader {
     this.handshakeTimeout = const Duration(seconds: 5),
     this.stepOnTimeout = const Duration(seconds: 45),
     this.impedanceGrace = const Duration(seconds: 8),
+    this.bodyCompositionTimeout = const Duration(seconds: 30),
   }) : _log = log ?? ScaleLog(),
        _clock = clock ?? DateTime.now;
 
@@ -53,6 +54,21 @@ class ScaleReader {
 
   /// Quanto si concede all'impedenza dopo il peso stabile.
   final Duration impedanceGrace;
+
+  /// Quanto si resta in ascolto **dopo il peso** su una bilancia a otto
+  /// elettrodi.
+  ///
+  /// Trenta secondi: il tempo di accorgersi del messaggio, prendere la
+  /// maniglia e stendere le braccia. Gli otto secondi dell'altra attesa
+  /// scadrebbero mentre Marco è ancora nel gesto.
+  ///
+  /// **Ma non serve allungarlo oltre**, e la ragione la dà la bilancia: si
+  /// spegne per conto suo dopo pochi secondi di inattività. Quando si spegne
+  /// il collegamento cade, arriva `onDone` e la sessione chiude lì — questo
+  /// timer è solo il tetto per il caso in cui resti accesa senza dire più
+  /// niente. Portarlo a due minuti non darebbe più tempo per misurare:
+  /// darebbe due minuti di rotella davanti a una bilancia già spenta.
+  final Duration bodyCompositionTimeout;
 
   ScaleLog get log => _log;
 
@@ -463,7 +479,7 @@ class ScaleReader {
           // dirgli di scendere un istante prima del dato che serviva.
           _emit(ScalePhase.holdStill, reading: pesata);
           // E si resta in ascolto: l'impedenza, se esiste, arriva dopo.
-          codaTimer ??= Timer(stepOnTimeout, () {
+          codaTimer ??= Timer(bodyCompositionTimeout, () {
             _note('nessun’altra trama: chiudo con il solo peso');
             finish(_emit(ScalePhase.incomplete, reading: pesata));
           });

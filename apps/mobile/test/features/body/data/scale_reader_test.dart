@@ -20,6 +20,7 @@ void main() {
     handshakeTimeout: const Duration(milliseconds: 60),
     stepOnTimeout: const Duration(milliseconds: 400),
     impedanceGrace: impedanceGrace,
+    bodyCompositionTimeout: const Duration(milliseconds: 400),
   );
 
   group('la radio prima di tutto', () {
@@ -519,7 +520,7 @@ void main() {
         expect(status.phase, ScalePhase.incomplete);
         expect(status.reading!.weightKg, closeTo(95.8, 0.001));
         expect(status.reading!.hasImpedance, isFalse);
-        expect(status.detail, contains('calze'));
+        expect(status.detail, contains('circuito chiuso'));
       },
     );
 
@@ -631,7 +632,7 @@ void main() {
       expect(status.phase, ScalePhase.incomplete);
       expect(status.reading!.weightKg, closeTo(95.8, 0.001));
       expect(status.reading!.hasImpedance, isFalse);
-      expect(status.detail, contains('calze'));
+      expect(status.detail, contains('circuito chiuso'));
       expect(
         status.log.map((entry) => entry.message).join('\n'),
         contains('solo peso'),

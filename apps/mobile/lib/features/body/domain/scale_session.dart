@@ -139,8 +139,9 @@ enum ScalePhase {
 
   stepOn(
     'Sali sulla bilancia',
-    'A piedi nudi e asciutti, fermo, con tutti e quattro gli angoli sotto i '
-        'piedi. L’impedenza passa dalla pianta: con le calze non si legge.',
+    'A piedi nudi, fermo, con tutti e quattro gli angoli sotto i piedi. La '
+        'maniglia si prende dopo, quando te lo dico: prima deve fermarsi il '
+        'peso.',
     ScaleTone.working,
   ),
 
@@ -159,18 +160,26 @@ enum ScalePhase {
   /// questa è la spiegazione più probabile: non è che la bilancia non la
   /// mandi, è che le si toglievano i piedi da sotto.
   holdStill(
-    'Peso preso — non scendere',
-    'Ci siamo quasi: ora misura l’impedenza, e per farlo le servono i piedi '
-        'ancora sugli elettrodi. Resta fermo finché non ti dico io.',
+    'Peso preso — ora la maniglia',
+    // La riga che mancava, e mancava perché non sapevo che bilancia fosse.
+    // La R-MSC02 ha otto elettrodi: quattro sotto i piedi e due sulla
+    // maniglia. L'impedenza mano-piede esiste solo a circuito chiuso — in
+    // piedi e basta, la bilancia pesa e non misura niente. Dire «non
+    // scendere» senza dire «prendi la maniglia» era chiedere di aspettare
+    // una cosa che non poteva succedere.
+    'Senza scendere: prendi la maniglia con tutte e due le mani e stendi le '
+        'braccia davanti a te. La corrente passa mano-piede, e finché il giro '
+        'non si chiude l’impedenza non esiste. Resta così finché il display '
+        'non ha finito.',
     ScaleTone.working,
   ),
 
   /// Il caso reale: peso sì, impedenza no.
   incomplete(
     'Solo il peso',
-    'La bilancia ha pesato ma non è riuscita a leggere l’impedenza: succede '
-        'con i piedi asciutti o le calze. Il peso vale ed entra nelle medie, '
-        'la composizione no.',
+    'Il peso vale ed entra nelle medie, la composizione no. Su questa '
+        'bilancia l’impedenza arriva solo a circuito chiuso: piedi nudi sugli '
+        'angoli e maniglia in mano con le braccia tese, fino alla fine.',
     ScaleTone.warning,
   ),
 
