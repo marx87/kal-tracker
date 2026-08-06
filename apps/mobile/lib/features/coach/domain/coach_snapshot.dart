@@ -207,18 +207,15 @@ class CoachAverages {
         if (day.hasComposition) day,
     ];
 
-    // L'acqua corporea non sta in `BodyDayPoint`: si media qui, per giorno,
-    // con lo stesso criterio delle masse.
-    final waterByDay = <DateTime, List<double>>{};
-    for (final measurement in inside) {
-      final water = measurement.waterPct;
-      if (water == null || water <= 0) {
-        continue;
-      }
-      waterByDay.putIfAbsent(measurement.day, () => []).add(water);
-    }
+    // L'acqua viene dalla **stessa lettura** di peso e masse, non da una media
+    // del giorno fatta qui. Quando era una media a parte si muoveva da sola:
+    // una settimana con qualche pesata serale in più mostrava un salto di
+    // acqua corporea senza che il corpo avesse fatto niente, e quel salto
+    // finiva a spiegare i movimenti del peso e ad accendere il semaforo del
+    // sovrallenamento.
     final waterDayMeans = [
-      for (final readings in waterByDay.values) _mean(readings)!,
+      for (final day in days)
+        if (day.waterPct case final water? when water > 0) water,
     ];
 
     return CoachAverages(

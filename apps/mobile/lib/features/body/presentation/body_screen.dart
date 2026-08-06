@@ -515,7 +515,7 @@ class _TrustCard extends StatelessWidget {
                 // Il numero non è un'opinione sulla BIA in generale: è
                 // misurato sui giorni in cui Marco è salito più volte, in cui
                 // il corpo era lo stesso e la differenza è tutta strumento.
-                ? 'Nei giorni in cui ti sei pesato più volte, la percentuale '
+                ? 'Quando ti sei pesato due volte di seguito, la percentuale '
                       'di grasso è cambiata di '
                       '${BodyFormats.percent(spread.bodyFatPoints)} punti — '
                       '${BodyFormats.kg(spread.fatMassKg)} kg — a corpo '
@@ -529,12 +529,33 @@ class _TrustCard extends StatelessWidget {
           Text(
             measured
                 ? 'Misurato sulle tue pesate: ${spread.dayCount} '
-                      '${spread.dayCount == 1 ? 'giorno' : 'giorni'} con più '
-                      'di una salita sulla bilancia. Per questo qui non trovi '
-                      'confronti giorno-su-giorno, solo medie a 7 giorni.'
+                      '${spread.dayCount == 1 ? 'giorno' : 'giorni'} con due '
+                      'salite ravvicinate. Solo quelle contano: fra mattina e '
+                      'sera cambia il corpo, non lo strumento. Per questo qui '
+                      'non trovi confronti giorno-su-giorno, solo medie a 7 '
+                      'giorni.'
                 : 'Ogni tanto pesati due volte di fila: così posso dirti di '
                       'quanto balla la TUA bilancia, con un numero. Intanto '
                       'qui si legge tutto a medie di 7 giorni.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: accents.mutedInk,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // La regola va detta, perché cambia i numeri e nessuno la vedrebbe.
+          // Prima si faceva la media delle pesate del giorno, e sembrava
+          // prudente: in realtà fra la mattina a digiuno e la sera dopo cena
+          // c'è un chilo e mezzo di cibo e acqua — un chilo e mezzo vero. La
+          // media ne usciva un numero che non corrispondeva a nessun momento
+          // della giornata, e che si spostava a seconda di quante volte uno
+          // era salito sulla bilancia.
+          Text(
+            'Se ti pesi più volte in un giorno conta la prima: fra mattina e '
+            'sera ci sono cibo e acqua, non grasso. Se al mattino il contatto '
+            'salta vale una ripetizione ravvicinata, non quella della sera. '
+            'Le altre restano nello storico.',
+            key: const Key('body_first_of_day_note'),
             style: theme.textTheme.bodySmall?.copyWith(
               color: accents.mutedInk,
               height: 1.4,

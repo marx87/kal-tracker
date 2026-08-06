@@ -23,6 +23,21 @@ abstract final class BodyAnalysis {
   /// differenza è quasi tutta rumore.
   static const minimumComparisonDays = 4;
 
+  /// Quanto può distare una lettura dalla prima del giorno per contare come
+  /// **lo stesso momento**.
+  ///
+  /// Tre ore, e il numero nasce da un difetto vero. La regola «vale la prima
+  /// con impedenza» era stata scritta senza limite d'orario, e così una pesata
+  /// serale col contatto riuscito batteva quella del mattino senza — cioè
+  /// prendeva il peso dopo cena pieno, che è esattamente il chilo e mezzo di
+  /// cibo e acqua che la regola esiste per togliere. In quel caso era peggiore
+  /// della vecchia media, che almeno dimezzava l'errore.
+  ///
+  /// Tre ore coprono ciò che serve coprire — si sale con le calze, non legge,
+  /// si riprova scalzi; ci si pesa, si va in bagno, ci si ripesa — e non
+  /// coprono mattina contro sera, che è tutto il punto.
+  static const sameConditionWindow = Duration(hours: 3);
+
   /// Soglia sotto la quale una variazione delle masse si chiama «stabile».
   /// Mezzo etto di massa grassa non è un risultato, è la BIA che respira.
   static const stableToleranceKg = 0.4;
@@ -72,8 +87,30 @@ abstract final class BodyAnalysis {
     );
   }
 
-  /// Un giorno, un punto. Le letture dello stesso giorno si mediano prima di
-  /// tutto il resto: è il primo filtro contro il rumore.
+  /// Un giorno, un punto: **la prima pesata utile della giornata**.
+  ///
+  /// Prima si faceva la media di tutte le letture del giorno, e sembrava il
+  /// filtro giusto contro il rumore. Non lo era, perché quelle letture non
+  /// misurano la stessa cosa: fra la mattina a digiuno e la sera dopo cena ci
+  /// sono un chilo e mezzo di cibo e acqua, e sono un chilo e mezzo **vero**,
+  /// non rumore. Mediarli produce un numero che non corrisponde a nessun
+  /// momento della giornata e che si sposta a seconda di quante volte uno è
+  /// salito sulla bilancia — un giorno con la sola pesata del mattino e uno
+  /// con mattina e sera diventano incomparabili, e la media mobile a sette
+  /// giorni li mette in fila come se lo fossero.
+  ///
+  /// La mattina a digiuno è l'unica condizione che si ripete uguale ogni
+  /// giorno, ed è per questo che vale quella. Le altre pesate **non si
+  /// buttano**: restano nello storico, restano nel conteggio qui sotto, e
+  /// [measureSpread] continua a usarle tutte — lì servono proprio perché sono
+  /// dello stesso giorno.
+  ///
+  /// «Utile» vuol dire con l'impedenza — ma **solo fra le letture vicine alla
+  /// prima** ([sameConditionWindow]). Una pesata col contatto riuscito dice
+  /// tutto quello che dice una senza, più la composizione, e a mezz'ora di
+  /// distanza è la stessa pesata riuscita meglio. A quindici ore no: è
+  /// un'altra condizione, e preferirla significherebbe far vincere la sera
+  /// sulla mattina — il contrario di quello che questa regola serve a fare.
   static List<BodyDayPoint> collapseDays(List<BodyMeasurement> measurements) {
     final grouped = <DateTime, List<BodyMeasurement>>{};
     for (final measurement in measurements) {
@@ -82,27 +119,43 @@ abstract final class BodyAnalysis {
 
     final points = <BodyDayPoint>[];
     for (final entry in grouped.entries) {
-      final readings = entry.value;
+      final readings = entry.value.toList()
+        // A parità di istante decide l'identificativo, e non è pedanteria: due
+        // letture possono condividere il millisecondo (un import, una doppia
+        // scrittura), e senza un secondo criterio «la prima» diventerebbe
+        // «quella che la query ha restituito per prima» — cioè un numero che
+        // può cambiare senza che nessun dato sia cambiato.
+        ..sort((a, b) {
+          final istante = a.measuredAt.compareTo(b.measuredAt);
+          return istante != 0 ? istante : a.id.compareTo(b.id);
+        });
       final withComposition = readings
           .where((item) => item.hasComposition)
           .toList(growable: false);
+      // Nessuna soglia oraria assoluta, di proposito: «prima del mattino» con
+      // un taglio a mezzogiorno butterebbe via il giorno in cui ci si è pesati
+      // solo la sera, e un dato tardi vale comunque più di un buco. La
+      // finestra è **relativa alla prima lettura**, non all'orologio.
+      final first = readings.first;
+      final limite = first.measuredAt.add(sameConditionWindow);
+      final chosen = withComposition.firstWhere(
+        (item) => !item.measuredAt.isAfter(limite),
+        orElse: () => first,
+      );
 
       points.add(
         BodyDayPoint(
           day: entry.key,
-          weightKg: _mean(readings.map((item) => item.weightKg)),
+          weightKg: chosen.weightKg,
+          measuredAt: chosen.measuredAt,
           readings: readings.length,
           compositionReadings: withComposition.length,
-          // Massa grassa e magra si mediano SEPARATAMENTE sulle letture che
-          // le portano, non si ricavano dal peso medio del giorno: così la
-          // somma delle due resta il peso di quelle letture e la pila del
-          // grafico non contiene una contraddizione interna.
-          fatMassKg: withComposition.isEmpty
-              ? null
-              : _mean(withComposition.map((item) => item.fatMassKg!)),
-          leanMassKg: withComposition.isEmpty
-              ? null
-              : _mean(withComposition.map((item) => item.leanMassKg!)),
+          // Grassa e magra vengono dalla stessa lettura del peso, quindi la
+          // loro somma È quel peso: la pila del grafico non può contenere una
+          // contraddizione interna.
+          fatMassKg: chosen.fatMassKg,
+          leanMassKg: chosen.leanMassKg,
+          waterPct: chosen.waterPct,
         ),
       );
     }
@@ -153,8 +206,15 @@ abstract final class BodyAnalysis {
     return List.unmodifiable(points);
   }
 
-  /// Lo scarto della BIA misurato sui giorni in cui ci si è pesati più volte:
-  /// lì il corpo è lo stesso, quindi la differenza è tutta strumento.
+  /// Lo scarto della BIA misurato sulle pesate **ravvicinate**: lì il corpo è
+  /// lo stesso, quindi la differenza è tutta strumento.
+  ///
+  /// «Ravvicinate» e non «dello stesso giorno», ed è una correzione: fra la
+  /// mattina e la sera ci sono cibo, acqua e un'idratazione diversa, cioè
+  /// fisiologia vera. Contarle come ripetizioni gonfiava il rumore attribuito
+  /// alla bilancia con roba che bilancia non è — e la card che dice «a corpo
+  /// fermo» affermava una cosa falsa proprio mentre citava il numero come
+  /// prova.
   static BiaSpread measureSpread(List<BodyMeasurement> measurements) {
     final byDay = <DateTime, List<BodyMeasurement>>{};
     for (final measurement in measurements) {
@@ -166,16 +226,27 @@ abstract final class BodyAnalysis {
 
     final spreads = <double>[];
     final weights = <double>[];
-    for (final readings in byDay.values) {
-      if (readings.length < 2) {
+    for (final all in byDay.values) {
+      if (all.length < 2) {
         continue;
       }
-      final percentages = readings
+      final readings = all.toList()
+        ..sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+      // Solo le letture entro la finestra dalla prima: le altre sono un altro
+      // momento del corpo, non una ripetizione della stessa misura.
+      final limite = readings.first.measuredAt.add(sameConditionWindow);
+      final vicine = readings
+          .where((item) => !item.measuredAt.isAfter(limite))
+          .toList(growable: false);
+      if (vicine.length < 2) {
+        continue;
+      }
+      final percentages = vicine
           .map((item) => item.bodyFatPct!)
           .toList(growable: false);
       percentages.sort();
       spreads.add(percentages.last - percentages.first);
-      weights.add(_mean(readings.map((item) => item.weightKg)));
+      weights.add(_mean(vicine.map((item) => item.weightKg)));
     }
 
     if (spreads.isEmpty) {

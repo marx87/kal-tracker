@@ -30,9 +30,12 @@ void main() {
         ], testWeek);
 
         // Senza il collasso per giorno la media sarebbe 94,4: il giorno con
-        // quattro letture peserebbe quattro volte tanto.
+        // quattro letture peserebbe quattro volte tanto. Il giorno vale una
+        // pesata sola — la prima — quindi 95 e 90, non la media delle quattro:
+        // fra la prima salita e le successive c'è quello che si è bevuto e
+        // mangiato in mezzo, che non è né grasso né rumore.
         expect(averages.dayCount, 2);
-        expect(averages.weightKg, closeTo(92.75, 0.001));
+        expect(averages.weightKg, closeTo(92.5, 0.001));
       },
     );
 
@@ -63,7 +66,11 @@ void main() {
       expect(averages.weightKg, closeTo(95, 0.001));
     });
 
-    test('l\'acqua corporea si media per giorno, come le masse', () {
+    test('l\'acqua viene dalla stessa lettura di peso e masse', () {
+      // Finché l'acqua era una media a parte si muoveva da sola: bastava una
+      // pesata serale in più perché la percentuale settimanale saltasse senza
+      // che il corpo avesse fatto niente. E quel salto finiva a spiegare i
+      // movimenti del peso e ad accendere il semaforo del sovrallenamento.
       final day = DateTime.utc(2026, 8, 1);
       final averages = CoachAverages.of([
         weighIn(day, weightKg: 95, bodyFatPct: 25, waterPct: 54, id: 'a'),
@@ -76,7 +83,9 @@ void main() {
         ),
       ], testWeek);
 
-      expect(averages.bodyWaterPct, closeTo(52.5, 0.001));
+      // 54 e 50: la lettura scelta del primo giorno e quella del secondo.
+      // Non 52,5, che sarebbe la media di 'a' e 'b' del primo giorno.
+      expect(averages.bodyWaterPct, closeTo(52.0, 0.001));
     });
 
     test('tre giorni fanno una media solida, due no', () {

@@ -79,38 +79,58 @@ class BodyMeasurement {
   double? get leanMassKg => hasComposition ? weightKg - fatMassKg! : null;
 }
 
-/// Il giorno, non la singola pesata: più letture dello stesso giorno vengono
-/// mediate prima di qualunque altra cosa.
+/// Il giorno, non la singola pesata: di più letture dello stesso giorno ne
+/// vale **una**, la prima utile.
 ///
-/// È il primo dei due filtri contro il rumore della BIA: senza, una giornata
-/// con quattro salite sulla bilancia peserebbe quattro volte tanto nella media
-/// mobile di una giornata con una sola.
+/// Resta il primo dei due filtri contro il rumore della BIA — senza, una
+/// giornata con quattro salite peserebbe quattro volte tanto nella media
+/// mobile di una con una sola — ma il modo è cambiato: prima si faceva la
+/// media di tutte, e quella media non corrispondeva a nessun momento della
+/// giornata. Fra la mattina a digiuno e la sera dopo cena c'è cibo e acqua,
+/// che è fisiologia vera e non rumore da smussare.
 @immutable
 class BodyDayPoint {
   const BodyDayPoint({
     required this.day,
     required this.weightKg,
+    required this.measuredAt,
     required this.readings,
     required this.compositionReadings,
     this.fatMassKg,
     this.leanMassKg,
+    this.waterPct,
   });
 
   final DateTime day;
 
-  /// Media dei pesi del giorno (tutte le letture: il peso è affidabile).
+  /// Il peso della pesata che vale per questo giorno — **non** una media.
   final double weightKg;
 
+  /// Quando è stata fatta la pesata che vale. Serve a dirlo: «tre pesate, vale
+  /// quella delle 8:12» è una frase che si può controllare, «media del giorno»
+  /// no.
+  final DateTime measuredAt;
+
+  /// Quante pesate ci sono state quel giorno, contate tutte. Le altre non
+  /// entrano nelle medie ma esistono, e vanno dette.
   final int readings;
 
   /// Quante letture del giorno portavano la composizione.
   final int compositionReadings;
 
-  /// Medie delle sole letture con composizione. Grassa + magra dà il peso di
-  /// QUELLE letture, che può differire di poco da [weightKg]: è voluto, così
-  /// la pila del grafico resta internamente coerente.
+  /// Grassa e magra della **stessa** lettura del peso: la loro somma è
+  /// esattamente [weightKg], quindi la pila del grafico non può contraddirsi.
   final double? fatMassKg;
   final double? leanMassKg;
+
+  /// L'acqua corporea della stessa lettura.
+  ///
+  /// Sta qui e non si media più altrove: restando una media del giorno mentre
+  /// le masse venivano da una lettura sola, si spostava a seconda di quante
+  /// volte uno era salito sulla bilancia — proprio il difetto tolto al peso. E
+  /// da lì passano due decisioni vere: la spiegazione dei movimenti falsi e il
+  /// semaforo del sovrallenamento.
+  final double? waterPct;
 
   bool get hasComposition => fatMassKg != null && leanMassKg != null;
 
@@ -316,7 +336,7 @@ class BodyInsights {
   /// Pesate grezze del periodo, dalla più recente.
   final List<BodyMeasurement> measurements;
 
-  /// Medie del giorno, in ordine cronologico (comprende i 6 giorni di
+  /// Un punto per giorno — la pesata che vale — in ordine cronologico
   /// riscaldamento prima della finestra).
   final List<BodyDayPoint> days;
 

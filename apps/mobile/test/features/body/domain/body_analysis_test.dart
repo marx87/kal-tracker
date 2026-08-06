@@ -32,18 +32,123 @@ void main() {
 
   final today = DateTime(2026, 8, 5);
 
-  group('media del giorno', () {
-    test('più pesate nello stesso giorno diventano un punto solo', () {
+  group('la pesata del giorno', () {
+    test('di più pesate vale la prima, non la loro media', () {
+      // **La media era il difetto.** Fra la mattina a digiuno e la sera dopo
+      // cena c'è cibo e acqua: un chilo e mezzo vero, non rumore. Mediandoli
+      // usciva un numero che non corrispondeva a nessun momento della
+      // giornata, e che si spostava a seconda di quante volte Marco fosse
+      // salito sulla bilancia — così un giorno con la sola pesata del mattino
+      // e uno con mattina e sera finivano nella stessa media mobile come se
+      // fossero misure della stessa cosa.
+      final mattina = measurement(
+        day: DateTime(2026, 8, 1),
+        weightKg: 94.0,
+        hour: 7,
+      );
       final points = BodyAnalysis.collapseDays([
-        measurement(day: DateTime(2026, 8, 1), weightKg: 94.0, hour: 7),
-        measurement(day: DateTime(2026, 8, 1), weightKg: 95.0, hour: 8),
+        measurement(day: DateTime(2026, 8, 1), weightKg: 95.0, hour: 20),
+        mattina,
         measurement(day: DateTime(2026, 8, 2), weightKg: 96.0),
       ]);
 
       expect(points, hasLength(2));
-      expect(points.first.weightKg, closeTo(94.5, 0.001));
+      // Quella del mattino, anche se era arrivata in fondo alla lista.
+      expect(points.first.weightKg, closeTo(94, 0.001));
+      expect(points.first.measuredAt, mattina.measuredAt);
+      // Quella delle 20 non è sparita: non conta, ma si conta.
       expect(points.first.readings, 2);
       expect(points.last.weightKg, closeTo(96, 0.001));
+    });
+
+    test('vale la prima CON impedenza, non la primissima', () {
+      // Una pesata col contatto riuscito dice tutto quello che dice una senza,
+      // più la composizione: a parità di mattina è quella che vale. Succede
+      // davvero — si sale con le calze, non legge, si riprova scalzi.
+      final conImpedenza = measurement(
+        day: DateTime(2026, 8, 1),
+        weightKg: 94.2,
+        bodyFatPct: 25,
+        hour: 7,
+        minute: 30,
+      );
+      final points = BodyAnalysis.collapseDays([
+        measurement(day: DateTime(2026, 8, 1), weightKg: 94.0, hour: 7),
+        conImpedenza,
+        measurement(
+          day: DateTime(2026, 8, 1),
+          weightKg: 96.0,
+          bodyFatPct: 26,
+          hour: 20,
+        ),
+      ]);
+
+      final point = points.single;
+      expect(point.weightKg, closeTo(94.2, 0.001));
+      expect(point.measuredAt, conImpedenza.measuredAt);
+      expect(point.readings, 3);
+      expect(point.compositionReadings, 2);
+    });
+
+    test('l’impedenza della sera NON batte il peso del mattino', () async {
+      // **Il difetto che questo test fissa.** «Vale la prima con impedenza»
+      // era scritto senza limite d'orario: al mattino il contatto salta (piedi
+      // asciutti, capita), la sera riesce, e il giorno prendeva il peso dopo
+      // cena pieno — cioè il chilo e mezzo di cibo e acqua che questa regola
+      // esiste per togliere. In quel caso era PEGGIO della vecchia media, che
+      // almeno dimezzava l'errore.
+      final mattina = measurement(
+        day: DateTime(2026, 8, 1),
+        weightKg: 94.0,
+        hour: 7,
+      );
+      final points = BodyAnalysis.collapseDays([
+        mattina,
+        measurement(
+          day: DateTime(2026, 8, 1),
+          weightKg: 95.4,
+          bodyFatPct: 25,
+          hour: 22,
+        ),
+      ]);
+
+      final point = points.single;
+      expect(point.weightKg, closeTo(94, 0.001));
+      expect(point.measuredAt, mattina.measuredAt);
+      // E il giorno resta senza composizione: prenderla dalla sera e il peso
+      // dal mattino rimetterebbe nel grafico la contraddizione che si era
+      // appena tolta — grassa + magra diverse dal peso mostrato.
+      expect(point.hasComposition, isFalse);
+      expect(point.compositionReadings, 1);
+    });
+
+    test('se nessuna ha l’impedenza vale comunque la prima', () {
+      // Un giorno di sole pesate senza contatto non diventa un buco: il peso
+      // vale lo stesso, ed è il dato che muove il traguardo.
+      final points = BodyAnalysis.collapseDays([
+        measurement(day: DateTime(2026, 8, 1), weightKg: 94.0, hour: 7),
+        measurement(day: DateTime(2026, 8, 1), weightKg: 95.0, hour: 20),
+      ]);
+
+      expect(points.single.weightKg, closeTo(94, 0.001));
+      expect(points.single.hasComposition, isFalse);
+    });
+
+    test('una pesata solo serale vale lo stesso: nessuna soglia oraria', () {
+      // La tentazione era tagliare a mezzogiorno e chiamarla «pesata del
+      // mattino». Butterebbe via il giorno in cui ci si è pesati solo la sera,
+      // e un dato tardi vale comunque più di un buco nella serie.
+      final sera = measurement(
+        day: DateTime(2026, 8, 1),
+        weightKg: 96.0,
+        bodyFatPct: 26,
+        hour: 21,
+      );
+      final points = BodyAnalysis.collapseDays([sera]);
+
+      expect(points, hasLength(1));
+      expect(points.single.weightKg, closeTo(96, 0.001));
+      expect(points.single.measuredAt, sera.measuredAt);
     });
 
     test('la pesata di mezzanotte resta nel giorno romano, non in quello '
@@ -62,10 +167,14 @@ void main() {
       expect(points.single.day, DateTime.utc(2026, 8, 2));
     });
 
-    test('grassa e magra si mediano solo sulle letture che le portano, e la '
-        'loro somma resta il peso di quelle letture', () {
+    test('grassa e magra vengono dalla stessa lettura del peso', () {
+      // Prima le tre grandezze potevano venire da letture diverse: il peso era
+      // la media del giorno, grassa e magra la media delle sole letture con
+      // impedenza. La somma delle due non faceva il peso mostrato, e il
+      // grafico ad aree impilate conteneva una contraddizione che nessuno
+      // poteva spiegare guardandolo.
       final points = BodyAnalysis.collapseDays([
-        // Senza impedenza: entra nel peso, non nella composizione.
+        // Senza impedenza: c'è, si conta, ma non è lei a valere.
         measurement(day: DateTime(2026, 8, 1), weightKg: 90, hour: 7),
         measurement(
           day: DateTime(2026, 8, 1),
@@ -76,14 +185,14 @@ void main() {
       ]);
 
       final point = points.single;
-      expect(point.weightKg, closeTo(95, 0.001));
+      expect(point.weightKg, closeTo(100, 0.001));
       expect(point.readings, 2);
       expect(point.compositionReadings, 1);
       expect(point.fatMassKg, closeTo(20, 0.001));
       expect(point.leanMassKg, closeTo(80, 0.001));
-      // La pila del grafico è internamente coerente: 20 + 80 = 100, il peso
-      // della lettura con impedenza, non i 95 della media del giorno.
-      expect(point.compositionWeightKg, closeTo(100, 0.001));
+      // 20 + 80 = 100, ed è esattamente il peso del punto. Niente scarto da
+      // spiegare.
+      expect(point.compositionWeightKg, closeTo(point.weightKg, 0.001));
     });
   });
 
