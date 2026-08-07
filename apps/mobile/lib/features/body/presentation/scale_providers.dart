@@ -172,11 +172,24 @@ class ScaleSessionController extends Notifier<ScaleStatus> {
   /// produrrebbe una composizione inventata, che è peggio di non averla.
   Future<ScaleUser?> _scaleUser(Ref ref) async {
     final profile = await ref.read(marcoProfileProvider.future);
+    // L'ultimo peso salvato serve a presentarsi PRIMA di salire: la bilancia
+    // non consegna la pesata che tiene in memoria a chi non si è ancora
+    // annunciato, e senza un peso da mettere nel profilo non ci si può
+    // annunciare. È lo stesso peso che l'app Renpho manda al collegamento.
+    double? ultimo;
+    try {
+      ultimo = await ref
+          .read(bodyRepositoryProvider)
+          .latestWeightKg(profileId: profile.id);
+    } on Object {
+      // Nessun peso noto: ci si presenterà appena qualcuno sale, come prima.
+    }
     return ScaleUser.from(
       heightCm: profile.heightCm,
       birthDate: profile.birthDate,
       sexCode: profile.sex,
       now: DateTime.now(),
+      lastWeightKg: ultimo,
     );
   }
 

@@ -38,6 +38,26 @@ class BodyRepository {
   /// mobile: chi chiama sottrae `BodyAnalysis.warmupDays` alla finestra
   /// visibile, altrimenti il primo punto del grafico sarebbe una media a un
   /// giorno solo travestita da media a sette.
+  /// Il peso dell'ultima pesata salvata, o `null` se non ce n'è nessuna.
+  ///
+  /// Lettura secca e non uno stream, ed è una correzione: presa da
+  /// `watchMeasurements(...).first` bloccava l'avvio della sessione con la
+  /// bilancia finché lo stream non avesse emesso — e in un test, o su un
+  /// database appena aperto, quel momento può non arrivare mai.
+  ///
+  /// Serve a presentarsi alla bilancia **prima** di salirci: senza un peso da
+  /// mettere nel profilo non ci si può annunciare, e senza annuncio la
+  /// bilancia non consegna la pesata che tiene in memoria.
+  Future<double?> latestWeightKg({required String profileId}) async {
+    final measurements = _database.bodyMeasurements;
+    final query = _database.select(measurements)
+      ..where((row) => row.profileId.equals(profileId) & row.deletedAt.isNull())
+      ..orderBy([(row) => OrderingTerm.desc(row.measuredAt)])
+      ..limit(1);
+    final row = await query.getSingleOrNull();
+    return row?.weightKg;
+  }
+
   Stream<List<BodyMeasurement>> watchMeasurements({
     required String profileId,
     DateTime? since,

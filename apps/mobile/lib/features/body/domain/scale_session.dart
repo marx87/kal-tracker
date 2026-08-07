@@ -63,6 +63,7 @@ class ScaleUser {
     required this.heightCm,
     required this.age,
     required this.male,
+    this.lastWeightKg,
   });
 
   /// Da profilo, se c'è tutto quello che serve. Torna `null` quando manca un
@@ -73,6 +74,7 @@ class ScaleUser {
     required DateTime? birthDate,
     required String? sexCode,
     required DateTime now,
+    double? lastWeightKg,
   }) {
     if (heightCm == null || birthDate == null || sexCode == null) {
       return null;
@@ -94,12 +96,21 @@ class ScaleUser {
       heightCm: heightCm,
       age: anni,
       male: sexCode.toUpperCase().startsWith('M'),
+      lastWeightKg: lastWeightKg,
     );
   }
 
   final double heightCm;
   final int age;
   final bool male;
+
+  /// L'ultimo peso salvato, per presentarsi **prima** di salire.
+  ///
+  /// L'app Renpho manda il profilo appena collegata, con il peso che già
+  /// conosce, e solo dopo chiede la pesata in memoria. Mandando la richiesta
+  /// per prima la bilancia non ha risposto: senza sapere chi è collegato non
+  /// consegna niente a nessuno.
+  final double? lastWeightKg;
 }
 
 /// Il tono con cui la schermata deve dire quello che sta succedendo. Il

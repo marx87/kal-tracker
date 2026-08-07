@@ -436,6 +436,12 @@ class ScaleReader {
     var sequenza = 0;
     var profiloMandato = false;
     var codaSvuotata = false;
+    // Le due cose vanno in quest'ordine e non nell'altro: prima ci si
+    // presenta, poi si chiede. Mandando la richiesta per prima la bilancia
+    // l'ha ignorata — nessuna risposta, contatore fermo — mentre l'app Renpho
+    // manda sempre orologio e profilo appena collegata, col peso che già
+    // conosce, e solo un paio di secondi dopo chiede la pesata in memoria.
+    Completer<void>? presentazione;
 
     Timer? stepOnTimer;
     Timer? codaTimer;
@@ -488,6 +494,7 @@ class ScaleReader {
       }
       final primaVolta = !profiloMandato;
       profiloMandato = true;
+      final attesa = primaVolta ? (presentazione = Completer<void>()) : null;
       try {
         // L'orologio si manda una volta sola: è l'ora, non cambia perché il
         // peso si è assestato.
@@ -514,6 +521,10 @@ class ScaleReader {
         );
       } on Object catch (error) {
         _note('la bilancia ha rifiutato i comandi: $error', isProblem: true);
+      } finally {
+        if (attesa != null && !attesa.isCompleted) {
+          attesa.complete();
+        }
       }
     }
 
@@ -655,8 +666,8 @@ class ScaleReader {
             codaSvuotata = true;
             final comando = renphoFetchStoredCommand();
             unawaited(
-              connection
-                  .send(comando)
+              (presentazione?.future ?? Future<void>.value())
+                  .then((_) => connection.send(comando))
                   .then(
                     (_) => _note(
                       'la bilancia ha $valore '
@@ -699,6 +710,13 @@ class ScaleReader {
     }
 
     _emit(ScalePhase.stepOn);
+    // Ci si presenta subito, col peso che già si conosce, senza aspettare che
+    // qualcuno salga: è quello che fa l'app Renpho, ed è la condizione perché
+    // la bilancia risponda alla richiesta della pesata in memoria.
+    final ultimo = _user?.lastWeightKg;
+    if (ultimo != null && ultimo >= RenphoMsc.minProfileWeightKg) {
+      unawaited(presentati(ultimo));
+    }
     final subscription = connection.incoming.listen(
       onFrame,
       onError: (Object error) {
