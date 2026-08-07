@@ -316,6 +316,7 @@ class BodyInsights {
     this.fatChange,
     this.leanChange,
     this.staleDays,
+    this.afternoonOnlyDays = 0,
   });
 
   const BodyInsights.empty(this.range)
@@ -329,7 +330,8 @@ class BodyInsights {
       weightChange = null,
       fatChange = null,
       leanChange = null,
-      staleDays = null;
+      staleDays = null,
+      afternoonOnlyDays = 0;
 
   final BodyRange range;
 
@@ -357,6 +359,14 @@ class BodyInsights {
 
   /// Da quanti giorni non si registra una pesata. Nullo se non ce ne sono.
   final int? staleDays;
+
+  /// Quanti giorni del periodo hanno pesate **solo dal pomeriggio in poi**, e
+  /// quindi non compaiono nelle medie.
+  ///
+  /// Si conta per dirlo. Escludere un dato senza dichiararlo è il peccato che
+  /// questa app evita già altrove: una pesata che esiste ma non si vede nel
+  /// grafico, senza spiegazione, sembra un difetto dell'app.
+  final int afternoonOnlyDays;
 
   bool get isEmpty => measurements.isEmpty;
 

@@ -199,6 +199,10 @@ class _BodyContent extends ConsumerWidget {
               const SizedBox(height: 14),
             ],
             _TrustCard(spread: insights.spread),
+            if (insights.afternoonOnlyDays > 0) ...[
+              const SizedBox(height: 14),
+              _AfternoonOnlyCard(days: insights.afternoonOnlyDays),
+            ],
             if (!insights.isEmpty) ...[
               const SizedBox(height: 14),
               _CompositionCard(insights: insights),
@@ -489,6 +493,47 @@ class _VerdictBanner extends StatelessWidget {
     BodyVerdict.stable => Icons.drag_handle_rounded,
     BodyVerdict.unknown => Icons.help_outline_rounded,
   };
+}
+
+/// Dice quante pesate sono rimaste fuori dalle medie, e perché.
+///
+/// Escludere un dato senza dichiararlo è il peccato che questa app evita già
+/// altrove: una pesata registrata che non compare nel grafico, e nessuna
+/// spiegazione, sembra un difetto dell'app — e chi la vede smette di fidarsi
+/// anche del resto.
+class _AfternoonOnlyCard extends StatelessWidget {
+  const _AfternoonOnlyCard({required this.days});
+
+  final int days;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+
+    return SectionCard(
+      key: const Key('body_afternoon_only_card'),
+      title: days == 1
+          ? 'Un giorno fuori dalle medie'
+          : '$days giorni fuori dalle medie',
+      icon: Icons.schedule_rounded,
+      child: Text(
+        days == 1
+            ? 'Un giorno ha solo pesate dal pomeriggio in poi: resta nello '
+                  'storico, ma non entra nelle medie. Dopo pranzo il peso '
+                  'porta cibo e acqua, e confrontarlo con una pesata a digiuno '
+                  'sarebbe confrontare due cose diverse.'
+            : '$days giorni hanno solo pesate dal pomeriggio in poi: restano '
+                  'nello storico, ma non entrano nelle medie. Dopo pranzo il '
+                  'peso porta cibo e acqua, e confrontarlo con una pesata a '
+                  'digiuno sarebbe confrontare due cose diverse.',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: accents.mutedInk,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
 }
 
 /// Il pezzo che dice, con un numero, perché il grafico è fatto di medie.

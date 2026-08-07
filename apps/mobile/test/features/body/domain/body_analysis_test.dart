@@ -56,8 +56,9 @@ void main() {
       // Quella del mattino, anche se era arrivata in fondo alla lista.
       expect(points.first.weightKg, closeTo(94, 0.001));
       expect(points.first.measuredAt, mattina.measuredAt);
-      // Quella delle 20 non è sparita: non conta, ma si conta.
-      expect(points.first.readings, 2);
+      // Quella delle 20 non entra nemmeno nel conteggio del giorno: è
+      // un'altra condizione, e resta nello storico.
+      expect(points.first.readings, 1);
       expect(points.last.weightKg, closeTo(96, 0.001));
     });
 
@@ -86,8 +87,9 @@ void main() {
       final point = points.single;
       expect(point.weightKg, closeTo(94.2, 0.001));
       expect(point.measuredAt, conImpedenza.measuredAt);
-      expect(point.readings, 3);
-      expect(point.compositionReadings, 2);
+      // Le due del mattino; quella delle 20 è fuori dalle medie.
+      expect(point.readings, 2);
+      expect(point.compositionReadings, 1);
     });
 
     test('l’impedenza della sera NON batte il peso del mattino', () async {
@@ -119,7 +121,9 @@ void main() {
       // dal mattino rimetterebbe nel grafico la contraddizione che si era
       // appena tolta — grassa + magra diverse dal peso mostrato.
       expect(point.hasComposition, isFalse);
-      expect(point.compositionReadings, 1);
+      // La lettura con impedenza era delle 22: fuori dalla finestra del
+      // mattino, quindi non si conta nemmeno fra quelle del giorno.
+      expect(point.compositionReadings, 0);
     });
 
     test('se nessuna ha l’impedenza vale comunque la prima', () {
@@ -134,21 +138,42 @@ void main() {
       expect(points.single.hasComposition, isFalse);
     });
 
-    test('una pesata solo serale vale lo stesso: nessuna soglia oraria', () {
-      // La tentazione era tagliare a mezzogiorno e chiamarla «pesata del
-      // mattino». Butterebbe via il giorno in cui ci si è pesati solo la sera,
-      // e un dato tardi vale comunque più di un buco nella serie.
-      final sera = measurement(
-        day: DateTime(2026, 8, 1),
-        weightKg: 96.0,
-        bodyFatPct: 26,
-        hour: 21,
-      );
-      final points = BodyAnalysis.collapseDays([sera]);
+    test('un giorno pesato solo la sera non entra nelle medie', () {
+      // **Regola invertita, e la ragione sta nei numeri.** Prima si teneva
+      // anche il giorno pesato solo la sera, per non lasciare un buco nella
+      // serie. Ma un punto preso dopo cena si infila fra gli altri fingendo di
+      // essere confrontabile: nei dati veri fra le 09:03 e le 10:22 dello
+      // stesso giorno ci sono già 0,7 kg, e nel pomeriggio la distanza cresce.
+      //
+      // Il buco è il male minore: la media mobile dichiara su quanti giorni è
+      // calcolata, e la schermata dice quanti giorni sono rimasti fuori. Una
+      // media inquinata non dichiara niente.
+      final points = BodyAnalysis.collapseDays([
+        measurement(
+          day: DateTime(2026, 8, 1),
+          weightKg: 96.0,
+          bodyFatPct: 26,
+          hour: 21,
+        ),
+      ]);
 
-      expect(points, hasLength(1));
-      expect(points.single.weightKg, closeTo(96, 0.001));
-      expect(points.single.measuredAt, sera.measuredAt);
+      expect(points, isEmpty);
+    });
+
+    test('la schermata dice quanti giorni sono rimasti fuori', () {
+      // Escludere un dato senza dichiararlo fa sembrare l'app rotta: la pesata
+      // c'è, nel grafico non si vede, e nessuno spiega perché.
+      final insights = BodyAnalysis.build(
+        measurements: [
+          measurement(day: DateTime(2026, 8, 1), weightKg: 95, hour: 7),
+          measurement(day: DateTime(2026, 8, 2), weightKg: 96, hour: 19),
+          measurement(day: DateTime(2026, 8, 3), weightKg: 95, hour: 21),
+        ],
+        range: BodyRange.month,
+        now: DateTime(2026, 8, 3, 22),
+      );
+
+      expect(insights.afternoonOnlyDays, 2);
     });
 
     test('la pesata di mezzanotte resta nel giorno romano, non in quello '
@@ -245,6 +270,33 @@ void main() {
       // dice 20,1 e non si fa trascinare.
       expect(smoothed.last.fatMassKg, closeTo(20.14, 0.01));
       expect(smoothed.last.compositionDays, 7);
+    });
+
+    test('una lettura col contatto fallito non sposta la settimana', () {
+      // Il caso vero dell'export del 6 agosto: 15,7 % di grasso e 81,3 kg di
+      // massa magra, contro 25,4 % e 71,9 kg di due minuti dopo. Un contatto
+      // saltato, o un'altra persona salita sul profilo.
+      //
+      // Da sola quella riga spostava la media settimanale della massa magra di
+      // oltre un chilo — e da lì passano basale, proteine e deficit, cioè una
+      // settimana intera di piano costruita su un numero sbagliato.
+      final giorni = <BodyMeasurement>[
+        for (var index = 0; index < 7; index++)
+          measurement(
+            day: DateTime(2026, 8, 1).add(Duration(days: index)),
+            weightKg: 96,
+            // 25 % di grasso su 96 kg: 24 grassa, 72 magra.
+            bodyFatPct: index == 3 ? 15.7 : 25,
+            hour: 7,
+          ),
+      ];
+      final smoothed = BodyAnalysis.smooth(BodyAnalysis.collapseDays(giorni));
+      final ultimo = smoothed.last;
+
+      // Senza difesa la magra media sarebbe 73,3; con lo scarto resta 72.
+      expect(ultimo.leanMassKg, closeTo(72, 0.05));
+      // E il giorno buttato si vede nel conteggio: sei giorni su sette.
+      expect(ultimo.compositionDays, 6);
     });
   });
 

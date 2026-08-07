@@ -1,3 +1,4 @@
+import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
 
 /// La matematica della schermata Corpo, tutta in funzioni pure.
@@ -23,6 +24,20 @@ abstract final class BodyAnalysis {
   /// differenza è quasi tutta rumore.
   static const minimumComparisonDays = 4;
 
+  /// L'ora oltre la quale una pesata **non entra nelle medie**.
+  ///
+  /// Undici del mattino, ora di Roma. Le pesate del pomeriggio restano nello
+  /// storico e restano visibili — sono successe — ma confrontarle con quelle
+  /// a digiuno significa confrontare due cose diverse: nei dati veri fra le
+  /// 09:03 e le 10:22 dello stesso giorno ci sono già 0,7 kg e 1,1 punti di
+  /// grasso, e nel pomeriggio la distanza cresce.
+  ///
+  /// Sì, un giorno pesato solo alle sei di sera diventa un buco nella serie.
+  /// È il male minore: la media mobile dice già su quanti giorni è calcolata,
+  /// mentre un punto preso dopo cena si infila fra gli altri fingendo di
+  /// essere confrontabile.
+  static const morningCutoffHour = 11;
+
   /// Quanto può distare una lettura dalla prima del giorno per contare come
   /// **lo stesso momento**.
   ///
@@ -37,6 +52,17 @@ abstract final class BodyAnalysis {
   /// si riprova scalzi; ci si pesa, si va in bagno, ci si ripesa — e non
   /// coprono mattina contro sera, che è tutto il punto.
   static const sameConditionWindow = Duration(hours: 3);
+
+  /// Quanto può discostarsi la massa magra di un giorno dalla mediana della
+  /// finestra prima di essere considerata un errore di lettura.
+  ///
+  /// Tre chili. Non è una variazione fisiologica in sette giorni: è un
+  /// contatto fallito o un'altra persona salita sul profilo. Nell'export del
+  /// 6 agosto ce n'è una da manuale — 81,3 kg di massa magra alle 16:07 e
+  /// 71,9 due minuti dopo — e da sola sposterebbe la media settimanale di
+  /// oltre un chilo, cioè tutta la settimana di piano che ne discende:
+  /// basale, proteine, deficit.
+  static const leanOutlierKg = 3.0;
 
   /// Soglia sotto la quale una variazione delle masse si chiama «stabile».
   /// Mezzo etto di massa grassa non è un risultato, è la BIA che respira.
@@ -61,6 +87,7 @@ abstract final class BodyAnalysis {
     final visibleFrom = today.subtract(Duration(days: range.days - 1));
 
     final days = collapseDays(sorted);
+    final giorniConPesata = sorted.map((item) => item.day).toSet().length;
     final smoothed = smooth(days);
     final visible = smoothed
         .where((point) => !point.day.isBefore(visibleFrom))
@@ -84,6 +111,7 @@ abstract final class BodyAnalysis {
       fatChange: fatChange,
       leanChange: leanChange,
       staleDays: today.difference(bodyDayOf(sorted.first.measuredAt)).inDays,
+      afternoonOnlyDays: giorniConPesata - days.length,
     );
   }
 
@@ -129,14 +157,26 @@ abstract final class BodyAnalysis {
           final istante = a.measuredAt.compareTo(b.measuredAt);
           return istante != 0 ? istante : a.id.compareTo(b.id);
         });
-      final withComposition = readings
+      // Solo il mattino entra nelle medie. Il resto resta nello storico, che
+      // è un'altra lista e non passa di qui.
+      final mattino = readings
+          .where(
+            (item) => AppTime.inRome(item.measuredAt).hour < morningCutoffHour,
+          )
+          .toList(growable: false);
+      if (mattino.isEmpty) {
+        // Giorno pesato solo dal pomeriggio in poi: resta nello storico, non
+        // nelle medie. Chi chiama conta la differenza e la dichiara.
+        continue;
+      }
+      final withComposition = mattino
           .where((item) => item.hasComposition)
           .toList(growable: false);
       // Nessuna soglia oraria assoluta, di proposito: «prima del mattino» con
       // un taglio a mezzogiorno butterebbe via il giorno in cui ci si è pesati
       // solo la sera, e un dato tardi vale comunque più di un buco. La
       // finestra è **relativa alla prima lettura**, non all'orologio.
-      final first = readings.first;
+      final first = mattino.first;
       final limite = first.measuredAt.add(sameConditionWindow);
       final chosen = withComposition.firstWhere(
         (item) => !item.measuredAt.isAfter(limite),
@@ -148,7 +188,7 @@ abstract final class BodyAnalysis {
           day: entry.key,
           weightKg: chosen.weightKg,
           measuredAt: chosen.measuredAt,
-          readings: readings.length,
+          readings: mattino.length,
           compositionReadings: withComposition.length,
           // Grassa e magra vengono dalla stessa lettura del peso, quindi la
           // loro somma È quel peso: la pila del grafico non può contenere una
@@ -192,14 +232,29 @@ abstract final class BodyAnalysis {
         }
       }
 
+      // **Media, ma dopo aver buttato gli anomali.** La media da sola non è
+      // robusta: una lettura col contatto fallito — 81,3 kg di massa magra
+      // contro 71,9 due minuti dopo, nell'export del 6 agosto — sposta la
+      // settimana di oltre un chilo, e la massa magra è la grandezza guida
+      // (basale, proteine, deficit vengono da lì). Un chilo sbagliato lì è una
+      // settimana intera di piano sbagliato.
+      //
+      // La mediana pura sembrava la risposta e non lo era: contro un rumore
+      // che oscilla simmetrico non smorza niente. Su sette giorni a 21 e 19
+      // alternati la media dà 20,14 e la mediana dà 21, cioè l'ultimo valore
+      // grezzo. Il rumore della BIA è simmetrico, gli errori di lettura no:
+      // servono due strumenti diversi, e questo li usa entrambi — la mediana
+      // per riconoscere l'anomalo, la media per smorzare il resto.
+      final magre = _withoutOutliers(leans);
+      final grasse = _withoutOutliers(fats);
       points.add(
         BodyTrendPoint(
           day: current.day,
           weightKg: _mean(weights),
           weightDays: weights.length,
-          compositionDays: fats.length,
-          fatMassKg: fats.isEmpty ? null : _mean(fats),
-          leanMassKg: leans.isEmpty ? null : _mean(leans),
+          compositionDays: magre.length,
+          fatMassKg: grasse.isEmpty ? null : _mean(grasse),
+          leanMassKg: magre.isEmpty ? null : _mean(magre),
         ),
       );
     }
@@ -385,6 +440,24 @@ abstract final class BodyAnalysis {
       count++;
     }
     return count == 0 ? 0 : total / count;
+  }
+
+  /// Toglie i valori troppo lontani dalla mediana.
+  ///
+  /// La mediana da sola già regge un valore anomalo su sette, ma con tre o
+  /// quattro giorni di finestra — l'inizio di ogni serie, e ogni ripresa dopo
+  /// una pausa — un errore di lettura può diventarla. Questo è il secondo
+  /// strato, e agisce sulla sola massa magra perché è la grandezza da cui
+  /// dipendono tutti i numeri a valle: basale, proteine, deficit.
+  static List<double> _withoutOutliers(List<double> values) {
+    if (values.length < 3) {
+      return values;
+    }
+    final centro = _median(values);
+    return [
+      for (final value in values)
+        if ((value - centro).abs() <= leanOutlierKg) value,
+    ];
   }
 
   static double _median(List<double> values) {
