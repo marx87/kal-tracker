@@ -125,6 +125,183 @@ void main() {
     });
   });
 
+  group('la composizione, dalle trame vere del 7 agosto', () {
+    // Le due misure complete catturate dal registro HCI mentre l'app Renpho
+    // parlava con la bilancia. Sono la prova che la decodifica è giusta e non
+    // solo plausibile: i valori che la bilancia si calcola per il display
+    // combaciano con quelli del CSV esportato dall'app.
+    const misura0902 =
+        '55 aa 25 00 24 04 11 00 00 25 3f 0a 00 e1 0b b8 0b 69 0a 94 0a 81 '
+        '00 bd 0a 48 09 f1 09 06 08 ef 01 01 00 01 20 01 ab 00 09 6d';
+    const misura1022 =
+        '55 aa 25 00 24 04 11 00 00 25 85 0a 00 e3 0b f1 0b aa 0a ad 0a 8e '
+        '00 bd 0a 75 0a 1f 09 21 09 02 01 01 0b 01 22 01 a4 00 0a 6d';
+
+    List<int> byte(String hex) => [
+      for (final parte in hex.split(' ')) int.parse(parte, radix: 16),
+    ];
+
+    test('peso e nove impedenze', () {
+      final frame = decodeRenphoFrame(byte(misura1022))! as RenphoBodyFrame;
+
+      expect(frame.checksumOk, isTrue);
+      expect(frame.weightKg, closeTo(96.05, 0.001));
+      expect(frame.impedancesOhm, hasLength(9));
+      // Little endian, decimi di ohm. Letto al contrario 0x0be3 farebbe
+      // cinquemila ohm, che non è un corpo umano.
+      expect(frame.impedancesOhm.first, closeTo(304.3, 0.05));
+      expect(frame.impedancesOhm, contains(closeTo(14.2, 0.05)));
+    });
+
+    test('il tronco è la più bassa, e non può essere altro', () {
+      // Un busto sta sui dieci-venti ohm, un arto sulle centinaia: è l'unico
+      // segmento che si riconosce senza ipotesi.
+      final frame = decodeRenphoFrame(byte(misura0902))! as RenphoBodyFrame;
+      final ordinate = frame.impedancesOhm.toList()..sort();
+
+      expect(ordinate.first, closeTo(12.9, 0.05));
+      expect(ordinate[1], greaterThan(150));
+    });
+
+    test('il percorso mano-piede sta nell’intervallo fisiologico', () {
+      // **Quello che questo test NON prova.** Quale delle nove sia il braccio
+      // e quale la gamba resta ignoto: la regola prende la più bassa come
+      // tronco (l'unica certa), la più alta come braccio e la minore fra le
+      // restanti come gamba. Con indici fissi diversi si ottengono 571 Ω
+      // invece di 522 — entrambi plausibili, e non c'è modo di scegliere
+      // finché non si sa l'anatomia della trama.
+      //
+      // Quello che prova: che qualunque cosa esca sia **un'impedenza di corpo
+      // intero** e non un numero qualsiasi. Se un domani l'attribuzione
+      // cambiasse, questo intervallo la tiene onesta — e lo storico si
+      // ricalcola, perché le nove restano tutte salvate.
+      for (final hex in [misura0902, misura1022]) {
+        final frame = decodeRenphoFrame(byte(hex))! as RenphoBodyFrame;
+        expect(frame.wholeBodyOhm, inInclusiveRange(300, 900));
+      }
+      final a = decodeRenphoFrame(byte(misura0902))! as RenphoBodyFrame;
+      final b = decodeRenphoFrame(byte(misura1022))! as RenphoBodyFrame;
+      // I valori che la regola dichiarata produce oggi, fissati perché un
+      // cambiamento silenzioso sposterebbe tutta la composizione dello storico.
+      expect(a.wholeBodyOhm, closeTo(522.4, 0.1));
+      expect(b.wholeBodyOhm, closeTo(553.4, 0.1));
+      // Due misure a ottanta minuti di distanza sullo stesso corpo: la
+      // differenza deve essere piccola, o l'attribuzione salta da un segmento
+      // all'altro fra una pesata e la successiva.
+      expect((a.wholeBodyOhm! - b.wholeBodyOhm!).abs(), lessThan(60));
+    });
+
+    test('i valori del display combaciano col CSV di Renpho', () {
+      // Il riscontro che ha chiuso la questione: il CSV esportato dall'app
+      // per una pesata dello stesso periodo dà grasso 25,2 %, BMI 28,9,
+      // muscolo scheletrico 43,0 % e viscerale 9. Se questi numeri escono
+      // giusti, gli offset sono giusti.
+      final frame = decodeRenphoFrame(byte(misura0902))! as RenphoBodyFrame;
+
+      expect(frame.bodyFatPct, closeTo(25.6, 0.05));
+      expect(frame.bmi, closeTo(28.8, 0.05));
+      expect(frame.skeletalMusclePct, closeTo(42.7, 0.05));
+      expect(frame.visceralFat, 9);
+    });
+  });
+
+  group('i comandi che sbloccano la composizione', () {
+    test('l’orologio porta i secondi Unix, big endian', () {
+      // Nella cattura valeva 0x6a7595c7, cioè le 08:22:31 UTC: esattamente
+      // l'ora della prova.
+      final comando = renphoClockCommand(
+        now: DateTime.utc(2026, 8, 7, 8, 22, 31),
+        sequence: 4,
+      );
+
+      expect(renphoHex(comando), contains('6a 75 95 c7'));
+      expect(comando[2], RenphoMsc.opcodeSetClock);
+      // La somma di controllo si costruisce come quella che si legge.
+      final riletto = decodeRenphoFrame(comando)!;
+      expect(riletto.checksumOk, isTrue);
+    });
+
+    test('il profilo è quello che l’app Renpho manda, byte per byte', () {
+      // La trama vera catturata: 55 aa b2 00 09 05 01 07 1c 25 85 a6 03 02 38
+      final comando = renphoProfileCommand(
+        sequence: 5,
+        heightCm: 182,
+        weightKg: 96.05,
+        age: 38,
+        male: true,
+      );
+
+      expect(
+        renphoHex(comando),
+        '55 aa b2 00 09 05 01 07 1c 25 85 a6 03 02 38',
+      );
+    });
+
+    test('una donna accende un bit diverso', () {
+      final comando = renphoProfileCommand(
+        sequence: 0,
+        heightCm: 165,
+        weightKg: 60,
+        age: 30,
+        male: false,
+      );
+      // 30 anni senza il bit alto.
+      expect(comando[11], 30);
+    });
+  });
+
+  group('la rimonta dei frammenti', () {
+    test('tre pezzi diventano una trama sola', () {
+      // Com'è arrivata davvero: `sequenza | 04 | quanti ne mancano`, e il
+      // contatore scende a zero sull'ultimo. Cercando `55 aa` in testa, due
+      // pezzi su tre non somigliano a niente — ed è per questo che la
+      // composizione era sembrata non arrivare mai.
+      final r = RenphoReassembler();
+      List<int> b(String hex) => [
+        for (final p in hex.split(' ')) int.parse(p, radix: 16),
+      ];
+
+      expect(
+        r.accept(
+          b('ad 04 02 55 aa 25 00 24 04 11 00 00 25 85 0a 00 e3 0b f1 0b'),
+        ),
+        isNull,
+      );
+      expect(
+        r.accept(
+          b('ae 04 01 aa 0a ad 0a 8e 00 bd 0a 75 0a 1f 09 21 09 02 01 01'),
+        ),
+        isNull,
+      );
+      final intera = r.accept(b('af 04 00 0b 01 22 01 a4 00 0a 6d'))!;
+
+      final frame = decodeRenphoFrame(intera)! as RenphoBodyFrame;
+      expect(frame.checksumOk, isTrue);
+      expect(frame.weightKg, closeTo(96.05, 0.001));
+      expect(frame.impedancesOhm, hasLength(9));
+    });
+
+    test('una trama intera passa dritta e azzera un rimontaggio a metà', () {
+      final r = RenphoReassembler();
+      r.accept([0xad, 0x04, 0x02, 0x55, 0xaa, 0x25]);
+      final intera = r.accept([
+        0x55,
+        0xaa,
+        0x21,
+        0x00,
+        0x05,
+        0x01,
+        0x00,
+        0x00,
+        0x25,
+        0xb2,
+        0xfd,
+      ])!;
+
+      expect(decodeRenphoFrame(intera), isA<RenphoWeightFrame>());
+    });
+  });
+
   group('quello che ancora non si sa', () {
     test('gli avanzamenti di stato si leggono senza fingere di capirli', () {
       // Le quattro trame 0x20 del registro. Che siano avanzamenti si vede dal

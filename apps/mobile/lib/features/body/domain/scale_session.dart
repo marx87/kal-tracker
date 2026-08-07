@@ -13,6 +13,7 @@ class ScaleReading {
     required this.rawPayloadHex,
     this.impedanceOhm,
     this.secondaryOhm,
+    this.segmentOhms = const <double>[],
   });
 
   /// Istante in UTC.
@@ -38,7 +39,67 @@ class ScaleReading {
   /// frequenza. Non si salva in una colonna: resta in [rawPayloadHex].
   final double? secondaryOhm;
 
+  /// Tutte le impedenze segmentali, grezze e nell'ordine di arrivo.
+  ///
+  /// La bilancia a otto elettrodi ne manda nove, e quale sia quale non si sa
+  /// ancora. Si conservano intere perché è l'unica cosa che rende
+  /// l'attribuzione correggibile: scegliere adesso e buttare il resto
+  /// significherebbe dover rifare mesi di pesate il giorno in cui si scopre
+  /// che il braccio era un'altra.
+  final List<double> segmentOhms;
+
   bool get hasImpedance => impedanceOhm != null && impedanceOhm! > 0;
+}
+
+/// Chi sta salendo sulla bilancia.
+///
+/// Serve perché **alcune bilance non parlano finché non lo sanno**. La
+/// R-MSC02 pesa e tace: senza altezza, sesso ed età non ha niente da
+/// calcolare, e l'impedenza non la manda a nessuno. Non è un dato che si
+/// possa stimare o saltare — è la domanda a cui la bilancia risponde.
+@immutable
+class ScaleUser {
+  const ScaleUser({
+    required this.heightCm,
+    required this.age,
+    required this.male,
+  });
+
+  /// Da profilo, se c'è tutto quello che serve. Torna `null` quando manca un
+  /// pezzo: mandare un'altezza inventata produrrebbe una composizione
+  /// inventata, e sarebbe peggio di non averla.
+  static ScaleUser? from({
+    required double? heightCm,
+    required DateTime? birthDate,
+    required String? sexCode,
+    required DateTime now,
+  }) {
+    if (heightCm == null || birthDate == null || sexCode == null) {
+      return null;
+    }
+    if (heightCm < 100 || heightCm > 250) {
+      return null;
+    }
+    var anni = now.year - birthDate.year;
+    // Il compleanno non ancora arrivato quest'anno vale un anno in meno: la
+    // bilancia riceve un intero, e sbagliarlo di uno sposta la composizione.
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      anni -= 1;
+    }
+    if (anni < 10 || anni > 120) {
+      return null;
+    }
+    return ScaleUser(
+      heightCm: heightCm,
+      age: anni,
+      male: sexCode.toUpperCase().startsWith('M'),
+    );
+  }
+
+  final double heightCm;
+  final int age;
+  final bool male;
 }
 
 /// Il tono con cui la schermata deve dire quello che sta succedendo. Il

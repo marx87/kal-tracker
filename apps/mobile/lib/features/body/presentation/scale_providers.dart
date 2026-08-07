@@ -98,16 +98,22 @@ class ScaleSessionController extends Notifier<ScaleStatus> {
     _handling = true;
     final ScaleReader reader;
     final RememberedScale? remembered;
+    final ScaleUser? user;
     try {
       reader = ref.read(scaleReaderProvider);
       remembered = await ref.read(rememberedScaleProvider.future);
+      user = await _scaleUser(ref);
     } finally {
       _handling = false;
     }
     // Nessun `await` fra qui e la riga sotto: `read()` emette `checkingRadio`
     // prima di sospendersi, quindi da questo punto in poi è `isBusy` a fare
     // la guardia e la staffetta si chiude senza buchi.
-    await reader.read(onStatus: _emit, preferredDeviceId: remembered?.id);
+    await reader.read(
+      onStatus: _emit,
+      preferredDeviceId: remembered?.id,
+      user: user,
+    );
   }
 
   /// Marco ha indicato quale dei dispositivi visti è la bilancia.
@@ -152,7 +158,26 @@ class ScaleSessionController extends Notifier<ScaleStatus> {
     if (raccolta) {
       return;
     }
-    await reader.connectTo(device, onStatus: _emit);
+    await reader.connectTo(
+      device,
+      onStatus: _emit,
+      user: await _scaleUser(ref),
+    );
+  }
+
+  /// Chi sta salendo, dal profilo dell'app.
+  ///
+  /// Torna `null` quando il profilo è incompleto, e in quel caso la bilancia
+  /// a otto elettrodi darà il solo peso: mandarle un'altezza inventata
+  /// produrrebbe una composizione inventata, che è peggio di non averla.
+  Future<ScaleUser?> _scaleUser(Ref ref) async {
+    final profile = await ref.read(marcoProfileProvider.future);
+    return ScaleUser.from(
+      heightCm: profile.heightCm,
+      birthDate: profile.birthDate,
+      sexCode: profile.sex,
+      now: DateTime.now(),
+    );
   }
 
   /// Dimentica la bilancia scelta: si torna a riconoscerla da sola.

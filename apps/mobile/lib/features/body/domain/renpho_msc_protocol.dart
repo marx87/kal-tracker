@@ -21,12 +21,19 @@ import 'package:flutter/foundation.dart';
 /// peso corrente; quando si assesta arriva un `0x24` con lo stesso valore. Fra
 /// una pesata e l'altra passano dei `0x20` che sembrano avanzamenti di stato.
 ///
-/// **Cosa NON si sa ancora.** L'impedenza. Nella cattura non è mai arrivata:
-/// o la bilancia la manda più tardi di quanto si fosse rimasti in ascolto, o
-/// aspetta un comando su `2a11` — l'unica caratteristica che non ha detto
-/// niente, e quindi quasi certamente quella su cui si scrive. Per questo ogni
-/// trama che non si riconosce continua a finire nel registro per intero: è
-/// così che si è arrivati fin qui.
+/// **L'impedenza, e perché non arrivava.** La bilancia non la manda a nessuno
+/// finché non sa **chi** ha sotto i piedi: senza altezza, sesso ed età non ha
+/// niente da calcolare. Il 7 agosto 2026 il registro HCI di Android ha mostrato
+/// i due comandi che l'app Renpho scrive su `2a11` e noi no — l'orologio
+/// ([renphoClockCommand]) e il profilo ([renphoProfileCommand]) — e subito dopo
+/// la trama `0x25` con nove impedenze segmentali. Non era una bilancia muta:
+/// era una domanda che nessuno le aveva fatto.
+///
+/// **Le trame lunghe arrivano a pezzi.** Sopra i venti byte c'è un livello di
+/// frammentazione tutto suo, prima dell'intestazione: `sequenza | 04 | quanti
+/// ne mancano`. Il contatore scende a zero sull'ultimo pezzo. È il motivo per
+/// cui la prima cattura non aveva mai visto la `0x25`: cercando `55 aa` in
+/// testa, due frammenti su tre non somigliavano a niente.
 abstract final class RenphoMsc {
   static const serviceUuid = '00001a10-0000-1000-8000-00805f9b34fb';
 
@@ -54,6 +61,38 @@ abstract final class RenphoMsc {
 
   /// Avanzamenti di stato, di significato ancora ignoto.
   static const opcodeStatus = 0x20;
+
+  /// **La composizione**: peso e nove impedenze segmentali.
+  static const opcodeBody = 0x25;
+
+  /// Risposta al profilo e all'orologio: seq + esito.
+  static const opcodeProfileAck = 0x22;
+  static const opcodeClockAck = 0x23;
+
+  /// Comando: l'ora corrente, in secondi Unix.
+  static const opcodeSetClock = 0xB3;
+
+  /// Comando: chi sta salendo — altezza, peso, sesso ed età.
+  static const opcodeSetProfile = 0xB2;
+
+  /// Il secondo byte dell'intestazione di frammentazione, costante in tutte
+  /// le trame spezzate osservate.
+  static const fragmentTag = 0x04;
+
+  /// L'impedenza viaggia in decimi di ohm: `0x0be3` = 3043 = 304,3 Ω.
+  static const impedanceDivisor = 10.0;
+
+  /// Quante impedenze porta la `0x25`. Nove, e a cosa corrisponda ognuna non
+  /// si sa ancora — vedi [RenphoBodyFrame.wholeBodyOhm].
+  static const impedanceCount = 9;
+
+  /// L'altezza viaggia in decimi di centimetro: `0x071c` = 1820 = 182,0 cm.
+  static const heightDivisor = 10.0;
+
+  /// Il bit alto del byte sesso-età. Acceso nelle catture di Marco, che è
+  /// uomo: che sia proprio «maschio» è l'ipotesi più semplice, e finché non
+  /// c'è una cattura di una donna resta un'ipotesi.
+  static const maleFlag = 0x80;
 
   /// Il peso arriva in centesimi di chilogrammo: `0x25b2` = 9650 = 96,50 kg.
   static const weightDivisor = 100.0;
@@ -129,6 +168,74 @@ class RenphoStatusFrame extends RenphoFrame {
       'contatore $counter)';
 }
 
+/// La composizione corporea: il peso e le nove impedenze.
+@immutable
+class RenphoBodyFrame extends RenphoFrame {
+  const RenphoBodyFrame({
+    required super.hex,
+    required super.checksumOk,
+    required this.weightKg,
+    required this.impedancesOhm,
+    this.bodyFatPct,
+    this.bmi,
+    this.skeletalMusclePct,
+    this.visceralFat,
+  });
+
+  final double weightKg;
+
+  /// Tutte e nove, grezze e nell'ordine in cui arrivano.
+  ///
+  /// Si conservano intere perché **non si sa ancora quale segmento sia
+  /// quale**. Sceglierne tre e buttare le altre sei significherebbe non poter
+  /// più correggere l'ipotesi: così invece il giorno in cui si scoprisse che
+  /// il braccio è un'altra, lo storico si ricalcola senza rifare una pesata.
+  final List<double> impedancesOhm;
+
+  /// Quello che la bilancia calcola per il proprio display. **Non entra nella
+  /// composizione**, che resta calcolata da noi dall'impedenza con una formula
+  /// versionata: serve da riscontro, ed è così che si è capito che la
+  /// decodifica era giusta — questi numeri combaciano con quelli del CSV
+  /// esportato dall'app Renpho.
+  final double? bodyFatPct;
+  final double? bmi;
+  final double? skeletalMusclePct;
+  final int? visceralFat;
+
+  /// L'impedenza di corpo intero, per il percorso mano-piede.
+  ///
+  /// **È un'ipotesi, dichiarata.** Delle nove, una sola è inequivocabile: la
+  /// più bassa di tutte è il tronco — un busto sta sui dieci-venti ohm mentre
+  /// un arto sta sulle centinaia, e nelle catture vale 12,9 e 14,2 contro
+  /// valori sopra 200. Sommando la più alta (un braccio), il tronco e la più
+  /// bassa fra le restanti (una gamba) escono 571 Ω e 552 Ω nelle due
+  /// misure — l'ordine di grandezza esatto di un'impedenza mano-piede.
+  ///
+  /// Non è una certezza e non va spacciata per tale. È però ricalcolabile:
+  /// le nove restano salvate, e la formula BIA è versionata apposta.
+  double? get wholeBodyOhm {
+    if (impedancesOhm.length < 3) {
+      return null;
+    }
+    final ordinate = impedancesOhm.toList()..sort();
+    final tronco = ordinate.first;
+    final resto = ordinate.sublist(1);
+    final braccio = resto.last;
+    final gamba = resto.first;
+    return braccio + tronco + gamba;
+  }
+
+  @override
+  String toString() {
+    final z = wholeBodyOhm;
+    return 'composizione: ${weightKg.toStringAsFixed(2)} kg, '
+        '${impedancesOhm.length} impedenze'
+        '${z == null ? '' : ', mano-piede ${z.toStringAsFixed(1)} Ω'}'
+        '${bodyFatPct == null ? '' : ', la bilancia dice '
+                  '${bodyFatPct!.toStringAsFixed(1)}% di grasso'}';
+  }
+}
+
 /// Una trama con un opcode mai visto. **Va mostrata per intero**: è la sola
 /// pista verso l'impedenza, che nella cattura non è ancora comparsa.
 @immutable
@@ -193,6 +300,17 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
         weightKg: weight,
         stable: opcode == RenphoMsc.opcodeStable,
       );
+    case RenphoMsc.opcodeBody:
+      final body = _decodeBody(payload, hex, checksumOk);
+      if (body != null) {
+        return body;
+      }
+      return RenphoUnknownFrame(
+        hex: hex,
+        checksumOk: checksumOk,
+        opcode: opcode,
+        payload: payload,
+      );
     case RenphoMsc.opcodeStatus:
       return RenphoStatusFrame(
         hex: hex,
@@ -207,6 +325,57 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
         payload: payload,
       );
   }
+}
+
+/// `0x25` — la composizione.
+///
+/// Struttura ricavata da due misure complete a confronto: due byte di testa,
+/// il peso a 32 bit **big endian** come nelle altre trame, poi un campo che
+/// vale 10 in entrambe, poi nove impedenze a 16 bit **little endian**, e in
+/// coda quattro valori a 16 bit big endian che la bilancia si calcola da sé.
+///
+/// Sì, le impedenze sono little endian e il peso big endian nella stessa
+/// trama. Non è un errore di lettura: è quello che fa il firmware, e provare a
+/// «uniformare» produrrebbe numeri assurdi — 0x0be3 letto al contrario è
+/// 58123, cioè cinquemila ohm.
+RenphoBodyFrame? _decodeBody(List<int> payload, String hex, bool checksumOk) {
+  const inizioImpedenze = 8;
+  const inizioDerivati = 28;
+  if (payload.length < inizioDerivati) {
+    return null;
+  }
+  final weight = _weightFrom(payload.sublist(0, 6));
+  if (weight == null) {
+    return null;
+  }
+
+  final impedenze = <double>[];
+  for (
+    var i = inizioImpedenze;
+    i + 1 < inizioDerivati && impedenze.length < RenphoMsc.impedanceCount;
+    i += 2
+  ) {
+    final grezzo = payload[i] | (payload[i + 1] << 8);
+    impedenze.add(grezzo / RenphoMsc.impedanceDivisor);
+  }
+
+  double? derivato(int offset, double scala) {
+    if (offset + 1 >= payload.length) {
+      return null;
+    }
+    return ((payload[offset] << 8) | payload[offset + 1]) / scala;
+  }
+
+  return RenphoBodyFrame(
+    hex: hex,
+    checksumOk: checksumOk,
+    weightKg: weight,
+    impedancesOhm: List<double>.unmodifiable(impedenze),
+    bodyFatPct: derivato(28, 10),
+    bmi: derivato(30, 10),
+    skeletalMusclePct: derivato(32, 10),
+    visceralFat: derivato(34, 1)?.round(),
+  );
 }
 
 /// Il peso sta negli **ultimi quattro byte** del payload, non a un offset
@@ -232,6 +401,114 @@ double? _weightFrom(List<int> payload) {
     return null;
   }
   return kg;
+}
+
+/// Costruisce una trama da mandare alla bilancia.
+List<int> _comando(int opcode, List<int> payload) {
+  final frame = <int>[
+    RenphoMsc.header0,
+    RenphoMsc.header1,
+    opcode,
+    (payload.length >> 8) & 0xFF,
+    payload.length & 0xFF,
+    ...payload,
+  ];
+  frame.add(frame.fold<int>(0, (a, b) => a + b) & 0xFF);
+  return frame;
+}
+
+/// `0xB3` — l'ora corrente.
+///
+/// È il primo dei due comandi che l'app Renpho manda e noi non mandavamo. Il
+/// timestamp è in secondi Unix, big endian: nelle catture valeva `07:02:47` e
+/// `08:22:31` UTC, cioè esattamente l'ora delle due prove.
+///
+/// [sequence] è un contatore di transazione: la bilancia lo rimanda indietro
+/// nella risposta, ed è così che si sa a quale comando appartiene.
+List<int> renphoClockCommand({required DateTime now, required int sequence}) {
+  final secondi = now.toUtc().millisecondsSinceEpoch ~/ 1000;
+  return _comando(RenphoMsc.opcodeSetClock, [
+    sequence & 0xFF,
+    // I byte fissi delle catture. Non se ne conosce il significato, e per
+    // questo si rimandano identici invece di inventarne di «più sensati»:
+    // è il pezzo di protocollo che si sta copiando, non progettando.
+    0x07, 0x01, 0x01,
+    (secondi >> 24) & 0xFF,
+    (secondi >> 16) & 0xFF,
+    (secondi >> 8) & 0xFF,
+    secondi & 0xFF,
+    0x00, 0x78, 0x00,
+  ]);
+}
+
+/// `0xB2` — **chi sta salendo sulla bilancia**.
+///
+/// Il comando che sbloccava tutto. Senza, la bilancia pesa e tace: non ha
+/// altezza, sesso ed età, quindi non ha niente da calcolare e nessuno a cui
+/// rispondere. Con, arriva la `0x25` con le nove impedenze.
+///
+/// [weightKg] è il peso che la bilancia ha appena misurato, non un peso
+/// storico: l'app Renpho manda quello corrente e lo rimanda aggiornato quando
+/// la pesata si assesta.
+List<int> renphoProfileCommand({
+  required int sequence,
+  required double heightCm,
+  required double weightKg,
+  required int age,
+  required bool male,
+}) {
+  final altezza = (heightCm * RenphoMsc.heightDivisor).round();
+  final peso = (weightKg * RenphoMsc.weightDivisor).round();
+  return _comando(RenphoMsc.opcodeSetProfile, [
+    sequence & 0xFF,
+    0x01,
+    (altezza >> 8) & 0xFF,
+    altezza & 0xFF,
+    (peso >> 8) & 0xFF,
+    peso & 0xFF,
+    // Sesso ed età in un byte solo: `0xa6` nelle catture, cioè bit alto acceso
+    // e 0x26 = 38, che sono gli anni di Marco.
+    (male ? RenphoMsc.maleFlag : 0x00) | (age & 0x7F),
+    0x03, 0x02,
+  ]);
+}
+
+/// Rimonta le trame spezzate.
+///
+/// Sopra i venti byte la bilancia frammenta con tre byte di testa —
+/// `sequenza | 04 | quanti ne mancano` — e il contatore scende a zero
+/// sull'ultimo pezzo. Chi cerca `55 aa` in testa vede solo il primo frammento
+/// e butta gli altri due: è esattamente il motivo per cui la composizione era
+/// sembrata non arrivare mai.
+class RenphoReassembler {
+  final _buffer = <int>[];
+
+  /// Torna la trama completa quando ce n'è una, altrimenti `null`.
+  List<int>? accept(List<int> chunk) {
+    if (chunk.isEmpty) {
+      return null;
+    }
+    if (chunk.length > 1 &&
+        chunk[0] == RenphoMsc.header0 &&
+        chunk[1] == RenphoMsc.header1) {
+      // Una trama intera azzera qualunque rimontaggio a metà: se ne era
+      // rimasto uno appeso, era comunque perso.
+      _buffer.clear();
+      return chunk;
+    }
+    if (chunk.length < 4 || chunk[1] != RenphoMsc.fragmentTag) {
+      return null;
+    }
+    _buffer.addAll(chunk.sublist(3));
+    if (chunk[2] != 0) {
+      return null;
+    }
+    final completa = List<int>.unmodifiable(_buffer);
+    _buffer.clear();
+    return completa;
+  }
+
+  void reset() => _buffer.clear();
 }
 
 /// La trama in esadecimale, per il registro.

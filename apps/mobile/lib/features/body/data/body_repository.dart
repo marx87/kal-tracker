@@ -291,7 +291,7 @@ class BodyRepository {
             ),
           );
       if (impedanceOhm != null) {
-        // La lettura di corpo intero, senza frequenza dichiarata: la QN-Scale
+        // La lettura di corpo intero, senza frequenza dichiarata: la bilancia
         // non la trasmette, e scriverci «50 kHz» sarebbe salvare una
         // supposizione accanto a una misura.
         await _database
@@ -304,6 +304,28 @@ class BodyRepository {
                 ohm: impedanceOhm,
               ),
             );
+        // Il tronco, l'unico segmento che si riconosce senza ipotesi: un busto
+        // sta sui dieci-venti ohm mentre un arto sta sulle centinaia, quindi
+        // la più bassa delle nove è quella e non può essere altro. Le altre
+        // otto restano nella trama grezza in attesa di un'attribuzione, che
+        // inventare adesso significherebbe scriverla nel database come se
+        // fosse una misura.
+        final segmenti = reading.segmentOhms;
+        if (segmenti.length >= 3) {
+          final minima = segmenti.reduce((a, b) => a < b ? a : b);
+          if (minima > 0 && minima <= 5000) {
+            await _database
+                .into(_database.bodyImpedanceReadings)
+                .insert(
+                  BodyImpedanceReadingsCompanion.insert(
+                    id: _uuid.v4(),
+                    measurementId: id,
+                    segment: 'trunk',
+                    ohm: minima,
+                  ),
+                );
+          }
+        }
       }
       await _appendOutbox(
         entityId: id,

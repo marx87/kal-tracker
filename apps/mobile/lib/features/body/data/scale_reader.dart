@@ -82,6 +82,10 @@ class ScaleReader {
   /// senza aspettare che la ricerca finisca.
   Completer<ScaleDevice?>? _selection;
 
+  /// Chi sta salendo, quando il profilo è completo. Alcune bilance non
+  /// mandano la composizione finché non lo sanno.
+  ScaleUser? _user;
+
   /// L'indirizzo scelto a mano una volta e ricordato. Vince su qualunque
   /// riconoscimento: se Marco ha già detto «è questa», non c'è euristica che
   /// debba poterlo smentire.
@@ -131,10 +135,12 @@ class ScaleReader {
   Future<ScaleStatus> read({
     void Function(ScaleStatus status)? onStatus,
     String? preferredDeviceId,
+    ScaleUser? user,
   }) async {
     _log.clear();
     _onStatus = onStatus;
     _preferredDeviceId = preferredDeviceId;
+    _user = user;
     _candidates.clear();
     _cancelled = false;
     if (preferredDeviceId != null) {
@@ -184,7 +190,9 @@ class ScaleReader {
   Future<ScaleStatus> connectTo(
     ScaleDevice device, {
     void Function(ScaleStatus status)? onStatus,
+    ScaleUser? user,
   }) async {
+    _user = user ?? _user;
     // Chi arriva da una scansione ha già il suo ascoltatore: si sovrascrive
     // solo se ne viene passato uno nuovo, altrimenti gli avanzamenti del
     // collegamento non arriverebbero a nessuno.
@@ -424,6 +432,9 @@ class ScaleReader {
   ) async {
     final session = _session = Completer<ScaleStatus>();
     _note('protocollo Renpho R-MSC02, ricavato dalle sue trame');
+    final rimonta = RenphoReassembler();
+    var sequenza = 0;
+    var profiloMandato = false;
 
     Timer? stepOnTimer;
     Timer? codaTimer;
@@ -458,12 +469,62 @@ class ScaleReader {
       }
     }
 
+    /// Dice alla bilancia chi ha sotto i piedi.
+    ///
+    /// **È il comando che sbloccava tutto.** Senza altezza, sesso ed età la
+    /// bilancia pesa e tace: non ha niente da calcolare e nessuno a cui
+    /// rispondere, e la composizione non arriva mai — non perché non la
+    /// misuri, ma perché nessuno gliel'ha chiesta.
+    Future<void> presentati(double weightKg) async {
+      final profile = _user;
+      if (profile == null) {
+        _note(
+          'manca il profilo (altezza, data di nascita, sesso): senza, la '
+          'bilancia non calcola la composizione',
+          isProblem: true,
+        );
+        return;
+      }
+      profiloMandato = true;
+      try {
+        final orologio = renphoClockCommand(
+          now: _clock(),
+          sequence: sequenza++,
+        );
+        await connection.send(orologio);
+        _note('orologio sincronizzato', hex: renphoHex(orologio));
+        final chi = renphoProfileCommand(
+          sequence: sequenza++,
+          heightCm: profile.heightCm,
+          weightKg: weightKg,
+          age: profile.age,
+          male: profile.male,
+        );
+        await connection.send(chi);
+        _note(
+          'profilo mandato: ${profile.heightCm.toStringAsFixed(0)} cm, '
+          '${profile.age} anni, ${profile.male ? 'uomo' : 'donna'}',
+          hex: renphoHex(chi),
+        );
+      } on Object catch (error) {
+        _note('la bilancia ha rifiutato i comandi: $error', isProblem: true);
+      }
+    }
+
     void onFrame(ScaleFrame incoming) {
-      final frame = decodeRenphoFrame(incoming.bytes);
+      // I frammenti si rimontano PRIMA di decodificare: sopra i venti byte la
+      // bilancia spezza, e cercando `55 aa` in testa due pezzi su tre non
+      // somigliano a niente. È così che la composizione era sembrata non
+      // arrivare mai.
+      final intera = rimonta.accept(incoming.bytes);
+      if (intera == null) {
+        return;
+      }
+      final frame = decodeRenphoFrame(intera);
       if (frame == null) {
         _note(
           'da ${incoming.label ?? '?'}: trama che non è di questo protocollo',
-          hex: renphoHex(incoming.bytes),
+          hex: renphoHex(intera),
           isProblem: true,
         );
         return;
@@ -484,7 +545,12 @@ class ScaleReader {
       grezzo.add(frame.hex);
 
       switch (frame) {
-        case RenphoWeightFrame(stable: false):
+        case RenphoWeightFrame(stable: false, weightKg: final kg):
+          // Il profilo si manda alla prima pesata utile: prima la bilancia non
+          // ha ancora un peso da abbinare, dopo il momento è passato.
+          if (!profiloMandato && kg > 0) {
+            unawaited(presentati(kg));
+          }
           _emit(ScalePhase.reading);
         case RenphoWeightFrame(stable: true, weightKg: final kg):
           stepOnTimer?.cancel();
@@ -511,6 +577,33 @@ class ScaleReader {
               ),
             );
           });
+        case RenphoBodyFrame(
+          weightKg: final kg,
+          impedancesOhm: final impedenze,
+        ):
+          stepOnTimer?.cancel();
+          codaTimer?.cancel();
+          _note(
+            'la bilancia dice ${frame.bodyFatPct?.toStringAsFixed(1) ?? '?'}% '
+            'di grasso: lo teniamo come riscontro, la composizione la '
+            'calcoliamo noi dall\'impedenza',
+          );
+          final completa = ScaleReading(
+            measuredAt: _clock().toUtc(),
+            weightKg: kg,
+            deviceName: device.name,
+            // Il grezzo tiene la trama della composizione e quella del peso
+            // stabile, non il flusso intero: sono le due che contano, e il
+            // campo ha un tetto.
+            rawPayloadHex: [
+              frame.hex,
+              if (pesata != null) pesata!.rawPayloadHex,
+            ].join(' | '),
+            impedanceOhm: frame.wholeBodyOhm,
+            segmentOhms: impedenze,
+          );
+          pesata = completa;
+          finish(_emit(ScalePhase.ready, reading: completa));
         case RenphoStatusFrame(counter: final valore):
           if (valore != null) {
             contatoreIniziale ??= valore;
