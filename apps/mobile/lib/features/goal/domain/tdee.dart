@@ -1,6 +1,12 @@
 import 'package:kal_tracker/features/goal/domain/body_composition.dart';
 
 /// Quanto ci si muove, finché non ci sono abbastanza dati per misurarlo.
+///
+/// Le cinque voci restano il punto di partenza — il primo giorno non c'è
+/// altro — ma non sono più il capolinea: appena ci sono tre settimane di
+/// allenamenti con i gruppi muscolari a posto,
+/// `DerivedActivityMultiplier` ricava il moltiplicatore vero e propone di
+/// sostituirlo. Vedi `activity_multiplier.dart`.
 enum ActivityLevel {
   sedentary(multiplier: 1.2, label: 'Sedentario'),
   light(multiplier: 1.375, label: 'Poco attivo'),
@@ -68,6 +74,7 @@ class TdeeEstimate {
     required this.source,
     required this.days,
     this.fellBackBecauseImplausible = false,
+    this.multiplierWasDerived = false,
   });
 
   final double kcal;
@@ -81,6 +88,12 @@ class TdeeEstimate {
   /// consumo da maratoneta.
   final bool fellBackBecauseImplausible;
 
+  /// Il moltiplicatore usato non è quello scelto a mano ma quello ricavato
+  /// dagli allenamenti. Resta una stima — il basale è sempre una formula — ma
+  /// non è più una tabella, e va detto perché è l'unica differenza visibile
+  /// fra due numeri che si assomigliano.
+  final bool multiplierWasDerived;
+
   bool get isMeasured => source == TdeeSource.measured;
 
   String get explanation => switch (source) {
@@ -90,6 +103,10 @@ class TdeeEstimate {
     TdeeSource.estimated when fellBackBecauseImplausible =>
       'I dati delle ultime settimane danno un numero fuori scala — succede '
           'quando il peso si muove per acqua — quindi per ora vale la stima.',
+    TdeeSource.estimated when multiplierWasDerived =>
+      'Stima da metabolismo basale e dal moltiplicatore ricavato dai tuoi '
+          'allenamenti: diventa una misura vera dopo '
+          '${AdaptiveTdee.minimumDays} giorni di dati.',
     TdeeSource.estimated =>
       'Stima da metabolismo basale e attività: diventa una misura vera dopo '
           '${AdaptiveTdee.minimumDays} giorni di dati.',
@@ -112,10 +129,28 @@ abstract final class AdaptiveTdee {
   static const double minMultiplierOfBmr = 1;
   static const double maxMultiplierOfBmr = 2.5;
 
+  /// Un moltiplicatore che dice «consumi meno del basale» o «consumi due
+  /// volte e mezzo il basale» non descrive nessuno: fuori da questa forbice
+  /// il derivato viene ignorato e torna a valere quello scelto a mano.
+  static bool isUsableMultiplier(double? multiplier) =>
+      multiplier != null &&
+      multiplier.isFinite &&
+      multiplier >= minMultiplierOfBmr &&
+      multiplier <= maxMultiplierOfBmr;
+
+  /// [derivedMultiplier] arriva da `DerivedActivityMultiplier` e **solo dopo
+  /// che Marco ha detto di sì**: qui non si va a cercarlo, lo si riceve. È la
+  /// differenza fra proporre e applicare, e sta tutta nel fatto che questo
+  /// parametro sia opzionale.
   static double fromBasalMetabolicRate({
     required double basalMetabolicRate,
     required ActivityLevel activity,
-  }) => basalMetabolicRate * activity.multiplier;
+    double? derivedMultiplier,
+  }) =>
+      basalMetabolicRate *
+      (isUsableMultiplier(derivedMultiplier)
+          ? derivedMultiplier!
+          : activity.multiplier);
 
   /// `kcal medie ingerite − (Δ peso × 7700 / giorni)`.
   ///
@@ -129,11 +164,14 @@ abstract final class AdaptiveTdee {
     required double fatFreeMassKg,
     required ActivityLevel activity,
     TdeeSample? sample,
+    double? derivedMultiplier,
   }) {
     final basal = BodyComposition.basalMetabolicRate(fatFreeMassKg);
+    final derived = isUsableMultiplier(derivedMultiplier);
     final estimate = fromBasalMetabolicRate(
       basalMetabolicRate: basal,
       activity: activity,
+      derivedMultiplier: derivedMultiplier,
     );
 
     if (sample == null || !sample.isUsable) {
@@ -141,6 +179,7 @@ abstract final class AdaptiveTdee {
         kcal: estimate,
         source: TdeeSource.estimated,
         days: sample?.days ?? 0,
+        multiplierWasDerived: derived,
       );
     }
 
@@ -155,6 +194,7 @@ abstract final class AdaptiveTdee {
         source: TdeeSource.estimated,
         days: sample.days,
         fellBackBecauseImplausible: true,
+        multiplierWasDerived: derived,
       );
     }
 

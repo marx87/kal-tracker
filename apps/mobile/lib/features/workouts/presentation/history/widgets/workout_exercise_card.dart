@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kal_tracker/features/workouts/domain/session_effort.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/workouts/data/workout_history_models.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/widgets/workout_session_card.dart';
@@ -197,7 +198,7 @@ class WorkoutSetRow extends StatelessWidget {
               if (set.rpe case final rpe?) ...[
                 const SizedBox(width: 8),
                 Text(
-                  'RPE $rpe',
+                  SessionEffort.nearest(rpe)?.label ?? 'RPE $rpe',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: accents.mutedInk,
                     fontWeight: FontWeight.w700,

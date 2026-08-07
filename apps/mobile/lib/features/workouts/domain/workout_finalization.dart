@@ -7,6 +7,7 @@ library;
 
 import 'package:kal_tracker/features/workouts/domain/kcal_estimator.dart';
 import 'package:kal_tracker/features/workouts/domain/muscle_group_snapshot.dart';
+import 'package:kal_tracker/features/workouts/domain/session_effort.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
 
 /// Solo una distruzione IMPREVISTA della rotta può usare la copia locale come
@@ -30,10 +31,19 @@ bool shouldFlushWorkoutOnDispose({
 /// di lettura (`Workout.duration`), e un CHECK in scrittura rifiuterebbe la
 /// chiusura di una sessione dimenticata aperta trenta ore, che in Gym si
 /// chiudeva mostrando 24 h.
+///
+/// [effort] è la risposta ai tre bersagli di fine sessione e sta QUI, nella
+/// stessa istantanea di `endedAt`, per la stessa ragione delle calorie: una
+/// sessione non deve poter finire scritta senza. Resta però nullable, perché
+/// il dominio non decide per le chiusure che non passano dalla domanda —
+/// riparazioni e importazioni chiudono sessioni vecchie, e su quelle
+/// inventare un livello sarebbe peggio del buco. A esigere la risposta è la
+/// schermata, che senza non chiude.
 Workout finalizeWorkoutSnapshot({
   required Workout workout,
   required DateTime endedAt,
   required double bodyKg,
+  SessionEffort? effort,
 }) {
   final rawDuration = endedAt.difference(workout.startedAt);
   final activeDuration =
@@ -43,6 +53,7 @@ Workout finalizeWorkoutSnapshot({
     finalDurationSeconds: activeDuration.isNegative
         ? 0
         : activeDuration.inSeconds,
+    rpe: effort?.rpe,
     // Chiusa la sessione, la card «riprendi» non deve avere più niente a cui
     // puntare.
     clearResumeState: true,

@@ -81,6 +81,73 @@ void main() {
     });
   });
 
+  group('il moltiplicatore ricavato dagli allenamenti', () {
+    test('quando arriva, prende il posto di quello scelto a mano', () {
+      final estimate = AdaptiveTdee.resolve(
+        fatFreeMassKg: marcoFatFreeMass,
+        activity: ActivityLevel.moderate,
+        derivedMultiplier: 1.48,
+      );
+
+      expect(
+        estimate.kcal,
+        closeTo(
+          BodyComposition.basalMetabolicRate(marcoFatFreeMass) * 1.48,
+          0.01,
+        ),
+      );
+      expect(estimate.multiplierWasDerived, isTrue);
+      expect(estimate.explanation, contains('Stima'));
+      expect(estimate.explanation, contains('allenamenti'));
+    });
+
+    test('non passarlo lascia tutto com\'era: si propone, non si applica', () {
+      final estimate = AdaptiveTdee.resolve(
+        fatFreeMassKg: marcoFatFreeMass,
+        activity: ActivityLevel.moderate,
+      );
+
+      expect(estimate.multiplierWasDerived, isFalse);
+      expect(estimate.explanation, contains('attività'));
+    });
+
+    test('un derivato fuori scala viene ignorato, non applicato a metà', () {
+      for (final assurdo in [0.4, 3.0, double.nan, double.infinity]) {
+        final estimate = AdaptiveTdee.resolve(
+          fatFreeMassKg: marcoFatFreeMass,
+          activity: ActivityLevel.moderate,
+          derivedMultiplier: assurdo,
+        );
+
+        expect(estimate.multiplierWasDerived, isFalse);
+        expect(
+          estimate.kcal,
+          closeTo(
+            BodyComposition.basalMetabolicRate(marcoFatFreeMass) * 1.55,
+            0.01,
+          ),
+        );
+      }
+    });
+
+    test('sulla misura vera il moltiplicatore non c\'entra più niente', () {
+      final estimate = AdaptiveTdee.resolve(
+        fatFreeMassKg: marcoFatFreeMass,
+        activity: ActivityLevel.moderate,
+        derivedMultiplier: 1.48,
+        sample: const TdeeSample(
+          averageDailyKcal: 2200,
+          weightChangeKg: -1,
+          days: 14,
+        ),
+      );
+
+      expect(estimate.source, TdeeSource.measured);
+      expect(estimate.kcal, closeTo(2750, 0.01));
+      expect(estimate.multiplierWasDerived, isFalse);
+    });
+  });
+
   group('difese contro i dati sbagliati', () {
     test(
       'una settimana con tre chili d\'acqua in meno non fa un maratoneta',

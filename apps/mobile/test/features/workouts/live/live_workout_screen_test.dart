@@ -5,6 +5,7 @@ import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/features/workouts/domain/exercise_kind.dart';
 import 'package:kal_tracker/features/workouts/domain/kcal_estimator.dart';
 import 'package:kal_tracker/features/workouts/domain/live_workout_repository.dart';
+import 'package:kal_tracker/features/workouts/domain/session_effort.dart';
 import 'package:kal_tracker/features/workouts/domain/start_workout.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
 import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
@@ -32,6 +33,18 @@ Future<void> _settle(WidgetTester tester, [int frames = 6]) async {
 /// oltre la fine del test.
 Future<void> _closeAutoSnackBar(WidgetTester tester) async {
   await tester.pump(const Duration(seconds: 6));
+  await _settle(tester);
+}
+
+/// Risponde alla domanda obbligatoria di fine sessione.
+///
+/// Ogni chiusura passa di qui: senza risposta la sessione non si chiude, ed è
+/// il motivo per cui non esiste una scorciatoia nemmeno nei test.
+Future<void> _answerEffort(
+  WidgetTester tester, [
+  SessionEffort effort = SessionEffort.giusta,
+]) async {
+  await tester.tap(find.byKey(Key('session_effort_${effort.name}')));
   await _settle(tester);
 }
 
@@ -345,6 +358,7 @@ void main() {
         expect(find.text('Defaticamento?'), findsOneWidget);
         await tester.tap(find.byKey(const Key('cooldown_accept')));
         await _settle(tester);
+        await _answerEffort(tester);
 
         final closed = repository.finalized;
         expect(closed, isNotNull);
@@ -370,6 +384,7 @@ void main() {
       await _settle(tester);
       await tester.tap(find.byKey(const Key('cooldown_skip')));
       await _settle(tester);
+      await _answerEffort(tester);
 
       expect(repository.finalized, isNotNull);
       expect(
@@ -395,12 +410,105 @@ void main() {
         await _settle(tester);
         await tester.tap(find.byKey(const Key('cooldown_skip')));
         await _settle(tester);
+        await _answerEffort(tester);
 
         expect(repository.finalized, isNull);
         expect(
           find.text('Chiusura non riuscita: l\'allenamento è ancora aperto.'),
           findsOneWidget,
         );
+
+        await _closeAutoSnackBar(tester);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  });
+
+  group('com\'è andata', () {
+    testWidgets('la sessione non si chiude finché non si risponde', (
+      tester,
+    ) async {
+      final repository = FakeLiveWorkoutRepository(initial: _openWorkout());
+
+      await tester.pumpWidget(_app(repository));
+      await _settle(tester);
+
+      await tester.tap(find.byKey(const Key('live_workout_back')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const Key('workout_exit_finish')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const Key('cooldown_skip')));
+      await _settle(tester);
+
+      expect(find.text('Com\'è andata?'), findsOneWidget);
+      // Toccare fuori è il gesto con cui si scappava dalla domanda
+      // facoltativa: qui non porta da nessuna parte.
+      await tester.tapAt(const Offset(10, 10));
+      await _settle(tester);
+
+      expect(find.text('Com\'è andata?'), findsOneWidget);
+      expect(repository.finalized, isNull);
+
+      await _answerEffort(tester, SessionEffort.dura);
+
+      expect(repository.finalized, isNotNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('il bersaglio scelto finisce nell\'RPE della sessione', (
+      tester,
+    ) async {
+      final repository = FakeLiveWorkoutRepository(initial: _openWorkout());
+
+      await tester.pumpWidget(_app(repository));
+      await _settle(tester);
+
+      await tester.tap(find.byKey(const Key('live_workout_back')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const Key('workout_exit_finish')));
+      await _settle(tester);
+      await tester.tap(find.byKey(const Key('cooldown_skip')));
+      await _settle(tester);
+      await _answerEffort(tester, SessionEffort.dura);
+
+      // Nove: la colonna è quella di sempre, così le sessioni importate da Gym
+      // e queste si mediano insieme.
+      expect(repository.finalized!.rpe, 9);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets(
+      'dopo una chiusura fallita il ritentativo non ripete la domanda',
+      (tester) async {
+        final repository = FakeLiveWorkoutRepository(initial: _openWorkout())
+          ..failFinalize = true;
+
+        await tester.pumpWidget(_app(repository));
+        await _settle(tester);
+
+        await tester.tap(find.byKey(const Key('live_workout_back')));
+        await _settle(tester);
+        await tester.tap(find.byKey(const Key('workout_exit_finish')));
+        await _settle(tester);
+        await tester.tap(find.byKey(const Key('cooldown_skip')));
+        await _settle(tester);
+        await _answerEffort(tester, SessionEffort.facile);
+
+        expect(repository.finalized, isNull);
+
+        // Il database si riprende e si ritenta dalla snackbar.
+        repository.failFinalize = false;
+        await tester.tap(find.text('Riprova'));
+        await _settle(tester);
+        await tester.tap(find.byKey(const Key('cooldown_skip')));
+        await _settle(tester);
+
+        // La risposta è già stata data: pagare l'errore di scrittura con una
+        // seconda domanda sarebbe il modo più veloce per farla odiare.
+        expect(find.text('Com\'è andata?'), findsNothing);
+        expect(repository.finalized, isNotNull);
+        expect(repository.finalized!.rpe, 3);
 
         await _closeAutoSnackBar(tester);
         await tester.pumpWidget(const SizedBox.shrink());

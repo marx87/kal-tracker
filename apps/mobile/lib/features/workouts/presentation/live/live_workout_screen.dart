@@ -11,6 +11,7 @@ import 'package:kal_tracker/features/workouts/domain/live_workout_repository.dar
 import 'package:kal_tracker/features/workouts/domain/muscle_group_snapshot.dart';
 import 'package:kal_tracker/features/workouts/domain/personal_records.dart';
 import 'package:kal_tracker/features/workouts/domain/rest_timer_controller.dart';
+import 'package:kal_tracker/features/workouts/domain/session_effort.dart';
 import 'package:kal_tracker/features/workouts/domain/set_completion_guard.dart';
 import 'package:kal_tracker/features/workouts/domain/superset_flow.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
@@ -20,6 +21,7 @@ import 'package:kal_tracker/features/workouts/presentation/live/live_workout_pro
 import 'package:kal_tracker/features/workouts/presentation/widgets/exercise_block_card.dart';
 import 'package:kal_tracker/features/workouts/presentation/widgets/live_workout_exit_guard.dart';
 import 'package:kal_tracker/features/workouts/presentation/widgets/rest_timer_banner.dart';
+import 'package:kal_tracker/features/workouts/presentation/widgets/session_effort_sheet.dart';
 
 /// La sessione dal vivo: l'unica schermata dell'app che si usa con le mani
 /// sporche di magnesite, quindi quella dove ogni bersaglio è grande e nessuna
@@ -29,6 +31,10 @@ import 'package:kal_tracker/features/workouts/presentation/widgets/rest_timer_ba
 /// superserie in ordine per round, record personali celebrati sul momento,
 /// uscita protetta con «continua / pausa / chiudi», ripresa dopo la pausa e
 /// proposta di defaticamento alla fine.
+///
+/// Una cosa in più rispetto a Gym: la sessione non si chiude finché non si è
+/// detto com'è andata. È l'unica domanda obbligatoria dell'app, e c'è perché
+/// la risposta facoltativa arrivava in 17 sessioni su 29.
 class LiveWorkoutScreen extends ConsumerStatefulWidget {
   const LiveWorkoutScreen({
     required this.workoutId,
@@ -62,6 +68,13 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   bool _isFinishing = false;
   bool _allowPop = false;
   bool _exitPromptOpen = false;
+
+  /// La risposta sui tre bersagli, tenuta da parte appena arriva.
+  ///
+  /// Una chiusura fallita riparte da capo dalla snackbar «Riprova»: chiedere
+  /// di nuovo com'è andata farebbe pagare a chi si allena un errore di
+  /// scrittura, e la seconda risposta sarebbe pure meno sincera della prima.
+  SessionEffort? _effort;
 
   Duration _elapsed = Duration.zero;
   Timer? _elapsedTicker;
@@ -469,6 +482,20 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
 
     final withCoolDown = await _offerCoolDown(workout);
     if (!mounted) return;
+    // Il defaticamento accettato si tiene SUBITO, prima di chiedere altro.
+    // Restava una variabile locale fino al salvataggio finale, e con la
+    // domanda dello sforzo in mezzo bastava che il sistema smontasse quel
+    // foglio perché gli esercizi appena accettati sparissero — e alla ripresa
+    // «Defaticamento?» ripartiva da capo, come se non avesse mai risposto.
+    _workout = withCoolDown;
+
+    final effort = _effort ?? await askSessionEffort(context);
+    if (!mounted) return;
+    // Nessuna risposta vuol dire che il foglio è stato smontato dal sistema,
+    // non che la domanda si possa saltare: la sessione resta aperta, che è
+    // dove il lavoro registrato è comunque al sicuro.
+    if (effort == null) return;
+    _effort = effort;
 
     setState(() => _isFinishing = true);
     _rest.cancel();
@@ -478,6 +505,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         workout: withCoolDown,
         endedAt: DateTime.now(),
         bodyKg: _bodyKg,
+        effort: effort,
       );
       await _flushSave(withCoolDown);
       await _repository.finalizeWorkout(snapshot);

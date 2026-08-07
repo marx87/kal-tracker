@@ -212,6 +212,11 @@ void main() {
     // Il defaticamento è una proposta, non un obbligo.
     await tester.tap(find.byKey(const Key('cooldown_skip')));
     await _settle(tester);
+    // «Com'è andata» invece è l'unica domanda obbligatoria: finché non si
+    // risponde la sessione resta aperta.
+    expect(await repository.activeWorkout(), isNotNull);
+    await tester.tap(find.byKey(const Key('session_effort_dura')));
+    await _settle(tester);
 
     expect(await repository.activeWorkout(), isNull);
     final row = await database.select(database.workouts).getSingle();
@@ -220,6 +225,10 @@ void main() {
     // 6.0 MET (gambe) × 95,8 kg × 40/60 h ≈ 383 kcal: il peso è quello della
     // pesata vera, non un valore congelato nel profilo.
     expect(row.totalKcal, closeTo(383, 25));
+    // Il bersaglio arriva davvero nella colonna che il coach legge, dentro il
+    // CHECK 1..10: è il punto in cui la copertura dell'RPE smette di essere
+    // una promessa.
+    expect(row.rpe, 9);
 
     await disposeApp(tester);
   });

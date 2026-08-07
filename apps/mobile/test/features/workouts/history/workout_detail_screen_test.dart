@@ -214,7 +214,10 @@ void main() {
     expect(find.text('60 kg × 8'), findsOneWidget);
     expect(find.text('20 kg × 12'), findsOneWidget);
     expect(find.text('3:00'), findsOneWidget);
-    expect(find.text('RPE 8'), findsWidgets);
+    // La parola e non «RPE 8»: la colonna porta due generazioni di dati — 1-10
+    // dallo storico Gym, 3/6/9 dalle sessioni nuove — e mostrare il numero
+    // restituirebbe a Marco una scala che l'app non gli ha mai fatto vedere.
+    expect(find.text('Dura'), findsWidgets);
 
     // Il feedback di fine sessione.
     expect(find.byKey(const Key('workout_detail_feedback')), findsOneWidget);

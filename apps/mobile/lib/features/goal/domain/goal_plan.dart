@@ -167,12 +167,39 @@ abstract final class GoalPlanner {
       ? 0
       : (startingDeficitKcal / consolidationStepKcal).ceil();
 
+  /// **Le kcal bruciate non si mangiano.**
+  ///
+  /// Il target del giorno è `TDEE − deficit`, e nient'altro: l'allenamento
+  /// non compare in questa sottrazione. Non perché non conti, ma perché
+  /// conta già. Il TDEE misurato nasce da «kcal mangiate meno il peso che
+  /// se n'è andato» ([AdaptiveTdee.fromRealData]), e il peso che se n'è
+  /// andato è anche il risultato delle sessioni: la panca di martedì è
+  /// dentro quel numero prima ancora che qualcuno la sommi.
+  ///
+  /// Riaccreditare qui le 600 kcal di una sessione le conterebbe due volte,
+  /// e un deficit da 550 kcal diventerebbe un pareggio da +50: la bilancia
+  /// smetterebbe di muoversi e il colpevole sembrerebbe il piano. È l'errore
+  /// classico di MyFitnessPal — «hai bruciato 600 kcal, mangiane 600 in più»
+  /// — ed è tanto più insidioso qui perché arriva vestito da premio.
+  ///
+  /// Vale anche al contrario: **le kcal della sessione non si sottraggono
+  /// dal consumato**. Sono due modi di scrivere lo stesso doppio conteggio.
+  ///
+  /// Allenarsi di più alza comunque il target, ma per la strada giusta e una
+  /// volta sola: si perde più peso, il TDEE misurato sale alla ricalcolata
+  /// settimanale, e il target sale con lui.
+  ///
+  /// Se un domani questa riga sembrerà una dimenticanza da «aggiustare»,
+  /// `test/features/kcal_bruciate_non_si_mangiano_test.dart` lo dice prima
+  /// che arrivi sul telefono di Marco.
   static GoalDailyTargets _targetsFor({
     required double tdee,
     required double fatFreeMassKg,
     required double dailyDeficitKcal,
   }) {
     final basal = BodyComposition.basalMetabolicRate(fatFreeMassKg);
+    // Qui non c'è niente da sommare: le calorie della sessione sono già
+    // dentro `tdee`.
     final wanted = tdee - dailyDeficitKcal;
     // Sotto il basale non si scende mai: il corpo non spegne il cuore per
     // rispettare una data.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kal_tracker/features/workouts/domain/session_effort.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/workouts/data/workout_history_models.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/workout_formatting.dart';
@@ -260,8 +261,12 @@ class WorkoutFeedbackWrap extends StatelessWidget {
         if (summary.rpe case final rpe?)
           WorkoutFeedbackPill(
             icon: Icons.speed_rounded,
-            text: 'RPE $rpe',
-            spoken: 'Sforzo percepito $rpe su 10',
+            // La parola che Marco ha toccato, non il numero che l'app ha
+            // scritto per sé: «RPE 6 su 10» restituisce una scala che nessuno
+            // gli ha mai mostrato.
+            text: SessionEffort.nearest(rpe)?.label ?? 'RPE $rpe',
+            spoken:
+                'Sforzo: ${SessionEffort.nearest(rpe)?.label ?? '$rpe su 10'}',
           ),
         if (summary.satisfaction case final satisfaction?)
           WorkoutFeedbackPill(
