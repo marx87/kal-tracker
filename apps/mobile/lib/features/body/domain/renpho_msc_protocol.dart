@@ -75,18 +75,31 @@ abstract final class RenphoMsc {
   /// Comando: chi sta salendo — altezza, peso, sesso ed età.
   static const opcodeSetProfile = 0xB2;
 
-  /// Comando: **la misura in sospeso l'ho vista, buttala**.
+  /// Comando: **mandami la misura che hai in sospeso**.
   ///
-  /// È il pezzo che mancava, e senza il quale niente funzionava. La bilancia
-  /// tiene una coda di misure fatte e non ancora raccolte da nessuno, e il
-  /// suo numero viaggia nel battito. Finché quella coda non è vuota **non ne
-  /// fa altre**: tre sessioni di fila con il contatore fermo a 1 e nessuna
-  /// scansione, e nelle catture dell'app Renpho il contatore era sempre zero.
+  /// Il pezzo che mancava. La bilancia tiene in memoria le pesate fatte
+  /// quando nessuno era collegato, e il loro numero viaggia nel battito;
+  /// finché quella coda non si svuota **non ne fa altre**. Tre sessioni di
+  /// fila si erano chiuse col solo peso per questo, col contatore fermo a 1.
   ///
-  /// Nel registro HCI del 7 agosto si vede l'intera meccanica in nove
-  /// secondi: battito con contatore 1, l'app manda questo, battito con
-  /// contatore 0. Subito dopo la scansione parte.
-  static const opcodeClearQueue = 0xB6;
+  /// **Chiede, non butta.** La prima lettura del registro era stata «le
+  /// scarto», ed era sbagliata: appena mandato questo comando la bilancia ha
+  /// risposto con una [opcodeStoredBody], cioè con la pesata intera. È così
+  /// che si recuperano le pesate fatte senza il telefono vicino.
+  static const opcodeFetchStored = 0xB6;
+
+  /// **Una pesata presa dalla memoria**, in risposta a [opcodeFetchStored].
+  ///
+  /// Stessa struttura della [opcodeBody] con quattro byte in più davanti al
+  /// peso: quanto tempo fa è stata fatta. Nell'unica osservazione valeva 15,
+  /// e i quindici secondi combaciano con la finestra fra i due battiti in cui
+  /// la scansione è finita — quindi **secondi**, con un campione solo.
+  static const opcodeStoredBody = 0x26;
+
+  /// Oltre questo, l'età dichiarata non si usa: un valore assurdo daterebbe
+  /// la pesata in un altro anno, e con una sola osservazione dell'unità è il
+  /// tipo di errore che va fermato prima del database.
+  static const maxStoredAge = Duration(days: 7);
 
   /// Il secondo byte dell'intestazione di frammentazione, costante in tutte
   /// le trame spezzate osservate.
@@ -206,7 +219,16 @@ class RenphoBodyFrame extends RenphoFrame {
     this.bmi,
     this.skeletalMusclePct,
     this.visceralFat,
+    this.age,
   });
+
+  /// Da quanto tempo è stata fatta, per le pesate prese dalla memoria.
+  ///
+  /// Nulla per quelle in diretta, che sono di adesso. Serve a datarle giuste:
+  /// una pesata recuperata è comunque una pesata di stamattina, e metterla
+  /// nell'ora in cui l'app si è collegata la sposterebbe nel giorno sbagliato
+  /// ogni volta che ci si collega dopo mezzanotte.
+  final Duration? age;
 
   final double weightKg;
 
@@ -361,7 +383,13 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
         stable: opcode == RenphoMsc.opcodeStable,
       );
     case RenphoMsc.opcodeBody:
-      final body = _decodeBody(payload, hex, checksumOk);
+    case RenphoMsc.opcodeStoredBody:
+      final body = _decodeBody(
+        payload,
+        hex,
+        checksumOk,
+        stored: opcode == RenphoMsc.opcodeStoredBody,
+      );
       if (body != null) {
         return body;
       }
@@ -408,15 +436,34 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
 /// trama. Non è un errore di lettura: è quello che fa il firmware, e provare a
 /// «uniformare» produrrebbe numeri assurdi — 0x0be3 letto al contrario è
 /// 58123, cioè cinquemila ohm.
-RenphoBodyFrame? _decodeBody(List<int> payload, String hex, bool checksumOk) {
-  const inizioImpedenze = 8;
-  const inizioDerivati = 28;
+RenphoBodyFrame? _decodeBody(
+  List<int> payload,
+  String hex,
+  bool checksumOk, {
+  bool stored = false,
+}) {
+  // La trama presa dalla memoria è identica salvo quattro byte infilati fra
+  // l'intestazione e il peso: tutto il resto scorre di conseguenza, e leggerla
+  // con gli offset dell'altra darebbe numeri plausibili e sbagliati.
+  final scarto = stored ? 4 : 0;
+  final inizioImpedenze = 8 + scarto;
+  final inizioDerivati = 28 + scarto;
   if (payload.length < inizioDerivati) {
     return null;
   }
-  final weight = _weightFrom(payload.sublist(0, 6));
+  final weight = _weightFrom(payload.sublist(0, 6 + scarto));
   if (weight == null) {
     return null;
+  }
+  Duration? eta;
+  if (stored) {
+    final secondi =
+        (payload[2] << 24) |
+        (payload[3] << 16) |
+        (payload[4] << 8) |
+        payload[5];
+    final candidata = Duration(seconds: secondi);
+    eta = candidata <= RenphoMsc.maxStoredAge ? candidata : null;
   }
 
   final impedenze = <double>[];
@@ -430,6 +477,7 @@ RenphoBodyFrame? _decodeBody(List<int> payload, String hex, bool checksumOk) {
   }
 
   double? derivato(int offset, double scala) {
+    offset += scarto;
     if (offset + 1 >= payload.length) {
       return null;
     }
@@ -445,6 +493,7 @@ RenphoBodyFrame? _decodeBody(List<int> payload, String hex, bool checksumOk) {
     bmi: derivato(30, 10),
     skeletalMusclePct: derivato(32, 10),
     visceralFat: derivato(34, 1)?.round(),
+    age: eta,
   );
 }
 
@@ -543,7 +592,7 @@ List<int> renphoProfileCommand({
   ]);
 }
 
-/// `0xB6` — svuota la coda delle misure in sospeso.
+/// `0xB6` — chiedi la pesata che la bilancia tiene in memoria.
 ///
 /// I due byte di payload sono copiati **identici** dalla cattura. Cosa
 /// significhino non si sa: potrebbero essere un sottocomando e un conteggio,
@@ -552,12 +601,12 @@ List<int> renphoProfileCommand({
 /// migliore per scoprire fra un mese che era sbagliata. Si copia quello che
 /// funziona, e si scrive che è una copia.
 ///
-/// **Cosa comporta.** Le pesate che la bilancia ha in memoria e che nessuno
-/// ha ancora raccolto vengono scartate invece di finire nell'app Renpho. Per
-/// chi ha smesso di usarla non cambia niente; per chi la usa ancora, è una
-/// pesata persa da quella parte.
-List<int> renphoClearQueueCommand() =>
-    _comando(RenphoMsc.opcodeClearQueue, const [0x01, 0x01]);
+/// **Non butta niente.** La prima lettura era stata «svuota la coda», ed era
+/// sbagliata: la bilancia risponde mandando la pesata intera. È il modo in cui
+/// si recuperano le pesate fatte quando il telefono non era vicino — e la
+/// ragione per cui vale la pena mandarlo sempre, non solo per sbloccarla.
+List<int> renphoFetchStoredCommand() =>
+    _comando(RenphoMsc.opcodeFetchStored, const [0x01, 0x01]);
 
 /// Rimonta le trame spezzate.
 ///

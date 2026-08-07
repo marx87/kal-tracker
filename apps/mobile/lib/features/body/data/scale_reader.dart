@@ -606,6 +606,7 @@ class ScaleReader {
         case RenphoBodyFrame(
           weightKg: final kg,
           impedancesOhm: final impedenze,
+          age: final eta,
         ):
           stepOnTimer?.cancel();
           codaTimer?.cancel();
@@ -614,8 +615,17 @@ class ScaleReader {
             'di grasso: lo teniamo come riscontro, la composizione la '
             'calcoliamo noi dall\'impedenza',
           );
+          if (eta != null) {
+            _note(
+              'presa dalla memoria della bilancia: pesata di '
+              '${eta.inSeconds} secondi fa',
+            );
+          }
           final completa = ScaleReading(
-            measuredAt: _clock().toUtc(),
+            // Una pesata recuperata è di quando è stata fatta, non di adesso:
+            // datarla al momento del collegamento la sposterebbe nel giorno
+            // sbagliato ogni volta che ci si collega dopo mezzanotte.
+            measuredAt: _clock().toUtc().subtract(eta ?? Duration.zero),
             weightKg: kg,
             deviceName: device.name,
             // Il grezzo tiene la trama della composizione e quella del peso
@@ -635,28 +645,29 @@ class ScaleReader {
             _note('la bilancia ha rifiutato il comando', isProblem: true);
           }
         case RenphoStatusFrame(counter: final valore):
-          // **La coda si svuota subito.** La bilancia tiene le misure fatte e
-          // mai raccolte, e finché quel numero non è zero non ne fa altre: tre
-          // sessioni di fila si erano chiuse col solo peso per questo, con il
-          // contatore fermo a 1 e nessuna scansione. Nelle catture dell'app
-          // Renpho quel numero era sempre zero, ed è così che ci arrivava.
+          // **La pesata in sospeso si chiede subito.** La bilancia tiene in
+          // memoria quelle fatte quando nessuno era collegato, e finché quel
+          // numero non torna a zero non ne fa di nuove: tre sessioni di fila
+          // chiuse col solo peso per questo. E chiederla non è solo un modo
+          // di sbloccarla — è come si recupera una pesata fatta senza il
+          // telefono vicino.
           if (valore != null && valore > 0 && !codaSvuotata) {
             codaSvuotata = true;
-            final comando = renphoClearQueueCommand();
+            final comando = renphoFetchStoredCommand();
             unawaited(
               connection
                   .send(comando)
                   .then(
                     (_) => _note(
-                      'la bilancia aveva $valore '
-                      '${valore == 1 ? 'misura' : 'misure'} in sospeso: '
-                      'le scarto, o non ne farebbe di nuove',
+                      'la bilancia ha $valore '
+                      '${valore == 1 ? 'pesata' : 'pesate'} in memoria: '
+                      'la chiedo',
                       hex: renphoHex(comando),
                     ),
                   )
                   .catchError((Object error) {
                     _note(
-                      'non riesco a svuotare la coda: $error',
+                      'non riesco a chiedere la pesata in memoria: $error',
                       isProblem: true,
                     );
                   }),

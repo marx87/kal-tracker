@@ -313,13 +313,57 @@ void main() {
     });
   });
 
-  group('la coda delle misure in sospeso', () {
+  group('la pesata tenuta in memoria', () {
     test('il comando è byte per byte quello dell’app Renpho', () {
-      // Dal registro HCI del 7 agosto: la bilancia annuncia una misura in
-      // sospeso, l'app manda questo, e nove secondi dopo il contatore è a
-      // zero. Senza, non ne fa di nuove — tre sessioni di fila chiuse col
-      // solo peso per questo motivo.
-      expect(renphoHex(renphoClearQueueCommand()), '55 aa b6 00 02 01 01 b9');
+      // Dal registro HCI del 7 agosto: la bilancia annuncia una pesata in
+      // sospeso, l'app manda questo, e la bilancia risponde mandandola.
+      // Senza, non ne fa di nuove — tre sessioni di fila chiuse col solo peso.
+      expect(renphoHex(renphoFetchStoredCommand()), '55 aa b6 00 02 01 01 b9');
+    });
+
+    test('la risposta è una pesata intera, non una conferma', () {
+      // **La prima lettura era sbagliata.** Il comando sembrava «svuota la
+      // coda», e nelle note di rilascio era finito scritto che le pesate
+      // venivano buttate. Invece la bilancia risponde con la pesata per
+      // esteso: è così che si recupera una salita fatta senza il telefono
+      // vicino. Questa è la trama vera delle 11:45:56.
+      final frame =
+          decodeRenphoFrame([
+                for (final p
+                    in ('55 aa 26 00 28 04 11 00 00 00 0f 00 00 25 f3 0a 00 '
+                            'de 0c 51 0c 0e 0a 61 0a 07 00 c1 0a be 0a 6f 08 '
+                            'e5 08 92 01 01 15 01 25 01 9e 00 0b d4')
+                        .split(' '))
+                  int.parse(p, radix: 16),
+              ])!
+              as RenphoBodyFrame;
+
+      expect(frame.checksumOk, isTrue);
+      expect(frame.weightKg, closeTo(97.15, 0.001));
+      expect(frame.impedancesOhm, hasLength(9));
+      expect(frame.bodyFatPct, closeTo(27.7, 0.05));
+      expect(frame.bmi, closeTo(29.3, 0.05));
+      expect(frame.visceralFat, 11);
+      // I quattro byte in più: quanto tempo fa è stata fatta.
+      expect(frame.age, const Duration(seconds: 15));
+    });
+
+    test('un’età assurda non data la pesata in un altro anno', () {
+      // L'unità è nota da una sola osservazione. Se un giorno si scoprisse
+      // che sono minuti o millisecondi, un valore grande sposterebbe la
+      // pesata di mesi: meglio nessuna età che una data inventata.
+      final byte = [
+        0x55, 0xaa, 0x26, 0x00, 0x28, //
+        0x04, 0x11, 0xff, 0xff, 0xff, 0xff, // età assurda
+        0x00, 0x00, 0x25, 0xf3, // peso
+        // Il payload dichiara 40 byte: dieci ci sono già, trenta di riempimento.
+        ...List<int>.filled(30, 0),
+      ];
+      byte.add(byte.fold<int>(0, (a, b) => a + b) & 0xFF);
+      final frame = decodeRenphoFrame(byte)! as RenphoBodyFrame;
+
+      expect(frame.age, isNull);
+      expect(frame.weightKg, closeTo(97.15, 0.001));
     });
 
     test('il contatore si legge dal battito', () {
