@@ -614,6 +614,12 @@ class RoutineExercises extends Table {
   IntColumn get prescDurationSec => integer().nullable()();
   IntColumn get prescRestSec => integer().nullable()();
 
+  /// L'intervallo di ripetizioni della doppia progressione: `8-12` invece di
+  /// `10`. Quando in tutte le serie si arriva in cima con margine dichiarato,
+  /// l'app propone il carico superiore e riporta le ripetizioni in fondo.
+  IntColumn get prescRepsMin => integer().nullable()();
+  IntColumn get prescRepsMax => integer().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 
@@ -1155,6 +1161,12 @@ class DailyCheckIns extends Table {
   DateTimeColumn get day => dateTime()();
   RealColumn get sleepHours => real().nullable()();
   IntColumn get energyScore => integer().nullable()();
+
+  /// Il movimento non strutturato della giornata. Serve ad accorgersene, non a
+  /// misurarlo con precisione: il plateau classico arriva quando il NEAT crolla
+  /// senza che nessuno se ne accorga.
+  IntColumn get steps => integer().nullable()();
+  IntColumn get walkMinutes => integer().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -1297,6 +1309,103 @@ class BodyImpedanceReadings extends Table {
   ];
 }
 
+/// Chi è Marco **come atleta**: cosa ha in casa, cosa gli fa male, quanto può
+/// allenarsi.
+///
+/// Non è burocrazia: è il filtro che rende programmabile tutto il resto. Senza,
+/// il lavoro di escludere a mano shoulder press, alzate sopra la spalla e tutto
+/// ciò che carica le mani va rifatto identico a ogni scheda — è già successo il
+/// 7 agosto 2026, ed è il costo che questa tabella cancella.
+///
+/// **Sincronizzata**, a differenza di `local_settings`: l'attrezzatura e le
+/// limitazioni sono dati di Marco, non dell'apparecchio, e devono viaggiare fra
+/// telefono e tablet.
+class TrainingProfiles extends Table {
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+
+  /// L'attrezzatura disponibile, separata da virgole.
+  ///
+  /// La distinzione fra elastici ad anello e ancorabili non è un dettaglio: è
+  /// la ragione per cui il push-down tricipiti resta fuori da ogni scheda con
+  /// i soli elastici. Senza un punto di ancoraggio quell'esercizio non esiste.
+  TextColumn get equipment =>
+      text().withLength(max: 400).withDefault(const Constant(''))();
+
+  /// Quante sessioni a settimana e quanto lunghe: servono all'aderenza — che
+  /// oggi guarda solo il cibo — e a un generatore che deve sapere se ha trenta
+  /// minuti o sessanta.
+  IntColumn get sessionsPerWeek => integer().nullable()();
+  IntColumn get minutesPerSession => integer().nullable()();
+
+  /// I giorni preferiti, separati da virgole (`lun,mer,ven`).
+  TextColumn get preferredDays =>
+      text().withLength(max: 60).withDefault(const Constant(''))();
+
+  /// Cosa fare quando il semaforo del sovrallenamento chiede uno scarico.
+  ///
+  /// Il valore di partenza è `suggerito` e non `automatico`, coerente col
+  /// principio di tutta l'app: propone, non decide.
+  TextColumn get deloadPreference =>
+      text().withLength(max: 16).withDefault(const Constant('suggerito'))();
+
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {profileId};
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (deload_preference IN ('automatico', 'suggerito'))",
+    'CHECK (sessions_per_week IS NULL OR '
+        '(sessions_per_week >= 1 AND sessions_per_week <= 14))',
+    'CHECK (minutes_per_session IS NULL OR '
+        '(minutes_per_session >= 10 AND minutes_per_session <= 300))',
+  ];
+}
+
+/// Una parte del corpo che al momento limita cosa si può fare.
+///
+/// **Nessuna scadenza automatica.** Un'app che «guarisce» una spalla dopo due
+/// settimane per conto suo è un'app che prescrive male: la limitazione si
+/// chiude quando Marco dice che è chiusa, non quando è passato abbastanza
+/// tempo.
+class TrainingLimitations extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+
+  /// L'articolazione o la zona: `spalla_dx`, `lombari`, `ginocchio_sx`…
+  TextColumn get bodyPart => text().withLength(min: 1, max: 24)();
+
+  /// `fastidio` segnala e propone un'alternativa, `dolore` esclude
+  /// dall'articolazione primaria, `stop` esclude e basta.
+  TextColumn get severity => text().withLength(min: 1, max: 12)();
+
+  TextColumn get note => text().withLength(max: 300).nullable()();
+  DateTimeColumn get startedAt => dateTime()();
+
+  /// Valorizzata solo quando Marco la chiude a mano.
+  DateTimeColumn get resolvedAt => dateTime().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (severity IN ('fastidio', 'dolore', 'stop'))",
+    "CHECK (body_part IN ('spalla_dx', 'spalla_sx', 'gomito_dx', "
+        "'gomito_sx', 'polso_dx', 'polso_sx', 'collo', 'costole', "
+        "'lombari', 'anca_dx', 'anca_sx', 'ginocchio_dx', 'ginocchio_sx', "
+        "'caviglia_dx', 'caviglia_sx'))",
+  ];
+}
+
 /// Le impostazioni che valgono su **questo telefono** e non si sincronizzano.
 ///
 /// Esiste separata da `app_profiles` per una ragione precisa: l'indirizzo
@@ -1350,6 +1459,9 @@ class LocalSettings extends Table {
     BodyImpedanceReadings,
     // v8 — impostazioni legate all'apparecchio, fuori dalla sincronizzazione
     LocalSettings,
+    // v9 — chi è Marco come atleta
+    TrainingProfiles,
+    TrainingLimitations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1366,7 +1478,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1491,6 +1603,40 @@ class AppDatabase extends _$AppDatabase {
       // serve, e chi arriva da qualsiasi versione precedente la riceve uguale.
       if (from < 8) {
         await migrator.createTable(localSettings);
+      }
+      if (from < 9) {
+        await migrator.createTable(trainingProfiles);
+        await migrator.createTable(trainingLimitations);
+        // L'intervallo di ripetizioni serve alla doppia progressione: la
+        // prescrizione dice `8-12` e non `10`, e quando si arriva in cima a
+        // tutte le serie l'app propone il gradino di carico. Nullable perché
+        // le schede esistenti hanno solo `presc_reps`, che resta il valore di
+        // partenza.
+        //
+        // La guardia è la stessa dei tag della v3 e delle colonne della v7:
+        // `routine_exercises` la crea il ramo `from < 6` **dalla definizione
+        // Dart di oggi**, che queste due colonne ce le ha già. Chi arriva da
+        // prima della v6 le ha quindi ricevute in regalo, e un addColumn qui
+        // esploderebbe con «duplicate column name».
+        if (from >= 6) {
+          await migrator.addColumn(
+            routineExercises,
+            routineExercises.prescRepsMin,
+          );
+          await migrator.addColumn(
+            routineExercises,
+            routineExercises.prescRepsMax,
+          );
+        }
+        // I passi del giorno: il NEAT è dove il plateau nasce davvero, e senza
+        // un campo il TDEE misurato vede il consumo calare senza poterlo
+        // spiegare — dicendo «togli 150 kcal» quando la risposta era «hai
+        // camminato metà». Stessa guardia, un ramo più avanti:
+        // `daily_check_ins` nasce nel `from < 7`.
+        if (from >= 7) {
+          await migrator.addColumn(dailyCheckIns, dailyCheckIns.steps);
+          await migrator.addColumn(dailyCheckIns, dailyCheckIns.walkMinutes);
+        }
       }
       // Fuori dalla guardia di proposito: ripara anche gli indici delle
       // versioni 2-5, che nessun database migrato ha mai avuto.

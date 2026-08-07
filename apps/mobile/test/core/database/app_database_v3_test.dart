@@ -216,7 +216,7 @@ void main() {
     final foods = await database.select(database.foods).get();
     final templates = await database.select(database.mealTemplates).get();
 
-    expect(version, 8);
+    expect(version, 9);
     expect(diary.entries.single.foodName, 'Riso v2');
     expect(diary.totals.calories, closeTo(195, 0.0001));
     expect(recipe.name, 'Bowl v2');
