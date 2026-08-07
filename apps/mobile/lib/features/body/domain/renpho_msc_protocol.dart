@@ -101,6 +101,15 @@ abstract final class RenphoMsc {
   /// decodifica che sembra funzionare e invece ha sbagliato allineamento.
   static const minWeightKg = 10.0;
   static const maxWeightKg = 300.0;
+
+  /// Sotto questo peso il profilo NON si manda.
+  ///
+  /// Mandarlo troppo presto è un errore che è costato una pesata: il profilo
+  /// partiva alla prima trama di peso utile, che è quella di quando si sta
+  /// ancora salendo, e dichiarava alla bilancia un uomo di 182 cm da 31 kg.
+  /// L'app Renpho manda sempre un peso plausibile, e la bilancia non ha
+  /// prodotto nessuna composizione per quella assurdità.
+  static const minProfileWeightKg = 40.0;
 }
 
 /// Una trama letta, qualunque essa sia.
@@ -131,10 +140,14 @@ class RenphoWeightFrame extends RenphoFrame {
   /// Vero per `0x24`: la bilancia dichiara che il peso si è assestato.
   final bool stable;
 
+  /// Vero quando non c'è nessuno sopra.
+  bool get isEmpty => weightKg <= 0;
+
   @override
-  String toString() =>
-      '${stable ? 'peso stabile' : 'peso'} '
-      '${weightKg.toStringAsFixed(2)} kg';
+  String toString() => isEmpty
+      ? 'bilancia libera'
+      : '${stable ? 'peso stabile' : 'peso'} '
+            '${weightKg.toStringAsFixed(2)} kg';
 }
 
 /// Un avanzamento di stato: se ne conosce la forma, non il significato.
@@ -236,6 +249,29 @@ class RenphoBodyFrame extends RenphoFrame {
   }
 }
 
+/// La bilancia conferma un comando: `0x22` per il profilo, `0x23` per
+/// l'orologio. Il primo byte è la sequenza che avevamo mandato noi, ed è così
+/// che si sa a quale comando risponde.
+@immutable
+class RenphoAckFrame extends RenphoFrame {
+  const RenphoAckFrame({
+    required super.hex,
+    required super.checksumOk,
+    required this.forClock,
+    required this.sequence,
+    required this.ok,
+  });
+
+  final bool forClock;
+  final int sequence;
+  final bool ok;
+
+  @override
+  String toString() =>
+      '${forClock ? 'orologio' : 'profilo'} '
+      '${ok ? 'accettato' : 'RIFIUTATO'} (comando $sequence)';
+}
+
 /// Una trama con un opcode mai visto. **Va mostrata per intero**: è la sola
 /// pista verso l'impedenza, che nella cattura non è ancora comparsa.
 @immutable
@@ -287,6 +323,17 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
     case RenphoMsc.opcodeStable:
       final weight = _weightFrom(payload);
       if (weight == null) {
+        // Zero è la bilancia accesa con nessuno sopra, non una trama che non
+        // si capisce: chiamarla «opcode sconosciuto» riempiva il registro di
+        // allarmi per la cosa più normale che una bilancia possa dire.
+        if (_isZeroWeight(payload)) {
+          return RenphoWeightFrame(
+            hex: hex,
+            checksumOk: checksumOk,
+            weightKg: 0,
+            stable: false,
+          );
+        }
         return RenphoUnknownFrame(
           hex: hex,
           checksumOk: checksumOk,
@@ -310,6 +357,16 @@ RenphoFrame? decodeRenphoFrame(List<int> bytes) {
         checksumOk: checksumOk,
         opcode: opcode,
         payload: payload,
+      );
+    case RenphoMsc.opcodeProfileAck:
+    case RenphoMsc.opcodeClockAck:
+      // Il profilo risponde con `seq esito`, l'orologio con `seq 07 esito`.
+      return RenphoAckFrame(
+        hex: hex,
+        checksumOk: checksumOk,
+        forClock: opcode == RenphoMsc.opcodeClockAck,
+        sequence: payload.isEmpty ? -1 : payload.first,
+        ok: payload.isNotEmpty && payload.last == 0x01,
       );
     case RenphoMsc.opcodeStatus:
       return RenphoStatusFrame(
@@ -509,6 +566,14 @@ class RenphoReassembler {
   }
 
   void reset() => _buffer.clear();
+}
+
+/// Vero quando gli ultimi quattro byte del payload sono tutti zero.
+bool _isZeroWeight(List<int> payload) {
+  if (payload.length < 4) {
+    return false;
+  }
+  return payload.sublist(payload.length - 4).every((b) => b == 0);
 }
 
 /// La trama in esadecimale, per il registro.

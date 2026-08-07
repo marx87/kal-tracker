@@ -485,14 +485,19 @@ class ScaleReader {
         );
         return;
       }
+      final primaVolta = !profiloMandato;
       profiloMandato = true;
       try {
-        final orologio = renphoClockCommand(
-          now: _clock(),
-          sequence: sequenza++,
-        );
-        await connection.send(orologio);
-        _note('orologio sincronizzato', hex: renphoHex(orologio));
+        // L'orologio si manda una volta sola: è l'ora, non cambia perché il
+        // peso si è assestato.
+        if (primaVolta) {
+          final orologio = renphoClockCommand(
+            now: _clock(),
+            sequence: sequenza++,
+          );
+          await connection.send(orologio);
+          _note('orologio sincronizzato', hex: renphoHex(orologio));
+        }
         final chi = renphoProfileCommand(
           sequence: sequenza++,
           heightCm: profile.heightCm,
@@ -546,14 +551,24 @@ class ScaleReader {
 
       switch (frame) {
         case RenphoWeightFrame(stable: false, weightKg: final kg):
-          // Il profilo si manda alla prima pesata utile: prima la bilancia non
-          // ha ancora un peso da abbinare, dopo il momento è passato.
-          if (!profiloMandato && kg > 0) {
+          // **Il profilo si manda con un peso plausibile, non col primo che
+          // arriva.** Mandandolo alla prima trama utile partiva mentre Marco
+          // stava ancora salendo, e dichiarava alla bilancia un uomo di 182 cm
+          // da 31 chili: una richiesta assurda, a cui la bilancia ha risposto
+          // con l'unica cosa sensata, cioè niente. L'app Renpho manda sempre
+          // un peso da adulto.
+          if (!profiloMandato && kg >= RenphoMsc.minProfileWeightKg) {
             unawaited(presentati(kg));
           }
-          _emit(ScalePhase.reading);
+          if (kg > 0) {
+            _emit(ScalePhase.reading);
+          }
         case RenphoWeightFrame(stable: true, weightKg: final kg):
           stepOnTimer?.cancel();
+          // E si ripete col peso assestato, come fa l'app Renpho: la prima
+          // volta il peso è ancora quello di uno che sta salendo, e la
+          // composizione si calcola su questo.
+          unawaited(presentati(kg));
           pesata = ScaleReading(
             measuredAt: _clock().toUtc(),
             weightKg: kg,
@@ -604,6 +619,10 @@ class ScaleReader {
           );
           pesata = completa;
           finish(_emit(ScalePhase.ready, reading: completa));
+        case RenphoAckFrame(ok: final accettato):
+          if (!accettato) {
+            _note('la bilancia ha rifiutato il comando', isProblem: true);
+          }
         case RenphoStatusFrame(counter: final valore):
           if (valore != null) {
             contatoreIniziale ??= valore;

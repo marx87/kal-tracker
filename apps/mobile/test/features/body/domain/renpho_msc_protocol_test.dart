@@ -302,6 +302,74 @@ void main() {
     });
   });
 
+  group('quello che il campo ha insegnato', () {
+    test('peso zero è «bilancia libera», non un opcode ignoto', () {
+      // Trama vera del 7 agosto alle 09:24:42, prima che Marco salisse. Il
+      // controllo di plausibilità la scartava e finiva fra le trame ignote:
+      // il registro si riempiva di allarmi in grassetto per la cosa più
+      // normale che una bilancia possa dire.
+      final frame =
+          decodeRenphoFrame(const [
+                0x55, 0xaa, 0x21, 0x00, 0x05, //
+                0x01, 0x00, 0x00, 0x00, 0x00, 0x26,
+              ])!
+              as RenphoWeightFrame;
+
+      expect(frame.isEmpty, isTrue);
+      expect(frame.weightKg, 0);
+      expect('$frame', 'bilancia libera');
+    });
+
+    test('gli ack della bilancia si leggono', () {
+      // `0x23` per l'orologio e `0x22` per il profilo: sono le risposte ai
+      // due comandi, e comparivano come «questa è nuova» mentre erano
+      // esattamente ciò che si stava aspettando.
+      final orologio =
+          decodeRenphoFrame(const [
+                0x55,
+                0xaa,
+                0x23,
+                0x00,
+                0x03,
+                0x00,
+                0x07,
+                0x01,
+                0x2d,
+              ])!
+              as RenphoAckFrame;
+      expect(orologio.forClock, isTrue);
+      expect(orologio.ok, isTrue);
+      expect(orologio.checksumOk, isTrue);
+
+      final profilo =
+          decodeRenphoFrame(const [
+                0x55,
+                0xaa,
+                0x22,
+                0x00,
+                0x02,
+                0x01,
+                0x01,
+                0x25,
+              ])!
+              as RenphoAckFrame;
+      expect(profilo.forClock, isFalse);
+      expect(profilo.sequence, 1);
+      expect(profilo.ok, isTrue);
+      expect('$profilo', contains('accettato'));
+    });
+
+    test('sotto i quaranta chili il profilo non si manda', () {
+      // La soglia esiste per un errore preciso: il profilo partiva alla prima
+      // trama di peso utile — quella di quando si sta ancora salendo — e
+      // dichiarava alla bilancia un uomo di 182 cm da 31,45 kg. Alla richiesta
+      // assurda la bilancia ha risposto con l'unica cosa sensata: niente.
+      expect(RenphoMsc.minProfileWeightKg, greaterThan(31.45));
+      // E non tanto alta da escludere una persona magra.
+      expect(RenphoMsc.minProfileWeightKg, lessThan(45));
+    });
+  });
+
   group('quello che ancora non si sa', () {
     test('gli avanzamenti di stato si leggono senza fingere di capirli', () {
       // Le quattro trame 0x20 del registro. Che siano avanzamenti si vede dal
