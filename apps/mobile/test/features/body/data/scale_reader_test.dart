@@ -723,7 +723,10 @@ void main() {
         0x9f,
         0xe9,
       ]);
-      expect(fasi.last, ScalePhase.reading);
+      // «Prendi la maniglia» arriva appena c'è qualcuno sopra, non al peso
+      // assestato: fra le due cose passano quattro secondi, e la misura
+      // elettrica vuole il circuito già chiuso.
+      expect(fasi.last, ScalePhase.holdStill);
       expect(connection.closed, isFalse);
 
       await connection.emitFrom(ScaleProtocolKind.renphoMsc, const [

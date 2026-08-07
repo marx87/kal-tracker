@@ -220,18 +220,35 @@ enum ScalePhase {
   /// sugli elettrodi. Nella prima cattura l'impedenza non è mai arrivata, e
   /// questa è la spiegazione più probabile: non è che la bilancia non la
   /// mandi, è che le si toglievano i piedi da sotto.
+  /// Il body scan è partito davvero: la bilancia lo ha detto.
+  ///
+  /// Non è cosmesi. Fino a qui l'unico modo di sapere se la misura elettrica
+  /// stesse girando era aspettare trenta secondi e vedere se arrivava
+  /// qualcosa — e quando non arrivava non si capiva se fosse colpa del
+  /// dialogo o del gesto. Il contatore nel battito della bilancia sale
+  /// quando la scansione finisce, quindi la risposta ce l'avevamo e non la
+  /// stavamo dicendo.
+  scanning8(
+    'Sta misurando',
+    'La corrente sta passando: tieni la maniglia e le braccia ferme ancora '
+        'qualche secondo.',
+    ScaleTone.working,
+  ),
+
   holdStill(
-    'Peso preso — ora la maniglia',
+    'Prendi la maniglia',
     // La riga che mancava, e mancava perché non sapevo che bilancia fosse.
     // La R-MSC02 ha otto elettrodi: quattro sotto i piedi e due sulla
     // maniglia. L'impedenza mano-piede esiste solo a circuito chiuso — in
     // piedi e basta, la bilancia pesa e non misura niente. Dire «non
     // scendere» senza dire «prendi la maniglia» era chiedere di aspettare
     // una cosa che non poteva succedere.
+    // Detto appena Marco è sulla bilancia e non più al peso assestato: fra le
+    // due cose passano quattro secondi, e la misura elettrica vuole il
+    // circuito chiuso prima, non dopo.
     'Senza scendere: prendi la maniglia con tutte e due le mani e stendi le '
         'braccia davanti a te. La corrente passa mano-piede, e finché il giro '
-        'non si chiude l’impedenza non esiste. Resta così finché il display '
-        'non ha finito.',
+        'non si chiude non c’è niente da misurare.',
     ScaleTone.working,
   ),
 
@@ -308,7 +325,8 @@ enum ScalePhase {
   bool get hasReading =>
       this == ScalePhase.ready ||
       this == ScalePhase.incomplete ||
-      this == ScalePhase.holdStill;
+      this == ScalePhase.holdStill ||
+      this == ScalePhase.scanning8;
 
   /// Vero quando l'elenco dei dispositivi è in schermata e sceglierne uno ha
   /// un senso.

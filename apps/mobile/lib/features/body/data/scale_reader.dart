@@ -560,9 +560,19 @@ class ScaleReader {
           if (!profiloMandato && kg >= RenphoMsc.minProfileWeightKg) {
             unawaited(presentati(kg));
           }
-          if (kg > 0) {
-            _emit(ScalePhase.reading);
+          if (kg <= 0) {
+            break;
           }
+          // «Prendi la maniglia» si dice appena c'è qualcuno sopra, non al
+          // peso assestato: fra le due cose passano quattro secondi, e la
+          // misura elettrica vuole il circuito già chiuso. Aspettare il peso
+          // stabile per dirlo significava chiederglielo dopo il momento in cui
+          // serviva.
+          _emit(
+            kg >= RenphoMsc.minProfileWeightKg
+                ? ScalePhase.holdStill
+                : ScalePhase.reading,
+          );
         case RenphoWeightFrame(stable: true, weightKg: final kg):
           stepOnTimer?.cancel();
           // E si ripete col peso assestato, come fa l'app Renpho: la prima
@@ -626,7 +636,18 @@ class ScaleReader {
         case RenphoStatusFrame(counter: final valore):
           if (valore != null) {
             contatoreIniziale ??= valore;
+            final cresciuto =
+                contatoreCorrente != null && valore > contatoreCorrente!;
             contatoreCorrente = valore;
+            if (cresciuto) {
+              // La bilancia ha finito una misura e l'ha archiviata: è l'unico
+              // segnale che dice «il circuito era chiuso, la corrente è
+              // passata». Senza, restava solo aspettare trenta secondi senza
+              // sapere se il gesto fosse servito.
+              _note('body scan completato: la bilancia lo ha archiviato');
+              _emit(ScalePhase.scanning8, reading: pesata);
+              break;
+            }
           }
           if (pesata == null) {
             _emit(ScalePhase.stepOn);
