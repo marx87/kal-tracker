@@ -75,6 +75,19 @@ abstract final class RenphoMsc {
   /// Comando: chi sta salendo — altezza, peso, sesso ed età.
   static const opcodeSetProfile = 0xB2;
 
+  /// Comando: **la misura in sospeso l'ho vista, buttala**.
+  ///
+  /// È il pezzo che mancava, e senza il quale niente funzionava. La bilancia
+  /// tiene una coda di misure fatte e non ancora raccolte da nessuno, e il
+  /// suo numero viaggia nel battito. Finché quella coda non è vuota **non ne
+  /// fa altre**: tre sessioni di fila con il contatore fermo a 1 e nessuna
+  /// scansione, e nelle catture dell'app Renpho il contatore era sempre zero.
+  ///
+  /// Nel registro HCI del 7 agosto si vede l'intera meccanica in nove
+  /// secondi: battito con contatore 1, l'app manda questo, battito con
+  /// contatore 0. Subito dopo la scansione parte.
+  static const opcodeClearQueue = 0xB6;
+
   /// Il secondo byte dell'intestazione di frammentazione, costante in tutte
   /// le trame spezzate osservate.
   static const fragmentTag = 0x04;
@@ -529,6 +542,22 @@ List<int> renphoProfileCommand({
     0x03, 0x02,
   ]);
 }
+
+/// `0xB6` — svuota la coda delle misure in sospeso.
+///
+/// I due byte di payload sono copiati **identici** dalla cattura. Cosa
+/// significhino non si sa: potrebbero essere un sottocomando e un conteggio,
+/// oppure due costanti. Con una sola osservazione — contatore a 1 — non c'è
+/// modo di distinguere, e inventare una regola su un campione solo è il modo
+/// migliore per scoprire fra un mese che era sbagliata. Si copia quello che
+/// funziona, e si scrive che è una copia.
+///
+/// **Cosa comporta.** Le pesate che la bilancia ha in memoria e che nessuno
+/// ha ancora raccolto vengono scartate invece di finire nell'app Renpho. Per
+/// chi ha smesso di usarla non cambia niente; per chi la usa ancora, è una
+/// pesata persa da quella parte.
+List<int> renphoClearQueueCommand() =>
+    _comando(RenphoMsc.opcodeClearQueue, const [0x01, 0x01]);
 
 /// Rimonta le trame spezzate.
 ///

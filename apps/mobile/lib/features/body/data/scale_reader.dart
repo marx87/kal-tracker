@@ -435,6 +435,7 @@ class ScaleReader {
     final rimonta = RenphoReassembler();
     var sequenza = 0;
     var profiloMandato = false;
+    var codaSvuotata = false;
 
     Timer? stepOnTimer;
     Timer? codaTimer;
@@ -634,6 +635,33 @@ class ScaleReader {
             _note('la bilancia ha rifiutato il comando', isProblem: true);
           }
         case RenphoStatusFrame(counter: final valore):
+          // **La coda si svuota subito.** La bilancia tiene le misure fatte e
+          // mai raccolte, e finché quel numero non è zero non ne fa altre: tre
+          // sessioni di fila si erano chiuse col solo peso per questo, con il
+          // contatore fermo a 1 e nessuna scansione. Nelle catture dell'app
+          // Renpho quel numero era sempre zero, ed è così che ci arrivava.
+          if (valore != null && valore > 0 && !codaSvuotata) {
+            codaSvuotata = true;
+            final comando = renphoClearQueueCommand();
+            unawaited(
+              connection
+                  .send(comando)
+                  .then(
+                    (_) => _note(
+                      'la bilancia aveva $valore '
+                      '${valore == 1 ? 'misura' : 'misure'} in sospeso: '
+                      'le scarto, o non ne farebbe di nuove',
+                      hex: renphoHex(comando),
+                    ),
+                  )
+                  .catchError((Object error) {
+                    _note(
+                      'non riesco a svuotare la coda: $error',
+                      isProblem: true,
+                    );
+                  }),
+            );
+          }
           if (valore != null) {
             contatoreIniziale ??= valore;
             final cresciuto =

@@ -132,7 +132,7 @@ void main() {
     // combaciano con quelli del CSV esportato dall'app.
     const misura0902 =
         '55 aa 25 00 24 04 11 00 00 25 3f 0a 00 e1 0b b8 0b 69 0a 94 0a 81 '
-        '00 bd 0a 48 09 f1 09 06 08 ef 01 01 00 01 20 01 ab 00 09 6d';
+        '00 bd 0a 48 09 f1 09 06 08 ef 01 01 00 01 20 01 ab 00 09 f3';
     const misura1022 =
         '55 aa 25 00 24 04 11 00 00 25 85 0a 00 e3 0b f1 0b aa 0a ad 0a 8e '
         '00 bd 0a 75 0a 1f 09 21 09 02 01 01 0b 01 22 01 a4 00 0a 6d';
@@ -151,6 +151,17 @@ void main() {
       // cinquemila ohm, che non è un corpo umano.
       expect(frame.impedancesOhm.first, closeTo(304.3, 0.05));
       expect(frame.impedancesOhm, contains(closeTo(14.2, 0.05)));
+    });
+
+    test('le somme di controllo tornano su entrambe', () {
+      // Il fissaggio delle 09:02 aveva la somma copiata male, e nessuno se ne
+      // era accorto perché nessun test la guardava: un fissaggio con una
+      // somma sbagliata è una bugia che aspetta. Questa asserzione è il
+      // controllo che le trame di questo file siano davvero quelle uscite
+      // dalla bilancia.
+      for (final hex in [misura0902, misura1022]) {
+        expect(decodeRenphoFrame(byte(hex))!.checksumOk, isTrue, reason: hex);
+      }
     });
 
     test('il tronco è la più bassa, e non può essere altro', () {
@@ -299,6 +310,68 @@ void main() {
       ])!;
 
       expect(decodeRenphoFrame(intera), isA<RenphoWeightFrame>());
+    });
+  });
+
+  group('la coda delle misure in sospeso', () {
+    test('il comando è byte per byte quello dell’app Renpho', () {
+      // Dal registro HCI del 7 agosto: la bilancia annuncia una misura in
+      // sospeso, l'app manda questo, e nove secondi dopo il contatore è a
+      // zero. Senza, non ne fa di nuove — tre sessioni di fila chiuse col
+      // solo peso per questo motivo.
+      expect(renphoHex(renphoClearQueueCommand()), '55 aa b6 00 02 01 01 b9');
+    });
+
+    test('il contatore si legge dal battito', () {
+      // Le due trame a confronto: quella con una misura in sospeso e quella
+      // subito dopo il comando. È l'unica differenza fra una sessione che
+      // funziona e una che si chiude col solo peso.
+      final prima =
+          decodeRenphoFrame(const [
+                0x55, 0xaa, 0x20, 0x00, 0x05, //
+                0x00, 0x01, 0x01, 0x01, 0x00, 0x27,
+              ])!
+              as RenphoStatusFrame;
+      final dopo =
+          decodeRenphoFrame(const [
+                0x55, 0xaa, 0x20, 0x00, 0x05, //
+                0x03, 0x09, 0x01, 0x00, 0x00, 0x31,
+              ])!
+              as RenphoStatusFrame;
+
+      expect(prima.counter, 1);
+      expect(dopo.counter, 0);
+    });
+  });
+
+  group('la misura riuscita del 7 agosto alle 12:36', () {
+    test('la prima composizione arrivata a Coach360', () {
+      // La sessione che ha chiuso la caccia: contatore a zero, peso stabile
+      // alle 12:36:45, composizione alle 12:36:59 — tredici secondi e mezzo
+      // dopo, esattamente il tempo che ci mette con l'app del costruttore.
+      final frame =
+          decodeRenphoFrame([
+                for (final p
+                    in ('55 aa 25 00 24 04 11 00 00 25 b2 0a 00 e6 0c 31 0b '
+                            'ea 0a 5c 0a 31 00 c3 0a a9 0a 53 08 e2 08 b6 01 '
+                            '01 11 01 23 01 a1 00 0a 55')
+                        .split(' '))
+                  int.parse(p, radix: 16),
+              ])!
+              as RenphoBodyFrame;
+
+      expect(frame.checksumOk, isTrue);
+      expect(frame.weightKg, closeTo(96.50, 0.001));
+      expect(frame.impedancesOhm, hasLength(9));
+      expect(frame.bodyFatPct, closeTo(27.3, 0.05));
+      expect(frame.bmi, closeTo(29.1, 0.05));
+      expect(frame.visceralFat, 10);
+      // Il tronco resta il più basso di tutti, anche se qui vale meno che
+      // nelle altre due misure: il rapporto con gli arti è quello che conta.
+      final ordinate = frame.impedancesOhm.toList()..sort();
+      expect(ordinate.first, lessThan(50));
+      expect(ordinate[1], greaterThan(150));
+      expect(frame.wholeBodyOhm, inInclusiveRange(300, 900));
     });
   });
 
