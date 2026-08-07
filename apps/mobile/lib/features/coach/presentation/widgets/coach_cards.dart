@@ -239,7 +239,7 @@ class CoachOvertrainingCard extends StatelessWidget {
     return SectionCard(
       key: const Key('coach_overtraining_card'),
       title: 'Sovrallenamento',
-      subtitle: 'Quattro segnali, e quelli che non so',
+      subtitle: 'Cinque segnali, e quelli che non so',
       icon: Icons.battery_alert_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

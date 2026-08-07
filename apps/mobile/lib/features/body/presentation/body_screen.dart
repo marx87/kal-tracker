@@ -10,6 +10,7 @@ import 'package:kal_tracker/features/body/presentation/body_formats.dart';
 import 'package:kal_tracker/features/body/presentation/body_providers.dart';
 import 'package:kal_tracker/features/body/presentation/weigh_in_sheet.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_settings_screen.dart';
 
 /// La schermata Corpo: quella che giustifica la bilancia.
 ///
@@ -71,6 +72,12 @@ class BodyScreen extends ConsumerWidget {
             tooltip: 'Obiettivo',
             onPressed: () => context.goNamed('goal'),
             icon: const Icon(Icons.flag_outlined),
+          ),
+          IconButton(
+            key: const Key('body_open_training_settings_button'),
+            tooltip: 'Impostazioni allenamento',
+            onPressed: () => context.goNamed(TrainingSettingsScreen.routeName),
+            icon: const Icon(Icons.fitness_center_outlined),
           ),
           IconButton(
             key: const Key('body_open_progress_button'),

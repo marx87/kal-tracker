@@ -12,12 +12,26 @@ final DateTime now = DateTime(2026, 8, 7, 20);
 
 final double marcoBasal = BodyComposition.basalMetabolicRate(marcoFatFreeMass);
 
-/// Una sessione pulita finita [daysAgo] giorni fa.
-TrainingSessionKcal session(int daysAgo, double kcal) => TrainingSessionKcal(
-  endedAt: now.subtract(Duration(days: daysAgo)),
-  kcal: kcal,
-  muscleGroupsComplete: true,
-);
+/// Il MET medio con cui i test costruiscono le sessioni: è il valore di
+/// ripiego di `estimateKcal`, cioè quello che esce da una seduta mista.
+const double testMet = 5.0;
+
+/// Da quota netta a calorie lorde: `MET / (MET − 1)`.
+///
+/// Serve ai test che partono dal moltiplicatore che vogliono ottenere e
+/// devono risalire alle calorie che il repository consegnerebbe — che sono
+/// sempre lorde, perché `estimateKcal` non toglie niente.
+double grossFor(double netKcal) => netKcal * testMet / (testMet - 1);
+
+/// Una sessione pulita finita [daysAgo] giorni fa. [kcal] è LORDA, come esce
+/// da `estimateKcal`.
+TrainingSessionKcal session(int daysAgo, double kcal, {double met = testMet}) =>
+    TrainingSessionKcal(
+      endedAt: now.subtract(Duration(days: daysAgo)),
+      kcal: kcal,
+      averageMet: met,
+      muscleGroupsComplete: true,
+    );
 
 /// La stessa sessione, ma senza gruppo muscolare: dentro le sue kcal c'è il
 /// 5,0 MET di ripiego.
@@ -25,6 +39,7 @@ TrainingSessionKcal blindSession(int daysAgo, double kcal) =>
     TrainingSessionKcal(
       endedAt: now.subtract(Duration(days: daysAgo)),
       kcal: kcal,
+      averageMet: testMet,
       muscleGroupsComplete: false,
     );
 
@@ -33,6 +48,11 @@ List<TrainingSessionKcal> threeCleanWeeks({double kcal = 600}) => [
   for (var week = 0; week < 3; week++)
     for (final offset in const [1, 3, 4, 6]) session(week * 7 + offset, kcal),
 ];
+
+/// Un anno fa: lo storico lungo è il caso normale, e i test che parlano
+/// d'altro non devono ripeterlo. Quelli che parlano proprio dello storico
+/// corto passano la loro data.
+final DateTime longHistory = now.subtract(const Duration(days: 365));
 
 ActivityMultiplierProposal proposeFor(
   List<TrainingSessionKcal> sessions, {
@@ -47,7 +67,7 @@ ActivityMultiplierProposal proposeFor(
   sessions: sessions,
   now: now,
   averageDailySteps: averageDailySteps,
-  historyStartsAt: historyStartsAt,
+  historyStartsAt: historyStartsAt ?? longHistory,
   lookbackWeeks: lookbackWeeks,
 );
 
@@ -75,11 +95,13 @@ void main() {
     test('è NEAT più le kcal settimanali spalmate su sette giorni', () {
       final proposal = proposeFor(threeCleanWeeks());
 
-      // 4 sessioni × 600 kcal = 2400 a settimana, cioè 342,86 al giorno.
-      expect(proposal.averageWeeklyTrainingKcal, closeTo(2400, 0.01));
+      // 4 sessioni × 600 kcal lorde = 2400 a settimana; al netto del riposo
+      // sono 1920, cioè 274,29 al giorno.
+      expect(proposal.averageWeeklyGrossTrainingKcal, closeTo(2400, 0.01));
+      expect(proposal.averageWeeklyTrainingKcal, closeTo(1920, 0.01));
       expect(
         proposal.proposedMultiplier,
-        closeTo(1.2 + (2400 / 7) / marcoBasal, 1e-9),
+        closeTo(1.2 + (1920 / 7) / marcoBasal, 1e-9),
       );
       expect(proposal.weeksUsed, 3);
       expect(proposal.sessionsUsed, 12);
@@ -126,7 +148,8 @@ void main() {
 
       expect(conRiposo.weeksUsed, 3);
       expect(conRiposo.sessionsUsed, 8);
-      expect(conRiposo.averageWeeklyTrainingKcal, closeTo(1600, 0.01));
+      expect(conRiposo.averageWeeklyGrossTrainingKcal, closeTo(1600, 0.01));
+      expect(conRiposo.averageWeeklyTrainingKcal, closeTo(1280, 0.01));
     });
 
     test('le sessioni fuori finestra e quelle nel futuro non entrano', () {
@@ -136,12 +159,70 @@ void main() {
         TrainingSessionKcal(
           endedAt: now.add(const Duration(days: 2)),
           kcal: 5000,
+          averageMet: testMet,
           muscleGroupsComplete: true,
         ),
       ]);
 
       expect(proposal.sessionsUsed, 12);
-      expect(proposal.averageWeeklyTrainingKcal, closeTo(2400, 0.01));
+      expect(proposal.averageWeeklyGrossTrainingKcal, closeTo(2400, 0.01));
+    });
+  });
+
+  group('le calorie lorde non si sommano al NEAT', () {
+    test('entra la quota netta, perché il riposo il NEAT lo contava già', () {
+      // A 5,0 MET un quinto delle calorie della seduta è il metabolismo che
+      // ci sarebbe stato comunque, seduti sul divano: quelle ore stanno
+      // dentro il NEAT, che copre la giornata intera.
+      final proposal = proposeFor(threeCleanWeeks());
+
+      expect(proposal.averageWeeklyGrossTrainingKcal, closeTo(2400, 0.01));
+      expect(proposal.averageWeeklyTrainingKcal, closeTo(1920, 0.01));
+    });
+
+    test('il doppio conteggio bastava da solo a far comparire la domanda', () {
+      // 480 kcal a settimana di differenza, cioè ~69 al giorno: +0,036 di
+      // moltiplicatore sul basale di Marco. minimumGap è 0,05, quindi lo
+      // scarto valeva quasi una proposta intera.
+      final proposal = proposeFor(threeCleanWeeks());
+      final lordo = 1.2 + (2400 / 7) / marcoBasal;
+
+      expect(lordo - proposal.proposedMultiplier!, closeTo(0.0358, 0.0005));
+      expect(
+        lordo - proposal.proposedMultiplier!,
+        greaterThan(ActivityMultiplierProposal.minimumGap / 2),
+      );
+    });
+
+    test('un MET più alto lascia dentro una fetta più grande', () {
+      // Stesse calorie lorde a 8,0 MET (cardio): l'ora è stata più intensa,
+      // quindi la quota di riposo da togliere pesa meno — 7/8 invece di 4/5.
+      final cardio = proposeFor([
+        for (var week = 0; week < 3; week++)
+          for (final offset in const [1, 3, 4, 6])
+            session(week * 7 + offset, 600, met: 8),
+      ]);
+
+      expect(cardio.averageWeeklyGrossTrainingKcal, closeTo(2400, 0.01));
+      expect(cardio.averageWeeklyTrainingKcal, closeTo(2400 * 7 / 8, 0.01));
+    });
+
+    test('la spiegazione dice quante calorie sono state tolte', () {
+      final proposal = proposeFor(threeCleanWeeks());
+
+      expect(proposal.explanation, contains('1920 kcal a settimana'));
+      expect(proposal.explanation, contains('tolte le 480 di riposo'));
+    });
+
+    test('un MET sotto il riposo non è un allenamento: butta la settimana', () {
+      // Sotto l'unità la quota netta sarebbe negativa. È un difetto a monte,
+      // e si tratta come uno snapshot mancante invece di sottrarre calorie.
+      final proposal = proposeFor(
+        threeCleanWeeks()..add(session(2, 900, met: 0.5)),
+      );
+
+      expect(proposal.refusal, DerivedMultiplierRefusal.missingMuscleGroups);
+      expect(proposal.weeksDiscardedForMissingGroups, 1);
     });
   });
 
@@ -196,6 +277,7 @@ void main() {
           TrainingSessionKcal(
             endedAt: now.subtract(const Duration(days: 2)),
             kcal: double.nan,
+            averageMet: testMet,
             muscleGroupsComplete: true,
           ),
         ),
@@ -221,6 +303,38 @@ void main() {
 
       expect(proposal.refusal, DerivedMultiplierRefusal.notEnoughHistory);
       expect(proposal.explanation, contains('3 settimane intere'));
+    });
+
+    test('tre sedute su un\'app installata ieri non abbassano niente', () {
+      // Il caso che il rifiuto esisteva per fermare: sei giorni di storico e
+      // tre sedute vere. Contando tre settimane, due sarebbero vuote perché
+      // l'app non c'era — e la proposta direbbe di SCENDERE.
+      final proposal = proposeFor([
+        for (final offset in const [1, 3, 5]) session(offset, 600),
+      ], historyStartsAt: now.subtract(const Duration(days: 6)));
+
+      expect(proposal.refusal, DerivedMultiplierRefusal.notEnoughHistory);
+      expect(proposal.proposedMultiplier, isNull);
+      expect(proposal.weeksInWindow, 0);
+    });
+
+    test('la finestra si ferma dove finisce lo storico', () {
+      // Sei settimane chieste, quattro di dati: se ne guardano quattro. Le
+      // altre due non sono settimane di riposo, sono settimane non osservate.
+      final proposal = proposeFor(
+        [
+          for (var week = 0; week < 6; week++)
+            for (final offset in const [1, 3, 4, 6])
+              session(week * 7 + offset, 600),
+        ],
+        historyStartsAt: now.subtract(const Duration(days: 29)),
+        lookbackWeeks: 6,
+      );
+
+      expect(proposal.refusal, isNull);
+      expect(proposal.weeksInWindow, 4);
+      expect(proposal.weeksUsed, 4);
+      expect(proposal.sessionsUsed, 16);
     });
 
     test('tre settimane vuote non sono tre settimane sedentarie', () {
@@ -260,9 +374,10 @@ void main() {
 
   group('si propone, non si applica', () {
     test('la domanda è quella dell\'esempio, con i due numeri', () {
-      // Serve un derivato ≈ 1,48 con basale 1918: 0,28 × 1918 × 7 kcal a
-      // settimana, cioè 1254 per sessione con tre sessioni a settimana.
-      final target = 0.28 * marcoBasal * 7 / 3;
+      // Serve un derivato ≈ 1,48 con basale 1918: 0,28 × 1918 × 7 kcal NETTE
+      // a settimana, che a 5,0 MET sono 1568 lorde per sessione con tre
+      // sessioni a settimana.
+      final target = grossFor(0.28 * marcoBasal * 7 / 3);
       final proposal = proposeFor([
         for (var week = 0; week < 3; week++)
           for (final offset in const [1, 3, 5])
@@ -282,8 +397,9 @@ void main() {
       // 1,55 dichiarato contro un derivato che gli sta a ridosso: chiedere
       // «vuoi aggiornare?» per meno di cento calorie insegna a rispondere no
       // senza leggere.
-      final target =
-          (ActivityLevel.moderate.multiplier - 1.2 - 0.01) * marcoBasal * 7 / 3;
+      final target = grossFor(
+        (ActivityLevel.moderate.multiplier - 1.2 - 0.01) * marcoBasal * 7 / 3,
+      );
       final proposal = proposeFor([
         for (var week = 0; week < 3; week++)
           for (final offset in const [1, 3, 5])
@@ -301,7 +417,7 @@ void main() {
 
       expect(proposal.explanation, contains('ultime 3 settimane'));
       expect(proposal.explanation, contains('12 allenamenti'));
-      expect(proposal.explanation, contains('2400 kcal a settimana'));
+      expect(proposal.explanation, contains('1920 kcal a settimana'));
       expect(proposal.explanation, contains('1,20'));
     });
 
@@ -309,7 +425,7 @@ void main() {
       final proposal = proposeFor([
         for (var week = 0; week < 3; week++)
           for (final offset in const [1, 3, 5])
-            session(week * 7 + offset, 0.28 * marcoBasal * 7 / 3),
+            session(week * 7 + offset, grossFor(0.28 * marcoBasal * 7 / 3)),
       ]);
 
       // Il TDEE calcolato senza passare il derivato è ancora quello di prima:
@@ -335,6 +451,53 @@ void main() {
         closeTo(marcoBasal * proposal.proposedMultiplier!, 0.01),
       );
       expect(dopo.multiplierWasDerived, isTrue);
+    });
+  });
+
+  group('quello che resta scritto', () {
+    test('il dichiarato e il derivato accettato fanno il giro completo', () {
+      const settings = ActivitySettings(
+        declared: ActivityLevel.high,
+        acceptedMultiplier: 1.48,
+      );
+
+      expect(ActivitySettings.fromJson(settings.toJson()), settings);
+    });
+
+    test('un file troncato torna al dichiarato invece di lanciare', () {
+      final settings = ActivitySettings.fromJson(const {});
+
+      expect(settings.declared, ActivityLevel.moderate);
+      expect(settings.acceptedMultiplier, isNull);
+    });
+
+    test('un derivato fuori forbice non si rilegge', () {
+      // Il TDEE lo ignorerebbe comunque: tenerlo scritto vorrebbe dire un
+      // campo valorizzato che non fa niente, e nessun modo di accorgersene.
+      final settings = ActivitySettings.fromJson(const {
+        'declared': 'light',
+        'accepted_multiplier': 3.4,
+      });
+
+      expect(settings.declared, ActivityLevel.light);
+      expect(settings.acceptedMultiplier, isNull);
+    });
+
+    test('scegliere un livello a mano toglie il derivato accettato', () {
+      const accettato = ActivitySettings(
+        declared: ActivityLevel.moderate,
+        acceptedMultiplier: 1.48,
+      );
+
+      expect(
+        accettato.withDeclared(ActivityLevel.light).acceptedMultiplier,
+        isNull,
+      );
+      // E toglierlo lascia in piedi la scelta, che era rimasta lì sotto.
+      expect(
+        accettato.withoutAcceptedMultiplier().declared,
+        ActivityLevel.moderate,
+      );
     });
   });
 }

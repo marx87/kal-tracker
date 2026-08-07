@@ -37,6 +37,13 @@ abstract class CheckInStore {
 /// come fa `BodyStateRepository` con la composizione corporea. Fuori da quella
 /// finestra nessuna scrittura tocca niente — è quello che impedisce alla
 /// potatura del log di trasformarsi in cancellazioni vere.
+///
+/// **Il movimento della v9 non basta a tenere in piedi una riga.** Passi e
+/// minuti a piedi hanno le loro colonne, ma la CHECK scritta con la v7
+/// pretende ancora almeno sonno o energia: una giornata di sola camminata
+/// viene rifiutata dal database. Qui la si salta apposta — vedi
+/// [DailyCheckIn.isStorable] — perché una riga rifiutata dentro la
+/// transazione si porterebbe dietro anche tutti gli altri giorni.
 class DriftCheckInStore implements CheckInStore {
   DriftCheckInStore(
     this._database, {
@@ -102,7 +109,12 @@ class DriftCheckInStore implements CheckInStore {
                 .get();
         for (final row in live) {
           final key = DailyCheckIn.dayKeyOf(row.day.toUtc());
-          if (log.entries.containsKey(key)) {
+          // Anche il giorno che nel log è rimasto di solo movimento va
+          // spento: la CHECK non lo lascia riscrivere (vedi il punto 2) e
+          // lasciare la riga com'era resusciterebbe alla riapertura il sonno
+          // che Marco ha appena tolto.
+          final entry = log.entries[key];
+          if (entry != null && entry.isStorable) {
             continue;
           }
           await (_database.update(
@@ -111,6 +123,11 @@ class DriftCheckInStore implements CheckInStore {
             DailyCheckInsCompanion(
               sleepHours: const Value(null),
               energyScore: const Value(null),
+              // Anche il movimento: un tombstone con dentro i passi di ieri
+              // li rimanderebbe all'altro dispositivo come se il giorno non
+              // fosse mai stato cancellato.
+              steps: const Value(null),
+              walkMinutes: const Value(null),
               updatedAt: Value(now),
               deletedAt: Value(now),
             ),
@@ -120,7 +137,11 @@ class DriftCheckInStore implements CheckInStore {
         // 2. Il resto è un upsert sulla chiave naturale: un giorno cancellato
         //    e poi ricompilato riprende la sua riga, tombstone compreso.
         for (final entry in log.entries.values) {
-          if (entry.isEmpty) {
+          // Le giornate di solo movimento restano fuori: la CHECK della
+          // tabella le rifiuta (vedi [DailyCheckIn.isStorable]) e una sola
+          // riga rifiutata farebbe abortire la transazione, portandosi dietro
+          // anche i giorni che si sarebbero salvati benissimo.
+          if (entry.isEmpty || !entry.isStorable) {
             continue;
           }
           await _upsert(profileId: profileId, entry: entry, now: now);
@@ -150,11 +171,15 @@ class DriftCheckInStore implements CheckInStore {
             updatedAt: entry.updatedAt,
             sleepHours: Value(entry.sleepHours),
             energyScore: Value(entry.energyScore),
+            steps: Value(entry.steps),
+            walkMinutes: Value(entry.walkMinutes),
           ),
           onConflict: DoUpdate(
             (_) => DailyCheckInsCompanion(
               sleepHours: Value(entry.sleepHours),
               energyScore: Value(entry.energyScore),
+              steps: Value(entry.steps),
+              walkMinutes: Value(entry.walkMinutes),
               updatedAt: Value(entry.updatedAt),
               // Riscrivere un giorno lo riporta in vita.
               deletedAt: const Value(null),
@@ -190,7 +215,7 @@ class DriftCheckInStore implements CheckInStore {
         await _database.batch((batch) {
           batch.insertAll(_database.dailyCheckIns, [
             for (final entry in log.entries.values)
-              if (!entry.isEmpty)
+              if (entry.isStorable)
                 DailyCheckInsCompanion.insert(
                   id: checkInRowId(profileId: profileId, day: _dayOf(entry)),
                   profileId: profileId,
@@ -199,6 +224,8 @@ class DriftCheckInStore implements CheckInStore {
                   updatedAt: entry.updatedAt,
                   sleepHours: Value(entry.sleepHours),
                   energyScore: Value(entry.energyScore),
+                  steps: Value(entry.steps),
+                  walkMinutes: Value(entry.walkMinutes),
                 ),
           ], mode: InsertMode.insertOrIgnore);
         });
@@ -230,6 +257,8 @@ class DriftCheckInStore implements CheckInStore {
       updatedAt: row.updatedAt.toUtc(),
       sleepHours: row.sleepHours,
       energyScore: row.energyScore,
+      steps: row.steps,
+      walkMinutes: row.walkMinutes,
     );
     return entry.isEmpty ? null : entry;
   }

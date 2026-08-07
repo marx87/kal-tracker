@@ -9,6 +9,7 @@ import 'package:kal_tracker/features/coach/data/coach_gateway.dart';
 import 'package:kal_tracker/features/coach/data/coach_store.dart';
 import 'package:kal_tracker/features/coach/domain/coach_narrative.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 import 'package:kal_tracker/features/coach/presentation/coach_providers.dart';
 import 'package:kal_tracker/features/coach/presentation/coach_screen.dart';
@@ -37,40 +38,47 @@ class SilentCoachGateway implements CoachGateway {
 }
 
 /// Una settimana vera: diario pieno, pesate con composizione, allenamenti.
-CoachSnapshot fullSnapshot() => CoachSnapshot(
-  week: testWeek,
-  diary: diaryWeek(lastDay: sunday, kcal: 2200, proteinGrams: 145, days: 14),
-  weighIns: weighInSeries(
-    lastDay: sunday,
-    weights: const [
-      95.9,
-      95.8,
-      95.8,
-      95.7,
-      95.6,
-      95.6,
-      95.5,
-      95.4,
-      95.4,
-      95.3,
-      95.2,
-      95.1,
-      95.1,
-      95,
-    ],
-    bodyFatPcts: List.filled(14, 25),
-    waterPcts: List.filled(14, 54),
-  ),
-  sessions: [
-    session(DateTime.utc(2026, 7, 28), rpe: 7),
-    session(DateTime.utc(2026, 7, 30), rpe: 7),
-  ],
-  targets: const CoachTargets(
-    dailyCalories: 2200,
-    dailyProtein: 143,
-    weeklyWorkouts: 3,
-  ),
-);
+CoachSnapshot fullSnapshot({List<CoachStrengthSet> strengthSets = const []}) =>
+    CoachSnapshot(
+      week: testWeek,
+      diary: diaryWeek(
+        lastDay: sunday,
+        kcal: 2200,
+        proteinGrams: 145,
+        days: 14,
+      ),
+      weighIns: weighInSeries(
+        lastDay: sunday,
+        weights: const [
+          95.9,
+          95.8,
+          95.8,
+          95.7,
+          95.6,
+          95.6,
+          95.5,
+          95.4,
+          95.4,
+          95.3,
+          95.2,
+          95.1,
+          95.1,
+          95,
+        ],
+        bodyFatPcts: List.filled(14, 25),
+        waterPcts: List.filled(14, 54),
+      ),
+      sessions: [
+        session(DateTime.utc(2026, 7, 28), rpe: 7),
+        session(DateTime.utc(2026, 7, 30), rpe: 7),
+      ],
+      strengthSets: strengthSets,
+      targets: const CoachTargets(
+        dailyCalories: 2200,
+        dailyProtein: 143,
+        weeklyWorkouts: 3,
+      ),
+    );
 
 CoachNarrative narrativeOf(CoachWeek week) => CoachNarrative(
   week: week,
@@ -178,6 +186,46 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('coach_header_card')), findsOneWidget);
+    });
+  });
+
+  group('il semaforo', () {
+    testWidgets('la card annuncia cinque segnali, non quattro', (tester) async {
+      await tester.pumpWidget(host(theme: AppTheme.light));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.byKey(const Key('coach_overtraining_card')));
+
+      expect(find.text('Cinque segnali, e quelli che non so'), findsOneWidget);
+    });
+
+    testWidgets('senza serie la forza è fra i dati che mancano', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(theme: AppTheme.light));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.byKey(const Key('coach_overtraining_card')));
+
+      expect(find.textContaining('forza in calo'), findsOneWidget);
+    });
+
+    testWidgets('con lo storico la forza arriva fino alla card', (
+      tester,
+    ) async {
+      // Il giro completo: le serie entrano nella fotografia, il motore le
+      // misura e la ragione compare a schermo con il suo numero.
+      await tester.pumpWidget(
+        host(
+          theme: AppTheme.light,
+          snapshot: fullSnapshot(
+            strengthSets: liftedWeeks(before: 100, now: 90),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.byKey(const Key('coach_overtraining_card')));
+
+      expect(find.textContaining('e1RM medio è sceso'), findsOneWidget);
+      expect(find.textContaining('10,0 %'), findsOneWidget);
     });
   });
 

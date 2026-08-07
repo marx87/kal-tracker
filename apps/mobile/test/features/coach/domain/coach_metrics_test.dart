@@ -6,6 +6,7 @@ import 'package:kal_tracker/features/coach/domain/coach_overtraining.dart';
 import 'package:kal_tracker/features/coach/domain/coach_projection.dart';
 import 'package:kal_tracker/features/coach/domain/coach_recomposition.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 
 import '../fixtures.dart';
 
@@ -18,6 +19,7 @@ CoachSnapshot goodWeek({
     weeklyWorkouts: 3,
   ),
   CoachGoalContext? goal,
+  List<CoachStrengthSet> strengthSets = const [],
 }) {
   final sunday = DateTime.utc(2026, 8, 2);
   // 28 giorni: 95,5 → 93,5, cioè mezzo chilo a settimana.
@@ -38,6 +40,7 @@ CoachSnapshot goodWeek({
         for (final offset in [1, 3, 5])
           session(sunday.subtract(Duration(days: week * 7 + offset)), rpe: 7),
     ],
+    strengthSets: strengthSets,
     water: [
       for (var day = 27; day >= 0; day--)
         CoachWaterDay(
@@ -129,6 +132,63 @@ void main() {
     );
   });
 
+  group('il quinto segnale', () {
+    test('senza storico di serie resta «non lo so», non «tiene»', () {
+      final light = CoachEngine.run(goodWeek()).overtraining;
+
+      expect(
+        light.readings[OvertrainingSignal.fallingStrength],
+        SignalReading.unknown,
+      );
+      expect(light.missingDataNote, contains('forza in calo'));
+    });
+
+    test('lo storico degli allenamenti accende la forza in calo', () {
+      final light = CoachEngine.run(
+        goodWeek(strengthSets: liftedWeeks(before: 100, now: 90)),
+      ).overtraining;
+
+      expect(
+        light.readings[OvertrainingSignal.fallingStrength],
+        SignalReading.fired,
+      );
+      // Il numero e gli esercizi, non solo il colore.
+      expect(light.reasons.single, contains('10,0 %'));
+      expect(light.reasons.single, contains('panca'));
+    });
+
+    test('una forza che tiene viene letta, non data per buona', () {
+      final light = CoachEngine.run(
+        goodWeek(strengthSets: liftedWeeks(before: 100, now: 100)),
+      ).overtraining;
+
+      expect(
+        light.readings[OvertrainingSignal.fallingStrength],
+        SignalReading.quiet,
+      );
+      // Tutti e cinque: è il conto su cui il semaforo dice «accesi n su n».
+      expect(light.knownCount, 5);
+      expect(light.missingDataNote, isNull);
+    });
+
+    test('le finestre della forza stanno ferme alla domenica del rapporto', () {
+      // Rileggendo lo stesso rapporto tre settimane dopo il quinto segnale
+      // non deve cambiare colore da solo: `today` sposta la proiezione, non
+      // il confronto dell'e1RM.
+      final snapshot = goodWeek(
+        strengthSets: liftedWeeks(before: 100, now: 90),
+      );
+
+      expect(
+        CoachEngine.run(
+          snapshot,
+          today: testWeek.end.add(const Duration(days: 21)),
+        ).overtraining.strength.change,
+        CoachEngine.run(snapshot).overtraining.strength.change,
+      );
+    });
+  });
+
   group('la richiesta che va sul Mac', () {
     test('porta i numeri già fatti e le frasi già scritte', () {
       final metrics = CoachEngine.run(
@@ -147,6 +207,28 @@ void main() {
       expect((request['overtraining']! as Map)['level'], 'clear');
       expect(request['headlines'], isA<List<String>>());
       expect((request['data_quality']! as Map)['total'], 4);
+    });
+
+    test('la forza porta la misura, non solo il segnale acceso', () {
+      final request = CoachEngine.run(
+        goodWeek(strengthSets: liftedWeeks(before: 100, now: 90)),
+      ).toRequestJson();
+      final strength =
+          (request['overtraining']! as Map)['strength']!
+              as Map<String, Object?>;
+
+      expect(strength['change']! as double, closeTo(-0.1, 0.0001));
+      expect(strength['exercises'], containsAll(['panca', 'squat', 'stacco']));
+    });
+
+    test('senza serie la forza viaggia nulla, non a zero', () {
+      final request = CoachEngine.run(goodWeek()).toRequestJson();
+      final strength =
+          (request['overtraining']! as Map)['strength']!
+              as Map<String, Object?>;
+
+      expect(strength['change'], isNull);
+      expect(strength['exercises'], isEmpty);
     });
 
     test('senza obiettivo la proiezione viaggia nulla, non finta', () {

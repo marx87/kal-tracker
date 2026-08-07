@@ -41,23 +41,80 @@ void main() {
     profileId: () async => profileId,
   );
 
-  test('sonno ed energia sopravvivono alla riapertura', () async {
+  test('sonno, energia e movimento sopravvivono alla riapertura', () async {
     final day = DateTime.utc(2026, 8, 6, 7, 30);
     final repository = CheckInRepository(storeWith());
 
     await repository.save(day: day, sleepHours: 7.5);
     await repository.save(day: day, energyScore: 4);
+    await repository.save(day: day, steps: 8000, walkMinutes: 40);
 
     // Uno store nuovo sullo stesso database: è la riapertura dell'app.
     final log = await storeWith().read();
     final entry = log.forDay(checkInDayOf(day))!;
     expect(entry.sleepHours, 7.5);
     expect(entry.energyScore, 4);
-    expect(entry.isComplete, isTrue);
+    expect(entry.steps, 8000);
+    expect(entry.walkMinutes, 40);
+    expect(entry.isFullyLogged, isTrue);
 
     final row = await database.select(database.dailyCheckIns).getSingle();
     expect(row.day.toUtc(), DateTime.utc(2026, 8, 6));
     expect(row.deletedAt, isNull);
+  });
+
+  test('la giornata ferma si salva come zero, non come niente', () async {
+    final day = DateTime.utc(2026, 8, 6);
+    await CheckInRepository(
+      storeWith(),
+    ).save(day: day, sleepHours: 7, steps: 0, walkMinutes: 0);
+
+    final entry = (await storeWith().read()).forDay(checkInDayOf(day))!;
+    // Lo zero deve tornare indietro dal database come zero: se si rileggesse
+    // `null` il giorno fermo tornerebbe indistinguibile da quello non
+    // segnato, e la media settimanale si farebbe di nuovo solo sui giorni
+    // buoni.
+    expect(entry.steps, 0);
+    expect(entry.walkMinutes, 0);
+    expect(entry.hasNeat, isTrue);
+  });
+
+  test(
+    'il movimento da solo non arriva alla tabella, e non fa danni',
+    () async {
+      final walkOnly = DateTime.utc(2026, 8, 6);
+      final normale = DateTime.utc(2026, 8, 5);
+      final repository = CheckInRepository(storeWith());
+      await repository.save(day: normale, sleepHours: 7, steps: 5000);
+
+      await repository.save(day: walkOnly, walkMinutes: 45);
+
+      // La CHECK della v7 pretende sonno o energia e rifiuta la riga di sola
+      // camminata. Quello che NON deve succedere è che si porti dietro anche
+      // il giorno buono: l'intera transazione abortirebbe.
+      final righe = await database.select(database.dailyCheckIns).get();
+      expect(righe, hasLength(1));
+      expect(righe.single.day.toUtc(), DateTime.utc(2026, 8, 5));
+      expect(righe.single.steps, 5000);
+      expect((await storeWith().read()).entries, hasLength(1));
+    },
+  );
+
+  test('togliendo il sonno il giorno non resuscita alla riapertura', () async {
+    final day = DateTime.utc(2026, 8, 6);
+    final repository = CheckInRepository(storeWith());
+    await repository.save(day: day, sleepHours: 7, walkMinutes: 45);
+
+    await repository.save(day: day, clearSleep: true);
+
+    // Resta solo la camminata: la riga non è più riscrivibile, quindi va
+    // spenta. Lasciarla com'era rimetterebbe in vita alla riapertura il
+    // sonno che Marco ha appena tolto.
+    final row = await database.select(database.dailyCheckIns).getSingle();
+    expect(row.deletedAt, isNotNull);
+    expect(row.sleepHours, isNull);
+    expect(row.walkMinutes, isNull);
+    expect((await storeWith().read()).entries, isEmpty);
   });
 
   test('il giorno cancellato resta come tombstone e può tornare', () async {

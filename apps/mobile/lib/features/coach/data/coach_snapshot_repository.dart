@@ -3,6 +3,7 @@ import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
 import 'package:kal_tracker/features/coach/domain/coach_metrics.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 
 /// Legge — e basta — la fotografia su cui lavora il motore.
@@ -16,6 +17,17 @@ class CoachSnapshotRepository {
   /// Quante settimane si caricano: la settimana del rapporto, quella di
   /// confronto e le due che servono al ritmo osservato della proiezione.
   static const int weeksLoaded = CoachEngine.maxRateWeeks + 1;
+
+  /// Quanto indietro devono arrivare le serie: il salto di tre settimane più
+  /// la finestra di allora.
+  ///
+  /// **Non si eredita da [weeksLoaded]**, che oggi ci arriva allo stesso
+  /// giorno per aritmetica (35 giorni tondi tutte e due). È una coincidenza,
+  /// e il giorno in cui una delle due costanti cambia il quinto segnale
+  /// tornerebbe cieco senza che nessuno se ne accorga: qui la finestra si
+  /// ricava da chi la usa.
+  static const int strengthDaysLoaded =
+      CoachStrength.comparisonGapDays + CoachStrength.windowDays;
 
   final AppDatabase _database;
 
@@ -36,6 +48,11 @@ class CoachSnapshotRepository {
       diary: await _diary(profileId: profileId, from: from, to: to),
       weighIns: await _weighIns(profileId: profileId, from: from, to: to),
       sessions: await _sessions(profileId: profileId, from: from, to: to),
+      strengthSets: await _strengthSets(
+        profileId: profileId,
+        from: week.end.subtract(const Duration(days: strengthDaysLoaded - 1)),
+        to: to,
+      ),
       water: await _water(profileId: profileId, from: from, to: to),
       targets: targets,
       goal: goal,
@@ -182,6 +199,71 @@ class CoachSnapshotRepository {
       return null;
     }
     return seconds ~/ 60;
+  }
+
+  /// Le serie da cui si misura la forza, già scremate qui e non nel dominio.
+  ///
+  /// La scrematura sta in SQL per la stessa ragione per cui ci sta quella
+  /// delle sessioni concluse: il coach riceve una fotografia pronta e
+  /// `CoachStrengthSet` non conosce `Workout`. Restano fuori i riscaldamenti,
+  /// le serie mai spuntate — un carico scritto e non eseguito non è forza — e
+  /// tutto ciò che non ha insieme carico e ripetizioni, cioè il cardio e i
+  /// blocchi a tempo, dove un massimale non vuol dire niente.
+  Future<List<CoachStrengthSet>> _strengthSets({
+    required String profileId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final workouts = _database.workouts;
+    final exercises = _database.workoutExercises;
+    final sets = _database.workoutSets;
+
+    final query =
+        _database.select(sets).join([
+            innerJoin(
+              exercises,
+              exercises.id.equalsExp(sets.workoutExerciseId),
+            ),
+            innerJoin(workouts, workouts.id.equalsExp(exercises.workoutId)),
+          ])
+          ..where(
+            workouts.profileId.equals(profileId) &
+                workouts.deletedAt.isNull() &
+                workouts.endedAt.isNotNull() &
+                workouts.startedAt.isBiggerOrEqualValue(from) &
+                workouts.startedAt.isSmallerThanValue(to) &
+                sets.completed.equals(true) &
+                sets.isWarmup.equals(false) &
+                // **Anche l'esercizio**, non solo la serie. Nell'export di
+                // Gym ci sono 68 righe esercizio marcate riscaldamento le cui
+                // serie non portano il flag: senza questo filtro un
+                // riscaldamento pesante entra nell'e1RM e può far sembrare la
+                // forza in calo quando non lo è — e la forza è il segnale che
+                // accende il semaforo del sovrallenamento, la cui risposta è
+                // «alleggerisci» o «mangia di più». Un allarme costruito su un
+                // riscaldamento è peggio di nessun allarme.
+                exercises.isWarmup.equals(false) &
+                sets.weightKg.isBiggerThanValue(0) &
+                sets.reps.isBiggerThanValue(0),
+          )
+          ..orderBy([OrderingTerm.asc(workouts.startedAt)]);
+
+    return [
+      for (final row in await query.get())
+        CoachStrengthSet(
+          at: row.readTable(workouts).startedAt,
+          // L'id ORIGINALE, non la chiave viva verso il catalogo: quella
+          // diventa nulla quando l'esercizio viene cancellato, ed esercizi
+          // diversi collasserebbero in una voce sola. È la stessa chiave con
+          // cui raggruppano i record personali.
+          exerciseId: row.readTable(exercises).exerciseRefId,
+          exerciseName: row.readTable(exercises).exerciseNameSnapshot,
+          // Il `!` è quello che il WHERE ha appena garantito: un NULL non
+          // sopravvive a un confronto con zero.
+          weightKg: row.readTable(sets).weightKg!,
+          reps: row.readTable(sets).reps!,
+        ),
+    ];
   }
 
   Future<List<CoachWaterDay>> _water({

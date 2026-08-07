@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
 import 'package:kal_tracker/features/workouts/domain/personal_records.dart';
-import 'package:kal_tracker/features/workouts/domain/workout.dart';
 
 /// Una serie completata, per quel poco che serve alla forza.
 ///
@@ -9,6 +8,24 @@ import 'package:kal_tracker/features/workouts/domain/workout.dart';
 /// dei dati, non sul modello vivo dell'allenamento. Qui la fotografia è
 /// ancora più stretta — carico e ripetizioni — perché è tutto quello che
 /// serve a [epley1Rm].
+///
+/// **Tipo locale, come `TrainingSessionKcal` dell'Obiettivo e per la stessa
+/// ragione.** Il dominio del coach non conosce `Workout`: la scrematura —
+/// serie completate, niente riscaldamento, carico e ripetizioni presenti —
+/// la fa `CoachSnapshotRepository` insieme a tutte le altre traduzioni dal
+/// database, e qui arriva già fatta. Se invece il coach rileggesse le
+/// sessioni, ogni cambio alla forma di un allenamento arriverebbe fin dentro
+/// il semaforo del sovrallenamento.
+///
+/// L'unica cosa che si continua a prendere da Allenamenti è [epley1Rm], che
+/// non è un modello ma **la formula**: una seconda copia della stessa stima
+/// darebbe due verdetti diversi sullo stesso carico, e quello costa più di un
+/// import.
+///
+/// Il raggruppamento è su [exerciseId] e non sul nome, per la stessa ragione
+/// dei record personali: il nome è congelato nella sessione e due esercizi
+/// diversi possono chiamarsi uguale, mentre l'id originale sopravvive anche
+/// alla cancellazione dal catalogo.
 @immutable
 class CoachStrengthSet {
   const CoachStrengthSet({
@@ -19,32 +36,8 @@ class CoachStrengthSet {
     required this.reps,
   });
 
-  /// Le serie che raccontano davvero la forza: completate, non riscaldamento,
-  /// con carico e ripetizioni.
-  ///
-  /// Il raggruppamento è su [WorkoutExercise.exerciseId] e non sul nome, per
-  /// la stessa ragione dei record personali: il nome è congelato nella
-  /// sessione e due esercizi diversi possono chiamarsi uguale, mentre l'id
-  /// originale sopravvive anche alla cancellazione dal catalogo.
-  static List<CoachStrengthSet> fromWorkouts(List<Workout> workouts) => [
-    for (final workout in workouts)
-      for (final exercise in workout.exercises)
-        for (final set in exercise.sets)
-          if (set.completed && !set.isWarmup)
-            if (set.weightKg case final kg? when kg > 0)
-              if (set.reps case final reps? when reps > 0)
-                CoachStrengthSet(
-                  // La data della sessione, non quella della singola serie:
-                  // le serie non ce l'hanno, e comunque un allenamento è un
-                  // punto solo nel tempo.
-                  at: workout.startedAt,
-                  exerciseId: exercise.exerciseId,
-                  exerciseName: exercise.exerciseName,
-                  weightKg: kg,
-                  reps: reps,
-                ),
-  ];
-
+  /// La data della **sessione**, non quella della singola serie: le serie non
+  /// ce l'hanno, e comunque un allenamento è un punto solo nel tempo.
   final DateTime at;
   final String exerciseId;
   final String exerciseName;

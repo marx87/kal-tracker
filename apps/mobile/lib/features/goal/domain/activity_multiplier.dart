@@ -3,10 +3,10 @@
 ///
 /// `ActivityLevel` è una tabella: Marco sceglie «Attivo» e il TDEE ci crede
 /// per sempre, anche la settimana in cui si è allenato una volta sola. Qui il
-/// numero si ricostruisce: **NEAT di base + calorie vere degli allenamenti
-/// diviso il basale**, dove le calorie vere sono quelle che
-/// `estimateKcal` calcola già su ogni sessione e che finora non entravano da
-/// nessuna parte nel consumo giornaliero.
+/// numero si ricostruisce: **NEAT di base + quota netta degli allenamenti
+/// diviso il basale**, dove la quota netta esce da quello che `estimateKcal`
+/// calcola già su ogni sessione, meno il riposo di quelle stesse ore — che il
+/// NEAT aveva già contato. Vedi [TrainingSessionKcal.netKcal].
 ///
 /// Due cose che questo file NON fa, di proposito:
 ///
@@ -23,17 +23,18 @@ import 'dart:math' as math;
 
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
 
-/// Una sessione allenata, ridotta ai tre fatti che servono qui.
+/// Una sessione allenata, ridotta ai quattro fatti che servono qui.
 ///
-/// Si costruisce a monte, nel repository degli allenamenti: `kcal` è il
-/// risultato di `estimateKcal` e `muscleGroupsComplete` quello di
-/// `hasCompleteMuscleGroupSnapshots`. L'area Obiettivo non conosce
-/// `Workout` e non deve: qui arriva un numero e la sua affidabilità, non una
-/// sessione da rileggere.
+/// Si costruisce a monte, nel repository degli allenamenti: `kcal` e
+/// `averageMet` sono il risultato e il MET medio di `estimateKcal`,
+/// `muscleGroupsComplete` è quello di `hasCompleteMuscleGroupSnapshots`.
+/// L'area Obiettivo non conosce `Workout` e non deve: qui arriva un numero e
+/// la sua affidabilità, non una sessione da rileggere.
 class TrainingSessionKcal {
   const TrainingSessionKcal({
     required this.endedAt,
     required this.kcal,
+    required this.averageMet,
     required this.muscleGroupsComplete,
   });
 
@@ -41,17 +42,48 @@ class TrainingSessionKcal {
   /// nell'altra.
   final DateTime endedAt;
 
-  /// Le calorie stimate della sessione.
+  /// Le calorie stimate della sessione, **lorde**.
+  ///
+  /// Dentro c'è anche il metabolismo delle ore di palestra, perché
+  /// `estimateKcal` fa `MET × peso × ore` e il MET è per definizione un
+  /// multiplo del riposo. Da sola non va sommata a un NEAT: vedi [netKcal].
   final double kcal;
+
+  /// Il MET medio con cui [kcal] è stata calcolata.
+  ///
+  /// Serve solo a togliere il riposo: da un totale lordo, senza sapere di
+  /// quante volte il riposo è stato moltiplicato, non si risale alla quota
+  /// che l'allenamento ha davvero aggiunto.
+  final double averageMet;
 
   /// Vero quando ogni esercizio che conta portava il suo gruppo muscolare.
   /// Falso significa che dentro `kcal` c'è almeno un 5,0 MET di ripiego.
   final bool muscleGroupsComplete;
 
+  /// Quello che l'allenamento ha aggiunto al riposo: `MET − 1` invece di
+  /// `MET`.
+  ///
+  /// **Il NEAT copre già tutte le 24 ore**, comprese quelle di palestra.
+  /// Sommargli le calorie lorde conta due volte il riposo di quelle ore: su
+  /// Marco sono ~67 kcal al giorno, cioè +0,036 di moltiplicatore — lo stesso
+  /// ordine di grandezza di [ActivityMultiplierProposal.minimumGap], quindi
+  /// abbastanza da trasformare un «niente da chiedere» in una proposta.
+  double get netKcal {
+    final net = kcal * (averageMet - 1) / averageMet;
+    return net.isFinite && net > 0 ? net : 0;
+  }
+
   /// Un valore negativo o non finito qui dentro è un difetto a monte, non un
   /// allenamento leggero: si tratta come uno snapshot mancante, cioè si butta
-  /// la settimana invece di lasciarlo entrare nella media.
-  bool get isTrustworthy => muscleGroupsComplete && kcal.isFinite && kcal >= 0;
+  /// la settimana invece di lasciarlo entrare nella media. Vale anche per un
+  /// MET sotto l'unità: sotto il riposo non ci scende chi si allena, e
+  /// [netKcal] verrebbe negativa.
+  bool get isTrustworthy =>
+      muscleGroupsComplete &&
+      kcal.isFinite &&
+      kcal >= 0 &&
+      averageMet.isFinite &&
+      averageMet >= 1;
 }
 
 /// Perché il derivato non si può usare. Non è una lista di errori: è quello
@@ -90,6 +122,7 @@ class ActivityMultiplierProposal {
     required this.weeksDiscardedForMissingGroups,
     required this.sessionsUsed,
     required this.averageWeeklyTrainingKcal,
+    required this.averageWeeklyGrossTrainingKcal,
   });
 
   /// Il moltiplicatore attualmente in uso: quello che Marco ha scelto.
@@ -124,8 +157,16 @@ class ActivityMultiplierProposal {
   /// Quante sessioni ci sono dietro il numero.
   final int sessionsUsed;
 
-  /// Media delle calorie di allenamento per settimana usata.
+  /// Media delle calorie di allenamento per settimana usata, **al netto** del
+  /// riposo che il NEAT contava già: è questa che entra nel calcolo.
   final double averageWeeklyTrainingKcal;
+
+  /// La stessa media, lorda come esce da `estimateKcal`.
+  ///
+  /// Si porta dietro perché la differenza fra le due va detta: è la quota che
+  /// il calcolo scarta, e scartarla in silenzio farebbe sembrare più leggeri
+  /// del vero gli allenamenti di Marco a chi legge la spiegazione.
+  final double averageWeeklyGrossTrainingKcal;
 
   /// Il numero da proporre. Nullo quando c'è un rifiuto: così non esiste
   /// nessuna strada per applicare un derivato che non ci si fida.
@@ -190,7 +231,7 @@ class ActivityMultiplierProposal {
     final buffer = StringBuffer(
       'Ricavato dalle tue ultime $weeksUsed settimane: ${_n(neat)} di '
       'movimento quotidiano più le calorie vere di $sessionsUsed '
-      'allenamenti (${averageWeeklyTrainingKcal.round()} kcal a settimana).',
+      'allenamenti ($_weeklyKcalPhrase).',
     );
     if (weeksDiscardedForMissingGroups > 0) {
       buffer.write(
@@ -204,6 +245,22 @@ class ActivityMultiplierProposal {
       );
     }
     return buffer.toString();
+  }
+
+  /// Le kcal a settimana, e quante ne sono state tolte.
+  ///
+  /// La sottrazione si dichiara invece di sparire nel numero: chi legge
+  /// «1920» dopo aver visto «2400» in cima alla scheda dell'allenamento deve
+  /// trovare qui la ragione, non pensare a un errore.
+  String get _weeklyKcalPhrase {
+    final resting = (averageWeeklyGrossTrainingKcal - averageWeeklyTrainingKcal)
+        .round();
+    final net = '${averageWeeklyTrainingKcal.round()} kcal a settimana';
+    if (resting <= 0) {
+      return net;
+    }
+    return '$net, tolte le $resting di riposo che il movimento quotidiano '
+        'contava già';
   }
 
   /// Un numero che è arrivato all'infinito non si stampa: «Infinity» in
@@ -224,8 +281,12 @@ class ActivityMultiplierProposal {
 
 /// **Il moltiplicatore derivato.**
 ///
-/// `moltiplicatore = NEAT + (kcal medie di allenamento a settimana / 7) /
-/// basale`.
+/// `moltiplicatore = NEAT + (kcal NETTE medie di allenamento a settimana / 7)
+/// / basale`.
+///
+/// «Nette» vuol dire senza il metabolismo a riposo delle ore di palestra:
+/// quelle ore stanno già dentro il NEAT, che copre la giornata intera. Vedi
+/// [TrainingSessionKcal.netKcal].
 ///
 /// Il `/ 7` non è un dettaglio: il moltiplicatore moltiplica un consumo
 /// **giornaliero**, quindi le calorie della settimana vanno spalmate sui
@@ -283,17 +344,21 @@ abstract final class DerivedActivityMultiplier {
   /// ritroso da qui: nessuna settimana parziale entra nella media, e i test
   /// non dipendono da che giorno è oggi.
   ///
-  /// [historyStartsAt] è il primo giorno in cui esistono dati. Le finestre
-  /// che iniziano prima non contano come settimane di riposo: sono settimane
-  /// in cui non stavamo guardando, e contarle come zero allenamenti
-  /// abbasserebbe il moltiplicatore di chi ha appena installato l'app.
+  /// [historyStartsAt] è il primo giorno in cui esistono dati, e **non è
+  /// facoltativo**. Senza, un'installazione fresca con tre sedute nell'ultima
+  /// settimana otterrebbe tre settimane «piene» di cui due mai esistite, e
+  /// proporrebbe di ABBASSARE il moltiplicatore su settimane in cui l'app non
+  /// c'era: il rifiuto [DerivedMultiplierRefusal.notEnoughHistory] esisteva
+  /// già, ma restava irraggiungibile se il chiamante non collaborava. Chi non
+  /// ha nessuno storico passa [now] — zero settimane coperte, e il rifiuto
+  /// arriva da sé.
   static ActivityMultiplierProposal propose({
     required double basalMetabolicRate,
     required ActivityLevel declared,
     required List<TrainingSessionKcal> sessions,
     required DateTime now,
+    required DateTime historyStartsAt,
     double? averageDailySteps,
-    DateTime? historyStartsAt,
     int lookbackWeeks = minimumWeeks,
   }) {
     final weeks = math.max(lookbackWeeks, minimumWeeks);
@@ -303,7 +368,11 @@ abstract final class DerivedActivityMultiplier {
     // richiesta e si accorcia se i dati non arrivano fin lì. È il numero che
     // compare nelle spiegazioni, perché «2 settimane su 6» sarebbe una
     // frazione inventata quando le altre quattro non esistono.
-    var examinedWeeks = weeks;
+    final examinedWeeks = _weeksCoveredBy(
+      now: now,
+      historyStartsAt: historyStartsAt,
+      cap: weeks,
+    );
 
     ActivityMultiplierProposal refuse(
       DerivedMultiplierRefusal refusal, {
@@ -312,6 +381,7 @@ abstract final class DerivedActivityMultiplier {
       int weeksDiscarded = 0,
       int sessionsUsed = 0,
       double averageWeeklyKcal = 0,
+      double averageWeeklyGrossKcal = 0,
     }) => ActivityMultiplierProposal(
       declared: declared,
       neat: neat,
@@ -322,14 +392,23 @@ abstract final class DerivedActivityMultiplier {
       weeksDiscardedForMissingGroups: weeksDiscarded,
       sessionsUsed: sessionsUsed,
       averageWeeklyTrainingKcal: averageWeeklyKcal,
+      averageWeeklyGrossTrainingKcal: averageWeeklyGrossKcal,
     );
 
     if (!basalMetabolicRate.isFinite || basalMetabolicRate <= 0) {
       return refuse(DerivedMultiplierRefusal.noBasalMetabolicRate);
     }
+    if (examinedWeeks < minimumWeeks) {
+      return refuse(DerivedMultiplierRefusal.notEnoughHistory);
+    }
 
-    final windowStart = now.subtract(Duration(days: 7 * weeks));
-    final buckets = List.generate(weeks, (_) => <TrainingSessionKcal>[]);
+    // La finestra si ferma dove finisce lo storico: guardare più indietro
+    // riempirebbe di zeri settimane che non sono mai state osservate.
+    final windowStart = now.subtract(Duration(days: 7 * examinedWeeks));
+    final buckets = List.generate(
+      examinedWeeks,
+      (_) => <TrainingSessionKcal>[],
+    );
     for (final session in sessions) {
       if (!session.endedAt.isAfter(windowStart)) {
         continue;
@@ -340,27 +419,17 @@ abstract final class DerivedActivityMultiplier {
         continue;
       }
       final index = now.difference(session.endedAt).inDays ~/ 7;
-      if (index >= weeks) {
+      if (index >= examinedWeeks) {
         continue;
       }
       buckets[index].add(session);
-    }
-
-    if (historyStartsAt != null) {
-      examinedWeeks = _weeksCoveredBy(
-        now: now,
-        historyStartsAt: historyStartsAt,
-        cap: weeks,
-      );
-    }
-    if (examinedWeeks < minimumWeeks) {
-      return refuse(DerivedMultiplierRefusal.notEnoughHistory);
     }
 
     var weeksUsed = 0;
     var weeksDiscarded = 0;
     var sessionsUsed = 0;
     var trainingKcal = 0.0;
+    var grossTrainingKcal = 0.0;
     for (var index = 0; index < examinedWeeks; index++) {
       final bucket = buckets[index];
       // Basta una sessione di cui non ci si fida per buttare la settimana:
@@ -376,7 +445,8 @@ abstract final class DerivedActivityMultiplier {
       weeksUsed++;
       sessionsUsed += bucket.length;
       for (final session in bucket) {
-        trainingKcal += session.kcal;
+        trainingKcal += session.netKcal;
+        grossTrainingKcal += session.kcal;
       }
     }
 
@@ -393,6 +463,7 @@ abstract final class DerivedActivityMultiplier {
     }
 
     final averageWeeklyKcal = trainingKcal / weeksUsed;
+    final averageWeeklyGrossKcal = grossTrainingKcal / weeksUsed;
     if (sessionsUsed < minimumSessions) {
       return refuse(
         DerivedMultiplierRefusal.notEnoughSessions,
@@ -400,6 +471,7 @@ abstract final class DerivedActivityMultiplier {
         weeksDiscarded: weeksDiscarded,
         sessionsUsed: sessionsUsed,
         averageWeeklyKcal: averageWeeklyKcal,
+        averageWeeklyGrossKcal: averageWeeklyGrossKcal,
       );
     }
 
@@ -414,6 +486,7 @@ abstract final class DerivedActivityMultiplier {
         weeksDiscarded: weeksDiscarded,
         sessionsUsed: sessionsUsed,
         averageWeeklyKcal: averageWeeklyKcal,
+        averageWeeklyGrossKcal: averageWeeklyGrossKcal,
       );
     }
 
@@ -427,6 +500,7 @@ abstract final class DerivedActivityMultiplier {
       weeksDiscardedForMissingGroups: weeksDiscarded,
       sessionsUsed: sessionsUsed,
       averageWeeklyTrainingKcal: averageWeeklyKcal,
+      averageWeeklyGrossTrainingKcal: averageWeeklyGrossKcal,
     );
   }
 
@@ -441,6 +515,70 @@ abstract final class DerivedActivityMultiplier {
     }
     return math.min(days ~/ 7, cap);
   }
+}
+
+/// Quanto ci si muove, per come è scritto da qualche parte.
+///
+/// Due campi e non uno perché il dichiarato non si perde quando il derivato
+/// entra in vigore: togliere [acceptedMultiplier] rimette in vigore la scelta
+/// di Marco invece di un livello ricostruito a ritroso dal numero — e i
+/// livelli sono cinque, quindi un moltiplicatore di 1,48 non ha nessuna voce
+/// in cui tornare.
+class ActivitySettings {
+  const ActivitySettings({
+    this.declared = ActivityLevel.moderate,
+    this.acceptedMultiplier,
+  });
+
+  /// Ricostruisce da JSON scartando quello che non si può usare: un file
+  /// troncato o un moltiplicatore fuori forbice tornano al dichiarato, che è
+  /// sempre valido.
+  factory ActivitySettings.fromJson(Map<String, Object?> json) {
+    final accepted = json['accepted_multiplier'];
+    final multiplier = accepted is num ? accepted.toDouble() : null;
+    return ActivitySettings(
+      declared: ActivityLevel.fromStorage(json['declared'] as String?),
+      acceptedMultiplier: AdaptiveTdee.isUsableMultiplier(multiplier)
+          ? multiplier
+          : null,
+    );
+  }
+
+  /// Il livello scelto a mano dalla tendina.
+  final ActivityLevel declared;
+
+  /// Il derivato **dopo il sì di Marco**, e solo dopo. Nullo vuol dire che
+  /// vale [declared]: è la differenza fra proporre e applicare, scritta in un
+  /// campo.
+  final double? acceptedMultiplier;
+
+  /// Sceglierne uno a mano cancella il derivato accettato.
+  ///
+  /// Altrimenti la tendina non farebbe niente — nel TDEE il derivato vince
+  /// sempre — e Marco vedrebbe la sua scelta non avere alcun effetto sul
+  /// numero.
+  ActivitySettings withDeclared(ActivityLevel level) =>
+      ActivitySettings(declared: level);
+
+  ActivitySettings withAcceptedMultiplier(double multiplier) =>
+      ActivitySettings(declared: declared, acceptedMultiplier: multiplier);
+
+  ActivitySettings withoutAcceptedMultiplier() =>
+      ActivitySettings(declared: declared);
+
+  Map<String, Object?> toJson() => {
+    'declared': declared.name,
+    'accepted_multiplier': acceptedMultiplier,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ActivitySettings &&
+      other.declared == declared &&
+      other.acceptedMultiplier == acceptedMultiplier;
+
+  @override
+  int get hashCode => Object.hash(declared, acceptedMultiplier);
 }
 
 String _n(double value) => value.toStringAsFixed(2).replaceAll('.', ',');

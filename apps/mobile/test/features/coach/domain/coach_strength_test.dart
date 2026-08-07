@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
-import 'package:kal_tracker/features/workouts/domain/workout.dart';
 
 /// Una serie alle 18 di Roma, con le ripetizioni fisse.
 ///
@@ -236,43 +235,10 @@ void main() {
     });
   });
 
-  group('la proiezione dallo storico', () {
-    test('riscaldamenti, serie non completate e cardio restano fuori', () {
-      final sets = CoachStrengthSet.fromWorkouts([
-        Workout(
-          id: 'w1',
-          startedAt: DateTime.utc(2026, 7, 22, 16),
-          exercises: const [
-            WorkoutExercise(
-              exerciseId: 'panca',
-              exerciseName: 'Panca piana',
-              sets: [
-                WorkoutSet(
-                  weightKg: 40,
-                  reps: 10,
-                  isWarmup: true,
-                  completed: true,
-                ),
-                WorkoutSet(weightKg: 90, reps: 5),
-                WorkoutSet(weightKg: 90, reps: 5, completed: true),
-              ],
-            ),
-            WorkoutExercise(
-              exerciseId: 'corsa',
-              exerciseName: 'Corsa',
-              sets: [WorkoutSet(durationSec: 1200, completed: true)],
-            ),
-          ],
-        ),
-      ]);
-
-      expect(sets, hasLength(1));
-      expect(sets.single.exerciseId, 'panca');
-      expect(sets.single.weightKg, 90);
-      // La data è quella della sessione: le serie non ne hanno una propria.
-      expect(sets.single.at, DateTime.utc(2026, 7, 22, 16));
-    });
-
+  // La scrematura delle serie — riscaldamenti, serie mai spuntate, cardio —
+  // non sta più qui: la fa `CoachSnapshotRepository` in SQL, e il suo test è
+  // in `data/coach_snapshot_repository_test.dart`. Qui resta il confronto.
+  group('la stima del massimale', () {
     test('l\'e1RM è quello dei record, non una seconda formula', () {
       final set = lift(
         DateTime.utc(2026, 7, 22),

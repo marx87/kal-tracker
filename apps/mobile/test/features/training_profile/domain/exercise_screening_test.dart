@@ -195,6 +195,48 @@ void main() {
 
       expect(esito.outcome, ScreeningOutcome.escluso);
       expect(esito.reason, contains('collo'));
+      // Vince la più grave, ma l'altra non sparisce: resta scritta, e la
+      // peggiore sta per prima perché è quella che la frase racconta.
+      expect(esito.limitations.map((limitazione) => limitazione.bodyPart), [
+        BodyPart.collo,
+        BodyPart.spallaDx,
+      ]);
+      expect(esito.reason, contains('spalla destra'));
+    });
+
+    test('due limitazioni sullo stesso esercizio si nominano tutte e due', () {
+      // Spalla e polso in fastidio sulle flessioni: sono le mani a terra a
+      // far male quanto la spalla. Nominarne una sola sarebbe un'esclusione
+      // non dichiarata — l'altra sparirebbe senza che nessuno lo dica.
+      final esito = ExerciseScreener.screen(
+        exercise: esercizio('Flessioni (push-up)', MuscleGroup.petto),
+        profile: profilo(
+          limitations: [
+            limitazione(
+              bodyPart: BodyPart.spallaDx,
+              severity: LimitationSeverity.fastidio,
+            ),
+            limitazione(
+              bodyPart: BodyPart.polsoDx,
+              severity: LimitationSeverity.fastidio,
+            ),
+          ],
+        ),
+      );
+
+      expect(esito.outcome, ScreeningOutcome.segnalato);
+      expect(esito.limitations, hasLength(2));
+      expect(
+        esito.limitations.map((limitazione) => limitazione.bodyPart),
+        containsAll([BodyPart.spallaDx, BodyPart.polsoDx]),
+      );
+      expect(esito.reason, contains('spalla destra'));
+      // La seconda arriva con la sua gravità: «pesa anche il polso» senza
+      // dire quanto non direbbe niente.
+      expect(
+        esito.reason,
+        contains('Su questo esercizio pesa anche polso destro (fastidio).'),
+      );
     });
 
     test('una zona che l\'esercizio non tocca non lo filtra', () {
@@ -227,6 +269,33 @@ void main() {
       expect(esito.missingEquipment, hasLength(1));
       expect(esito.missingEquipment.single.label, contains('ancoraggio'));
       expect(esito.reason, contains('ancoraggio'));
+    });
+
+    test('l\'attrezzo mancante non fa sparire la limitazione che stava '
+        'segnalando', () {
+      // L'esito lo decide l'ancoraggio, ma la spalla sta lavorando lo stesso:
+      // se il campo tornasse vuoto, comprare l'elastico farebbe ricomparire
+      // l'esercizio come se non ci fosse mai stato niente da dire.
+      final esito = ExerciseScreener.screen(
+        exercise: pushDown,
+        profile: profilo(
+          limitations: [
+            limitazione(
+              bodyPart: BodyPart.spallaDx,
+              severity: LimitationSeverity.fastidio,
+            ),
+          ],
+        ),
+      );
+
+      expect(esito.outcome, ScreeningOutcome.escluso);
+      expect(esito.missingEquipment.single.label, contains('ancoraggio'));
+      expect(esito.limitations.single.bodyPart, BodyPart.spallaDx);
+      expect(esito.reason, contains('ancoraggio'));
+      expect(
+        esito.reason,
+        contains('Su questo esercizio pesa anche spalla destra (fastidio).'),
+      );
     });
 
     test('con gli elastici ancorabili lo stesso push-down è libero', () {

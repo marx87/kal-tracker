@@ -46,6 +46,20 @@ Widget _host({
   ),
 );
 
+/// Tocca un controllo portandolo prima nella finestra.
+///
+/// La card è più alta del riquadro dei test e i controlli del movimento sono
+/// gli ultimi: senza lo scorrimento il tocco cadrebbe nel vuoto e il test
+/// passerebbe o fallirebbe per la dimensione della finestra, non per il
+/// comportamento della card.
+Future<void> _tap(WidgetTester tester, String key) async {
+  final finder = find.byKey(Key(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUpAll(() => initializeDateFormatting('it'));
   setUp(AppTime.initialize);
@@ -162,6 +176,104 @@ void main() {
     );
   });
 
+  testWidgets('i passi partono da 6.000 e si muovono di mille', (tester) async {
+    final store = InMemoryCheckInStore();
+    await tester.pumpWidget(_host(store: store));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_steps_value'))).data,
+      'da inserire',
+    );
+
+    await _tap(tester, 'check_in_steps_plus');
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_steps_value'))).data,
+      '6.000',
+    );
+
+    await _tap(tester, 'check_in_steps_plus');
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_steps_value'))).data,
+      '7.000',
+    );
+
+    expect(
+      (await store.read()).forDay(checkInDayOf(AppTime.nowInRome()))!.steps,
+      7000,
+    );
+  });
+
+  testWidgets('i minuti a piedi partono da 30 e si muovono di dieci', (
+    tester,
+  ) async {
+    final store = InMemoryCheckInStore();
+    await tester.pumpWidget(_host(store: store));
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'check_in_walk_plus');
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_walk_value'))).data,
+      '30 min',
+    );
+
+    await _tap(tester, 'check_in_walk_minus');
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_walk_value'))).data,
+      '20 min',
+    );
+  });
+
+  testWidgets('«Giornata ferma» segna lo zero in un tocco solo', (
+    tester,
+  ) async {
+    final store = InMemoryCheckInStore();
+    await tester.pumpWidget(_host(store: store));
+    await tester.pumpAndSettle();
+
+    await _tap(tester, 'check_in_neat_still');
+
+    // Zero e non «da inserire»: è la distinzione su cui si regge tutto il
+    // campo, e scendere di mille passi alla volta fino a zero significa non
+    // segnarlo mai.
+    final entry = (await store.read()).forDay(
+      checkInDayOf(AppTime.nowInRome()),
+    )!;
+    expect(entry.steps, 0);
+    expect(entry.walkMinutes, 0);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_steps_value'))).data,
+      '0',
+    );
+
+    // Lo stesso tocco lo annulla: il chip preso per sbaglio non obbliga a
+    // risalire a colpi di mille.
+    await _tap(tester, 'check_in_neat_still');
+    expect(
+      tester.widget<Text>(find.byKey(const Key('check_in_steps_value'))).data,
+      'da inserire',
+    );
+  });
+
+  testWidgets('il movimento da solo lo dice, non lo perde in silenzio', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host(store: InMemoryCheckInStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsNothing);
+
+    await _tap(tester, 'check_in_walk_plus');
+
+    expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsOneWidget);
+
+    // Con il sonno la riga diventa salvabile e l'avviso sparisce da solo.
+    await tester.tap(find.byKey(const Key('check_in_sleep_plus')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsNothing);
+  });
+
   testWidgets('completo si richiude, «Modifica» lo riapre', (tester) async {
     final store = InMemoryCheckInStore();
     await tester.pumpWidget(_host(store: store));
@@ -172,8 +284,20 @@ void main() {
     await tester.tap(find.byKey(const Key('check_in_energy_5')));
     await tester.pumpAndSettle();
 
+    // Sonno ed energia si richiudono subito, ma il movimento resta lì: è la
+    // domanda su ieri, e nessuno riaprirebbe una card per rispondere a una
+    // cosa che non sa di dover rispondere.
     expect(find.byKey(const Key('check_in_summary')), findsOneWidget);
     expect(find.byKey(const Key('check_in_sleep_plus')), findsNothing);
+    expect(find.byKey(const Key('check_in_neat_still')), findsOneWidget);
+    expect(find.text('Manca solo quanto ti sei mosso.'), findsOneWidget);
+
+    await _tap(tester, 'check_in_neat_still');
+
+    // Adesso non manca più niente e sparisce anche il movimento, che finisce
+    // nella riga di riepilogo.
+    expect(find.byKey(const Key('check_in_neat_still')), findsNothing);
+    expect(find.textContaining('giornata ferma'), findsOneWidget);
 
     await tester.tap(find.text('Modifica'));
     await tester.pumpAndSettle();

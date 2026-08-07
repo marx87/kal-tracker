@@ -14,18 +14,22 @@ class CheckInRepository {
 
   Future<CheckInLog> read() => _store.read();
 
-  /// Scrive sonno ed energia del giorno.
+  /// Scrive sonno, energia e movimento del giorno.
   ///
-  /// I due campi sono indipendenti: passare solo [energyScore] non cancella
-  /// il sonno già inserito. Per togliere un valore si passa [clearSleep] o
-  /// [clearEnergy] — un `null` significa «non lo tocco», e senza questa
-  /// distinzione un salvataggio parziale svuoterebbe l'altro campo.
+  /// I campi sono indipendenti: passare solo [energyScore] non cancella il
+  /// sonno già inserito. Per togliere un valore si passa il `clear` che gli
+  /// corrisponde — un `null` significa «non lo tocco», e senza questa
+  /// distinzione un salvataggio parziale svuoterebbe gli altri campi.
   Future<CheckInLog> save({
     required DateTime day,
     double? sleepHours,
     int? energyScore,
+    int? steps,
+    int? walkMinutes,
     bool clearSleep = false,
     bool clearEnergy = false,
+    bool clearSteps = false,
+    bool clearWalkMinutes = false,
   }) async {
     final now = AppTime.nowUtc();
     final log = await _store.read();
@@ -40,6 +44,15 @@ class CheckInRepository {
       energyScore: clearEnergy
           ? null
           : DailyCheckIn.normalizeEnergy(energyScore) ?? existing?.energyScore,
+      // Lo zero passa: `normalizeSteps(0)` torna 0, che non è `null`, quindi
+      // «oggi fermo» sovrascrive il valore precedente invece di ereditarlo.
+      steps: clearSteps
+          ? null
+          : DailyCheckIn.normalizeSteps(steps) ?? existing?.steps,
+      walkMinutes: clearWalkMinutes
+          ? null
+          : DailyCheckIn.normalizeWalkMinutes(walkMinutes) ??
+                existing?.walkMinutes,
     );
     final updated = log.upsert(entry, now: now);
     await _store.write(updated);

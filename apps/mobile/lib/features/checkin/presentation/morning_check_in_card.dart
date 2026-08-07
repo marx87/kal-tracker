@@ -8,17 +8,17 @@ import 'package:kal_tracker/features/checkin/presentation/check_in_providers.dar
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/goal/domain/body_state.dart';
 
-/// Il check-in del mattino: peso, sonno, energia. Dieci secondi.
+/// Il check-in del mattino: peso, sonno, energia, movimento. Dieci secondi.
 ///
 /// Il peso non si inserisce qui — si mostra se la pesata di oggi c'è già e
 /// altrimenti si invita a farla, aprendo il foglio della schermata Corpo. È
 /// una sola strada per una sola tabella: due punti d'inserimento del peso
 /// diventerebbero due storici che non tornano.
 ///
-/// Sonno ed energia si salvano al tocco, senza pulsante «Salva»: un modulo
-/// da dieci secondi non può chiederne uno in più. Quando ci sono tutti e
-/// due, la card si richiude in una riga di riepilogo — quello che non serve
-/// adesso non deve occupare mezzo schermo.
+/// Tutto si salva al tocco, senza pulsante «Salva»: un modulo da dieci
+/// secondi non può chiederne uno in più. Quello che è già stato risposto si
+/// richiude in una riga di riepilogo — quello che non serve adesso non deve
+/// occupare mezzo schermo — e resta fuori solo la domanda ancora aperta.
 class MorningCheckInCard extends ConsumerStatefulWidget {
   const MorningCheckInCard({required this.onWeighIn, super.key});
 
@@ -41,13 +41,24 @@ class _MorningCheckInCardState extends ConsumerState<MorningCheckInCard> {
     final weighIn = ref.watch(todayWeighInProvider).valueOrNull;
     final complete = checkIn?.isComplete ?? false;
     final collapsed = complete && !_reopened;
+    // Il movimento sopravvive al richiudersi finché non c'è. È la domanda che
+    // riguarda ieri e non stamattina, e se sparisse insieme a sonno ed
+    // energia resterebbe vuota tutti i giorni: nessuno riapre una card per
+    // rispondere a una cosa che non sa di dover rispondere.
+    final showNeat = !collapsed || !(checkIn?.hasNeat ?? false);
 
     return SectionCard(
       key: const Key('morning_check_in_card'),
       title: 'Check-in di oggi',
-      subtitle: collapsed
-          ? 'Fatto. Sonno ed energia entrano nelle tendenze della settimana.'
-          : 'Dieci secondi: quanto hai dormito e come ti senti.',
+      subtitle: switch ((collapsed, showNeat)) {
+        (true, true) => 'Manca solo quanto ti sei mosso.',
+        (true, false) =>
+          'Fatto. Sonno, energia e movimento entrano nelle tendenze della '
+              'settimana.',
+        _ =>
+          'Dieci secondi: quanto hai dormito, come ti senti, quanto ti sei '
+              'mosso.',
+      },
       icon: Icons.wb_twilight_rounded,
       actionLabel: collapsed ? 'Modifica' : null,
       onAction: collapsed ? () => setState(() => _reopened = true) : null,
@@ -73,6 +84,233 @@ class _MorningCheckInCardState extends ConsumerState<MorningCheckInCard> {
                   .setEnergy(today, value),
             ),
           ],
+          if (showNeat) ...[
+            const Divider(height: 26),
+            _NeatSection(checkIn: checkIn, day: today),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// **Il movimento della giornata: passi, minuti a piedi, o lo zero.**
+///
+/// Sta nel check-in del mattino e non in una schermata sua perché è il campo
+/// che nessuno compilerebbe mai andandolo a cercare, ed è quello che spiega i
+/// plateau: quando il consumo misurato cala, la risposta è quasi sempre qui e
+/// non nel piatto.
+class _NeatSection extends ConsumerWidget {
+  const _NeatSection({required this.checkIn, required this.day});
+
+  final DailyCheckIn? checkIn;
+  final DateTime day;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final entry = checkIn;
+    final steps = entry?.steps;
+    final walk = entry?.walkMinutes;
+    final still = steps == 0 && walk == 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Movimento',
+          style: theme.textTheme.labelLarge?.copyWith(color: accents.mutedInk),
+        ),
+        const SizedBox(height: 8),
+        // Lo zero deve costare un tocco solo. Scendere di mille passi alla
+        // volta fino a zero vuol dire non arrivarci mai, e un giorno fermo
+        // non segnato è indistinguibile da un giorno non compilato: è
+        // esattamente il buco che rende invisibile il crollo del NEAT.
+        FilterChip(
+          key: const Key('check_in_neat_still'),
+          selected: still,
+          onSelected: (value) => ref
+              .read(checkInControllerProvider.notifier)
+              .setStillDay(day, clear: !value),
+          avatar: const Icon(Icons.chair_outlined, size: 18),
+          label: const Text('Giornata ferma'),
+        ),
+        const SizedBox(height: 12),
+        _ValueStepper(
+          label: 'Passi',
+          semanticsLabel: 'Passi del giorno',
+          text: steps == null ? null : _integer.format(steps),
+          valueKey: const Key('check_in_steps_value'),
+          minusKey: const Key('check_in_steps_minus'),
+          plusKey: const Key('check_in_steps_plus'),
+          minusTooltip: 'Mille passi in meno',
+          plusTooltip: 'Mille passi in più',
+          onMinus: steps == null || steps > DailyCheckIn.minSteps
+              ? () => ref
+                    .read(checkInControllerProvider.notifier)
+                    .setSteps(
+                      day,
+                      (steps ?? DailyCheckIn.defaultSteps) -
+                          DailyCheckIn.stepsStep,
+                    )
+              : null,
+          onPlus: steps == null || steps < DailyCheckIn.maxSteps
+              // Il primo tocco vale come «inserisci»: si parte dai seimila
+              // invece che da mille, così il check-in resta corto anche la
+              // prima volta. Stessa regola del sonno.
+              ? () => ref
+                    .read(checkInControllerProvider.notifier)
+                    .setSteps(
+                      day,
+                      steps == null
+                          ? DailyCheckIn.defaultSteps
+                          : steps + DailyCheckIn.stepsStep,
+                    )
+              : null,
+        ),
+        const SizedBox(height: 10),
+        _ValueStepper(
+          label: 'A piedi',
+          semanticsLabel: 'Minuti a piedi',
+          text: walk == null ? null : '$walk min',
+          valueKey: const Key('check_in_walk_value'),
+          minusKey: const Key('check_in_walk_minus'),
+          plusKey: const Key('check_in_walk_plus'),
+          minusTooltip: 'Dieci minuti in meno',
+          plusTooltip: 'Dieci minuti in più',
+          onMinus: walk == null || walk > DailyCheckIn.minWalkMinutes
+              ? () => ref
+                    .read(checkInControllerProvider.notifier)
+                    .setWalkMinutes(
+                      day,
+                      (walk ?? DailyCheckIn.defaultWalkMinutes) -
+                          DailyCheckIn.walkStepMinutes,
+                    )
+              : null,
+          onPlus: walk == null || walk < DailyCheckIn.maxWalkMinutes
+              ? () => ref
+                    .read(checkInControllerProvider.notifier)
+                    .setWalkMinutes(
+                      day,
+                      walk == null
+                          ? DailyCheckIn.defaultWalkMinutes
+                          : walk + DailyCheckIn.walkStepMinutes,
+                    )
+              : null,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          // Le due cose che questo campo NON è. La prima perché il consumo
+          // misurato include già il movimento e rimangiarselo lo conterebbe
+          // due volte; la seconda perché senza gli zeri la media settimanale
+          // si fa solo sui giorni buoni e il crollo sparisce.
+          'Non diventano calorie da mangiare: servono a spiegare i cali del '
+          'consumo. Segna anche i giorni fermi.',
+          key: const Key('check_in_neat_caption'),
+          style: theme.textTheme.bodySmall?.copyWith(color: accents.mutedInk),
+        ),
+        if (entry != null && entry.hasNeat && !entry.isStorable) ...[
+          const SizedBox(height: 8),
+          Text(
+            // Detto invece di taciuto: la riga di sola camminata oggi non
+            // arriva al database (vedi `DailyCheckIn.isStorable`), e sparire
+            // alla riapertura senza aver avvisato è il modo peggiore.
+            'Il movimento da solo non basta a salvare il check-in: aggiungi '
+            'il sonno o l\'energia.',
+            key: const Key('check_in_neat_needs_anchor'),
+            style: theme.textTheme.bodySmall?.copyWith(color: accents.warning),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Una riga «etichetta, valore, meno e più».
+///
+/// Stessa forma per sonno, passi e minuti: sono tre numeri che si muovono a
+/// gradini, e tre controlli diversi per la stessa gestualità costringerebbero
+/// a rileggere la card ogni mattina.
+class _ValueStepper extends StatelessWidget {
+  const _ValueStepper({
+    required this.label,
+    required this.semanticsLabel,
+    required this.text,
+    required this.valueKey,
+    required this.minusKey,
+    required this.plusKey,
+    required this.minusTooltip,
+    required this.plusTooltip,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  final String label;
+  final String semanticsLabel;
+
+  /// Nullo quando il valore non c'è ancora: la riga lo dice a parole invece
+  /// di mostrare uno zero che sembrerebbe una risposta.
+  final String? text;
+
+  final Key valueKey;
+  final Key minusKey;
+  final Key plusKey;
+  final String minusTooltip;
+  final String plusTooltip;
+  final VoidCallback? onMinus;
+  final VoidCallback? onPlus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final value = text ?? _missing;
+
+    return Semantics(
+      container: true,
+      label: semanticsLabel,
+      value: value,
+      child: Row(
+        children: [
+          Expanded(
+            child: ExcludeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: accents.mutedInk,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    key: valueKey,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: text == null
+                          ? accents.mutedInk
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          IconButton.outlined(
+            key: minusKey,
+            tooltip: minusTooltip,
+            onPressed: onMinus,
+            icon: const Icon(Icons.remove_rounded),
+          ),
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            key: plusKey,
+            tooltip: plusTooltip,
+            onPressed: onPlus,
+            icon: const Icon(Icons.add_rounded),
+          ),
         ],
       ),
     );
@@ -138,6 +376,7 @@ class _CheckInSummary extends StatelessWidget {
     final accents = AppAccents.of(context);
     final sleep = checkIn.sleepHours;
     final energy = checkIn.energy;
+    final neat = _neatText(checkIn);
 
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -146,6 +385,7 @@ class _CheckInSummary extends StatelessWidget {
         label: [
           if (sleep != null) '${_sleepText(sleep)} di sonno',
           if (energy != null) 'energia ${energy.score} su 5, ${energy.label}',
+          ?neat,
         ].join(', '),
         child: ExcludeSemantics(
           child: Row(
@@ -158,6 +398,7 @@ class _CheckInSummary extends StatelessWidget {
                   [
                     if (sleep != null) _sleepText(sleep),
                     if (energy != null) 'energia ${energy.score}/5',
+                    ?neat,
                   ].join(' · '),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -185,67 +426,28 @@ class _SleepStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accents = AppAccents.of(context);
     final value = hours ?? DailyCheckIn.defaultSleepHours;
-    final canDecrease = value > DailyCheckIn.minSleepHours;
-    final canIncrease = value < DailyCheckIn.maxSleepHours;
 
-    return Semantics(
-      container: true,
-      label: 'Ore di sonno',
-      value: hours == null ? 'da inserire' : _sleepText(hours!),
-      child: Row(
-        children: [
-          Expanded(
-            child: ExcludeSemantics(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Sonno',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: accents.mutedInk,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    hours == null ? 'da inserire' : _sleepText(hours!),
-                    key: const Key('check_in_sleep_value'),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: hours == null
-                          ? accents.mutedInk
-                          : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          IconButton.outlined(
-            key: const Key('check_in_sleep_minus'),
-            tooltip: 'Mezz\'ora in meno',
-            onPressed: canDecrease
-                ? () => onChanged(value - DailyCheckIn.sleepStepHours)
-                : null,
-            icon: const Icon(Icons.remove_rounded),
-          ),
-          const SizedBox(width: 8),
-          IconButton.outlined(
-            key: const Key('check_in_sleep_plus'),
-            tooltip: 'Mezz\'ora in più',
-            onPressed: canIncrease
-                // Il primo tocco vale come «inserisci»: senza un valore
-                // precedente si parte dalle 7,5 h invece che da zero, così
-                // il check-in resta di dieci secondi anche la prima volta.
-                ? () => onChanged(
-                    hours == null ? value : value + DailyCheckIn.sleepStepHours,
-                  )
-                : null,
-            icon: const Icon(Icons.add_rounded),
-          ),
-        ],
-      ),
+    return _ValueStepper(
+      label: 'Sonno',
+      semanticsLabel: 'Ore di sonno',
+      text: hours == null ? null : _sleepText(hours!),
+      valueKey: const Key('check_in_sleep_value'),
+      minusKey: const Key('check_in_sleep_minus'),
+      plusKey: const Key('check_in_sleep_plus'),
+      minusTooltip: 'Mezz\'ora in meno',
+      plusTooltip: 'Mezz\'ora in più',
+      onMinus: value > DailyCheckIn.minSleepHours
+          ? () => onChanged(value - DailyCheckIn.sleepStepHours)
+          : null,
+      onPlus: value < DailyCheckIn.maxSleepHours
+          // Il primo tocco vale come «inserisci»: senza un valore precedente
+          // si parte dalle 7,5 h invece che da zero, così il check-in resta di
+          // dieci secondi anche la prima volta.
+          ? () => onChanged(
+              hours == null ? value : value + DailyCheckIn.sleepStepHours,
+            )
+          : null,
     );
   }
 }
@@ -301,5 +503,25 @@ class _EnergyPicker extends StatelessWidget {
 }
 
 final _hours = NumberFormat('#,##0.#', 'it');
+final _integer = NumberFormat('#,##0', 'it');
+
+/// Il testo mostrato quando un valore non c'è ancora. **Non uno zero**: qui
+/// lo zero è una risposta, e scriverlo al posto del vuoto farebbe passare
+/// per «giornata ferma» un campo che nessuno ha toccato.
+const String _missing = 'da inserire';
 
 String _sleepText(double hours) => '${_hours.format(hours)} h';
+
+/// Il movimento in una manciata di caratteri, per la riga di riepilogo.
+String? _neatText(DailyCheckIn checkIn) {
+  final steps = checkIn.steps;
+  final walk = checkIn.walkMinutes;
+  if (steps == 0 && walk == 0) {
+    return 'giornata ferma';
+  }
+  final parts = [
+    if (steps != null) '${_integer.format(steps)} passi',
+    if (walk != null) '$walk min a piedi',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
+}

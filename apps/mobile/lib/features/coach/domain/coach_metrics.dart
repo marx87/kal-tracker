@@ -5,6 +5,7 @@ import 'package:kal_tracker/features/coach/domain/coach_overtraining.dart';
 import 'package:kal_tracker/features/coach/domain/coach_projection.dart';
 import 'package:kal_tracker/features/coach/domain/coach_recomposition.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_tdee.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 
@@ -144,6 +145,13 @@ class CoachMetrics {
       'level': overtraining.level.name,
       'fired': [for (final signal in overtraining.fired) signal.name],
       'unknown': [for (final signal in overtraining.unknown) signal.name],
+      // La misura dietro il quinto segnale, non solo il suo colore: il
+      // modello deve poter scrivere «sulla panca sollevi il 6 % in meno»
+      // senza rifare il conto, e sugli esercizi che lo dicono davvero.
+      'strength': {
+        'change': _rounded(overtraining.strength.change, 4),
+        'exercises': overtraining.strength.exercises,
+      },
     },
     'false_movement': {
       'kind': falseMovement.kind.name,
@@ -217,6 +225,15 @@ abstract final class CoachEngine {
       currentAverages: currentAverages,
       previousAverages: previousAverages,
       proteinLine: adherence.protein,
+      strength: CoachStrength.measure(
+        sets: snapshot.strengthSets,
+        // La domenica del rapporto, non `today`: le due finestre dell'e1RM
+        // sono ancorate alla settimana di cui si parla, e rileggendo il
+        // rapporto il mercoledì il quinto segnale non deve cambiare colore
+        // da solo. È lo stesso motivo per cui la proiezione qui sotto parte
+        // da `week.end`.
+        referenceDay: week.end,
+      ),
     );
 
     final falseMovement = CoachFalseMovement.detect(

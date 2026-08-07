@@ -123,6 +123,76 @@ void main() {
         ),
       );
 
+  /// Una serie dentro una sessione conclusa, creando al volo quello che
+  /// manca: la sessione del giorno, l'esercizio dentro la sessione, la serie
+  /// in coda alle sue.
+  ///
+  /// Peso e ripetizioni sono nullable apposta: «non inserito» e «zero» sono
+  /// due cose diverse, ed è esattamente la differenza che il cardio porta in
+  /// tabella.
+  Future<void> addLift({
+    required DateTime day,
+    required String exercise,
+    double? weightKg,
+    int? reps = 5,
+    String name = 'Panca piana',
+    bool completed = true,
+    bool warmupSet = false,
+    bool stillOpen = false,
+  }) async {
+    final startedAt = at(day, hour: 16);
+    final workoutId = 'workout-${startedAt.toIso8601String()}';
+    await database
+        .into(database.workouts)
+        .insert(
+          WorkoutsCompanion.insert(
+            id: workoutId,
+            profileId: profileId,
+            startedAt: startedAt,
+            endedAt: Value(stillOpen ? null : at(day, hour: 18)),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+
+    final siblings = await (database.select(
+      database.workoutExercises,
+    )..where((row) => row.workoutId.equals(workoutId))).get();
+    final exerciseRowId = '$workoutId-$exercise';
+    if (!siblings.any((row) => row.id == exerciseRowId)) {
+      await database
+          .into(database.workoutExercises)
+          .insert(
+            WorkoutExercisesCompanion.insert(
+              id: exerciseRowId,
+              workoutId: workoutId,
+              position: siblings.length,
+              exerciseRefId: exercise,
+              exerciseNameSnapshot: name,
+              trackingMode: 'weightReps',
+            ),
+          );
+    }
+
+    final done = await (database.select(
+      database.workoutSets,
+    )..where((row) => row.workoutExerciseId.equals(exerciseRowId))).get();
+    await database
+        .into(database.workoutSets)
+        .insert(
+          WorkoutSetsCompanion.insert(
+            id: '$exerciseRowId-${done.length}',
+            workoutExerciseId: exerciseRowId,
+            position: done.length,
+            weightKg: Value(weightKg),
+            reps: Value(reps),
+            isWarmup: Value(warmupSet),
+            completed: Value(completed),
+          ),
+        );
+  }
+
   Future<void> addWater({required DateTime loggedAt, required int ml}) =>
       database
           .into(database.waterLogs)
@@ -297,6 +367,113 @@ void main() {
         expect(snapshot.sessions.single.durationMinutes, isNull);
       },
     );
+  });
+
+  group('le serie della forza', () {
+    test('quello che non è forza resta fuori', () async {
+      await addLift(
+        day: sunday,
+        exercise: 'panca',
+        weightKg: 40,
+        reps: 10,
+        warmupSet: true,
+      );
+      await addLift(
+        day: sunday,
+        exercise: 'panca',
+        weightKg: 90,
+        reps: 5,
+        completed: false,
+      );
+      // Il cardio: spuntato davvero, ma senza carico né ripetizioni.
+      await addLift(day: sunday, exercise: 'corsa', reps: null, name: 'Corsa');
+      await addLift(day: sunday, exercise: 'panca', weightKg: 90, reps: 5);
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.strengthSets, hasLength(1));
+      expect(snapshot.strengthSets.single.weightKg, 90);
+      expect(snapshot.strengthSets.single.reps, 5);
+    });
+
+    test('l\'id è quello originale e il nome quello congelato', () async {
+      await addLift(
+        day: sunday,
+        exercise: 'panca-2019',
+        weightKg: 90,
+        name: 'Panca piana',
+      );
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.strengthSets.single.exerciseId, 'panca-2019');
+      expect(snapshot.strengthSets.single.exerciseName, 'Panca piana');
+      // La data è quella della sessione: le serie non ne hanno una propria.
+      // Il `toUtc` è perché drift rilegge gli istanti nel fuso della
+      // macchina, e per `DateTime` «stesso momento» e «stesso fuso» sono due
+      // uguaglianze diverse.
+      expect(snapshot.strengthSets.single.at.toUtc(), at(sunday, hour: 16));
+    });
+
+    test('la finestra arriva alla lettura di tre settimane fa', () async {
+      // 34 giorni indietro è l'ultimo giorno della finestra «di allora»: è
+      // il confine che tiene in vita il confronto, e va oltre le due
+      // settimane che bastano a tutto il resto della fotografia.
+      await addLift(
+        day: sunday.subtract(const Duration(days: 34)),
+        exercise: 'panca',
+        weightKg: 100,
+      );
+      await addLift(
+        day: sunday.subtract(const Duration(days: 35)),
+        exercise: 'panca',
+        weightKg: 200,
+      );
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.strengthSets, hasLength(1));
+      expect(snapshot.strengthSets.single.weightKg, 100);
+    });
+
+    test('una sessione ancora aperta non porta serie', () async {
+      await addLift(
+        day: sunday,
+        exercise: 'panca',
+        weightKg: 90,
+        stillOpen: true,
+      );
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.strengthSets, isEmpty);
+    });
+
+    test('una sessione cancellata non conta', () async {
+      await addLift(day: sunday, exercise: 'panca', weightKg: 90);
+      await (database.update(database.workouts)
+            ..where((row) => row.profileId.equals(profileId)))
+          .write(WorkoutsCompanion(deletedAt: Value(now)));
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.strengthSets, isEmpty);
+    });
   });
 
   group('l\'acqua', () {

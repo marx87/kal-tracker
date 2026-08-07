@@ -45,13 +45,13 @@ enum EnergyLevel {
   }
 }
 
-/// Il check-in di un giorno: due campi soli, più niente.
+/// Il check-in di un giorno: sonno, energia, movimento. Più niente.
 ///
 /// Il peso NON sta qui: vive dov'è sempre vissuto, in `body_measurements`.
 /// Duplicarlo darebbe due verità sullo stesso numero, e le medie a 7 giorni
 /// della composizione corporea leggono quella tabella.
 ///
-/// Entrambi i campi sono facoltativi: un check-in con il solo sonno è un
+/// Tutti i campi sono facoltativi: un check-in con il solo sonno è un
 /// check-in valido. Il coach deve funzionare con dati mancanti — nello
 /// storico reale l'umore è compilato in 11 sessioni su 29.
 @immutable
@@ -61,6 +61,8 @@ class DailyCheckIn {
     required this.updatedAt,
     this.sleepHours,
     this.energyScore,
+    this.steps,
+    this.walkMinutes,
   });
 
   /// Ore di sonno minime e massime accettate. Sotto zero non esiste; sopra
@@ -76,6 +78,30 @@ class DailyCheckIn {
   /// cui partire.
   static const double defaultSleepHours = 7.5;
 
+  /// Passi minimi e massimi. Zero è una risposta vera — vedi [hasNeat] — e
+  /// sopra i sessantamila non è più una giornata a piedi, è un dato sbagliato
+  /// arrivato da un'importazione.
+  static const int minSteps = 0;
+  static const int maxSteps = 60000;
+
+  /// Il passo del selettore: mille alla volta. È la risoluzione che serve —
+  /// «diecimila contro cinquemila» è una notizia, «8437 contro 8500» no — ed
+  /// è quella che tiene il check-in a tocchi invece che a tastiera.
+  static const int stepsStep = 1000;
+
+  /// Da dove parte il selettore dei passi quando non c'è niente.
+  static const int defaultSteps = 6000;
+
+  /// Minuti a piedi. Il tetto è dieci ore: oltre non è il NEAT di una
+  /// giornata, è un'escursione che si registra come allenamento.
+  static const int minWalkMinutes = 0;
+  static const int maxWalkMinutes = 600;
+
+  /// Dieci minuti alla volta: una camminata non si ricorda al minuto.
+  static const int walkStepMinutes = 10;
+
+  static const int defaultWalkMinutes = 30;
+
   /// Etichetta del giorno: `DateTime.utc` a mezzanotte (vedi [checkInDayOf]).
   final DateTime day;
 
@@ -87,23 +113,68 @@ class DailyCheckIn {
   /// Energia percepita 1-5. Nullo finché non viene inserita.
   final int? energyScore;
 
+  /// **Il movimento non strutturato della giornata.**
+  ///
+  /// Il grasso viscerale si muove più con i passi quotidiani che con l'ora di
+  /// palestra, e il plateau classico arriva quando questo crolla senza che
+  /// nessuno se ne accorga. Il TDEE misurato lo cattura a posteriori ma non
+  /// può spiegarlo: senza questo campo l'app dice «togli 150 kcal» quando la
+  /// risposta giusta era «hai camminato metà».
+  ///
+  /// Nulli finché non vengono inseriti, e i due sono indipendenti: chi legge
+  /// i passi dall'orologio non ha i minuti, chi ricorda la passeggiata non ha
+  /// i passi.
+  final int? steps;
+  final int? walkMinutes;
+
   EnergyLevel? get energy => EnergyLevel.fromScore(energyScore);
 
-  bool get isEmpty => sleepHours == null && energyScore == null;
+  /// **Zero conta come compilato.** È tutto il senso del campo: un giorno
+  /// fermo e un giorno non segnato devono restare distinguibili, altrimenti
+  /// la settimana in cui il NEAT è crollato si legge identica a quella in cui
+  /// Marco si è dimenticato di segnarlo.
+  bool get hasNeat => steps != null || walkMinutes != null;
 
-  /// Vero quando tutti e due i campi ci sono: è la condizione con cui la
-  /// schermata Oggi smette di invitare e si limita a riassumere.
+  bool get isEmpty => sleepHours == null && energyScore == null && !hasNeat;
+
+  /// Vero quando sonno ed energia ci sono tutti e due: è la condizione con
+  /// cui la schermata Oggi li richiude in una riga di riepilogo.
+  ///
+  /// **Il movimento non entra qui di proposito.** Sonno ed energia si
+  /// rispondono la mattina e si chiudono insieme; il movimento è l'unica
+  /// domanda che riguarda ieri, e per lui c'è [isFullyLogged]: la card
+  /// richiude questi due e lascia quello sotto gli occhi finché non arriva.
   bool get isComplete => sleepHours != null && energyScore != null;
+
+  /// Vero quando non manca niente, movimento compreso.
+  ///
+  /// Serve alla card per sapere quando può sparire del tutto: se si accontentasse
+  /// di [isComplete], il campo che serve ad accorgersi del crollo del NEAT
+  /// resterebbe vuoto proprio nei giorni in cui il crollo c'è stato.
+  bool get isFullyLogged => isComplete && hasNeat;
+
+  /// **Vero quando la riga può vivere in `daily_check_ins`.**
+  ///
+  /// La tabella pretende almeno sonno o energia (CHECK della v7: la v9 ha
+  /// aggiunto le colonne del movimento senza allargarla). Per il dominio una
+  /// giornata di sola camminata è un check-in legittimo, per il database no:
+  /// finché non arriva una v10 che rilassa quella CHECK, il movimento da solo
+  /// non si salva. Chi scrive lo deve dire invece di perderlo in silenzio.
+  bool get isStorable => sleepHours != null || energyScore != null;
 
   DailyCheckIn copyWith({
     double? sleepHours,
     int? energyScore,
+    int? steps,
+    int? walkMinutes,
     DateTime? updatedAt,
   }) => DailyCheckIn(
     day: day,
     updatedAt: updatedAt ?? this.updatedAt,
     sleepHours: sleepHours ?? this.sleepHours,
     energyScore: energyScore ?? this.energyScore,
+    steps: steps ?? this.steps,
+    walkMinutes: walkMinutes ?? this.walkMinutes,
   );
 
   /// Chiave del giorno, `yyyy-MM-dd`: è anche la chiave nel file JSON e
@@ -136,11 +207,33 @@ class DailyCheckIn {
     return score.clamp(1, 5);
   }
 
+  /// I passi si tagliano ai limiti e basta: **non si arrotondano.**
+  ///
+  /// Il passo da mille è dell'inserimento, non della misura. Il giorno in cui
+  /// arriverà un ponte con l'orologio, un 8437 letto dal dispositivo è un dato
+  /// buono e arrotondarlo a 8000 sarebbe buttare via precisione che nessuno
+  /// aveva chiesto di buttare.
+  static int? normalizeSteps(int? steps) {
+    if (steps == null) {
+      return null;
+    }
+    return steps.clamp(minSteps, maxSteps);
+  }
+
+  static int? normalizeWalkMinutes(int? minutes) {
+    if (minutes == null) {
+      return null;
+    }
+    return minutes.clamp(minWalkMinutes, maxWalkMinutes);
+  }
+
   Map<String, Object?> toJson() => {
     'day': dayKey,
     'updated_at': updatedAt.toUtc().toIso8601String(),
     if (sleepHours != null) 'sleep_hours': sleepHours,
     if (energyScore != null) 'energy_score': energyScore,
+    if (steps != null) 'steps': steps,
+    if (walkMinutes != null) 'walk_minutes': walkMinutes,
   };
 
   /// Lettura indulgente: una riga rotta vale `null` e viene saltata, non fa
@@ -169,6 +262,14 @@ class DailyCheckIn {
         final num value => value.toInt(),
         _ => null,
       }),
+      steps: normalizeSteps(switch (json['steps']) {
+        final num value => value.toInt(),
+        _ => null,
+      }),
+      walkMinutes: normalizeWalkMinutes(switch (json['walk_minutes']) {
+        final num value => value.toInt(),
+        _ => null,
+      }),
     );
   }
 
@@ -179,10 +280,13 @@ class DailyCheckIn {
           other.day == day &&
           other.updatedAt == updatedAt &&
           other.sleepHours == sleepHours &&
-          other.energyScore == energyScore;
+          other.energyScore == energyScore &&
+          other.steps == steps &&
+          other.walkMinutes == walkMinutes;
 
   @override
-  int get hashCode => Object.hash(day, updatedAt, sleepHours, energyScore);
+  int get hashCode =>
+      Object.hash(day, updatedAt, sleepHours, energyScore, steps, walkMinutes);
 }
 
 /// Lo storico dei check-in, per giorno.

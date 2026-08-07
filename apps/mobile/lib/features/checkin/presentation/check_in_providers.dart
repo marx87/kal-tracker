@@ -46,6 +46,47 @@ class CheckInController extends AsyncNotifier<CheckInLog> {
     );
   }
 
+  Future<void> setSteps(DateTime day, int? steps) async {
+    state = AsyncData(
+      await ref
+          .read(checkInRepositoryProvider)
+          .save(day: day, steps: steps, clearSteps: steps == null),
+    );
+  }
+
+  Future<void> setWalkMinutes(DateTime day, int? minutes) async {
+    state = AsyncData(
+      await ref
+          .read(checkInRepositoryProvider)
+          .save(
+            day: day,
+            walkMinutes: minutes,
+            clearWalkMinutes: minutes == null,
+          ),
+    );
+  }
+
+  /// «Oggi fermo»: zero passi e zero minuti, in una scrittura sola.
+  ///
+  /// Serve una scorciatoia perché senza lo zero il campo non funziona — un
+  /// giorno fermo e un giorno non segnato devono restare distinguibili — e
+  /// arrivarci scendendo di mille passi alla volta significa non arrivarci
+  /// mai. [clear] riporta i due campi a «da inserire»: il tocco per sbaglio
+  /// si annulla con lo stesso tocco.
+  Future<void> setStillDay(DateTime day, {bool clear = false}) async {
+    state = AsyncData(
+      await ref
+          .read(checkInRepositoryProvider)
+          .save(
+            day: day,
+            steps: clear ? null : 0,
+            walkMinutes: clear ? null : 0,
+            clearSteps: clear,
+            clearWalkMinutes: clear,
+          ),
+    );
+  }
+
   Future<void> clearDay(DateTime day) async {
     state = AsyncData(await ref.read(checkInRepositoryProvider).clearDay(day));
   }

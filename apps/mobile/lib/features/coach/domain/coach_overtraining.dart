@@ -131,9 +131,10 @@ class OvertrainingLight {
   ///
   /// Dire «3 accesi su 5» quando uno dei cinque non ha dati da leggere è
   /// falso in modo insidioso: sembra che due siano spenti mentre uno è cieco,
-  /// e la stessa card poi elenca fra i mancanti proprio quello. Il quinto
-  /// segnale — la forza — esiste nel dominio ma non è ancora collegato allo
-  /// storico degli allenamenti, quindi in produzione oggi è sempre cieco.
+  /// e la stessa card poi elenca fra i mancanti proprio quello. Succede a
+  /// chiunque dei cinque: la forza nelle prime tre settimane, l'acqua se la
+  /// bilancia non legge l'impedenza, lo sforzo in una settimana da una seduta
+  /// sola.
   int get _total =>
       readings.values.where((r) => r != SignalReading.unknown).length;
 

@@ -219,14 +219,19 @@ class WeeklyMuscleVolume {
       if (focus.contains(entry.group)) entry,
   ];
 
+  /// I gruppi con POCHE serie: quelli a zero non ci sono, stanno solo in
+  /// [emptyBandedGroups]. Lo stato resta `below` anche a zero — la banda non
+  /// mente — ma le due liste si leggono di fila nella stessa card, e un
+  /// gruppo in tutt'e due farebbe nominare due volte le spalle.
   List<MuscleGroupVolume> get belowBand => [
     for (final entry in groups)
-      if (entry.status == VolumeBandStatus.below) entry,
+      if (entry.status == VolumeBandStatus.below && !entry.isEmpty) entry,
   ];
 
-  /// I gruppi con banda rimasti a zero. Sono separati da [belowBand] perché
-  /// «poche serie» e «nessuna serie» hanno cause diverse: la seconda di
-  /// solito è un esercizio saltato o escluso, non una scheda leggera.
+  /// I gruppi con banda rimasti a zero. Sono DISGIUNTI da [belowBand] — un
+  /// gruppo vuoto sta qui e in nessun altro posto — perché «poche serie» e
+  /// «nessuna serie» hanno cause diverse: la seconda di solito è un esercizio
+  /// saltato o escluso, non una scheda leggera.
   List<MuscleGroupVolume> get emptyBandedGroups => [
     for (final entry in groups)
       if (entry.isBanded && entry.isEmpty) entry,

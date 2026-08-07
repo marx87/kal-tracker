@@ -23,6 +23,7 @@ import 'package:kal_tracker/features/recipes/presentation/recipes_screen.dart';
 import 'package:kal_tracker/features/routines/presentation/routine_editor_screen.dart';
 import 'package:kal_tracker/features/routines/presentation/routines_screen.dart';
 import 'package:kal_tracker/features/sync/presentation/sync_screen.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_settings_screen.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/shopping_list_screen.dart';
 import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_screen.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/progress_screen.dart';
@@ -196,6 +197,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/progress',
                 name: 'progress',
+                // Progressi porta con sé la porta delle Impostazioni: è già
+                // la pagina delle funzioni di servizio, e il profilo di
+                // allenamento non appartiene a nessuna delle sei aree. Il
+                // bottone lo aggiunge un involucro invece della schermata,
+                // che è di un'altra area.
                 builder: (context, state) => const ProgressScreen(),
                 routes: [
                   GoRoute(
@@ -220,6 +226,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'dati-personali',
                     name: 'personal-details',
                     builder: (context, state) => const PersonalDetailsScreen(),
+                  ),
+                  // La settima area: attrezzatura, limitazioni e
+                  // disponibilità. Sotto Progressi e non a sé perché è da lì
+                  // che ci si arriva, e una rotta che vive nello stesso ramo
+                  // si apre con il tasto indietro al posto giusto.
+                  GoRoute(
+                    path: 'impostazioni-allenamento',
+                    name: TrainingSettingsScreen.routeName,
+                    builder: (context, state) => const TrainingSettingsScreen(),
                   ),
                 ],
               ),

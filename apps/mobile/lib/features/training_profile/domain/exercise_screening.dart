@@ -93,7 +93,13 @@ class ExerciseScreening {
   /// lavoro su Marco invece di toglierglielo.
   final String? alternative;
 
-  /// Le limitazioni aperte che hanno prodotto l'esito.
+  /// **Tutte** le limitazioni aperte che toccano questo esercizio, la più
+  /// grave per prima — non solo quella che ha deciso l'esito.
+  ///
+  /// Portarne una sola era un'esclusione non dichiarata: con spalla e polso
+  /// tutti e due in fastidio sulle flessioni, la ragione ne nominava una e
+  /// l'altra spariva. Per lo stesso motivo ci sono anche quando a escludere è
+  /// stata l'attrezzatura: comprare l'attrezzo non fa passare la spalla.
   final List<TrainingLimitation> limitations;
 
   /// I requisiti di attrezzatura non soddisfatti.
@@ -120,9 +126,12 @@ abstract final class ExerciseScreener {
   }) {
     final joints = jointsOf(exercise);
 
-    // La più grave fra le limitazioni che toccano questo esercizio: due
-    // limitazioni aperte insieme (spalla in fastidio, polso in stop) devono
-    // dare l'esito della peggiore, non quello della prima trovata.
+    // Si raccolgono TUTTE le limitazioni che toccano l'esercizio, non solo
+    // quella che decide: sono quelle che l'esito dovrà dichiarare. La più
+    // grave invece è una sola, perché due limitazioni aperte insieme (spalla
+    // in fastidio, polso in stop) devono dare l'esito della peggiore, non
+    // quello della prima trovata.
+    final touched = <TrainingLimitation>[];
     TrainingLimitation? worst;
     JointRole? worstRole;
     for (final limitation in profile.activeLimitations) {
@@ -130,6 +139,7 @@ abstract final class ExerciseScreener {
       if (role == null) {
         continue;
       }
+      touched.add(limitation);
       if (worst == null ||
           limitation.severity.rank > worst.severity.rank ||
           (limitation.severity == worst.severity &&
@@ -140,14 +150,27 @@ abstract final class ExerciseScreener {
       }
     }
 
+    // La peggiore per prima: è quella che la ragione racconta per esteso, le
+    // altre le nomina la coda.
+    final decisive = worst;
+    final limitations = decisive == null
+        ? const <TrainingLimitation>[]
+        : <TrainingLimitation>[
+            decisive,
+            for (final limitation in touched)
+              if (!identical(limitation, decisive)) limitation,
+          ];
+
     if (worst != null && worstRole != null) {
       final excluded = _excludes(worst.severity, worstRole);
       if (excluded) {
         return ExerciseScreening(
           exerciseId: exercise.id,
           outcome: ScreeningOutcome.escluso,
-          reason: _limitationReason(worst, worstRole, excluded: true),
-          limitations: [worst],
+          reason:
+              _limitationReason(worst, worstRole, excluded: true) +
+              _alsoLimitations(limitations.skip(1)),
+          limitations: limitations,
         );
       }
     }
@@ -157,7 +180,11 @@ abstract final class ExerciseScreener {
       return ExerciseScreening(
         exerciseId: exercise.id,
         outcome: ScreeningOutcome.escluso,
-        reason: _equipmentReason(missing),
+        // Qui la ragione non ne ha già nominata nessuna, quindi la coda le
+        // prende tutte: l'esercizio esce per l'attrezzo, ma la spalla che
+        // stava segnalando non sparisce dietro quel motivo.
+        reason: _equipmentReason(missing) + _alsoLimitations(limitations),
+        limitations: limitations,
         missingEquipment: missing,
       );
     }
@@ -166,9 +193,14 @@ abstract final class ExerciseScreener {
       return ExerciseScreening(
         exerciseId: exercise.id,
         outcome: ScreeningOutcome.segnalato,
-        reason: _limitationReason(worst, worstRole, excluded: false),
+        reason:
+            _limitationReason(worst, worstRole, excluded: false) +
+            _alsoLimitations(limitations.skip(1)),
+        // L'alternativa risolve l'articolazione peggiore: è l'unica per cui
+        // sappiamo dire una sostituzione sensata. Le altre restano scritte
+        // nella ragione, così chi legge sa che non sono state risolte.
         alternative: _alternativeFor(exercise, worst.bodyPart.area),
-        limitations: [worst],
+        limitations: limitations,
       );
     }
 
@@ -288,6 +320,29 @@ abstract final class ExerciseScreener {
           : 'Fuori: $zona fa male e $carico.';
     }
     return 'Da tenere d\'occhio: $zona dà fastidio e $carico.';
+  }
+
+  /// La coda che nomina le limitazioni che la ragione non ha già raccontato.
+  ///
+  /// Porta anche la gravità fra parentesi perché «pesa anche il polso» senza
+  /// dire quanto non è un'informazione: fastidio e stop chiedono due cose
+  /// diverse. Vuota quando non c'è altro da aggiungere, così la frase normale
+  /// resta quella di prima.
+  static String _alsoLimitations(Iterable<TrainingLimitation> others) {
+    final zones = [
+      for (final limitation in others)
+        '${limitation.bodyPart.label.toLowerCase()} '
+            '(${limitation.severity.label.toLowerCase()})',
+    ];
+    if (zones.isEmpty) {
+      return '';
+    }
+    if (zones.length == 1) {
+      return ' Su questo esercizio pesa anche ${zones.single}.';
+    }
+    final list =
+        '${zones.sublist(0, zones.length - 1).join(', ')} e ${zones.last}';
+    return ' Su questo esercizio pesano anche $list.';
   }
 
   static String _equipmentReason(List<EquipmentRequirement> missing) {

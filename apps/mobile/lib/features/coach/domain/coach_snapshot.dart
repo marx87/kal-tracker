@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:kal_tracker/features/body/domain/body_analysis.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
 
@@ -108,6 +109,7 @@ class CoachSnapshot {
     this.diary = const [],
     this.weighIns = const [],
     this.sessions = const [],
+    this.strengthSets = const [],
     this.water = const [],
     this.targets,
     this.goal,
@@ -124,6 +126,17 @@ class CoachSnapshot {
   final List<BodyMeasurement> weighIns;
 
   final List<CoachSession> sessions;
+
+  /// Le serie che raccontano la forza, già scremate dal repository.
+  ///
+  /// Guardano **più indietro di tutto il resto della fotografia**: il
+  /// confronto dell'e1RM mette una lettura di due settimane contro quella di
+  /// tre settimane prima, quindi qui dentro c'è più di un mese di serie
+  /// mentre il diario e le pesate servono per due settimane. Vuota significa
+  /// «non lo so» e il quinto segnale resta cieco: è la verità, e vale più di
+  /// una forza che sembra tenere.
+  final List<CoachStrengthSet> strengthSets;
+
   final List<CoachWaterDay> water;
 
   final CoachTargets? targets;

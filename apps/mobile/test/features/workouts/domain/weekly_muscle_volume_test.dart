@@ -388,6 +388,38 @@ void main() {
       ]);
     });
 
+    test('«poche serie» e «nessuna serie» non nominano lo stesso gruppo', () {
+      // Le due liste finiscono affiancate nella stessa card: se un gruppo a
+      // zero stesse in tutt'e due, le spalle verrebbero nominate due volte,
+      // una come «sotto la banda» e una come «vuoto».
+      final volume = _volume([
+        _session(
+          id: 's1',
+          startedAt: _weekStart,
+          exercises: [
+            _exercise(id: 'panca', group: MuscleGroup.petto, sets: 2),
+            _exercise(id: 'crunch', group: MuscleGroup.addome, sets: 8),
+          ],
+        ),
+      ]);
+
+      final poche = volume.belowBand.map((entry) => entry.group).toSet();
+      final vuoti = volume.emptyBandedGroups
+          .map((entry) => entry.group)
+          .toSet();
+
+      expect(poche.intersection(vuoti), isEmpty);
+      expect(poche, contains(MuscleGroup.petto));
+      expect(vuoti, contains(MuscleGroup.spalle));
+      expect(vuoti, isNot(contains(MuscleGroup.petto)));
+      // Il gruppo vuoto resta «sotto la banda» come stato: è la lista a
+      // sceglierne uno solo, non la banda a cambiare risposta.
+      expect(
+        volume.forGroup(MuscleGroup.spalle)?.status,
+        VolumeBandStatus.below,
+      );
+    });
+
     test('tutti i gruppi con banda ci sono sempre, anche a zero', () {
       final volume = _volume(const []);
 

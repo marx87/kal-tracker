@@ -39,6 +39,61 @@ void main() {
     });
   });
 
+  group('movimento', () {
+    test('i passi si tagliano ai limiti ma non si arrotondano', () {
+      // 8437 arriva com'è: il passo da mille è dell'inserimento, non della
+      // misura, e il giorno in cui i passi arriveranno da un dispositivo
+      // arrotondarli sarebbe buttare precisione che nessuno aveva chiesto.
+      expect(DailyCheckIn.normalizeSteps(8437), 8437);
+      expect(DailyCheckIn.normalizeSteps(-100), 0);
+      expect(DailyCheckIn.normalizeSteps(999999), DailyCheckIn.maxSteps);
+      expect(DailyCheckIn.normalizeSteps(null), isNull);
+    });
+
+    test('i minuti a piedi stanno fra zero e dieci ore', () {
+      expect(DailyCheckIn.normalizeWalkMinutes(45), 45);
+      expect(DailyCheckIn.normalizeWalkMinutes(-5), 0);
+      expect(
+        DailyCheckIn.normalizeWalkMinutes(2000),
+        DailyCheckIn.maxWalkMinutes,
+      );
+    });
+
+    test('zero conta come compilato, null no', () {
+      final fermo = DailyCheckIn(
+        day: DateTime.utc(2026, 8, 5),
+        updatedAt: DateTime.utc(2026, 8, 5, 6),
+        steps: 0,
+        walkMinutes: 0,
+      );
+      final vuoto = DailyCheckIn(
+        day: DateTime.utc(2026, 8, 5),
+        updatedAt: DateTime.utc(2026, 8, 5, 6),
+      );
+
+      // È la distinzione su cui si regge il campo: un giorno fermo e un
+      // giorno non segnato devono restare due cose diverse.
+      expect(fermo.hasNeat, isTrue);
+      expect(fermo.isEmpty, isFalse);
+      expect(vuoto.hasNeat, isFalse);
+      expect(vuoto.isEmpty, isTrue);
+    });
+
+    test('la sola camminata è un check-in valido ma non salvabile', () {
+      final entry = DailyCheckIn(
+        day: DateTime.utc(2026, 8, 5),
+        updatedAt: DateTime.utc(2026, 8, 5, 6),
+        walkMinutes: 40,
+      );
+
+      // La CHECK di `daily_check_ins` pretende ancora sonno o energia: per il
+      // dominio la giornata esiste, per la tabella no.
+      expect(entry.isEmpty, isFalse);
+      expect(entry.isStorable, isFalse);
+      expect(entry.copyWith(sleepHours: 7).isStorable, isTrue);
+    });
+  });
+
   test('un check-in con un solo campo è valido ma non completo', () {
     final entry = DailyCheckIn(
       day: DateTime.utc(2026, 8, 5),
@@ -50,6 +105,22 @@ void main() {
     expect(entry.energy, isNull);
   });
 
+  test('sonno ed energia si chiudono da soli, il movimento no', () {
+    final entry = DailyCheckIn(
+      day: DateTime.utc(2026, 8, 5),
+      updatedAt: DateTime.utc(2026, 8, 5, 6),
+      sleepHours: 7,
+      energyScore: 4,
+    );
+
+    // Due condizioni diverse per due momenti diversi: la card richiude sonno
+    // ed energia appena ci sono, e tiene sotto gli occhi il movimento — che
+    // è la domanda su ieri — finché non arriva anche quello.
+    expect(entry.isComplete, isTrue);
+    expect(entry.isFullyLogged, isFalse);
+    expect(entry.copyWith(steps: 8000).isFullyLogged, isTrue);
+  });
+
   test('l\'energia porta con sé la sua etichetta', () {
     expect(EnergyLevel.fromScore(5), EnergyLevel.charged);
     expect(EnergyLevel.fromScore(5)!.label, 'Carico');
@@ -59,13 +130,20 @@ void main() {
   group('CheckInLog', () {
     final today = DateTime.utc(2026, 8, 5, 8);
 
-    DailyCheckIn entryOn(DateTime day, {double? sleep = 7, int? energy = 4}) =>
-        DailyCheckIn(
-          day: checkInDayOf(day),
-          updatedAt: day,
-          sleepHours: sleep,
-          energyScore: energy,
-        );
+    DailyCheckIn entryOn(
+      DateTime day, {
+      double? sleep = 7,
+      int? energy = 4,
+      int? steps,
+      int? walk,
+    }) => DailyCheckIn(
+      day: checkInDayOf(day),
+      updatedAt: day,
+      sleepHours: sleep,
+      energyScore: energy,
+      steps: steps,
+      walkMinutes: walk,
+    );
 
     test('scrivere due volte lo stesso giorno sostituisce, non accoda', () {
       final log = const CheckInLog.empty()
@@ -93,9 +171,21 @@ void main() {
       expect(log.forDay(checkInDayOf(old)), isNull);
     });
 
+    test('un giorno di solo movimento resta nello storico', () {
+      final log = const CheckInLog.empty().upsert(
+        entryOn(today, sleep: null, energy: null, steps: 0, walk: 0),
+        now: today,
+      );
+      expect(log.entries, hasLength(1));
+      expect(log.forDay(checkInDayOf(today))!.hasNeat, isTrue);
+    });
+
     test('il giro completo su JSON conserva i valori', () {
       final log = const CheckInLog.empty()
-          .upsert(entryOn(today, sleep: 7.5, energy: 2), now: today)
+          .upsert(
+            entryOn(today, sleep: 7.5, energy: 2, steps: 8437, walk: 45),
+            now: today,
+          )
           .upsert(
             entryOn(
               today.subtract(const Duration(days: 1)),
@@ -110,6 +200,8 @@ void main() {
       expect(decoded.entries, hasLength(2));
       expect(decoded.forDay(checkInDayOf(today))!.sleepHours, 7.5);
       expect(decoded.forDay(checkInDayOf(today))!.energyScore, 2);
+      expect(decoded.forDay(checkInDayOf(today))!.steps, 8437);
+      expect(decoded.forDay(checkInDayOf(today))!.walkMinutes, 45);
       // Dal più recente: è l'ordine in cui il coach leggerà la settimana.
       expect(decoded.recentFirst.first.day, checkInDayOf(today));
     });

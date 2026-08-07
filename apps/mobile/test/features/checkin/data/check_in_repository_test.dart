@@ -9,20 +9,90 @@ void main() {
 
   final day = DateTime.utc(2026, 8, 5, 7);
 
-  test(
-    'sonno ed energia si scrivono uno alla volta senza cancellarsi',
-    () async {
-      final repository = CheckInRepository(InMemoryCheckInStore());
+  test('i campi si scrivono uno alla volta senza cancellarsi', () async {
+    final repository = CheckInRepository(InMemoryCheckInStore());
 
-      await repository.save(day: day, sleepHours: 7.5);
-      final afterEnergy = await repository.save(day: day, energyScore: 4);
+    await repository.save(day: day, sleepHours: 7.5);
+    await repository.save(day: day, energyScore: 4);
+    await repository.save(day: day, steps: 8000);
+    final log = await repository.save(day: day, walkMinutes: 40);
 
-      final entry = afterEnergy.forDay(checkInDayOf(day))!;
-      expect(entry.sleepHours, 7.5);
-      expect(entry.energyScore, 4);
-      expect(entry.isComplete, isTrue);
-    },
-  );
+    final entry = log.forDay(checkInDayOf(day))!;
+    expect(entry.sleepHours, 7.5);
+    expect(entry.energyScore, 4);
+    expect(entry.steps, 8000);
+    expect(entry.walkMinutes, 40);
+    expect(entry.isFullyLogged, isTrue);
+  });
+
+  test('senza il movimento il check-in non è ancora tutto', () async {
+    final repository = CheckInRepository(InMemoryCheckInStore());
+
+    final log = await repository.save(
+      day: day,
+      sleepHours: 7.5,
+      energyScore: 4,
+    );
+
+    // Sonno ed energia si chiudono da soli, ma il giorno non è finito: senza
+    // questa distinzione la card sparirebbe prima di chiedere i passi, e il
+    // campo che serve ad accorgersi del crollo del NEAT resterebbe vuoto
+    // proprio nei giorni in cui il crollo c'è stato.
+    final entry = log.forDay(checkInDayOf(day))!;
+    expect(entry.isComplete, isTrue);
+    expect(entry.isFullyLogged, isFalse);
+    expect(entry.hasNeat, isFalse);
+  });
+
+  test('lo zero è una risposta, non un campo vuoto', () async {
+    final repository = CheckInRepository(InMemoryCheckInStore());
+    await repository.save(day: day, steps: 9000, walkMinutes: 50);
+
+    final log = await repository.save(day: day, steps: 0, walkMinutes: 0);
+
+    // Senza questo, «oggi fermo» erediterebbe i novemila di prima: `0` non è
+    // `null`, e la giornata ferma deve poter sovrascrivere.
+    final entry = log.forDay(checkInDayOf(day))!;
+    expect(entry.steps, 0);
+    expect(entry.walkMinutes, 0);
+    expect(entry.hasNeat, isTrue);
+    expect(entry.isEmpty, isFalse);
+  });
+
+  test('il movimento si può togliere senza toccare il resto', () async {
+    final repository = CheckInRepository(InMemoryCheckInStore());
+    await repository.save(
+      day: day,
+      sleepHours: 7,
+      steps: 8000,
+      walkMinutes: 40,
+    );
+
+    final log = await repository.save(
+      day: day,
+      clearSteps: true,
+      clearWalkMinutes: true,
+    );
+
+    final entry = log.forDay(checkInDayOf(day))!;
+    expect(entry.steps, isNull);
+    expect(entry.walkMinutes, isNull);
+    expect(entry.sleepHours, 7);
+  });
+
+  test('i passi fuori scala vengono riportati dentro', () async {
+    final repository = CheckInRepository(InMemoryCheckInStore());
+
+    final log = await repository.save(
+      day: day,
+      steps: 999999,
+      walkMinutes: -30,
+    );
+
+    final entry = log.forDay(checkInDayOf(day))!;
+    expect(entry.steps, DailyCheckIn.maxSteps);
+    expect(entry.walkMinutes, 0);
+  });
 
   test(
     'i valori fuori scala vengono riportati dentro, non rifiutati',

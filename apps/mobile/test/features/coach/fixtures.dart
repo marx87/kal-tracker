@@ -8,6 +8,7 @@ library;
 
 import 'package:kal_tracker/features/body/domain/body_models.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
+import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 
 /// La domenica di riferimento: 2 agosto 2026.
@@ -75,3 +76,30 @@ CoachSession session(DateTime day, {int? rpe, int? mood, int? satisfaction}) =>
       mood: mood,
       satisfaction: satisfaction,
     );
+
+/// Tre fondamentali, due giornate per lettura, le due letture a tre settimane
+/// di distanza: il minimo che il confronto dell'e1RM accetta, riferito alla
+/// domenica di [testWeek].
+///
+/// Le ripetizioni restano fisse, così l'e1RM è proporzionale al carico e la
+/// variazione attesa si legge direttamente dai chili: qui non si prova la
+/// formula di Epley, si prova che il segnale arriva a destinazione.
+List<CoachStrengthSet> liftedWeeks({
+  required double before,
+  required double now,
+}) => [
+  for (final exercise in ['panca', 'squat', 'stacco'])
+    for (final (day, weightKg) in [
+      (DateTime.utc(2026, 7, 1), before),
+      (DateTime.utc(2026, 7, 8), before),
+      (DateTime.utc(2026, 7, 22), now),
+      (DateTime.utc(2026, 7, 29), now),
+    ])
+      CoachStrengthSet(
+        at: DateTime.utc(day.year, day.month, day.day, 16),
+        exerciseId: exercise,
+        exerciseName: exercise,
+        weightKg: weightKg,
+        reps: 5,
+      ),
+];
