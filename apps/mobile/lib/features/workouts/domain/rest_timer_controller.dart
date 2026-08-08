@@ -26,6 +26,7 @@ class RestTimerController extends ChangeNotifier {
 
   Duration get remaining => _remaining;
   Duration get total => _total;
+  DateTime? get deadline => _deadline;
   bool get isRunning => _ticker?.isActive ?? false;
   bool get isCompleted => _completed;
 

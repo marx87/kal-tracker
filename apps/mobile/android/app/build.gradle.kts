@@ -32,7 +32,8 @@ android {
         applicationId = "it.marcomartelli.kaltracker"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // `health` 13.3.1 / Health Connect richiede almeno Android 8 (API 26).
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -379,6 +379,45 @@ void main() {
       expect(reread.circuitCheckpoint, {'round': 2, 'stepIndex': 1});
     });
 
+    test('il commit del circuito aggiorna righe e marcatori e pulisce la '
+        'ripresa in modo idempotente', () async {
+      await seedCatalog();
+      final started = await repository.startWorkout(
+        exercises: [exercise('squat')],
+      );
+      await repository.updateResumeState(
+        started.id,
+        resumePath: '/workout/${started.id}/phase/segment?seg=0',
+        circuitCheckpoint: {
+          'phase': 'work',
+          'completedSteps': ['1:0'],
+        },
+      );
+
+      final sets = List<WorkoutSet>.of(started.exercises.first.sets);
+      sets[0] = sets[0].copyWith(completed: true);
+      final committed = started.copyWith(
+        exercises: [started.exercises.first.copyWith(sets: sets)],
+        completedIntervalSegmentIndices: const [0],
+        completedIntervalSegmentSignatures: const {0: 'firma'},
+      );
+
+      await repository.commitCircuitPhase(committed);
+      await repository.commitCircuitPhase(committed);
+
+      final reread = await repository.getById(started.id);
+      expect(reread!.exercises, hasLength(1));
+      expect(
+        reread.exercises.first.sets,
+        hasLength(started.exercises.first.sets.length),
+      );
+      expect(reread.exercises.first.sets.first.completed, isTrue);
+      expect(reread.resumePath, isNull);
+      expect(reread.circuitCheckpoint, isNull);
+      expect(reread.completedIntervalSegmentIndices, [0]);
+      expect(reread.completedIntervalSegmentSignatures, {0: 'firma'});
+    });
+
     test('salvare una sessione che non c\'è più è un errore, non un '
         'silenzio', () async {
       await expectLater(

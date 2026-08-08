@@ -83,7 +83,7 @@ void main() {
     });
 
     test('conserva le sezioni degli allenamenti', () {
-      final document = _document(withWorkouts: true);
+      final document = _document(withWorkouts: true, formatVersion: 2);
 
       final restored = BackupDocument.decode(document.encode());
 

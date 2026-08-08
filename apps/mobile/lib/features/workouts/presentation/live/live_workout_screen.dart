@@ -4,10 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
+import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
+import 'package:kal_tracker/features/exercises/presentation/exercise_providers.dart';
+import 'package:kal_tracker/features/health/domain/health_data_gateway.dart';
+import 'package:kal_tracker/features/health/presentation/health_providers.dart';
+import 'package:kal_tracker/features/routines/domain/routine_models.dart';
+import 'package:kal_tracker/features/routines/presentation/routine_providers.dart';
+import 'package:kal_tracker/features/training_profile/domain/exercise_screening.dart';
+import 'package:kal_tracker/features/training_profile/domain/training_profile.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_profile_providers.dart';
+import 'package:kal_tracker/features/workouts/cues/application/live_workout_cue_coordinator.dart';
+import 'package:kal_tracker/features/workouts/cues/workout_cue_providers.dart';
+import 'package:kal_tracker/features/workouts/domain/circuit_flow.dart';
 import 'package:kal_tracker/features/workouts/domain/cool_down_sequence.dart';
 import 'package:kal_tracker/features/workouts/domain/kcal_estimator.dart';
+import 'package:kal_tracker/features/workouts/domain/live_load_guidance.dart';
 import 'package:kal_tracker/features/workouts/domain/live_workout_focus.dart';
 import 'package:kal_tracker/features/workouts/domain/live_workout_repository.dart';
+import 'package:kal_tracker/features/workouts/domain/load_progression.dart';
 import 'package:kal_tracker/features/workouts/domain/muscle_group_snapshot.dart';
 import 'package:kal_tracker/features/workouts/domain/personal_records.dart';
 import 'package:kal_tracker/features/workouts/domain/rest_timer_controller.dart';
@@ -17,6 +31,7 @@ import 'package:kal_tracker/features/workouts/domain/superset_flow.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
 import 'package:kal_tracker/features/workouts/domain/workout_finalization.dart';
 import 'package:kal_tracker/features/workouts/domain/workout_set_mutation.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/circuit_workout_plan.dart';
 import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 import 'package:kal_tracker/features/workouts/presentation/widgets/exercise_block_card.dart';
 import 'package:kal_tracker/features/workouts/presentation/widgets/live_workout_exit_guard.dart';
@@ -47,7 +62,7 @@ class LiveWorkoutScreen extends ConsumerStatefulWidget {
 
   /// Riporta dentro un blocco a tempo lasciato a metà. Il collegamento alla
   /// rotta lo fa chi possiede il router: qui c'è solo il pulsante.
-  final void Function(String resumePath)? onOpenPhase;
+  final FutureOr<void> Function(String resumePath)? onOpenPhase;
 
   /// Chiamata dopo una chiusura andata a buon fine, con la sessione conclusa.
   final void Function(Workout closed)? onClosed;
@@ -59,6 +74,7 @@ class LiveWorkoutScreen extends ConsumerStatefulWidget {
 class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     with WidgetsBindingObserver {
   Workout? _workout;
+  RoutineDetails? _routine;
   Object? _loadError;
   bool _loading = true;
 
@@ -68,6 +84,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   bool _isFinishing = false;
   bool _allowPop = false;
   bool _exitPromptOpen = false;
+  bool _openingPhase = false;
 
   /// La risposta sui tre bersagli, tenuta da parte appena arriva.
   ///
@@ -80,6 +97,8 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   Timer? _elapsedTicker;
 
   final RestTimerController _rest = RestTimerController();
+  String? _restContextLabel;
+  String? _restNextLabel;
 
   /// Due tocchi rapidi sullo stesso «fatta» arrivano prima che la scrittura
   /// finisca: il lucchetto li fa diventare uno solo.
@@ -102,14 +121,25 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   /// La superserie che sta guidando il recupero, se ce n'è una.
   List<int>? _guidedGroup;
 
+  /// I valori precedenti a «Applica» restano disponibili finché non si
+  /// modifica o completa una serie di quell'esercizio.
+  final Map<int, WorkoutExercise> _loadGuidanceUndo = {};
+
   /// Preso UNA volta e tenuto: `ref` non è più leggibile dentro `dispose`,
   /// e proprio lì serve — è dove sta la rete di sicurezza del salvataggio.
   late final LiveWorkoutRepository _repository;
+  late final LiveWorkoutCueCoordinator _cues;
+  late final HealthDataGateway _health;
 
   @override
   void initState() {
     super.initState();
     _repository = ref.read(liveWorkoutRepositoryProvider);
+    _health = ref.read(healthDataGatewayProvider);
+    _cues = LiveWorkoutCueCoordinator(
+      engine: ref.read(workoutCueEngineProvider),
+      workoutId: widget.workoutId,
+    );
     WidgetsBinding.instance.addObserver(this);
     unawaited(_load());
   }
@@ -120,6 +150,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     _elapsedTicker?.cancel();
     _saveDebounce?.cancel();
     _rest.dispose();
+    unawaited(_ignoreCueFailure(() => _cues.deactivate()));
     // Rete di sicurezza per la sola distruzione IMPREVISTA: un'uscita
     // controllata ha già atteso la sua istantanea, e una sessione chiusa ha
     // lato repository dati più nuovi di questa copia.
@@ -136,12 +167,61 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-    // Al ritorno in primo piano i timer periodici sono stati sospesi ma le
-    // scadenze assolute no: si riallinea tutto invece di riprendere a contare
-    // da dove si era rimasti.
-    _rest.synchronize();
-    _refreshElapsed();
+    if (state == AppLifecycleState.resumed) {
+      // Al ritorno in primo piano i timer periodici sono stati sospesi ma le
+      // scadenze assolute no: si riallinea tutto invece di riprendere a
+      // contare da dove si era rimasti.
+      _rest.synchronize();
+      _refreshElapsed();
+      unawaited(_synchronizeCueRest());
+      return;
+    }
+
+    // Il debounce è giusto mentre si digitano i chili, non quando il sistema
+    // sta per sospendere il processo. In quel momento l'ultima copia parte
+    // immediatamente verso SQLite.
+    final workout = _workout;
+    if (workout != null && !_isFinishing) {
+      _saveDebounce?.cancel();
+      unawaited(_enqueueSave(workout).catchError((_) {}));
+    }
+  }
+
+  bool _synchronizingCueRest = false;
+
+  Future<void> _synchronizeCueRest() => _restoreCueRest();
+
+  Future<void> _restoreCueRest() async {
+    if (_synchronizingCueRest) return;
+    _synchronizingCueRest = true;
+    try {
+      final deadline = await _cues.restoreRestDeadline();
+      if (!mounted || deadline == null) return;
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) return;
+      final localDeadline = _rest.deadline;
+      if (localDeadline != null &&
+          (localDeadline.difference(deadline).inMilliseconds).abs() < 1500) {
+        return;
+      }
+      _rest.start(remaining);
+      setState(() {
+        _restContextLabel ??= 'Recupero in corso';
+        _restNextLabel = _cues.pendingRestNextExerciseName;
+      });
+    } catch (_) {
+      // La sessione e il suo salvataggio non dipendono mai da voce/notifiche.
+    } finally {
+      _synchronizingCueRest = false;
+    }
+  }
+
+  Future<void> _ignoreCueFailure(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (_) {
+      // Audio, vibrazione e notifica sono aiuti: SQLite resta la fonte vera.
+    }
   }
 
   // ── Caricamento e ripresa ────────────────────────────────────────────────
@@ -158,20 +238,24 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         return;
       }
 
+      final wasExplicitlyPaused = workout.pausedAt != null;
       final resumed = _resumeFromPause(workout);
       final weights = await _repository.recentBodyWeights();
       final history = await _repository.recentClosedWorkouts();
+      final routine = await _loadRoutine(workout);
 
       if (!mounted) return;
       final body = pickBodyKg(measurements: weights);
       setState(() {
         _workout = resumed;
+        _routine = routine;
         _bodyKg = body.kg;
         _bodyKgSource = body.source;
         _recordBaseline = recordsFromHistory(
           history,
           excludeWorkoutId: workout.id,
         );
+        _loadGuidanceUndo.clear();
         _loading = false;
       });
       if (resumed.pausedAt == null && workout.pausedAt != null) {
@@ -180,12 +264,36 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         await _enqueueSave(resumed);
       }
       _startElapsedTicker();
+      final alreadyInProgress =
+          DateTime.now().difference(workout.startedAt) >
+          const Duration(seconds: 30);
+      unawaited(
+        _ignoreCueFailure(
+          () => _cues.activate(
+            workoutName: workout.routineName,
+            resumed: wasExplicitlyPaused || alreadyInProgress,
+          ),
+        ),
+      );
+      await _restoreCueRest();
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
         _loadError = error;
       });
+    }
+  }
+
+  Future<RoutineDetails?> _loadRoutine(Workout workout) async {
+    final routineId = workout.routineId;
+    if (routineId == null) return null;
+    try {
+      return await ref.read(routineRepositoryProvider).getRoutine(routineId);
+    } catch (_) {
+      // La sessione rimane utilizzabile anche se la scheda è stata rimossa.
+      // Una fase già aperta porta il proprio piano nel checkpoint.
+      return null;
     }
   }
 
@@ -246,11 +354,57 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     return _enqueueSave(snapshot);
   }
 
+  Future<bool> _openTimedPhase(String path) async {
+    final workout = _workout;
+    final open = widget.onOpenPhase;
+    if (workout == null || open == null || _openingPhase || _isFinishing) {
+      return false;
+    }
+    setState(() => _openingPhase = true);
+    try {
+      _dismissRest();
+      // Prima si consegna al database l'ultima modifica della schermata
+      // madre; al ritorno si rilegge il commit della fase. Così nessuna copia
+      // vecchia può riscrivere sopra le serie appena concluse.
+      await _flushSave(workout);
+      await Future<void>.sync(() => open(path));
+      final refreshed = await _repository.getById(widget.workoutId);
+      if (refreshed == null) {
+        throw StateError('La sessione non esiste più.');
+      }
+      final routine = await _loadRoutine(refreshed);
+      if (!mounted) return true;
+      setState(() {
+        _workout = refreshed;
+        _routine = routine;
+        _loadGuidanceUndo.clear();
+      });
+      return true;
+    } catch (_) {
+      if (!mounted) return false;
+      showAutoClosingSnackBar(
+        ScaffoldMessenger.of(context),
+        const SnackBar(
+          content: Text(
+            'Non riesco ad aprire o ricaricare il timer. La sessione è salva.',
+          ),
+        ),
+      );
+      return false;
+    } finally {
+      if (mounted) setState(() => _openingPhase = false);
+    }
+  }
+
+  Future<bool> _openPlan(CircuitWorkoutPlan plan) =>
+      _openTimedPhase(plan.resumePath(widget.workoutId));
+
   // ── Gesti sulle serie ────────────────────────────────────────────────────
 
   void _onSetChanged(int exerciseIndex, int setIndex, WorkoutSet set) {
     final workout = _workout;
     if (workout == null || _isFinishing) return;
+    _loadGuidanceUndo.remove(exerciseIndex);
     setState(
       () => _workout = replaceWorkoutSet(workout, exerciseIndex, setIndex, set),
     );
@@ -269,8 +423,8 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
       final set = before.exercises[exerciseIndex].sets[setIndex];
       final toggled = set.copyWith(completed: !set.completed);
       final next = replaceWorkoutSet(before, exerciseIndex, setIndex, toggled);
+      _loadGuidanceUndo.remove(exerciseIndex);
       setState(() => _workout = next);
-      HapticFeedback.selectionClick();
       await _flushSave(next);
       if (!mounted) return;
 
@@ -280,8 +434,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
       } else {
         // Riaprire una serie ferma il recupero che quella serie aveva
         // avviato: continuare a contare non avrebbe più un riferimento.
-        _rest.cancel();
-        _guidedGroup = null;
+        _dismissRest();
       }
     } catch (error) {
       if (!mounted) return;
@@ -314,6 +467,29 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   void _startRestAfter(Workout before, int exerciseIndex, int setIndex) {
     final exercise = before.exercises[exerciseIndex];
     if (exercise.isCooldown) return;
+    final current = _workout ?? before;
+    final target = _cueTarget(current);
+
+    Future<void> announce({Duration? rest}) => _ignoreCueFailure(() async {
+      await _cues.setCompleted(
+        exerciseName: exercise.exerciseName,
+        setNumber: setIndex + 1,
+        totalSets: exercise.sets.length,
+      );
+      if (rest != null) {
+        await _cues.startRest(
+          duration: rest,
+          deadline: DateTime.now().add(rest),
+          nextExerciseName: target?.exerciseName,
+        );
+      } else if (target != null) {
+        await _cues.nextSet(
+          exerciseName: target.exerciseName,
+          setNumber: target.setNumber,
+          totalSets: target.totalSets,
+        );
+      }
+    });
 
     final group = supersetGroupContaining(before, exerciseIndex);
     if (group != null) {
@@ -323,23 +499,51 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
       ));
       if (!transition.shouldRest) {
         // Prossima stazione subito: è il senso della superserie.
-        _guidedGroup = group;
+        if (mounted) setState(() => _guidedGroup = group);
         final next = transition.next;
         if (next != null && mounted) {
           _announce(
             'Vai su ${before.exercises[next.exerciseIndex].exerciseName}',
           );
         }
+        unawaited(announce());
         return;
       }
-      _guidedGroup = group;
+      if (mounted) setState(() => _guidedGroup = group);
     } else {
-      _guidedGroup = null;
+      if (mounted) setState(() => _guidedGroup = null);
     }
 
     final seconds = exercise.restSeconds ?? 0;
-    if (seconds <= 0) return;
-    _rest.start(Duration(seconds: seconds));
+    if (seconds <= 0) {
+      unawaited(announce());
+      return;
+    }
+    final duration = Duration(seconds: seconds);
+    final deadline = DateTime.now().add(duration);
+    _rest.start(duration);
+    if (mounted) {
+      setState(() {
+        _restContextLabel = '${exercise.exerciseName} · serie ${setIndex + 1}';
+        _restNextLabel = target == null ? null : _cueTargetLabel(target);
+      });
+    }
+    // La scadenza usata dal banner e quella persistita differiscono solo dei
+    // pochi microsecondi necessari a costruire il messaggio.
+    unawaited(
+      _ignoreCueFailure(() async {
+        await _cues.setCompleted(
+          exerciseName: exercise.exerciseName,
+          setNumber: setIndex + 1,
+          totalSets: exercise.sets.length,
+        );
+        await _cues.startRest(
+          duration: duration,
+          deadline: deadline,
+          nextExerciseName: target?.exerciseName,
+        );
+      }),
+    );
   }
 
   /// Confronta la serie appena chiusa con i record precedenti a oggi.
@@ -366,6 +570,81 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         : 'Record: ${exercise.exerciseName} vale ora '
               '${formatKg(estimated)} kg di massimale stimato.';
     _announce(message, emphasis: true);
+    unawaited(
+      _ignoreCueFailure(
+        () => _cues.personalRecord(
+          exerciseName: exercise.exerciseName,
+          summary: heavier
+              ? '${formatKg(kg)} chilogrammi.'
+              : 'Nuovo massimale stimato.',
+        ),
+      ),
+    );
+  }
+
+  ({String exerciseName, int setNumber, int totalSets})? _cueTarget(
+    Workout workout,
+  ) {
+    final cursor = calculateLiveWorkoutFocus(workout).current;
+    if (cursor == null) return null;
+    final exercise = workout.exercises[cursor.exerciseIndex];
+    return (
+      exerciseName: exercise.exerciseName,
+      setNumber: cursor.setIndex + 1,
+      totalSets: exercise.sets.length,
+    );
+  }
+
+  String _cueTargetLabel(
+    ({String exerciseName, int setNumber, int totalSets}) target,
+  ) =>
+      '${target.exerciseName} · serie ${target.setNumber} di ${target.totalSets}';
+
+  void _dismissRest() {
+    _rest.cancel();
+    unawaited(_ignoreCueFailure(_cues.cancelRest));
+    if (mounted) {
+      setState(() {
+        _guidedGroup = null;
+        _restContextLabel = null;
+        _restNextLabel = null;
+      });
+    }
+  }
+
+  void _skipRest() {
+    final target = _workout == null ? null : _cueTarget(_workout!);
+    _rest.skip();
+    _rest.cancel();
+    unawaited(
+      _ignoreCueFailure(
+        () => _cues.finishRestNow(nextExerciseName: target?.exerciseName),
+      ),
+    );
+    if (mounted) {
+      setState(() {
+        _guidedGroup = null;
+        _restContextLabel = null;
+        _restNextLabel = null;
+      });
+    }
+  }
+
+  void _adjustRest(Duration remaining) {
+    if (remaining <= Duration.zero) {
+      _skipRest();
+      return;
+    }
+    final deadline = _rest.deadline ?? DateTime.now().add(remaining);
+    final target = _workout == null ? null : _cueTarget(_workout!);
+    unawaited(
+      _ignoreCueFailure(
+        () => _cues.rescheduleRest(
+          deadline: deadline,
+          nextExerciseName: target?.exerciseName,
+        ),
+      ),
+    );
   }
 
   void _announce(String message, {bool emphasis = false}) {
@@ -393,6 +672,9 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   void _addRound(List<int> exerciseIndices) {
     final workout = _workout;
     if (workout == null || _isFinishing) return;
+    for (final index in exerciseIndices) {
+      _loadGuidanceUndo.remove(index);
+    }
     final next = appendSupersetRound(
       workout,
       exerciseIndices,
@@ -414,11 +696,111 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
 
     final exercises = List<WorkoutExercise>.of(workout.exercises);
     for (final index in exerciseIndices) {
+      _loadGuidanceUndo.remove(index);
       exercises[index] = exercises[index].copyWith(restSeconds: picked);
     }
     final next = workout.copyWith(exercises: exercises);
     setState(() => _workout = next);
     unawaited(_flushSave(next));
+  }
+
+  void _applyLoadGuidance(int exerciseIndex, LiveLoadGuidance guidance) {
+    final workout = _workout;
+    if (workout == null ||
+        _isFinishing ||
+        exerciseIndex < 0 ||
+        exerciseIndex >= workout.exercises.length ||
+        !guidance.canApply) {
+      return;
+    }
+    final original = workout.exercises[exerciseIndex];
+    final exercises = List<WorkoutExercise>.of(workout.exercises);
+    exercises[exerciseIndex] = guidance.applyToRemaining(original);
+    final next = workout.copyWith(exercises: exercises);
+    _loadGuidanceUndo[exerciseIndex] = original;
+    setState(() => _workout = next);
+    unawaited(_flushSave(next));
+  }
+
+  void _undoLoadGuidance(int exerciseIndex) {
+    final workout = _workout;
+    final original = _loadGuidanceUndo.remove(exerciseIndex);
+    if (workout == null ||
+        original == null ||
+        exerciseIndex < 0 ||
+        exerciseIndex >= workout.exercises.length ||
+        _isFinishing) {
+      return;
+    }
+    final exercises = List<WorkoutExercise>.of(workout.exercises);
+    exercises[exerciseIndex] = original;
+    final next = workout.copyWith(exercises: exercises);
+    setState(() => _workout = next);
+    unawaited(_flushSave(next));
+  }
+
+  Map<int, LiveLoadGuidance> _loadGuidanceFor(
+    Workout workout,
+    LiveWorkoutFocus focus,
+  ) {
+    final cursor = focus.current;
+    if (cursor == null) return const {};
+    final exercise = workout.exercises[cursor.exerciseIndex];
+    if (exercise.isWarmup ||
+        exercise.isCooldown ||
+        exercise.trackingMode.isTimed) {
+      return const {};
+    }
+    // La proposta deve poter spiegare la prescrizione che sta applicando.
+    // In una sessione libera non c'è una riga di scheda né un intervallo:
+    // copiare un vecchio peso lì sembrerebbe un consiglio senza contesto.
+    final routine = _routine;
+    if (routine == null) return const {};
+
+    final history = ref
+        .watch(lastWorkSetsProvider(lastWorkSetsKey([exercise.exerciseId])))
+        .valueOrNull;
+    final profile = ref.watch(trainingProfileProvider).valueOrNull;
+    final catalog = ref.watch(exerciseCatalogProvider).valueOrNull;
+    if (history == null || profile == null || catalog == null) return const {};
+
+    RoutineExerciseRef? routineRow;
+    for (final row in [...routine.main, ...routine.finisher]) {
+      if (row.exerciseRefId == exercise.exerciseId) {
+        routineRow = row;
+        break;
+      }
+    }
+    Exercise? catalogExercise;
+    for (final item in catalog) {
+      if (item.id == exercise.exerciseId) {
+        catalogExercise = item;
+        break;
+      }
+    }
+    final tools = catalogExercise == null
+        ? const <Equipment>{}
+        : {
+            for (final requirement in ExerciseScreener.requirementsOf(
+              catalogExercise,
+            ))
+              ...requirement.options,
+          };
+    final advice = LoadProgression.advise(
+      sets: history[exercise.exerciseId] ?? const <WorkoutSet>[],
+      range: routineRow?.prescription.range,
+      tools: tools,
+      owned: profile.equipment,
+      prescribedSets: routineRow?.prescription.sets ?? exercise.sets.length,
+    );
+    final guidance = LiveLoadGuidance.from(
+      lastSets: history[exercise.exerciseId] ?? const <WorkoutSet>[],
+      plannedSets: exercise.sets,
+      advice: advice,
+    );
+    return guidance.hasHistory
+        ? {cursor.exerciseIndex: guidance}
+        : const <int, LiveLoadGuidance>{};
   }
 
   // ── Uscita, pausa, chiusura ──────────────────────────────────────────────
@@ -448,7 +830,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     final workout = _workout;
     if (workout == null || _isFinishing) return;
     setState(() => _isFinishing = true);
-    _rest.cancel();
+    _dismissRest();
     _elapsedTicker?.cancel();
     try {
       final paused = workout.copyWith(pausedAt: DateTime.now());
@@ -458,6 +840,11 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         _workout = paused;
         _allowPop = true;
       });
+      await _ignoreCueFailure(() async {
+        await _cues.paused();
+        await _cues.deactivate(stopVoice: false);
+      });
+      if (!mounted) return;
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
@@ -477,17 +864,54 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   }
 
   Future<void> _finish() async {
-    final workout = _workout;
-    if (workout == null || _isFinishing) return;
+    final initial = _workout;
+    if (initial == null || _isFinishing || _openingPhase) return;
+    var current = initial;
 
-    final withCoolDown = await _offerCoolDown(workout);
+    // Il tasto finale è anche il proseguimento naturale della scheda: prima
+    // completa, nell'ordine, riscaldamento/circuiti/blocchi a tempo; solo dopo
+    // propone di chiudere la sessione.
+    while (true) {
+      final pending = circuitPlansForWorkout(
+        current,
+        routine: _routine,
+      ).where((plan) => plan.kind != CircuitKind.cooldown).toList();
+      if (pending.isEmpty) break;
+      final plan = pending.first;
+      final opened = await _openPlan(plan);
+      if (!mounted || !opened) return;
+      final refreshed = _workout;
+      if (refreshed == null) return;
+      current = refreshed;
+      final currentId = current.id;
+      final stillPending = circuitPlansForWorkout(current, routine: _routine)
+          .any(
+            (candidate) =>
+                candidate.resumePath(currentId) == plan.resumePath(currentId),
+          );
+      // È uscito prima della fine: niente catena automatica e, soprattutto,
+      // niente chiusura che fingerebbe completato il resto.
+      if (stillPending) return;
+    }
+
+    var withCoolDown = await _offerCoolDown(current);
     if (!mounted) return;
-    // Il defaticamento accettato si tiene SUBITO, prima di chiedere altro.
-    // Restava una variabile locale fino al salvataggio finale, e con la
-    // domanda dello sforzo in mezzo bastava che il sistema smontasse quel
-    // foglio perché gli esercizi appena accettati sparissero — e alla ripresa
-    // «Defaticamento?» ripartiva da capo, come se non avesse mai risposto.
-    _workout = withCoolDown;
+    setState(() => _workout = withCoolDown);
+
+    final cooldown = circuitPlansForWorkout(
+      withCoolDown,
+      routine: _routine,
+    ).where((plan) => plan.kind == CircuitKind.cooldown).firstOrNull;
+    if (cooldown != null) {
+      final opened = await _openPlan(cooldown);
+      if (!mounted || !opened) return;
+      withCoolDown = _workout ?? withCoolDown;
+      final cooldownStillPending = circuitPlansForWorkout(
+        withCoolDown,
+        routine: _routine,
+      ).any((plan) => plan.kind == CircuitKind.cooldown);
+      if (cooldownStillPending) return;
+    }
 
     final effort = _effort ?? await askSessionEffort(context);
     if (!mounted) return;
@@ -498,7 +922,7 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     _effort = effort;
 
     setState(() => _isFinishing = true);
-    _rest.cancel();
+    _dismissRest();
     _elapsedTicker?.cancel();
     try {
       final snapshot = finalizeWorkoutSnapshot(
@@ -514,6 +938,14 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
         _workout = snapshot;
         _allowPop = true;
       });
+      await _ignoreCueFailure(
+        () => _cues.completed(workoutName: snapshot.routineName),
+      );
+      if (!mounted) return;
+      // Health Connect/HealthKit è un'uscita secondaria: la sessione locale è
+      // già conclusa e si chiude subito. Se manca il consenso, la schermata
+      // Salute permetterà di esportarla in seguito.
+      unawaited(_syncFinalizedWorkoutToHealth(snapshot));
       widget.onClosed?.call(snapshot);
       Navigator.of(context).pop();
     } catch (error) {
@@ -532,6 +964,37 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
           ),
         ),
       );
+    }
+  }
+
+  Future<void> _syncFinalizedWorkoutToHealth(Workout workout) async {
+    final endedAt = workout.endedAt;
+    if (endedAt == null || workout.syncedToHealthConnect) return;
+    try {
+      final status = await _health.status();
+      if (!status.supports(HealthCapability.writeWorkout) ||
+          !status.isGranted(HealthCapability.writeWorkout)) {
+        return;
+      }
+      final result = await _health.writeWorkout(
+        HealthWorkoutRecord(
+          id: workout.id,
+          title: workout.routineName ?? 'Allenamento Coach360',
+          startedAt: workout.startedAt,
+          endedAt: endedAt,
+          totalKcal: workout.totalKcal,
+        ),
+      );
+      if (result.state != HealthWorkoutWriteState.written &&
+          result.state != HealthWorkoutWriteState.alreadyPresent) {
+        return;
+      }
+      await _repository.saveWorkout(
+        workout.copyWith(syncedToHealthConnect: true),
+      );
+    } catch (_) {
+      // L'esportazione si può ritentare dalla schermata Salute. Non rende mai
+      // incompleta una sessione che SQLite ha già finalizzato.
     }
   }
 
@@ -578,7 +1041,10 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     );
     if (accepted != true) return workout;
     return workout.copyWith(
-      exercises: [...workout.exercises, ...coolDownAsWorkoutExercises()],
+      exercises: [
+        ...workout.exercises,
+        ...coolDownAsWorkoutExercises(completed: false),
+      ],
     );
   }
 
@@ -587,6 +1053,19 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
   @override
   Widget build(BuildContext context) {
     final workout = _workout;
+    final focus = workout == null ? null : calculateLiveWorkoutFocus(workout);
+    CircuitWorkoutPlan? primaryGuidedPlan;
+    if (workout != null) {
+      final pending = circuitPlansForWorkout(
+        workout,
+        routine: _routine,
+      ).where((plan) => plan.kind != CircuitKind.cooldown).toList();
+      if (pending.isNotEmpty &&
+          (focus?.current == null ||
+              pending.first.kind == CircuitKind.warmup)) {
+        primaryGuidedPlan = pending.first;
+      }
+    }
 
     return LiveWorkoutExitGuard(
       allowPop: _allowPop || workout == null,
@@ -624,12 +1103,20 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
                 rest: _rest,
                 guided: _guidedGroup != null,
                 onStopGuided: () {
-                  _rest.cancel();
-                  setState(() => _guidedGroup = null);
+                  _dismissRest();
                 },
-                focus: calculateLiveWorkoutFocus(workout),
+                onSkipRest: _skipRest,
+                onDismissRest: _dismissRest,
+                onAdjustedRest: _adjustRest,
+                restContextLabel: _restContextLabel,
+                restNextLabel: _restNextLabel,
+                focus: focus!,
                 workout: workout,
-                busy: _busyCursor != null || _isFinishing,
+                busy: _busyCursor != null || _isFinishing || _openingPhase,
+                guidedPlan: primaryGuidedPlan,
+                onOpenGuided: primaryGuidedPlan == null
+                    ? null
+                    : () => unawaited(_openPlan(primaryGuidedPlan!)),
                 onCompleteCurrent: (cursor) => unawaited(
                   _onSetComplete(cursor.exerciseIndex, cursor.setIndex),
                 ),
@@ -669,6 +1156,15 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
 
     final workout = _workout!;
     final focus = calculateLiveWorkoutFocus(workout);
+    final loadGuidance = _loadGuidanceFor(workout, focus);
+    final resumePath = workout.resumePath;
+    final guidedPlans = circuitPlansForWorkout(workout, routine: _routine)
+        .where(
+          (plan) =>
+              plan.kind != CircuitKind.cooldown &&
+              plan.resumePath(workout.id) != resumePath,
+        )
+        .toList(growable: false);
     final actions = WorkoutBlockActions(
       onSetChanged: _onSetChanged,
       onSetComplete: (exerciseIndex, setIndex) =>
@@ -688,17 +1184,26 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
             bodyKg: _bodyKg,
             bodyKgSource: _bodyKgSource,
           ),
-          if (workout.resumePath case final path?)
+          if (resumePath case final path?)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: _ResumePhaseCard(
                 onOpen: widget.onOpenPhase == null
                     ? null
-                    : () => widget.onOpenPhase!(path),
+                    : () => unawaited(_openTimedPhase(path)),
+              ),
+            ),
+          if (guidedPlans.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: _GuidedPhasesCard(
+                plans: guidedPlans,
+                busy: _openingPhase || _isFinishing,
+                onOpen: (plan) => unawaited(_openPlan(plan)),
               ),
             ),
           const SizedBox(height: 12),
-          ..._buildBlocks(workout, focus, actions),
+          ..._buildBlocks(workout, focus, actions, loadGuidance),
         ],
       ),
     );
@@ -710,11 +1215,24 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
     Workout workout,
     LiveWorkoutFocus focus,
     WorkoutBlockActions actions,
+    Map<int, LiveLoadGuidance> loadGuidance,
   ) {
     final blocks = <Widget>[];
     var index = 0;
     while (index < workout.exercises.length) {
-      final group = supersetGroupContaining(workout, index);
+      final exercise = workout.exercises[index];
+      if (exercise.trackingMode.isTimed) {
+        index++;
+        continue;
+      }
+      final candidateGroup = supersetGroupContaining(workout, index);
+      final group =
+          candidateGroup != null &&
+              candidateGroup.every(
+                (member) => !workout.exercises[member].trackingMode.isTimed,
+              )
+          ? candidateGroup
+          : null;
       if (group != null && group.first == index) {
         blocks.add(
           Padding(
@@ -726,6 +1244,17 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
               actions: actions,
               current: focus.current,
               busyCursor: _busyCursor,
+              guidanceByExercise: {
+                for (final member in group) member: ?loadGuidance[member],
+              },
+              guidanceUndoIndices: _loadGuidanceUndo.keys.toSet(),
+              onApplyGuidance: (exerciseIndex) {
+                final guidance = loadGuidance[exerciseIndex];
+                if (guidance != null) {
+                  _applyLoadGuidance(exerciseIndex, guidance);
+                }
+              },
+              onUndoGuidance: _undoLoadGuidance,
             ),
           ),
         );
@@ -737,11 +1266,18 @@ class _LiveWorkoutScreenState extends ConsumerState<LiveWorkoutScreen>
           padding: const EdgeInsets.only(bottom: 14),
           child: ExerciseBlockCard(
             key: ValueKey('exercise-$index'),
-            exercise: workout.exercises[index],
+            exercise: exercise,
             exerciseIndex: index,
             actions: actions,
             current: focus.current,
             busyCursor: _busyCursor,
+            guidance: loadGuidance[index],
+            onApplyGuidance: loadGuidance[index] == null
+                ? null
+                : () => _applyLoadGuidance(index, loadGuidance[index]!),
+            onUndoGuidance: _loadGuidanceUndo.containsKey(index)
+                ? () => _undoLoadGuidance(index)
+                : null,
           ),
         ),
       );
@@ -885,15 +1421,59 @@ class _ResumePhaseCard extends StatelessWidget {
   }
 }
 
+class _GuidedPhasesCard extends StatelessWidget {
+  const _GuidedPhasesCard({
+    required this.plans,
+    required this.busy,
+    required this.onOpen,
+  });
+
+  final List<CircuitWorkoutPlan> plans;
+  final bool busy;
+  final void Function(CircuitWorkoutPlan plan) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      title: 'Fasi guidate',
+      subtitle: 'Timer e recuperi avanzano insieme alla sessione.',
+      icon: Icons.timer_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final plan in plans) ...[
+            FilledButton.tonalIcon(
+              key: ValueKey(
+                'open-${plan.kind.name}-${plan.segmentIndex}-${plan.rowIndex}',
+              ),
+              onPressed: busy ? null : () => onOpen(plan),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(plan.actionLabel),
+            ),
+            if (plan != plans.last) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// La barra in fondo: il recupero quando c'è, e sotto l'azione principale.
 class _BottomBar extends StatelessWidget {
   const _BottomBar({
     required this.rest,
     required this.guided,
     required this.onStopGuided,
+    required this.onSkipRest,
+    required this.onDismissRest,
+    required this.onAdjustedRest,
+    required this.restContextLabel,
+    required this.restNextLabel,
     required this.focus,
     required this.workout,
     required this.busy,
+    required this.guidedPlan,
+    required this.onOpenGuided,
     required this.onCompleteCurrent,
     required this.onFinish,
   });
@@ -901,9 +1481,16 @@ class _BottomBar extends StatelessWidget {
   final RestTimerController rest;
   final bool guided;
   final VoidCallback onStopGuided;
+  final VoidCallback onSkipRest;
+  final VoidCallback onDismissRest;
+  final ValueChanged<Duration> onAdjustedRest;
+  final String? restContextLabel;
+  final String? restNextLabel;
   final LiveWorkoutFocus focus;
   final Workout workout;
   final bool busy;
+  final CircuitWorkoutPlan? guidedPlan;
+  final VoidCallback? onOpenGuided;
   final void Function(WorkoutCursor cursor) onCompleteCurrent;
   final VoidCallback onFinish;
 
@@ -914,43 +1501,59 @@ class _BottomBar extends StatelessWidget {
 
     return Material(
       color: theme.colorScheme.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Divider(height: 1, color: theme.colorScheme.outline),
-          RestTimerBanner(
-            controller: rest,
-            guided: guided,
-            onStop: guided ? onStopGuided : null,
-            nextLabel: cursor == null
-                ? null
-                : workout.exercises[cursor.exerciseIndex].exerciseName,
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: cursor == null
-                  ? FilledButton.icon(
-                      key: const Key('live_workout_finish'),
-                      onPressed: busy ? null : onFinish,
-                      icon: const Icon(Icons.flag_rounded),
-                      label: const Text('Hai finito — chiudi e salva'),
-                    )
-                  : FilledButton.icon(
-                      key: const Key('live_workout_complete_current'),
-                      onPressed: busy ? null : () => onCompleteCurrent(cursor),
-                      icon: const Icon(Icons.check_rounded),
-                      label: Text(
-                        _currentActionLabel(workout, cursor),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-            ),
-          ),
-        ],
+      child: AnimatedBuilder(
+        animation: rest,
+        builder: (context, _) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Divider(height: 1, color: theme.colorScheme.outline),
+            if (rest.isVisible)
+              RestTimerBanner(
+                controller: rest,
+                guided: guided,
+                onStop: guided ? onStopGuided : onDismissRest,
+                onSkip: onSkipRest,
+                onDismiss: onDismissRest,
+                onAdjusted: onAdjustedRest,
+                contextLabel: restContextLabel,
+                nextLabel: restNextLabel,
+              )
+            else
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: guidedPlan != null
+                      ? FilledButton.icon(
+                          key: const Key('live_workout_open_guided'),
+                          onPressed: busy ? null : onOpenGuided,
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: Text(guidedPlan!.actionLabel),
+                        )
+                      : cursor == null
+                      ? FilledButton.icon(
+                          key: const Key('live_workout_finish'),
+                          onPressed: busy ? null : onFinish,
+                          icon: const Icon(Icons.flag_rounded),
+                          label: const Text('Hai finito — chiudi e salva'),
+                        )
+                      : FilledButton.icon(
+                          key: const Key('live_workout_complete_current'),
+                          onPressed: busy
+                              ? null
+                              : () => onCompleteCurrent(cursor),
+                          icon: const Icon(Icons.check_rounded),
+                          label: Text(
+                            _currentActionLabel(workout, cursor),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -960,7 +1563,8 @@ String _currentActionLabel(Workout workout, WorkoutCursor cursor) {
   final exercise = workout.exercises[cursor.exerciseIndex];
   final set = exercise.sets[cursor.setIndex];
   final description = describeWorkoutSet(set, exercise.trackingMode);
-  return 'Fatta: ${exercise.exerciseName} · $description';
+  return 'Fatta: ${exercise.exerciseName} · serie ${cursor.setIndex + 1} '
+      'di ${exercise.sets.length} · $description';
 }
 
 /// Il foglio del recupero: valori pronti più la possibilità di toglierlo.

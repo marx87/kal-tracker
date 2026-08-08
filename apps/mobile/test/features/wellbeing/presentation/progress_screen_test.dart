@@ -24,6 +24,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_listWidth(tester), 400);
+    expect(find.byKey(const Key('open_health_button')), findsOneWidget);
 
     await _dispose(tester, database);
   });

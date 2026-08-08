@@ -28,6 +28,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Coach360 usa la fotocamera per fotografare il pasto da analizzare e per leggere i codici a barre dei prodotti.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Coach360 legge passi, sonno, frequenza a riposo e allenamenti da Salute per unificare il tuo quadro fitness.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Coach360 salva in Salute gli allenamenti che scegli di condividere, evitando copie duplicate.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Coach360 usa il riconoscimento attività per autorizzare i dati fitness collegati alla tua giornata.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Coach360 legge la foto scelta dalla galleria per proporne l’analisi nel diario.</string>
 	<key>UIApplicationSceneManifest</key>

@@ -104,6 +104,7 @@ WorkoutExercise _mainRow(
       rounds: segment.rounds,
       workSec: segment.workSec,
       restSec: segment.restSec,
+      intervalSegmentIndex: segment.segmentIndex,
       chained: chainable && exercise.inSupersetWithPrevious,
     );
   }
@@ -125,6 +126,7 @@ WorkoutExercise _timedRow(
   required int workSec,
   required int restSec,
   required bool chained,
+  int? intervalSegmentIndex,
 }) {
   return WorkoutExercise(
     exerciseId: exercise.exerciseRefId,
@@ -134,6 +136,7 @@ WorkoutExercise _timedRow(
     trackingMode: ExerciseTrackingMode.timed,
     muscleGroup: _groupOf(exercise),
     restSeconds: restSec,
+    intervalSegmentIndex: intervalSegmentIndex,
     isInSupersetWithPrevious: chained,
     sets: [
       for (var round = 0; round < rounds; round++)

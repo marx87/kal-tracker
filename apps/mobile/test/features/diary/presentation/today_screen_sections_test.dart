@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kal_tracker/core/config/app_config.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
@@ -20,6 +21,7 @@ import 'package:kal_tracker/features/diary/presentation/today_diary_screen.dart'
 import 'package:kal_tracker/features/diary/presentation/widgets/playful_empty_state.dart';
 import 'package:kal_tracker/features/diary/presentation/widgets/today_recipes_card.dart';
 import 'package:kal_tracker/features/profile/data/local_profile_repository.dart';
+import 'package:kal_tracker/features/weekly_plan/data/workout_plan_repository.dart';
 
 /// La schermata si monta senza `app.dart`: qui interessa il diario, non il
 /// router, e un guscio spoglio tiene il test indipendente dal resto
@@ -246,6 +248,56 @@ void main() {
     await _dispose(tester, database);
   });
 
+  testWidgets('Inizia da Oggi crea la sessione e apre Live', (tester) async {
+    _usePhone(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final profileId = await _seedProfile(database);
+    await _seedRoutinePlannedToday(
+      database,
+      profileId,
+      name: 'Sessione da Oggi',
+    );
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const TodayDiaryScreen()),
+        GoRoute(
+          path: '/workout/:id',
+          builder: (_, state) => Scaffold(
+            key: const Key('fake_live_workout'),
+            body: Text(state.pathParameters['id']!),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          appConfigProvider.overrideWithValue(const AppConfig.offline()),
+          checkInStoreProvider.overrideWithValue(InMemoryCheckInStore()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final start = find.byKey(const Key('today_training_start_button'));
+    await tester.ensureVisible(start);
+    await tester.tap(start);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('fake_live_workout')), findsOneWidget);
+    final open = await (database.select(
+      database.workouts,
+    )..where((row) => row.endedAt.isNull())).getSingle();
+    expect(open.routineId, 'routine-1');
+    expect(open.routineNameSnapshot, 'Sessione da Oggi');
+
+    await _dispose(tester, database);
+  });
+
   testWidgets('una scheda cancellata resta annunciata, senza fingere', (
     tester,
   ) async {
@@ -331,6 +383,48 @@ void main() {
 
     expect(find.byKey(const Key('today_training_rest')), findsOneWidget);
 
+    await _dispose(tester, database);
+  });
+
+  testWidgets('Oggi reagisce quando cambia il piano settimanale', (
+    tester,
+  ) async {
+    _usePhone(tester);
+    final database = AppDatabase(NativeDatabase.memory());
+    final profileId = await _seedProfile(database);
+    final now = AppTime.nowUtc();
+    await database
+        .into(database.routines)
+        .insert(
+          RoutinesCompanion.insert(
+            id: 'routine-reactive',
+            profileId: profileId,
+            name: 'Gambe reattive',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    await tester.pumpWidget(_host(database));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('today_training_planned')), findsNothing);
+
+    await WorkoutPlanRepository(database).setDay(
+      profileId: profileId,
+      weekday: AppTime.nowInRome().weekday,
+      routineId: 'routine-reactive',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('today_training_planned')), findsOneWidget);
+    expect(find.text('Gambe reattive'), findsOneWidget);
+
+    await WorkoutPlanRepository(
+      database,
+    ).clearDay(profileId: profileId, weekday: AppTime.nowInRome().weekday);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('today_training_planned')), findsNothing);
     await _dispose(tester, database);
   });
 

@@ -82,7 +82,7 @@ class _WeeklyPlanScreenState extends ConsumerState<WeeklyPlanScreen> {
     final recipes =
         ref.watch(recipesProvider).valueOrNull ?? const <FitRecipeSummary>[];
     final target =
-        ref.watch(nutritionTargetProvider).valueOrNull ??
+        ref.watch(effectiveNutritionTargetProvider).valueOrNull ??
         const NutritionTarget.standard();
     final recipesById = {for (final recipe in recipes) recipe.id: recipe};
     final formOpen = _formOpen ?? (plan == null && pending == null);

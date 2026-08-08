@@ -22,6 +22,7 @@ class FakeLiveWorkoutRepository implements LiveWorkoutRepository {
 
   /// Ogni istantanea passata a `saveWorkout`, in ordine.
   final List<Workout> saved = [];
+  final List<Workout> circuitCommits = [];
 
   /// L'istantanea di chiusura, se è arrivata.
   Workout? finalized;
@@ -36,6 +37,10 @@ class FakeLiveWorkoutRepository implements LiveWorkoutRepository {
 
   /// Fa fallire `finalizeWorkout`.
   bool failFinalize = false;
+
+  /// Fa fallire il commit atomico di una fase, senza cambiare né righe né
+  /// checkpoint: riproduce il rollback della transazione Drift.
+  bool failCircuitCommit = false;
 
   Workout? get current => _workouts.values.firstOrNull;
 
@@ -78,6 +83,16 @@ class FakeLiveWorkoutRepository implements LiveWorkoutRepository {
     }
     saved.add(workout);
     _workouts[workout.id] = workout;
+  }
+
+  @override
+  Future<void> commitCircuitPhase(Workout workout) async {
+    if (failCircuitCommit) {
+      throw StateError('commit circuito fallito');
+    }
+    final committed = workout.copyWith(clearResumeState: true);
+    circuitCommits.add(committed);
+    _workouts[workout.id] = committed;
   }
 
   @override

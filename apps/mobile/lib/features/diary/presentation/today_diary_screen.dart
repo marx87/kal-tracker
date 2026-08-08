@@ -8,6 +8,7 @@ import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/core/updates/update_banner.dart';
 import 'package:kal_tracker/features/body/presentation/body_screen.dart';
 import 'package:kal_tracker/features/checkin/presentation/morning_check_in_card.dart';
+import 'package:kal_tracker/features/coach/presentation/widgets/coach_feed.dart';
 import 'package:kal_tracker/features/diary/domain/diary_models.dart';
 import 'package:kal_tracker/features/diary/domain/nutrition.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
@@ -32,7 +33,7 @@ import 'package:kal_tracker/features/quick_add/quick_add_menu.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart';
 import 'package:kal_tracker/features/targets/domain/nutrition_target.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
-import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/start_workout_action.dart';
 
 export 'package:kal_tracker/features/diary/presentation/widgets/meal_type_presentation.dart';
 
@@ -202,7 +203,7 @@ class _DiaryBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isToday = DiaryDay.isSameDay(day, today);
     final target = ref
-        .watch(nutritionTargetProvider)
+        .watch(effectiveNutritionTargetProvider)
         .maybeWhen(
           data: (value) => value,
           orElse: () => const NutritionTarget.standard(),
@@ -335,6 +336,7 @@ class _DiaryBody extends ConsumerWidget {
     // Le tre card del «adesso» valgono solo per oggi: guardando ieri
     // sono rumore, e l'allenamento di ieri non si inizia più.
     if (isToday) ...[
+      const CoachFeed(),
       const _TodayTrainingSection(),
       const _TodayRecipesSection(),
       const SizedBox(height: 14),
@@ -797,50 +799,24 @@ class _TodayTrainingSection extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 14),
       child: TodayTrainingCard(
         training: training,
-        onResume: (session) => _resumeWorkout(context, ref, session),
-        onStart: (_) => _openGym(context),
+        onResume: (session) => openLiveWorkout(context, session.id),
+        onStart: (planned) => _startPlannedWorkout(context, ref, planned),
       ),
     );
   }
 }
 
-/// Riprende la sessione aperta.
-///
-/// `liveWorkoutRepositoryProvider` non è ancora collegato all'app — lancia
-/// finché qualcuno non lo sovrascrive con l'implementazione Drift — e la
-/// schermata dal vivo lo legge in `initState`. Senza questo controllo
-/// «Riprendi» aprirebbe una schermata che esplode. Quando il collegamento
-/// arriva, questo ramo smette da solo di scattare.
-void _resumeWorkout(
+Future<void> _startPlannedWorkout(
   BuildContext context,
   WidgetRef ref,
-  OpenWorkoutSession session,
-) {
-  if (!_liveWorkoutIsWired(ref)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'La sessione dal vivo non è ancora attiva su questa '
-          'installazione. La sessione aperta resta dov\'è.',
-        ),
-      ),
-    );
+  PlannedTraining planned,
+) async {
+  final routineId = planned.routineId;
+  if (routineId == null) {
+    GoRouter.of(context).go('/gym');
     return;
   }
-  GoRouter.of(context).push('/workout/${session.id}');
-}
-
-/// L'allenamento si avvia dalla scheda, in Palestra: è l'unico posto che
-/// oggi sa comporre una sessione. Da qui si arriva con un tocco.
-void _openGym(BuildContext context) => GoRouter.of(context).go('/gym');
-
-bool _liveWorkoutIsWired(WidgetRef ref) {
-  try {
-    ref.read(liveWorkoutRepositoryProvider);
-    return true;
-  } on Object {
-    return false;
-  }
+  await startWorkoutFromRoutine(context, ref, routineId: routineId);
 }
 
 /// «Cosa mangio adesso»: il suggeritore per macro rimanenti, promosso dalla

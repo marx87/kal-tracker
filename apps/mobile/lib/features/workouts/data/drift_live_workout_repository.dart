@@ -263,6 +263,32 @@ class DriftLiveWorkoutRepository implements LiveWorkoutRepository {
   }
 
   @override
+  Future<void> commitCircuitPhase(Workout workout) async {
+    final now = _now();
+    await _database.transaction(() async {
+      final row = await _rowById(workout.id);
+      if (row == null) {
+        throw StateError('Questa sessione non esiste più.');
+      }
+      if (row.endedAt != null) {
+        throw StateError('Questa sessione è già chiusa.');
+      }
+      await (_database.update(
+        _database.workouts,
+      )..where((table) => table.id.equals(workout.id))).write(
+        WorkoutsCompanion(
+          resumePath: const Value(null),
+          circuitCheckpointJson: const Value(null),
+          updatedAt: Value(now),
+        ),
+      );
+      await _writeChildren(workout.id, workout.exercises);
+      await _writePainPoints(workout.id, workout.painPoints);
+      await _writeIntervalSegments(workout);
+    });
+  }
+
+  @override
   Future<void> finalizeWorkout(Workout snapshot) async {
     final now = _now();
     await _database.transaction(() async {

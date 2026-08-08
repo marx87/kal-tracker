@@ -1027,4 +1027,133 @@ void main() {
     expect(swap.parentId, adoptedProfileId);
     expect(swap.rows.single['profile_id'], adoptedProfileId);
   });
+
+  test('training profile e nuovi dati Coach360 non bloccano la coda', () {
+    const cases = <(String, String)>[
+      ('daily_check_in', 'daily_check_ins'),
+      ('goal', 'goals'),
+      ('training_profile', 'training_profiles'),
+      ('training_limitation', 'training_limitations'),
+      ('daily_health_summary', 'daily_health_summaries'),
+      ('coach_feed_item', 'coach_feed_items'),
+    ];
+    for (final (entityType, table) in cases) {
+      final mapped = SyncPushMapper.map(
+        SyncMutation(
+          mutationId: _mutationId,
+          entityType: entityType,
+          entityId: entityType == 'training_profile' ? _profileId : _itemId,
+          operation: 'upsert',
+          payload: _coach360Payload(entityType),
+        ),
+      );
+      expect(mapped.ops, isNotEmpty, reason: entityType);
+      expect((mapped.ops.single as RemoteUpsert).table, table);
+    }
+  });
+
+  test(
+    'la pesata Renpho porta composizione, provenienza e impedenze figlie',
+    () {
+      const mutation = SyncMutation(
+        mutationId: _mutationId,
+        entityType: 'body_measurement',
+        entityId: _itemId,
+        operation: 'upsert',
+        payload: {
+          'id': _itemId,
+          'profile_id': _profileId,
+          'weight_kg': 82.4,
+          'measured_at': '2026-08-08T06:30:00.000Z',
+          'has_impedance': true,
+          'impedance_ohm': 512.5,
+          'body_fat_pct': 22.1,
+          'muscle_pct': 73.2,
+          'water_pct': 55.8,
+          'source': 'renpho_ble',
+          'external_id': 'renpho-reading-1',
+          'device_model': 'RENPHO 8 electrodes',
+          'raw_payload': 'a1b2c3',
+          'updated_at': '2026-08-08T06:31:00.000Z',
+          'impedance_readings': [
+            {
+              'id': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              'segment': 'whole',
+              'frequency_hz': 50000,
+              'ohm': 512.5,
+            },
+          ],
+        },
+      );
+
+      final ops = SyncPushMapper.map(mutation).ops;
+      expect(ops, hasLength(2));
+      final parent = (ops.first as RemoteUpsert).rows.single;
+      expect(parent['body_fat_pct'], 22.1);
+      expect(parent['device_model'], 'RENPHO 8 electrodes');
+      expect(parent['raw_payload'], 'a1b2c3');
+      final children = ops.last as RemoteChildrenSwap;
+      expect(children.table, 'body_impedance_readings');
+      expect(children.rows.single['frequency_hz'], 50000);
+      expect(children.rows.single['ohm'], 512.5);
+    },
+  );
+}
+
+Map<String, Object?> _coach360Payload(String entityType) {
+  const base = <String, Object?>{
+    'id': _itemId,
+    'profile_id': _profileId,
+    'created_at': '2026-08-08T06:00:00.000Z',
+    'updated_at': '2026-08-08T06:00:00.000Z',
+  };
+  return switch (entityType) {
+    'daily_check_in' => {
+      ...base,
+      'day': '2026-08-08',
+      'sleep_hours': 7.5,
+      'energy_score': 4,
+      'steps': 9000,
+    },
+    'goal' => {
+      ...base,
+      'target_weight_kg': 78.0,
+      'target_level': 'defined',
+      'pace_kg_per_week': 0.4,
+      'started_at': '2026-08-08T06:00:00.000Z',
+      'start_weight_kg': 82.0,
+      'start_fat_free_mass_kg': 64.0,
+      'phase': 'approach',
+    },
+    'training_profile' => {
+      ...base,
+      'profile_id': _profileId,
+      'equipment': 'manubri,panca',
+      'sessions_per_week': 4,
+      'minutes_per_session': 60,
+      'preferred_days': 'lun,mar,gio,sab',
+      'deload_preference': 'suggerito',
+    },
+    'training_limitation' => {
+      ...base,
+      'body_part': 'spalla_dx',
+      'severity': 'fastidio',
+      'started_at': '2026-08-08T06:00:00.000Z',
+    },
+    'daily_health_summary' => {
+      ...base,
+      'day': '2026-08-08',
+      'source': 'health_connect',
+      'steps': 9000,
+    },
+    'coach_feed_item' => {
+      ...base,
+      'kind': 'weekly_review',
+      'source': 'deterministic',
+      'title': 'Rapporto',
+      'body': 'Settimana completata.',
+      'occurred_at': '2026-08-08T06:00:00.000Z',
+    },
+    _ => throw ArgumentError.value(entityType),
+  };
 }

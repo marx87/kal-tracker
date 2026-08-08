@@ -22896,6 +22896,1573 @@ class TrainingLimitationsCompanion extends UpdateCompanion<TrainingLimitation> {
   }
 }
 
+class $DailyHealthSummariesTable extends DailyHealthSummaries
+    with TableInfo<$DailyHealthSummariesTable, LocalDailyHealthSummary> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyHealthSummariesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<DateTime> day = GeneratedColumn<DateTime>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 40,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _externalIdMeta = const VerificationMeta(
+    'externalId',
+  );
+  @override
+  late final GeneratedColumn<String> externalId = GeneratedColumn<String>(
+    'external_id',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 120),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stepsMeta = const VerificationMeta('steps');
+  @override
+  late final GeneratedColumn<int> steps = GeneratedColumn<int>(
+    'steps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sleepMinutesMeta = const VerificationMeta(
+    'sleepMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> sleepMinutes = GeneratedColumn<int>(
+    'sleep_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _restingHeartRateMeta = const VerificationMeta(
+    'restingHeartRate',
+  );
+  @override
+  late final GeneratedColumn<int> restingHeartRate = GeneratedColumn<int>(
+    'resting_heart_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    day,
+    source,
+    externalId,
+    steps,
+    sleepMinutes,
+    restingHeartRate,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_health_summaries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalDailyHealthSummary> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('external_id')) {
+      context.handle(
+        _externalIdMeta,
+        externalId.isAcceptableOrUnknown(data['external_id']!, _externalIdMeta),
+      );
+    }
+    if (data.containsKey('steps')) {
+      context.handle(
+        _stepsMeta,
+        steps.isAcceptableOrUnknown(data['steps']!, _stepsMeta),
+      );
+    }
+    if (data.containsKey('sleep_minutes')) {
+      context.handle(
+        _sleepMinutesMeta,
+        sleepMinutes.isAcceptableOrUnknown(
+          data['sleep_minutes']!,
+          _sleepMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('resting_heart_rate')) {
+      context.handle(
+        _restingHeartRateMeta,
+        restingHeartRate.isAcceptableOrUnknown(
+          data['resting_heart_rate']!,
+          _restingHeartRateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalDailyHealthSummary map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalDailyHealthSummary(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      externalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_id'],
+      ),
+      steps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}steps'],
+      ),
+      sleepMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sleep_minutes'],
+      ),
+      restingHeartRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}resting_heart_rate'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $DailyHealthSummariesTable createAlias(String alias) {
+    return $DailyHealthSummariesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalDailyHealthSummary extends DataClass
+    implements Insertable<LocalDailyHealthSummary> {
+  final String id;
+  final String profileId;
+  final DateTime day;
+  final String source;
+  final String? externalId;
+  final int? steps;
+  final int? sleepMinutes;
+  final int? restingHeartRate;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const LocalDailyHealthSummary({
+    required this.id,
+    required this.profileId,
+    required this.day,
+    required this.source,
+    this.externalId,
+    this.steps,
+    this.sleepMinutes,
+    this.restingHeartRate,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['day'] = Variable<DateTime>(day);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || externalId != null) {
+      map['external_id'] = Variable<String>(externalId);
+    }
+    if (!nullToAbsent || steps != null) {
+      map['steps'] = Variable<int>(steps);
+    }
+    if (!nullToAbsent || sleepMinutes != null) {
+      map['sleep_minutes'] = Variable<int>(sleepMinutes);
+    }
+    if (!nullToAbsent || restingHeartRate != null) {
+      map['resting_heart_rate'] = Variable<int>(restingHeartRate);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  DailyHealthSummariesCompanion toCompanion(bool nullToAbsent) {
+    return DailyHealthSummariesCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      day: Value(day),
+      source: Value(source),
+      externalId: externalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalId),
+      steps: steps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(steps),
+      sleepMinutes: sleepMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sleepMinutes),
+      restingHeartRate: restingHeartRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(restingHeartRate),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory LocalDailyHealthSummary.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalDailyHealthSummary(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      day: serializer.fromJson<DateTime>(json['day']),
+      source: serializer.fromJson<String>(json['source']),
+      externalId: serializer.fromJson<String?>(json['externalId']),
+      steps: serializer.fromJson<int?>(json['steps']),
+      sleepMinutes: serializer.fromJson<int?>(json['sleepMinutes']),
+      restingHeartRate: serializer.fromJson<int?>(json['restingHeartRate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'day': serializer.toJson<DateTime>(day),
+      'source': serializer.toJson<String>(source),
+      'externalId': serializer.toJson<String?>(externalId),
+      'steps': serializer.toJson<int?>(steps),
+      'sleepMinutes': serializer.toJson<int?>(sleepMinutes),
+      'restingHeartRate': serializer.toJson<int?>(restingHeartRate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  LocalDailyHealthSummary copyWith({
+    String? id,
+    String? profileId,
+    DateTime? day,
+    String? source,
+    Value<String?> externalId = const Value.absent(),
+    Value<int?> steps = const Value.absent(),
+    Value<int?> sleepMinutes = const Value.absent(),
+    Value<int?> restingHeartRate = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => LocalDailyHealthSummary(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    day: day ?? this.day,
+    source: source ?? this.source,
+    externalId: externalId.present ? externalId.value : this.externalId,
+    steps: steps.present ? steps.value : this.steps,
+    sleepMinutes: sleepMinutes.present ? sleepMinutes.value : this.sleepMinutes,
+    restingHeartRate: restingHeartRate.present
+        ? restingHeartRate.value
+        : this.restingHeartRate,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  LocalDailyHealthSummary copyWithCompanion(
+    DailyHealthSummariesCompanion data,
+  ) {
+    return LocalDailyHealthSummary(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      day: data.day.present ? data.day.value : this.day,
+      source: data.source.present ? data.source.value : this.source,
+      externalId: data.externalId.present
+          ? data.externalId.value
+          : this.externalId,
+      steps: data.steps.present ? data.steps.value : this.steps,
+      sleepMinutes: data.sleepMinutes.present
+          ? data.sleepMinutes.value
+          : this.sleepMinutes,
+      restingHeartRate: data.restingHeartRate.present
+          ? data.restingHeartRate.value
+          : this.restingHeartRate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalDailyHealthSummary(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('day: $day, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
+          ..write('steps: $steps, ')
+          ..write('sleepMinutes: $sleepMinutes, ')
+          ..write('restingHeartRate: $restingHeartRate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    day,
+    source,
+    externalId,
+    steps,
+    sleepMinutes,
+    restingHeartRate,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalDailyHealthSummary &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.day == this.day &&
+          other.source == this.source &&
+          other.externalId == this.externalId &&
+          other.steps == this.steps &&
+          other.sleepMinutes == this.sleepMinutes &&
+          other.restingHeartRate == this.restingHeartRate &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class DailyHealthSummariesCompanion
+    extends UpdateCompanion<LocalDailyHealthSummary> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<DateTime> day;
+  final Value<String> source;
+  final Value<String?> externalId;
+  final Value<int?> steps;
+  final Value<int?> sleepMinutes;
+  final Value<int?> restingHeartRate;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const DailyHealthSummariesCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.day = const Value.absent(),
+    this.source = const Value.absent(),
+    this.externalId = const Value.absent(),
+    this.steps = const Value.absent(),
+    this.sleepMinutes = const Value.absent(),
+    this.restingHeartRate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyHealthSummariesCompanion.insert({
+    required String id,
+    required String profileId,
+    required DateTime day,
+    required String source,
+    this.externalId = const Value.absent(),
+    this.steps = const Value.absent(),
+    this.sleepMinutes = const Value.absent(),
+    this.restingHeartRate = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       day = Value(day),
+       source = Value(source),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalDailyHealthSummary> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<DateTime>? day,
+    Expression<String>? source,
+    Expression<String>? externalId,
+    Expression<int>? steps,
+    Expression<int>? sleepMinutes,
+    Expression<int>? restingHeartRate,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (day != null) 'day': day,
+      if (source != null) 'source': source,
+      if (externalId != null) 'external_id': externalId,
+      if (steps != null) 'steps': steps,
+      if (sleepMinutes != null) 'sleep_minutes': sleepMinutes,
+      if (restingHeartRate != null) 'resting_heart_rate': restingHeartRate,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyHealthSummariesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<DateTime>? day,
+    Value<String>? source,
+    Value<String?>? externalId,
+    Value<int?>? steps,
+    Value<int?>? sleepMinutes,
+    Value<int?>? restingHeartRate,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return DailyHealthSummariesCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      day: day ?? this.day,
+      source: source ?? this.source,
+      externalId: externalId ?? this.externalId,
+      steps: steps ?? this.steps,
+      sleepMinutes: sleepMinutes ?? this.sleepMinutes,
+      restingHeartRate: restingHeartRate ?? this.restingHeartRate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<DateTime>(day.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (externalId.present) {
+      map['external_id'] = Variable<String>(externalId.value);
+    }
+    if (steps.present) {
+      map['steps'] = Variable<int>(steps.value);
+    }
+    if (sleepMinutes.present) {
+      map['sleep_minutes'] = Variable<int>(sleepMinutes.value);
+    }
+    if (restingHeartRate.present) {
+      map['resting_heart_rate'] = Variable<int>(restingHeartRate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyHealthSummariesCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('day: $day, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
+          ..write('steps: $steps, ')
+          ..write('sleepMinutes: $sleepMinutes, ')
+          ..write('restingHeartRate: $restingHeartRate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CoachFeedItemsTable extends CoachFeedItems
+    with TableInfo<$CoachFeedItemsTable, LocalCoachFeedItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CoachFeedItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_profiles (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 40,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 20,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _externalIdMeta = const VerificationMeta(
+    'externalId',
+  );
+  @override
+  late final GeneratedColumn<String> externalId = GeneratedColumn<String>(
+    'external_id',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 120),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 120,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 1200,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actionLabelMeta = const VerificationMeta(
+    'actionLabel',
+  );
+  @override
+  late final GeneratedColumn<String> actionLabel = GeneratedColumn<String>(
+    'action_label',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 60),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _actionPathMeta = const VerificationMeta(
+    'actionPath',
+  );
+  @override
+  late final GeneratedColumn<String> actionPath = GeneratedColumn<String>(
+    'action_path',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 200),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAt = GeneratedColumn<DateTime>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _readAtMeta = const VerificationMeta('readAt');
+  @override
+  late final GeneratedColumn<DateTime> readAt = GeneratedColumn<DateTime>(
+    'read_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dismissedAtMeta = const VerificationMeta(
+    'dismissedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dismissedAt = GeneratedColumn<DateTime>(
+    'dismissed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    kind,
+    source,
+    externalId,
+    title,
+    body,
+    actionLabel,
+    actionPath,
+    occurredAt,
+    readAt,
+    dismissedAt,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'coach_feed_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalCoachFeedItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('external_id')) {
+      context.handle(
+        _externalIdMeta,
+        externalId.isAcceptableOrUnknown(data['external_id']!, _externalIdMeta),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('action_label')) {
+      context.handle(
+        _actionLabelMeta,
+        actionLabel.isAcceptableOrUnknown(
+          data['action_label']!,
+          _actionLabelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('action_path')) {
+      context.handle(
+        _actionPathMeta,
+        actionPath.isAcceptableOrUnknown(data['action_path']!, _actionPathMeta),
+      );
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('read_at')) {
+      context.handle(
+        _readAtMeta,
+        readAt.isAcceptableOrUnknown(data['read_at']!, _readAtMeta),
+      );
+    }
+    if (data.containsKey('dismissed_at')) {
+      context.handle(
+        _dismissedAtMeta,
+        dismissedAt.isAcceptableOrUnknown(
+          data['dismissed_at']!,
+          _dismissedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalCoachFeedItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalCoachFeedItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      externalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_id'],
+      ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      actionLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_label'],
+      ),
+      actionPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_path'],
+      ),
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      readAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}read_at'],
+      ),
+      dismissedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}dismissed_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $CoachFeedItemsTable createAlias(String alias) {
+    return $CoachFeedItemsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalCoachFeedItem extends DataClass
+    implements Insertable<LocalCoachFeedItem> {
+  final String id;
+  final String profileId;
+  final String kind;
+  final String source;
+  final String? externalId;
+  final String title;
+  final String body;
+  final String? actionLabel;
+  final String? actionPath;
+  final DateTime occurredAt;
+  final DateTime? readAt;
+  final DateTime? dismissedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const LocalCoachFeedItem({
+    required this.id,
+    required this.profileId,
+    required this.kind,
+    required this.source,
+    this.externalId,
+    required this.title,
+    required this.body,
+    this.actionLabel,
+    this.actionPath,
+    required this.occurredAt,
+    this.readAt,
+    this.dismissedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['profile_id'] = Variable<String>(profileId);
+    map['kind'] = Variable<String>(kind);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || externalId != null) {
+      map['external_id'] = Variable<String>(externalId);
+    }
+    map['title'] = Variable<String>(title);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || actionLabel != null) {
+      map['action_label'] = Variable<String>(actionLabel);
+    }
+    if (!nullToAbsent || actionPath != null) {
+      map['action_path'] = Variable<String>(actionPath);
+    }
+    map['occurred_at'] = Variable<DateTime>(occurredAt);
+    if (!nullToAbsent || readAt != null) {
+      map['read_at'] = Variable<DateTime>(readAt);
+    }
+    if (!nullToAbsent || dismissedAt != null) {
+      map['dismissed_at'] = Variable<DateTime>(dismissedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  CoachFeedItemsCompanion toCompanion(bool nullToAbsent) {
+    return CoachFeedItemsCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      kind: Value(kind),
+      source: Value(source),
+      externalId: externalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalId),
+      title: Value(title),
+      body: Value(body),
+      actionLabel: actionLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actionLabel),
+      actionPath: actionPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actionPath),
+      occurredAt: Value(occurredAt),
+      readAt: readAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readAt),
+      dismissedAt: dismissedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dismissedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory LocalCoachFeedItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalCoachFeedItem(
+      id: serializer.fromJson<String>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      source: serializer.fromJson<String>(json['source']),
+      externalId: serializer.fromJson<String?>(json['externalId']),
+      title: serializer.fromJson<String>(json['title']),
+      body: serializer.fromJson<String>(json['body']),
+      actionLabel: serializer.fromJson<String?>(json['actionLabel']),
+      actionPath: serializer.fromJson<String?>(json['actionPath']),
+      occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      readAt: serializer.fromJson<DateTime?>(json['readAt']),
+      dismissedAt: serializer.fromJson<DateTime?>(json['dismissedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'profileId': serializer.toJson<String>(profileId),
+      'kind': serializer.toJson<String>(kind),
+      'source': serializer.toJson<String>(source),
+      'externalId': serializer.toJson<String?>(externalId),
+      'title': serializer.toJson<String>(title),
+      'body': serializer.toJson<String>(body),
+      'actionLabel': serializer.toJson<String?>(actionLabel),
+      'actionPath': serializer.toJson<String?>(actionPath),
+      'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'readAt': serializer.toJson<DateTime?>(readAt),
+      'dismissedAt': serializer.toJson<DateTime?>(dismissedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  LocalCoachFeedItem copyWith({
+    String? id,
+    String? profileId,
+    String? kind,
+    String? source,
+    Value<String?> externalId = const Value.absent(),
+    String? title,
+    String? body,
+    Value<String?> actionLabel = const Value.absent(),
+    Value<String?> actionPath = const Value.absent(),
+    DateTime? occurredAt,
+    Value<DateTime?> readAt = const Value.absent(),
+    Value<DateTime?> dismissedAt = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => LocalCoachFeedItem(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    kind: kind ?? this.kind,
+    source: source ?? this.source,
+    externalId: externalId.present ? externalId.value : this.externalId,
+    title: title ?? this.title,
+    body: body ?? this.body,
+    actionLabel: actionLabel.present ? actionLabel.value : this.actionLabel,
+    actionPath: actionPath.present ? actionPath.value : this.actionPath,
+    occurredAt: occurredAt ?? this.occurredAt,
+    readAt: readAt.present ? readAt.value : this.readAt,
+    dismissedAt: dismissedAt.present ? dismissedAt.value : this.dismissedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  LocalCoachFeedItem copyWithCompanion(CoachFeedItemsCompanion data) {
+    return LocalCoachFeedItem(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      source: data.source.present ? data.source.value : this.source,
+      externalId: data.externalId.present
+          ? data.externalId.value
+          : this.externalId,
+      title: data.title.present ? data.title.value : this.title,
+      body: data.body.present ? data.body.value : this.body,
+      actionLabel: data.actionLabel.present
+          ? data.actionLabel.value
+          : this.actionLabel,
+      actionPath: data.actionPath.present
+          ? data.actionPath.value
+          : this.actionPath,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      readAt: data.readAt.present ? data.readAt.value : this.readAt,
+      dismissedAt: data.dismissedAt.present
+          ? data.dismissedAt.value
+          : this.dismissedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalCoachFeedItem(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('kind: $kind, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('actionLabel: $actionLabel, ')
+          ..write('actionPath: $actionPath, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('readAt: $readAt, ')
+          ..write('dismissedAt: $dismissedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    profileId,
+    kind,
+    source,
+    externalId,
+    title,
+    body,
+    actionLabel,
+    actionPath,
+    occurredAt,
+    readAt,
+    dismissedAt,
+    createdAt,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalCoachFeedItem &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.kind == this.kind &&
+          other.source == this.source &&
+          other.externalId == this.externalId &&
+          other.title == this.title &&
+          other.body == this.body &&
+          other.actionLabel == this.actionLabel &&
+          other.actionPath == this.actionPath &&
+          other.occurredAt == this.occurredAt &&
+          other.readAt == this.readAt &&
+          other.dismissedAt == this.dismissedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class CoachFeedItemsCompanion extends UpdateCompanion<LocalCoachFeedItem> {
+  final Value<String> id;
+  final Value<String> profileId;
+  final Value<String> kind;
+  final Value<String> source;
+  final Value<String?> externalId;
+  final Value<String> title;
+  final Value<String> body;
+  final Value<String?> actionLabel;
+  final Value<String?> actionPath;
+  final Value<DateTime> occurredAt;
+  final Value<DateTime?> readAt;
+  final Value<DateTime?> dismissedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const CoachFeedItemsCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.source = const Value.absent(),
+    this.externalId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.body = const Value.absent(),
+    this.actionLabel = const Value.absent(),
+    this.actionPath = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.readAt = const Value.absent(),
+    this.dismissedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CoachFeedItemsCompanion.insert({
+    required String id,
+    required String profileId,
+    required String kind,
+    required String source,
+    this.externalId = const Value.absent(),
+    required String title,
+    required String body,
+    this.actionLabel = const Value.absent(),
+    this.actionPath = const Value.absent(),
+    required DateTime occurredAt,
+    this.readAt = const Value.absent(),
+    this.dismissedAt = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       profileId = Value(profileId),
+       kind = Value(kind),
+       source = Value(source),
+       title = Value(title),
+       body = Value(body),
+       occurredAt = Value(occurredAt),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalCoachFeedItem> custom({
+    Expression<String>? id,
+    Expression<String>? profileId,
+    Expression<String>? kind,
+    Expression<String>? source,
+    Expression<String>? externalId,
+    Expression<String>? title,
+    Expression<String>? body,
+    Expression<String>? actionLabel,
+    Expression<String>? actionPath,
+    Expression<DateTime>? occurredAt,
+    Expression<DateTime>? readAt,
+    Expression<DateTime>? dismissedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (kind != null) 'kind': kind,
+      if (source != null) 'source': source,
+      if (externalId != null) 'external_id': externalId,
+      if (title != null) 'title': title,
+      if (body != null) 'body': body,
+      if (actionLabel != null) 'action_label': actionLabel,
+      if (actionPath != null) 'action_path': actionPath,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (readAt != null) 'read_at': readAt,
+      if (dismissedAt != null) 'dismissed_at': dismissedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CoachFeedItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? profileId,
+    Value<String>? kind,
+    Value<String>? source,
+    Value<String?>? externalId,
+    Value<String>? title,
+    Value<String>? body,
+    Value<String?>? actionLabel,
+    Value<String?>? actionPath,
+    Value<DateTime>? occurredAt,
+    Value<DateTime?>? readAt,
+    Value<DateTime?>? dismissedAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return CoachFeedItemsCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      kind: kind ?? this.kind,
+      source: source ?? this.source,
+      externalId: externalId ?? this.externalId,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      actionLabel: actionLabel ?? this.actionLabel,
+      actionPath: actionPath ?? this.actionPath,
+      occurredAt: occurredAt ?? this.occurredAt,
+      readAt: readAt ?? this.readAt,
+      dismissedAt: dismissedAt ?? this.dismissedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (externalId.present) {
+      map['external_id'] = Variable<String>(externalId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (actionLabel.present) {
+      map['action_label'] = Variable<String>(actionLabel.value);
+    }
+    if (actionPath.present) {
+      map['action_path'] = Variable<String>(actionPath.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<DateTime>(occurredAt.value);
+    }
+    if (readAt.present) {
+      map['read_at'] = Variable<DateTime>(readAt.value);
+    }
+    if (dismissedAt.present) {
+      map['dismissed_at'] = Variable<DateTime>(dismissedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachFeedItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('kind: $kind, ')
+          ..write('source: $source, ')
+          ..write('externalId: $externalId, ')
+          ..write('title: $title, ')
+          ..write('body: $body, ')
+          ..write('actionLabel: $actionLabel, ')
+          ..write('actionPath: $actionPath, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('readAt: $readAt, ')
+          ..write('dismissedAt: $dismissedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -22958,6 +24525,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $TrainingLimitationsTable trainingLimitations =
       $TrainingLimitationsTable(this);
+  late final $DailyHealthSummariesTable dailyHealthSummaries =
+      $DailyHealthSummariesTable(this);
+  late final $CoachFeedItemsTable coachFeedItems = $CoachFeedItemsTable(this);
   late final Index idxMealsProfileEatenAt = Index(
     'idx_meals_profile_eaten_at',
     'CREATE INDEX idx_meals_profile_eaten_at ON meals (profile_id, eaten_at)',
@@ -23058,6 +24628,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_body_impedance_readings_measurement',
     'CREATE INDEX idx_body_impedance_readings_measurement ON body_impedance_readings (measurement_id)',
   );
+  late final Index idxDailyHealthSummariesProfileDay = Index(
+    'idx_daily_health_summaries_profile_day',
+    'CREATE INDEX idx_daily_health_summaries_profile_day ON daily_health_summaries (profile_id, day)',
+  );
+  late final Index idxCoachFeedProfileOccurred = Index(
+    'idx_coach_feed_profile_occurred',
+    'CREATE INDEX idx_coach_feed_profile_occurred ON coach_feed_items (profile_id, occurred_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -23097,6 +24675,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localSettings,
     trainingProfiles,
     trainingLimitations,
+    dailyHealthSummaries,
+    coachFeedItems,
     idxMealsProfileEatenAt,
     idxMealItemsMealId,
     idxSyncOutboxCreatedAt,
@@ -23122,6 +24702,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxDailyCheckInsProfileDay,
     idxGoalsProfileStarted,
     idxBodyImpedanceReadingsMeasurement,
+    idxDailyHealthSummariesProfileDay,
+    idxCoachFeedProfileOccurred,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -23387,6 +24969,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('training_limitations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('daily_health_summaries', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_profiles',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('coach_feed_items', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -23790,6 +25386,49 @@ final class $$AppProfilesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _trainingLimitationsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $DailyHealthSummariesTable,
+    List<LocalDailyHealthSummary>
+  >
+  _dailyHealthSummariesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.dailyHealthSummaries,
+        aliasName: 'app_profiles__id__daily_health_summaries__profile_id',
+      );
+
+  $$DailyHealthSummariesTableProcessedTableManager
+  get dailyHealthSummariesRefs {
+    final manager = $$DailyHealthSummariesTableTableManager(
+      $_db,
+      $_db.dailyHealthSummaries,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _dailyHealthSummariesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CoachFeedItemsTable, List<LocalCoachFeedItem>>
+  _coachFeedItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.coachFeedItems,
+    aliasName: 'app_profiles__id__coach_feed_items__profile_id',
+  );
+
+  $$CoachFeedItemsTableProcessedTableManager get coachFeedItemsRefs {
+    final manager = $$CoachFeedItemsTableTableManager(
+      $_db,
+      $_db.coachFeedItems,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_coachFeedItemsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -24306,6 +25945,56 @@ class $$AppProfilesTableFilterComposer
           }) => $$TrainingLimitationsTableFilterComposer(
             $db: $db,
             $table: $db.trainingLimitations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dailyHealthSummariesRefs(
+    Expression<bool> Function($$DailyHealthSummariesTableFilterComposer f) f,
+  ) {
+    final $$DailyHealthSummariesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dailyHealthSummaries,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DailyHealthSummariesTableFilterComposer(
+            $db: $db,
+            $table: $db.dailyHealthSummaries,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> coachFeedItemsRefs(
+    Expression<bool> Function($$CoachFeedItemsTableFilterComposer f) f,
+  ) {
+    final $$CoachFeedItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.coachFeedItems,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CoachFeedItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.coachFeedItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -24871,6 +26560,57 @@ class $$AppProfilesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> dailyHealthSummariesRefs<T extends Object>(
+    Expression<T> Function($$DailyHealthSummariesTableAnnotationComposer a) f,
+  ) {
+    final $$DailyHealthSummariesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.dailyHealthSummaries,
+          getReferencedColumn: (t) => t.profileId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$DailyHealthSummariesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dailyHealthSummaries,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> coachFeedItemsRefs<T extends Object>(
+    Expression<T> Function($$CoachFeedItemsTableAnnotationComposer a) f,
+  ) {
+    final $$CoachFeedItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.coachFeedItems,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CoachFeedItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.coachFeedItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AppProfilesTableTableManager
@@ -24906,6 +26646,8 @@ class $$AppProfilesTableTableManager
             bool goalsRefs,
             bool trainingProfilesRefs,
             bool trainingLimitationsRefs,
+            bool dailyHealthSummariesRefs,
+            bool coachFeedItemsRefs,
           })
         > {
   $$AppProfilesTableTableManager(_$AppDatabase db, $AppProfilesTable table)
@@ -24988,6 +26730,8 @@ class $$AppProfilesTableTableManager
                 goalsRefs = false,
                 trainingProfilesRefs = false,
                 trainingLimitationsRefs = false,
+                dailyHealthSummariesRefs = false,
+                coachFeedItemsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -25011,6 +26755,8 @@ class $$AppProfilesTableTableManager
                     if (goalsRefs) db.goals,
                     if (trainingProfilesRefs) db.trainingProfiles,
                     if (trainingLimitationsRefs) db.trainingLimitations,
+                    if (dailyHealthSummariesRefs) db.dailyHealthSummaries,
+                    if (coachFeedItemsRefs) db.coachFeedItems,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -25414,6 +27160,48 @@ class $$AppProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (dailyHealthSummariesRefs)
+                        await $_getPrefetchedData<
+                          LocalProfile,
+                          $AppProfilesTable,
+                          LocalDailyHealthSummary
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AppProfilesTableReferences
+                              ._dailyHealthSummariesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AppProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dailyHealthSummariesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (coachFeedItemsRefs)
+                        await $_getPrefetchedData<
+                          LocalProfile,
+                          $AppProfilesTable,
+                          LocalCoachFeedItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AppProfilesTableReferences
+                              ._coachFeedItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AppProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).coachFeedItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -25454,6 +27242,8 @@ typedef $$AppProfilesTableProcessedTableManager =
         bool goalsRefs,
         bool trainingProfilesRefs,
         bool trainingLimitationsRefs,
+        bool dailyHealthSummariesRefs,
+        bool coachFeedItemsRefs,
       })
     >;
 typedef $$MealsTableCreateCompanionBuilder =
@@ -42416,6 +44206,991 @@ typedef $$TrainingLimitationsTableProcessedTableManager =
       TrainingLimitation,
       PrefetchHooks Function({bool profileId})
     >;
+typedef $$DailyHealthSummariesTableCreateCompanionBuilder =
+    DailyHealthSummariesCompanion Function({
+      required String id,
+      required String profileId,
+      required DateTime day,
+      required String source,
+      Value<String?> externalId,
+      Value<int?> steps,
+      Value<int?> sleepMinutes,
+      Value<int?> restingHeartRate,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$DailyHealthSummariesTableUpdateCompanionBuilder =
+    DailyHealthSummariesCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<DateTime> day,
+      Value<String> source,
+      Value<String?> externalId,
+      Value<int?> steps,
+      Value<int?> sleepMinutes,
+      Value<int?> restingHeartRate,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$DailyHealthSummariesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $DailyHealthSummariesTable,
+          LocalDailyHealthSummary
+        > {
+  $$DailyHealthSummariesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AppProfilesTable _profileIdTable(_$AppDatabase db) => db.appProfiles
+      .createAlias('daily_health_summaries__profile_id__app_profiles__id');
+
+  $$AppProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$AppProfilesTableTableManager(
+      $_db,
+      $_db.appProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DailyHealthSummariesTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyHealthSummariesTable> {
+  $$DailyHealthSummariesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get steps => $composableBuilder(
+    column: $table.steps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sleepMinutes => $composableBuilder(
+    column: $table.sleepMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get restingHeartRate => $composableBuilder(
+    column: $table.restingHeartRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppProfilesTableFilterComposer get profileId {
+    final $$AppProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyHealthSummariesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyHealthSummariesTable> {
+  $$DailyHealthSummariesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get steps => $composableBuilder(
+    column: $table.steps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sleepMinutes => $composableBuilder(
+    column: $table.sleepMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get restingHeartRate => $composableBuilder(
+    column: $table.restingHeartRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppProfilesTableOrderingComposer get profileId {
+    final $$AppProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyHealthSummariesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyHealthSummariesTable> {
+  $$DailyHealthSummariesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get steps =>
+      $composableBuilder(column: $table.steps, builder: (column) => column);
+
+  GeneratedColumn<int> get sleepMinutes => $composableBuilder(
+    column: $table.sleepMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get restingHeartRate => $composableBuilder(
+    column: $table.restingHeartRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AppProfilesTableAnnotationComposer get profileId {
+    final $$AppProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyHealthSummariesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyHealthSummariesTable,
+          LocalDailyHealthSummary,
+          $$DailyHealthSummariesTableFilterComposer,
+          $$DailyHealthSummariesTableOrderingComposer,
+          $$DailyHealthSummariesTableAnnotationComposer,
+          $$DailyHealthSummariesTableCreateCompanionBuilder,
+          $$DailyHealthSummariesTableUpdateCompanionBuilder,
+          (LocalDailyHealthSummary, $$DailyHealthSummariesTableReferences),
+          LocalDailyHealthSummary,
+          PrefetchHooks Function({bool profileId})
+        > {
+  $$DailyHealthSummariesTableTableManager(
+    _$AppDatabase db,
+    $DailyHealthSummariesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyHealthSummariesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyHealthSummariesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DailyHealthSummariesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<DateTime> day = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
+                Value<int?> sleepMinutes = const Value.absent(),
+                Value<int?> restingHeartRate = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyHealthSummariesCompanion(
+                id: id,
+                profileId: profileId,
+                day: day,
+                source: source,
+                externalId: externalId,
+                steps: steps,
+                sleepMinutes: sleepMinutes,
+                restingHeartRate: restingHeartRate,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required DateTime day,
+                required String source,
+                Value<String?> externalId = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
+                Value<int?> sleepMinutes = const Value.absent(),
+                Value<int?> restingHeartRate = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyHealthSummariesCompanion.insert(
+                id: id,
+                profileId: profileId,
+                day: day,
+                source: source,
+                externalId: externalId,
+                steps: steps,
+                sleepMinutes: sleepMinutes,
+                restingHeartRate: restingHeartRate,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DailyHealthSummariesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.profileId,
+                                referencedTable:
+                                    $$DailyHealthSummariesTableReferences
+                                        ._profileIdTable(db),
+                                referencedColumn:
+                                    $$DailyHealthSummariesTableReferences
+                                        ._profileIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DailyHealthSummariesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyHealthSummariesTable,
+      LocalDailyHealthSummary,
+      $$DailyHealthSummariesTableFilterComposer,
+      $$DailyHealthSummariesTableOrderingComposer,
+      $$DailyHealthSummariesTableAnnotationComposer,
+      $$DailyHealthSummariesTableCreateCompanionBuilder,
+      $$DailyHealthSummariesTableUpdateCompanionBuilder,
+      (LocalDailyHealthSummary, $$DailyHealthSummariesTableReferences),
+      LocalDailyHealthSummary,
+      PrefetchHooks Function({bool profileId})
+    >;
+typedef $$CoachFeedItemsTableCreateCompanionBuilder =
+    CoachFeedItemsCompanion Function({
+      required String id,
+      required String profileId,
+      required String kind,
+      required String source,
+      Value<String?> externalId,
+      required String title,
+      required String body,
+      Value<String?> actionLabel,
+      Value<String?> actionPath,
+      required DateTime occurredAt,
+      Value<DateTime?> readAt,
+      Value<DateTime?> dismissedAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$CoachFeedItemsTableUpdateCompanionBuilder =
+    CoachFeedItemsCompanion Function({
+      Value<String> id,
+      Value<String> profileId,
+      Value<String> kind,
+      Value<String> source,
+      Value<String?> externalId,
+      Value<String> title,
+      Value<String> body,
+      Value<String?> actionLabel,
+      Value<String?> actionPath,
+      Value<DateTime> occurredAt,
+      Value<DateTime?> readAt,
+      Value<DateTime?> dismissedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+final class $$CoachFeedItemsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CoachFeedItemsTable,
+          LocalCoachFeedItem
+        > {
+  $$CoachFeedItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AppProfilesTable _profileIdTable(_$AppDatabase db) => db.appProfiles
+      .createAlias('coach_feed_items__profile_id__app_profiles__id');
+
+  $$AppProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<String>('profile_id')!;
+
+    final manager = $$AppProfilesTableTableManager(
+      $_db,
+      $_db.appProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CoachFeedItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $CoachFeedItemsTable> {
+  $$CoachFeedItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actionLabel => $composableBuilder(
+    column: $table.actionLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actionPath => $composableBuilder(
+    column: $table.actionPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppProfilesTableFilterComposer get profileId {
+    final $$AppProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CoachFeedItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CoachFeedItemsTable> {
+  $$CoachFeedItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actionLabel => $composableBuilder(
+    column: $table.actionLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actionPath => $composableBuilder(
+    column: $table.actionPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppProfilesTableOrderingComposer get profileId {
+    final $$AppProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CoachFeedItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CoachFeedItemsTable> {
+  $$CoachFeedItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get actionLabel => $composableBuilder(
+    column: $table.actionLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get actionPath => $composableBuilder(
+    column: $table.actionPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get readAt =>
+      $composableBuilder(column: $table.readAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dismissedAt => $composableBuilder(
+    column: $table.dismissedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$AppProfilesTableAnnotationComposer get profileId {
+    final $$AppProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.appProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CoachFeedItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CoachFeedItemsTable,
+          LocalCoachFeedItem,
+          $$CoachFeedItemsTableFilterComposer,
+          $$CoachFeedItemsTableOrderingComposer,
+          $$CoachFeedItemsTableAnnotationComposer,
+          $$CoachFeedItemsTableCreateCompanionBuilder,
+          $$CoachFeedItemsTableUpdateCompanionBuilder,
+          (LocalCoachFeedItem, $$CoachFeedItemsTableReferences),
+          LocalCoachFeedItem,
+          PrefetchHooks Function({bool profileId})
+        > {
+  $$CoachFeedItemsTableTableManager(
+    _$AppDatabase db,
+    $CoachFeedItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CoachFeedItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CoachFeedItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CoachFeedItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String?> actionLabel = const Value.absent(),
+                Value<String?> actionPath = const Value.absent(),
+                Value<DateTime> occurredAt = const Value.absent(),
+                Value<DateTime?> readAt = const Value.absent(),
+                Value<DateTime?> dismissedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CoachFeedItemsCompanion(
+                id: id,
+                profileId: profileId,
+                kind: kind,
+                source: source,
+                externalId: externalId,
+                title: title,
+                body: body,
+                actionLabel: actionLabel,
+                actionPath: actionPath,
+                occurredAt: occurredAt,
+                readAt: readAt,
+                dismissedAt: dismissedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String profileId,
+                required String kind,
+                required String source,
+                Value<String?> externalId = const Value.absent(),
+                required String title,
+                required String body,
+                Value<String?> actionLabel = const Value.absent(),
+                Value<String?> actionPath = const Value.absent(),
+                required DateTime occurredAt,
+                Value<DateTime?> readAt = const Value.absent(),
+                Value<DateTime?> dismissedAt = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CoachFeedItemsCompanion.insert(
+                id: id,
+                profileId: profileId,
+                kind: kind,
+                source: source,
+                externalId: externalId,
+                title: title,
+                body: body,
+                actionLabel: actionLabel,
+                actionPath: actionPath,
+                occurredAt: occurredAt,
+                readAt: readAt,
+                dismissedAt: dismissedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CoachFeedItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (profileId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.profileId,
+                                referencedTable: $$CoachFeedItemsTableReferences
+                                    ._profileIdTable(db),
+                                referencedColumn:
+                                    $$CoachFeedItemsTableReferences
+                                        ._profileIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CoachFeedItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CoachFeedItemsTable,
+      LocalCoachFeedItem,
+      $$CoachFeedItemsTableFilterComposer,
+      $$CoachFeedItemsTableOrderingComposer,
+      $$CoachFeedItemsTableAnnotationComposer,
+      $$CoachFeedItemsTableCreateCompanionBuilder,
+      $$CoachFeedItemsTableUpdateCompanionBuilder,
+      (LocalCoachFeedItem, $$CoachFeedItemsTableReferences),
+      LocalCoachFeedItem,
+      PrefetchHooks Function({bool profileId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -42494,4 +45269,8 @@ class $AppDatabaseManager {
       $$TrainingProfilesTableTableManager(_db, _db.trainingProfiles);
   $$TrainingLimitationsTableTableManager get trainingLimitations =>
       $$TrainingLimitationsTableTableManager(_db, _db.trainingLimitations);
+  $$DailyHealthSummariesTableTableManager get dailyHealthSummaries =>
+      $$DailyHealthSummariesTableTableManager(_db, _db.dailyHealthSummaries);
+  $$CoachFeedItemsTableTableManager get coachFeedItems =>
+      $$CoachFeedItemsTableTableManager(_db, _db.coachFeedItems);
 }

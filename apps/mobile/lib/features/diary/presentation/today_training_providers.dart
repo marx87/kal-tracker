@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/weekly_plan/domain/plan_week.dart';
+import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_providers.dart';
 
 /// La sessione rimasta aperta, se c'è.
 ///
@@ -76,20 +78,19 @@ class TodayTraining {
   bool get isSilent => openSession == null && planned == null && !hasWeeklyPlan;
 }
 
-/// L'allenamento di oggi, letto dalle tabelle che ci sono già.
+/// L'allenamento di oggi.
 ///
-/// **Perché la query sta qui e non in un repository.** `features/routines/`
-/// e `features/workouts/` non espongono ancora una lettura del piano
-/// settimanale né della sessione aperta (l'implementazione Drift di
-/// `LiveWorkoutRepository` non è ancora collegata all'app), e quelle cartelle
-/// sono di altri. Questa è una lettura sola, senza scritture: quando il
-/// repository della palestra arriverà, questo provider gli si appoggia e la
-/// query sparisce. È scritto nelle note di consegna.
+/// La sessione aperta arriva dal suo stream Drift; il piano usa la stessa
+/// sorgente reattiva della schermata Piano. In questo modo cambiare il giorno
+/// di una scheda aggiorna subito Oggi, anche quando non cambia nessuna
+/// sessione.
 final todayTrainingProvider = StreamProvider<TodayTraining>((ref) async* {
-  // Tutte le `watch` sincrone prima del primo await: nel buco asincrono il
-  // provider non deve perdere le dipendenze.
   final database = ref.watch(databaseProvider);
   final weekday = ref.watch(todayProvider).weekday;
+  final plannedWorkouts = ref.watch(plannedWorkoutsProvider).valueOrNull;
+  if (plannedWorkouts == null) {
+    return;
+  }
   final profile = await ref.watch(marcoProfileProvider.future);
 
   final openQuery = database.select(database.workouts)
@@ -102,14 +103,11 @@ final todayTrainingProvider = StreamProvider<TodayTraining>((ref) async* {
     ..orderBy([(row) => OrderingTerm.desc(row.startedAt)])
     ..limit(1);
 
-  // Il piano settimanale si rilegge a ogni cambio della sessione aperta:
-  // oggi nessuna schermata lo modifica (arriva dall'import di Gym Tracker),
-  // quindi non serve un secondo stream da tenere in vita.
   yield* openQuery.watch().asyncMap(
     (rows) => _build(
       database: database,
-      profileId: profile.id,
       weekday: weekday,
+      plannedWorkouts: plannedWorkouts,
       open: rows.isEmpty ? null : rows.first,
     ),
   );
@@ -117,17 +115,10 @@ final todayTrainingProvider = StreamProvider<TodayTraining>((ref) async* {
 
 Future<TodayTraining> _build({
   required AppDatabase database,
-  required String profileId,
   required int weekday,
+  required List<PlannedWorkout> plannedWorkouts,
   required LocalWorkout? open,
 }) async {
-  final planRows = await (database.select(
-    database.routineWeeklyPlan,
-  )..where((row) => row.profileId.equals(profileId))).get();
-  final hasWeeklyPlan = planRows.any(
-    (row) => row.routineId != null || row.routineExternalId != null,
-  );
-
   Future<LocalRoutine?> liveRoutine(String? id) async {
     if (id == null) {
       return null;
@@ -137,25 +128,16 @@ Future<TodayTraining> _build({
         .getSingleOrNull();
   }
 
-  PlannedTraining? planned;
-  for (final row in planRows) {
-    if (row.weekday != weekday) {
-      continue;
-    }
-    final routine = await liveRoutine(row.routineId);
-    final name = routine?.name ?? row.routineNameSnapshot;
-    if (name == null) {
-      // Riga del piano che non punta più a niente e non conserva il nome:
-      // non c'è un allenamento da annunciare.
-      continue;
-    }
-    planned = PlannedTraining(
-      name: name,
-      routineId: routine?.id,
-      isMissing: routine == null,
-    );
-    break;
-  }
+  final workout = plannedWorkouts
+      .where((candidate) => candidate.weekday == weekday)
+      .firstOrNull;
+  final planned = workout == null
+      ? null
+      : PlannedTraining(
+          name: workout.routineName,
+          routineId: workout.routineId,
+          isMissing: workout.isMissing,
+        );
 
   OpenWorkoutSession? session;
   if (open != null) {
@@ -170,6 +152,6 @@ Future<TodayTraining> _build({
   return TodayTraining(
     openSession: session,
     planned: planned,
-    hasWeeklyPlan: hasWeeklyPlan,
+    hasWeeklyPlan: plannedWorkouts.isNotEmpty,
   );
 }

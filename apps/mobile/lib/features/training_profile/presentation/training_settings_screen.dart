@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,11 @@ import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/training_profile/domain/training_profile.dart';
 import 'package:kal_tracker/features/training_profile/presentation/limitation_sheet.dart';
 import 'package:kal_tracker/features/training_profile/presentation/training_profile_providers.dart';
+import 'package:kal_tracker/features/workouts/cues/application/workout_cue_engine.dart';
+import 'package:kal_tracker/features/workouts/cues/domain/workout_cue.dart';
+import 'package:kal_tracker/features/workouts/cues/domain/workout_cue_preferences.dart';
+import 'package:kal_tracker/features/workouts/cues/presentation/workout_cue_settings_section.dart';
+import 'package:kal_tracker/features/workouts/cues/workout_cue_providers.dart';
 
 /// **Impostazioni.** La settima area: quella che possiede il profilo di
 /// allenamento.
@@ -94,6 +101,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   int? _sessions;
   int? _minutes;
   bool _saving = false;
+  WorkoutCuePreferences? _cuePreferences;
 
   @override
   void initState() {
@@ -126,6 +134,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
+    final cueEngine = ref.watch(workoutCueReadyProvider);
     final active = profile.activeLimitations;
     final closed = profile.limitations
         .where((limitation) => !limitation.isActive)
@@ -173,6 +182,30 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
             value: _deload,
             onChanged: (value) => setState(() => _deload = value),
           ),
+          const SizedBox(height: 14),
+          cueEngine.when(
+            data: (engine) {
+              final preferences = _cuePreferences ?? engine.preferences;
+              return WorkoutCueSettingsSection(
+                preferences: preferences,
+                onChanged: (value) =>
+                    unawaited(_updateCuePreferences(engine, value)),
+                onTestVoice: () => unawaited(
+                  engine.emit(
+                    const NextSetCue(
+                      exerciseName: 'Squat',
+                      setNumber: 2,
+                      totalSets: 3,
+                    ),
+                  ),
+                ),
+              );
+            },
+            loading: () => const _CueSettingsLoading(),
+            error: (error, stackTrace) => _CueSettingsUnavailable(
+              onRetry: () => ref.invalidate(workoutCueReadyProvider),
+            ),
+          ),
           const SizedBox(height: 22),
           FilledButton(
             key: const Key('training_settings_save_button'),
@@ -184,6 +217,33 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
         ],
       ),
     );
+  }
+
+  Future<void> _updateCuePreferences(
+    WorkoutCueEngine engine,
+    WorkoutCuePreferences next,
+  ) async {
+    final previous = _cuePreferences ?? engine.preferences;
+    setState(() => _cuePreferences = next);
+
+    if (!previous.notificationsEnabled && next.notificationsEnabled) {
+      final permissions = await engine.requestNotificationPermissions();
+      if (!permissions.notifications) {
+        next = next.copyWith(notificationsEnabled: false);
+        if (mounted) {
+          setState(() => _cuePreferences = next);
+          _say(
+            ScaffoldMessenger.of(context),
+            const Text(
+              'Le notifiche non sono autorizzate: voce e timer restano attivi '
+              'con l’app aperta.',
+            ),
+          );
+        }
+      }
+    }
+
+    await engine.updatePreferences(next);
   }
 
   Future<void> _save() async {
@@ -342,6 +402,41 @@ class _Intro extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CueSettingsLoading extends StatelessWidget {
+  const _CueSettingsLoading();
+
+  @override
+  Widget build(BuildContext context) => const SectionCard(
+    title: 'Guida durante l’allenamento',
+    icon: Icons.record_voice_over_rounded,
+    child: Center(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: CircularProgressIndicator(),
+      ),
+    ),
+  );
+}
+
+class _CueSettingsUnavailable extends StatelessWidget {
+  const _CueSettingsUnavailable({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => SectionCard(
+    title: 'Guida durante l’allenamento',
+    icon: Icons.record_voice_over_rounded,
+    child: AppEmptyState(
+      compact: true,
+      icon: Icons.volume_off_rounded,
+      message: 'Non riesco a caricare le preferenze della guida.',
+      actionLabel: 'Riprova',
+      onAction: onRetry,
+    ),
+  );
 }
 
 class _SaveFootnote extends StatelessWidget {

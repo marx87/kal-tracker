@@ -103,6 +103,55 @@ class BackupRepository {
                 ..where((row) => row.measurementId.isIn(measurementIds))
                 ..orderBy([(row) => OrderingTerm.asc(row.id)]))
               .get();
+    final impedanceReadings = measurementIds.isEmpty
+        ? const <LocalBodyImpedanceReading>[]
+        : await (_database.select(_database.bodyImpedanceReadings)
+                ..where((row) => row.measurementId.isIn(measurementIds))
+                ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+              .get();
+
+    final generatedPlans =
+        await (_database.select(_database.weeklyPlans)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    final generatedPlanIds = generatedPlans
+        .map((row) => row.id)
+        .toList(growable: false);
+    final generatedPlanSlots = generatedPlanIds.isEmpty
+        ? const <LocalWeeklyPlanSlot>[]
+        : await (_database.select(_database.weeklyPlanSlots)
+                ..where((row) => row.planId.isIn(generatedPlanIds))
+                ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+              .get();
+    final checkIns =
+        await (_database.select(_database.dailyCheckIns)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    final goals =
+        await (_database.select(_database.goals)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    final trainingProfiles = await (_database.select(
+      _database.trainingProfiles,
+    )..where((row) => row.profileId.equals(profileId))).get();
+    final trainingLimitations =
+        await (_database.select(_database.trainingLimitations)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    final healthSummaries =
+        await (_database.select(_database.dailyHealthSummaries)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
+    final coachFeed =
+        await (_database.select(_database.coachFeedItems)
+              ..where((row) => row.profileId.equals(profileId))
+              ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+            .get();
 
     // Gli esercizi si prendono TUTTI, compresi i sintetici del defaticamento:
     // lo storico li cita per id e un backup che li saltasse non sarebbe
@@ -190,6 +239,9 @@ class BackupRepository {
         displayName: profile.displayName,
         createdAt: profile.createdAt,
         updatedAt: profile.updatedAt,
+        heightCm: profile.heightCm,
+        birthDate: profile.birthDate,
+        sex: profile.sex,
       ),
       meals: [
         for (final row in meals)
@@ -270,6 +322,8 @@ class BackupRepository {
             formulaVersion: row.formulaVersion,
             source: row.source,
             externalId: row.externalId,
+            deviceModel: row.deviceModel,
+            rawPayload: row.rawPayload,
             note: row.note,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
@@ -582,6 +636,147 @@ class BackupRepository {
             unlockedAt: row.unlockedAt,
           ),
       ],
+      weeklyPlans: [
+        for (final row in generatedPlans)
+          BackupWeeklyPlan(
+            id: row.id,
+            profileId: row.profileId,
+            startDate: row.startDate,
+            days: row.days,
+            mealsCsv: row.mealsCsv,
+            status: row.status,
+            remoteJobId: row.remoteJobId,
+            notes: row.notes,
+            requestJson: row.requestJson,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
+      weeklyPlanSlots: [
+        for (final row in generatedPlanSlots)
+          BackupWeeklyPlanSlot(
+            id: row.id,
+            planId: row.planId,
+            date: row.date,
+            meal: row.meal,
+            recipeId: row.recipeId,
+            recipeNameSnapshot: row.recipeNameSnapshot,
+            servings: row.servings,
+            why: row.why,
+            doneAt: row.doneAt,
+            diaryEntryIds: row.diaryEntryIds,
+          ),
+      ],
+      dailyCheckIns: [
+        for (final row in checkIns)
+          BackupDailyCheckIn(
+            id: row.id,
+            profileId: row.profileId,
+            day: row.day,
+            sleepHours: row.sleepHours,
+            energyScore: row.energyScore,
+            steps: row.steps,
+            walkMinutes: row.walkMinutes,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
+      goals: [
+        for (final row in goals)
+          BackupGoal(
+            id: row.id,
+            profileId: row.profileId,
+            targetWeightKg: row.targetWeightKg,
+            targetLevel: row.targetLevel,
+            paceKgPerWeek: row.paceKgPerWeek,
+            startedAt: row.startedAt,
+            startWeightKg: row.startWeightKg,
+            startFatFreeMassKg: row.startFatFreeMassKg,
+            phase: row.phase,
+            phaseStartedAt: row.phaseStartedAt,
+            closedAt: row.closedAt,
+            outcome: row.outcome,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
+      bodyImpedanceReadings: [
+        for (final row in impedanceReadings)
+          BackupBodyImpedanceReading(
+            id: row.id,
+            measurementId: row.measurementId,
+            segment: row.segment,
+            frequencyHz: row.frequencyHz,
+            ohm: row.ohm,
+          ),
+      ],
+      trainingProfiles: [
+        for (final row in trainingProfiles)
+          BackupTrainingProfile(
+            profileId: row.profileId,
+            equipment: row.equipment,
+            sessionsPerWeek: row.sessionsPerWeek,
+            minutesPerSession: row.minutesPerSession,
+            preferredDays: row.preferredDays,
+            deloadPreference: row.deloadPreference,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+          ),
+      ],
+      trainingLimitations: [
+        for (final row in trainingLimitations)
+          BackupTrainingLimitation(
+            id: row.id,
+            profileId: row.profileId,
+            bodyPart: row.bodyPart,
+            severity: row.severity,
+            note: row.note,
+            startedAt: row.startedAt,
+            resolvedAt: row.resolvedAt,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
+      dailyHealthSummaries: [
+        for (final row in healthSummaries)
+          BackupDailyHealthSummary(
+            id: row.id,
+            profileId: row.profileId,
+            day: row.day,
+            source: row.source,
+            externalId: row.externalId,
+            steps: row.steps,
+            sleepMinutes: row.sleepMinutes,
+            restingHeartRate: row.restingHeartRate,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
+      coachFeedItems: [
+        for (final row in coachFeed)
+          BackupCoachFeedItem(
+            id: row.id,
+            profileId: row.profileId,
+            kind: row.kind,
+            source: row.source,
+            externalId: row.externalId,
+            title: row.title,
+            body: row.body,
+            actionLabel: row.actionLabel,
+            actionPath: row.actionPath,
+            occurredAt: row.occurredAt,
+            readAt: row.readAt,
+            dismissedAt: row.dismissedAt,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+            deletedAt: row.deletedAt,
+          ),
+      ],
     );
   }
 
@@ -615,6 +810,9 @@ class BackupRepository {
     if (replacing && !document.coversWorkouts) {
       await _refuseLegacyReplace();
     }
+    if (replacing && !document.coversDataContract) {
+      await _refuseLegacyDataContractReplace();
+    }
     final removable = replacing
         ? await _existingKeys()
         : const <String, Set<String>>{};
@@ -643,6 +841,23 @@ class BackupRepository {
     await _restoreMeasurements(document, profileId, replacing, counters, now);
     await _restoreRecipes(document, profileId, replacing, counters, now);
     await _restoreTemplates(document, profileId, replacing, counters, now);
+    await _restoreGeneratedWeeklyPlans(
+      document,
+      profileId,
+      replacing,
+      counters,
+    );
+    await _restoreCheckIns(document, profileId, replacing, counters, now);
+    await _restoreGoals(document, profileId, replacing, counters, now);
+    await _restoreTrainingData(document, profileId, replacing, counters, now);
+    await _restoreDailyHealthSummaries(
+      document,
+      profileId,
+      replacing,
+      counters,
+      now,
+    );
+    await _restoreCoachFeed(document, profileId, replacing, counters, now);
     // L'ordine è quello delle chiavi esterne: catalogo, schede, sessioni. Le
     // righe figlie citano i genitori appena scritti, quindi non si possono
     // anticipare.
@@ -686,11 +901,20 @@ class BackupRepository {
             AppProfilesCompanion.insert(
               id: profile.id,
               displayName: profile.displayName,
+              heightCm: Value(profile.heightCm),
+              birthDate: Value(profile.birthDate),
+              sex: Value(profile.sex),
               createdAt: profile.createdAt,
               updatedAt: profile.updatedAt,
             ),
           );
       counters.created++;
+      await _appendOutbox(
+        entityType: 'profile',
+        entityId: profile.id,
+        payload: profile.toJson(),
+        now: now,
+      );
       return profile.id;
     }
     if (existing.id == profile.id &&
@@ -700,10 +924,19 @@ class BackupRepository {
       )..where((row) => row.id.equals(profile.id))).write(
         AppProfilesCompanion(
           displayName: Value(profile.displayName),
+          heightCm: Value(profile.heightCm),
+          birthDate: Value(profile.birthDate),
+          sex: Value(profile.sex),
           updatedAt: Value(profile.updatedAt),
         ),
       );
       counters.updated++;
+      await _appendOutbox(
+        entityType: 'profile',
+        entityId: existing.id,
+        payload: {...profile.toJson(), 'id': existing.id},
+        now: now,
+      );
     } else {
       counters.skipped++;
     }
@@ -981,6 +1214,12 @@ class BackupRepository {
     for (final value in document.bodyMeasurementValues) {
       valuesByMeasurement.putIfAbsent(value.measurementId, () => []).add(value);
     }
+    final impedanceByMeasurement = <String, List<BackupBodyImpedanceReading>>{};
+    for (final reading in document.bodyImpedanceReadings) {
+      impedanceByMeasurement
+          .putIfAbsent(reading.measurementId, () => [])
+          .add(reading);
+    }
 
     for (final measurement in document.bodyMeasurements) {
       final existing = replacing
@@ -1015,6 +1254,8 @@ class BackupRepository {
               formulaVersion: Value(measurement.formulaVersion),
               source: Value(measurement.source),
               externalId: Value(measurement.externalId),
+              deviceModel: Value(measurement.deviceModel),
+              rawPayload: Value(measurement.rawPayload),
               note: Value(measurement.note),
               createdAt: Value(measurement.createdAt),
               updatedAt: Value(measurement.updatedAt),
@@ -1024,6 +1265,9 @@ class BackupRepository {
       if (existing != null) {
         await (_database.delete(
           _database.bodyMeasurementValues,
+        )..where((row) => row.measurementId.equals(measurement.id))).go();
+        await (_database.delete(
+          _database.bodyImpedanceReadings,
         )..where((row) => row.measurementId.equals(measurement.id))).go();
       }
       for (final value
@@ -1040,11 +1284,41 @@ class BackupRepository {
               ),
             );
       }
+      for (final reading
+          in impedanceByMeasurement[measurement.id] ??
+              const <BackupBodyImpedanceReading>[]) {
+        await _database
+            .into(_database.bodyImpedanceReadings)
+            .insertOnConflictUpdate(
+              BodyImpedanceReadingsCompanion(
+                id: Value(reading.id),
+                measurementId: Value(measurement.id),
+                segment: Value(reading.segment),
+                frequencyHz: Value(reading.frequencyHz),
+                ohm: Value(reading.ohm),
+              ),
+            );
+      }
       _count(counters, existing != null);
       await _appendOutbox(
         entityType: 'body_measurement',
         entityId: measurement.id,
-        payload: {...measurement.toJson(), 'profile_id': profileId},
+        payload: {
+          ...measurement.toJson(),
+          'profile_id': profileId,
+          'values': [
+            for (final value
+                in valuesByMeasurement[measurement.id] ??
+                    const <BackupBodyMeasurementValue>[])
+              value.toJson(),
+          ],
+          'impedance_readings': [
+            for (final reading
+                in impedanceByMeasurement[measurement.id] ??
+                    const <BackupBodyImpedanceReading>[])
+              reading.toJson(),
+          ],
+        },
         now: now,
       );
     }
@@ -1207,6 +1481,342 @@ class BackupRepository {
           'profile_id': profileId,
           'items': [for (final item in items) item.toJson()],
         },
+        now: now,
+      );
+    }
+  }
+
+  Future<void> _restoreGeneratedWeeklyPlans(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+  ) async {
+    final slotsByPlan = <String, List<BackupWeeklyPlanSlot>>{};
+    for (final slot in document.weeklyPlanSlots) {
+      slotsByPlan.putIfAbsent(slot.planId, () => []).add(slot);
+    }
+    final liveRecipeIds = {
+      for (final recipe in await _database.select(_database.fitRecipes).get())
+        recipe.id,
+    };
+
+    for (final plan in document.weeklyPlans) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.weeklyPlans,
+            )..where((row) => row.id.equals(plan.id))).getSingleOrNull();
+      if (existing != null && !plan.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.weeklyPlans)
+          .insertOnConflictUpdate(
+            WeeklyPlansCompanion(
+              id: Value(plan.id),
+              profileId: Value(profileId),
+              startDate: Value(plan.startDate),
+              days: Value(plan.days),
+              mealsCsv: Value(plan.mealsCsv),
+              status: Value(plan.status),
+              remoteJobId: Value(plan.remoteJobId),
+              notes: Value(plan.notes),
+              requestJson: Value(plan.requestJson),
+              createdAt: Value(plan.createdAt),
+              updatedAt: Value(plan.updatedAt),
+              deletedAt: Value(plan.deletedAt),
+            ),
+          );
+      if (existing != null) {
+        await (_database.delete(
+          _database.weeklyPlanSlots,
+        )..where((row) => row.planId.equals(plan.id))).go();
+      }
+      for (final slot
+          in slotsByPlan[plan.id] ?? const <BackupWeeklyPlanSlot>[]) {
+        final recipeId = slot.recipeId;
+        await _database
+            .into(_database.weeklyPlanSlots)
+            .insertOnConflictUpdate(
+              WeeklyPlanSlotsCompanion(
+                id: Value(slot.id),
+                planId: Value(plan.id),
+                date: Value(slot.date),
+                meal: Value(slot.meal),
+                recipeId: Value(
+                  recipeId != null && liveRecipeIds.contains(recipeId)
+                      ? recipeId
+                      : null,
+                ),
+                recipeNameSnapshot: Value(slot.recipeNameSnapshot),
+                servings: Value(slot.servings),
+                why: Value(slot.why),
+                doneAt: Value(slot.doneAt),
+                diaryEntryIds: Value(slot.diaryEntryIds),
+              ),
+            );
+      }
+      _count(counters, existing != null);
+    }
+  }
+
+  Future<void> _restoreCheckIns(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+    DateTime now,
+  ) async {
+    for (final checkIn in document.dailyCheckIns) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.dailyCheckIns,
+            )..where((row) => row.id.equals(checkIn.id))).getSingleOrNull();
+      if (existing != null && !checkIn.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.dailyCheckIns)
+          .insertOnConflictUpdate(
+            DailyCheckInsCompanion(
+              id: Value(checkIn.id),
+              profileId: Value(profileId),
+              day: Value(checkIn.day),
+              sleepHours: Value(checkIn.sleepHours),
+              energyScore: Value(checkIn.energyScore),
+              steps: Value(checkIn.steps),
+              walkMinutes: Value(checkIn.walkMinutes),
+              createdAt: Value(checkIn.createdAt),
+              updatedAt: Value(checkIn.updatedAt),
+              deletedAt: Value(checkIn.deletedAt),
+            ),
+          );
+      _count(counters, existing != null);
+      await _appendOutbox(
+        entityType: 'daily_check_in',
+        entityId: checkIn.id,
+        payload: {...checkIn.toJson(), 'profile_id': profileId},
+        now: now,
+      );
+    }
+  }
+
+  Future<void> _restoreGoals(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+    DateTime now,
+  ) async {
+    for (final goal in document.goals) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.goals,
+            )..where((row) => row.id.equals(goal.id))).getSingleOrNull();
+      if (existing != null && !goal.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.goals)
+          .insertOnConflictUpdate(
+            GoalsCompanion(
+              id: Value(goal.id),
+              profileId: Value(profileId),
+              targetWeightKg: Value(goal.targetWeightKg),
+              targetLevel: Value(goal.targetLevel),
+              paceKgPerWeek: Value(goal.paceKgPerWeek),
+              startedAt: Value(goal.startedAt),
+              startWeightKg: Value(goal.startWeightKg),
+              startFatFreeMassKg: Value(goal.startFatFreeMassKg),
+              phase: Value(goal.phase),
+              phaseStartedAt: Value(goal.phaseStartedAt),
+              closedAt: Value(goal.closedAt),
+              outcome: Value(goal.outcome),
+              createdAt: Value(goal.createdAt),
+              updatedAt: Value(goal.updatedAt),
+              deletedAt: Value(goal.deletedAt),
+            ),
+          );
+      _count(counters, existing != null);
+      await _appendOutbox(
+        entityType: 'goal',
+        entityId: goal.id,
+        payload: {...goal.toJson(), 'profile_id': profileId},
+        now: now,
+      );
+    }
+  }
+
+  Future<void> _restoreTrainingData(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+    DateTime now,
+  ) async {
+    for (final profile in document.trainingProfiles) {
+      final existing = replacing
+          ? null
+          : await (_database.select(_database.trainingProfiles)
+                  ..where((row) => row.profileId.equals(profileId)))
+                .getSingleOrNull();
+      if (existing != null && !profile.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+      } else {
+        await _database
+            .into(_database.trainingProfiles)
+            .insertOnConflictUpdate(
+              TrainingProfilesCompanion(
+                profileId: Value(profileId),
+                equipment: Value(profile.equipment),
+                sessionsPerWeek: Value(profile.sessionsPerWeek),
+                minutesPerSession: Value(profile.minutesPerSession),
+                preferredDays: Value(profile.preferredDays),
+                deloadPreference: Value(profile.deloadPreference),
+                createdAt: Value(profile.createdAt),
+                updatedAt: Value(profile.updatedAt),
+              ),
+            );
+        _count(counters, existing != null);
+        await _appendOutbox(
+          entityType: 'training_profile',
+          entityId: profileId,
+          payload: {...profile.toJson(), 'profile_id': profileId},
+          now: now,
+        );
+      }
+    }
+
+    for (final limitation in document.trainingLimitations) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.trainingLimitations,
+            )..where((row) => row.id.equals(limitation.id))).getSingleOrNull();
+      if (existing != null &&
+          !limitation.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.trainingLimitations)
+          .insertOnConflictUpdate(
+            TrainingLimitationsCompanion(
+              id: Value(limitation.id),
+              profileId: Value(profileId),
+              bodyPart: Value(limitation.bodyPart),
+              severity: Value(limitation.severity),
+              note: Value(limitation.note),
+              startedAt: Value(limitation.startedAt),
+              resolvedAt: Value(limitation.resolvedAt),
+              createdAt: Value(limitation.createdAt),
+              updatedAt: Value(limitation.updatedAt),
+              deletedAt: Value(limitation.deletedAt),
+            ),
+          );
+      _count(counters, existing != null);
+      await _appendOutbox(
+        entityType: 'training_limitation',
+        entityId: limitation.id,
+        payload: {...limitation.toJson(), 'profile_id': profileId},
+        now: now,
+      );
+    }
+  }
+
+  Future<void> _restoreDailyHealthSummaries(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+    DateTime now,
+  ) async {
+    for (final summary in document.dailyHealthSummaries) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.dailyHealthSummaries,
+            )..where((row) => row.id.equals(summary.id))).getSingleOrNull();
+      if (existing != null && !summary.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.dailyHealthSummaries)
+          .insertOnConflictUpdate(
+            DailyHealthSummariesCompanion(
+              id: Value(summary.id),
+              profileId: Value(profileId),
+              day: Value(summary.day),
+              source: Value(summary.source),
+              externalId: Value(summary.externalId),
+              steps: Value(summary.steps),
+              sleepMinutes: Value(summary.sleepMinutes),
+              restingHeartRate: Value(summary.restingHeartRate),
+              createdAt: Value(summary.createdAt),
+              updatedAt: Value(summary.updatedAt),
+              deletedAt: Value(summary.deletedAt),
+            ),
+          );
+      _count(counters, existing != null);
+      await _appendOutbox(
+        entityType: 'daily_health_summary',
+        entityId: summary.id,
+        payload: {...summary.toJson(), 'profile_id': profileId},
+        now: now,
+      );
+    }
+  }
+
+  Future<void> _restoreCoachFeed(
+    BackupDocument document,
+    String profileId,
+    bool replacing,
+    _RestoreCounters counters,
+    DateTime now,
+  ) async {
+    for (final item in document.coachFeedItems) {
+      final existing = replacing
+          ? null
+          : await (_database.select(
+              _database.coachFeedItems,
+            )..where((row) => row.id.equals(item.id))).getSingleOrNull();
+      if (existing != null && !item.updatedAt.isAfter(existing.updatedAt)) {
+        counters.skipped++;
+        continue;
+      }
+      await _database
+          .into(_database.coachFeedItems)
+          .insertOnConflictUpdate(
+            CoachFeedItemsCompanion(
+              id: Value(item.id),
+              profileId: Value(profileId),
+              kind: Value(item.kind),
+              source: Value(item.source),
+              externalId: Value(item.externalId),
+              title: Value(item.title),
+              body: Value(item.body),
+              actionLabel: Value(item.actionLabel),
+              actionPath: Value(item.actionPath),
+              occurredAt: Value(item.occurredAt),
+              readAt: Value(item.readAt),
+              dismissedAt: Value(item.dismissedAt),
+              createdAt: Value(item.createdAt),
+              updatedAt: Value(item.updatedAt),
+              deletedAt: Value(item.deletedAt),
+            ),
+          );
+      _count(counters, existing != null);
+      await _appendOutbox(
+        entityType: 'coach_feed_item',
+        entityId: item.id,
+        payload: {...item.toJson(), 'profile_id': profileId},
         now: now,
       );
     }
@@ -1674,6 +2284,41 @@ class BackupRepository {
     );
   }
 
+  /// Il formato 2 conosce gli allenamenti ma non i dati introdotti dal
+  /// contratto Coach360. In modalita' sostituzione quelle tabelle verrebbero
+  /// eliminate insieme al profilo, quindi si applica la stessa protezione del
+  /// formato 1 invece di perdere dati in silenzio.
+  Future<void> _refuseLegacyDataContractReplace() async {
+    final profiles = await _database.select(_database.appProfiles).get();
+    final measurements = await _database
+        .select(_database.bodyMeasurements)
+        .get();
+    final hasPersonalDetails = profiles.any(
+      (row) => row.heightCm != null || row.birthDate != null || row.sex != null,
+    );
+    final hasScaleProvenance = measurements.any(
+      (row) => row.deviceModel != null || row.rawPayload != null,
+    );
+    final rows =
+        await _countRows(_database.weeklyPlans) +
+        await _countRows(_database.dailyCheckIns) +
+        await _countRows(_database.goals) +
+        await _countRows(_database.bodyImpedanceReadings) +
+        await _countRows(_database.trainingProfiles) +
+        await _countRows(_database.trainingLimitations) +
+        await _countRows(_database.dailyHealthSummaries) +
+        await _countRows(_database.coachFeedItems);
+    if (rows == 0 && !hasPersonalDetails && !hasScaleProvenance) {
+      return;
+    }
+    throw const BackupWouldLoseDataException(
+      'Questo backup è stato fatto prima che Coach360 salvasse check-in, '
+      'obiettivi, profilo atleta, dati salute e provenienza della bilancia. '
+      'Sostituendo tutto perderesti dati che il file non può ripristinare. '
+      'Usa «Unisci», oppure fai prima un backup nuovo.',
+    );
+  }
+
   /// Descrive in italiano che cosa c'è da perdere, o null se non c'è niente.
   Future<String?> _workoutDataSummary() async {
     final sessions = await _countRows(_database.workouts);
@@ -1717,6 +2362,18 @@ class BackupRepository {
     )..where((row) => row.source.isIn(_builtInFoodSources).not())).get();
     final preferences = await _database.select(_database.foodPreferences).get();
     final targets = await _database.select(_database.nutritionTargets).get();
+    final checkIns = await _database.select(_database.dailyCheckIns).get();
+    final goals = await _database.select(_database.goals).get();
+    final trainingProfiles = await _database
+        .select(_database.trainingProfiles)
+        .get();
+    final trainingLimitations = await _database
+        .select(_database.trainingLimitations)
+        .get();
+    final healthSummaries = await _database
+        .select(_database.dailyHealthSummaries)
+        .get();
+    final coachFeed = await _database.select(_database.coachFeedItems).get();
     return {
       'meal_item': {
         for (final row in await _database.select(_database.mealItems).get())
@@ -1744,6 +2401,12 @@ class BackupRepository {
         for (final row in preferences) '${row.profileId}:${row.foodId}',
       },
       'nutrition_target': {for (final row in targets) row.profileId},
+      'daily_check_in': {for (final row in checkIns) row.id},
+      'goal': {for (final row in goals) row.id},
+      'training_profile': {for (final row in trainingProfiles) row.profileId},
+      'training_limitation': {for (final row in trainingLimitations) row.id},
+      'daily_health_summary': {for (final row in healthSummaries) row.id},
+      'coach_feed_item': {for (final row in coachFeed) row.id},
     };
   }
 
@@ -1763,6 +2426,18 @@ class BackupRepository {
     'nutrition_target': document.nutritionTargets.isEmpty
         ? const <String>{}
         : {profileId},
+    'daily_check_in': {for (final row in document.dailyCheckIns) row.id},
+    'goal': {for (final row in document.goals) row.id},
+    'training_profile': document.trainingProfiles.isEmpty
+        ? const <String>{}
+        : {profileId},
+    'training_limitation': {
+      for (final row in document.trainingLimitations) row.id,
+    },
+    'daily_health_summary': {
+      for (final row in document.dailyHealthSummaries) row.id,
+    },
+    'coach_feed_item': {for (final row in document.coachFeedItems) row.id},
   };
 
   /// L'ordine è figli prima dei genitori anche dove basterebbe il CASCADE: la
@@ -1772,6 +2447,14 @@ class BackupRepository {
   /// non hanno un tipo entità sul gateway: non sono mai state spinte, quindi
   /// non c'è niente da cancellare da remoto.
   Future<void> _wipeUserTables() async {
+    await _database.delete(_database.coachFeedItems).go();
+    await _database.delete(_database.dailyHealthSummaries).go();
+    await _database.delete(_database.trainingLimitations).go();
+    await _database.delete(_database.trainingProfiles).go();
+    await _database.delete(_database.dailyCheckIns).go();
+    await _database.delete(_database.goals).go();
+    await _database.delete(_database.weeklyPlanSlots).go();
+    await _database.delete(_database.weeklyPlans).go();
     await _database.delete(_database.workoutSets).go();
     await _database.delete(_database.workoutExercises).go();
     await _database.delete(_database.workoutPainPoints).go();
@@ -1785,6 +2468,7 @@ class BackupRepository {
     await _database.delete(_database.workoutProfileStats).go();
     await _database.delete(_database.exercises).go();
     await _database.delete(_database.bodyMeasurementValues).go();
+    await _database.delete(_database.bodyImpedanceReadings).go();
     await _database.delete(_database.mealItems).go();
     await _database.delete(_database.meals).go();
     await _database.delete(_database.mealTemplateItems).go();
@@ -1831,6 +2515,9 @@ class BackupRepository {
       return {'profile_id': parts.first, 'food_id': parts.last};
     }
     if (entityType == 'nutrition_target') {
+      return {'profile_id': key};
+    }
+    if (entityType == 'training_profile') {
       return {'profile_id': key};
     }
     return {'id': key};

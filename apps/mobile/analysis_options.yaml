@@ -9,6 +9,15 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+# The vendored package keeps its upstream examples and package-level tests for
+# traceability. They use dev dependencies that belong to that package, not to
+# Coach360, so the app analyzer intentionally checks the patched library code
+# but skips those standalone fixtures.
+analyzer:
+  exclude:
+    - third_party/device_info_plus/example/**
+    - third_party/device_info_plus/test/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

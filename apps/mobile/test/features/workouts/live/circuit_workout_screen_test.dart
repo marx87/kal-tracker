@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
+import 'package:kal_tracker/features/workouts/cues/application/workout_cue_engine.dart';
+import 'package:kal_tracker/features/workouts/cues/application/workout_cue_ports.dart';
+import 'package:kal_tracker/features/workouts/cues/data/workout_cue_store.dart';
+import 'package:kal_tracker/features/workouts/cues/domain/workout_cue.dart';
+import 'package:kal_tracker/features/workouts/cues/domain/workout_cue_preferences.dart';
+import 'package:kal_tracker/features/workouts/cues/workout_cue_providers.dart';
 import 'package:kal_tracker/features/workouts/domain/circuit_flow.dart';
 import 'package:kal_tracker/features/workouts/domain/exercise_kind.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
 import 'package:kal_tracker/features/workouts/presentation/live/circuit_workout_screen.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/circuit_workout_plan.dart';
 import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 
 import 'fake_live_workout_repository.dart';
@@ -52,7 +59,24 @@ Workout _workout({Map<String, dynamic>? checkpoint}) => Workout(
   id: 'w1',
   startedAt: DateTime(2026, 8, 5, 17, 30),
   circuitCheckpoint: checkpoint,
-  exercises: const [],
+  exercises: const [
+    WorkoutExercise(
+      exerciseId: 'jumping',
+      exerciseName: 'Jumping jack',
+      trackingMode: ExerciseTrackingMode.timed,
+      muscleGroup: MuscleGroup.cardio,
+      restSeconds: 15,
+      sets: [WorkoutSet(durationSec: 30)],
+    ),
+    WorkoutExercise(
+      exerciseId: 'squat',
+      exerciseName: 'Squat a corpo libero',
+      trackingMode: ExerciseTrackingMode.timed,
+      muscleGroup: MuscleGroup.gambe,
+      restSeconds: 15,
+      sets: [WorkoutSet(durationSec: 30)],
+    ),
+  ],
 );
 
 Widget _app(
@@ -61,17 +85,38 @@ Widget _app(
   int rounds = 1,
   CircuitKind kind = CircuitKind.main,
   void Function(CircuitFlowState)? onCompleted,
+  WorkoutCueEngine? cueEngine,
 }) => ProviderScope(
-  overrides: [liveWorkoutRepositoryProvider.overrideWithValue(repository)],
+  overrides: [
+    liveWorkoutRepositoryProvider.overrideWithValue(repository),
+    workoutCueStoreProvider.overrideWithValue(InMemoryWorkoutCueStore()),
+    workoutSpeechOutputProvider.overrideWithValue(
+      const SilentWorkoutSpeechOutput(),
+    ),
+    workoutSignalOutputProvider.overrideWithValue(
+      const SilentWorkoutSignalOutput(),
+    ),
+    workoutNotificationOutputProvider.overrideWithValue(
+      const SilentWorkoutNotificationOutput(),
+    ),
+    workoutWakeLockOutputProvider.overrideWithValue(
+      const SilentWorkoutWakeLockOutput(),
+    ),
+    if (cueEngine != null)
+      workoutCueEngineProvider.overrideWithValue(cueEngine),
+  ],
   child: MaterialApp(
     theme: AppTheme.light,
     home: CircuitWorkoutScreen(
       workoutId: 'w1',
-      kind: kind,
-      steps: _steps,
-      restSec: 15,
-      longRestSec: 45,
-      rounds: rounds,
+      plan: CircuitWorkoutPlan(
+        kind: kind,
+        steps: _steps,
+        exerciseIndices: const [0, 1],
+        restSec: 15,
+        longRestSec: 45,
+        rounds: rounds,
+      ),
       now: clock.call,
       onCompleted: onCompleted,
     ),
@@ -204,7 +249,7 @@ void main() {
 
       expect(find.text('Blocco finito'), findsOneWidget);
 
-      final written = repository.saved.last.exercises;
+      final written = repository.circuitCommits.single.exercises;
       expect(written, hasLength(2));
       expect(written.first.muscleGroup, MuscleGroup.cardio);
       expect(written.last.muscleGroup, MuscleGroup.gambe);
@@ -212,8 +257,8 @@ void main() {
       expect(written.first.sets.single.completed, isTrue);
 
       // Finito il blocco non c'è più niente da riprendere.
-      expect(repository.resumeWrites.last.resumePath, isNull);
-      expect(repository.resumeWrites.last.checkpoint, isNull);
+      expect(repository.current!.resumePath, isNull);
+      expect(repository.current!.circuitCheckpoint, isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -329,10 +374,225 @@ void main() {
     await tester.tap(find.byKey(const Key('circuit_exit_leave')));
     await tester.pumpAndSettle();
 
-    final written = repository.saved.last.exercises;
-    expect(written, hasLength(1));
-    expect(written.single.exerciseId, 'jumping');
+    final written = repository.circuitCommits.single.exercises;
+    expect(written, hasLength(2));
+    expect(written.first.sets.single.completed, isTrue);
+    expect(written.last.sets.single.completed, isFalse);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('se il commit fallisce non esce e conserva il checkpoint', (
+    tester,
+  ) async {
+    final clock = _Clock();
+    final repository = FakeLiveWorkoutRepository(initial: _workout())
+      ..failCircuitCommit = true;
+
+    await tester.pumpWidget(_app(repository, clock));
+    await tester.pump();
+    await _tick(tester, clock, 5 + 30 + 2);
+
+    await tester.tap(find.byKey(const Key('circuit_back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('circuit_exit_leave')));
+    await tester.pumpAndSettle();
+
+    expect(repository.circuitCommits, isEmpty);
+    expect(repository.current!.resumePath, '/workout/w1/phase/main');
+    expect(repository.current!.circuitCheckpoint, isNotNull);
+    expect(find.byKey(const Key('circuit_back')), findsOneWidget);
+    expect(find.textContaining('Non ho salvato questo blocco'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'cue: prepara, lavora, recupera, cambia, sincronizza e completa con un '
+    'solo countdown durevole',
+    (tester) async {
+      final clock = _Clock();
+      final repository = FakeLiveWorkoutRepository(initial: _workout());
+      final wakeLock = _RecordingWakeLock();
+      final engine = _SpyCueEngine(
+        store: InMemoryWorkoutCueStore(
+          WorkoutCuePersistentState(
+            preferences: const WorkoutCuePreferences(
+              voice: VoiceGuidanceLevel.detailed,
+              keepScreenAwake: true,
+              notificationsEnabled: false,
+            ),
+          ),
+        ),
+        wakeLock: wakeLock,
+        now: clock.call,
+      );
+      addTearDown(engine.dispose);
+
+      await tester.pumpWidget(_app(repository, clock, cueEngine: engine));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      const cueId = 'circuit:w1:main:none:none';
+      expect(engine.synchronizeCalls, 1);
+      expect(engine.sessionStates, contains(true));
+      expect(wakeLock.values, contains(true));
+      expect(
+        engine.emitted.whereType<CircuitPhaseCue>().first.phase,
+        WorkoutCircuitPhase.transition,
+      );
+      expect(engine.scheduledIds, [cueId]);
+      expect(engine.pending.single.id, cueId);
+
+      await _tick(tester, clock, 5);
+      expect(
+        engine.emitted.whereType<CircuitPhaseCue>().any(
+          (cue) =>
+              cue.phase == WorkoutCircuitPhase.work &&
+              cue.exerciseName == 'Jumping jack',
+        ),
+        isTrue,
+      );
+
+      await _tick(tester, clock, 30);
+      final circuitCues = engine.emitted.whereType<CircuitPhaseCue>().toList();
+      expect(
+        circuitCues.any((cue) => cue.phase == WorkoutCircuitPhase.recovery),
+        isTrue,
+      );
+      expect(
+        circuitCues.any(
+          (cue) =>
+              cue.phase == WorkoutCircuitPhase.transition &&
+              cue.exerciseName == 'Squat a corpo libero',
+        ),
+        isTrue,
+      );
+      expect(engine.scheduledIds.toSet(), {cueId});
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(engine.sessionStates.last, isFalse);
+      expect(engine.pending.single.id, cueId);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(engine.synchronizeCalls, greaterThanOrEqualTo(2));
+      expect(engine.sessionStates.last, isTrue);
+
+      await tester.tap(find.byKey(const Key('circuit_back')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('circuit_exit_stay')), findsOneWidget);
+      expect(engine.cancelledIds, contains(cueId));
+      expect(engine.pending, isEmpty);
+      expect(engine.sessionStates.last, isFalse);
+
+      await tester.tap(find.byKey(const Key('circuit_exit_stay')));
+      await tester.pumpAndSettle();
+      expect(engine.pending.single.id, cueId);
+      expect(engine.sessionStates.last, isTrue);
+
+      final cancellationsBeforeSkip = engine.cancelledIds.length;
+      await tester.tap(find.byKey(const Key('circuit_skip')));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(engine.cancelledIds.length, greaterThan(cancellationsBeforeSkip));
+      expect(engine.pending.single.id, cueId);
+
+      await _tick(tester, clock, 3 + 30);
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+        engine.emitted.whereType<CircuitPhaseCue>().any(
+          (cue) => cue.phase == WorkoutCircuitPhase.completed,
+        ),
+        isTrue,
+      );
+      expect(engine.pending, isEmpty);
+      expect(engine.sessionStates.last, isFalse);
+      expect(wakeLock.values.last, isFalse);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+}
+
+class _SpyCueEngine extends WorkoutCueEngine {
+  _SpyCueEngine({
+    required super.store,
+    required super.wakeLock,
+    required DateTime Function() now,
+  }) : super(
+         speech: const SilentWorkoutSpeechOutput(),
+         signals: const SilentWorkoutSignalOutput(),
+         notifications: const SilentWorkoutNotificationOutput(),
+         now: now,
+         timerFactory: _NeverCueTimer.new,
+       );
+
+  final List<WorkoutCue> emitted = [];
+  final List<String> scheduledIds = [];
+  final List<String> cancelledIds = [];
+  final List<bool> sessionStates = [];
+  int synchronizeCalls = 0;
+
+  @override
+  Future<WorkoutCueDispatchReport> emit(WorkoutCue cue) {
+    emitted.add(cue);
+    return super.emit(cue);
+  }
+
+  @override
+  Future<int> scheduleCountdown({
+    required String id,
+    required DateTime deadline,
+    required WorkoutCue completionCue,
+    Iterable<int>? announceAtSeconds,
+  }) {
+    scheduledIds.add(id);
+    return super.scheduleCountdown(
+      id: id,
+      deadline: deadline,
+      completionCue: completionCue,
+      announceAtSeconds: announceAtSeconds,
+    );
+  }
+
+  @override
+  Future<void> cancelScheduled(String id) {
+    cancelledIds.add(id);
+    return super.cancelScheduled(id);
+  }
+
+  @override
+  Future<void> setSessionActive(bool active) {
+    sessionStates.add(active);
+    return super.setSessionActive(active);
+  }
+
+  @override
+  Future<void> synchronize() {
+    synchronizeCalls += 1;
+    return super.synchronize();
+  }
+}
+
+class _RecordingWakeLock implements WorkoutWakeLockOutput {
+  final List<bool> values = [];
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    values.add(enabled);
+  }
+}
+
+class _NeverCueTimer implements WorkoutCueTimer {
+  _NeverCueTimer(Duration _, void Function() _);
+
+  bool _active = true;
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  void cancel() => _active = false;
 }

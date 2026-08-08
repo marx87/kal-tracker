@@ -211,6 +211,32 @@ void main() {
       expect(size.width, greaterThanOrEqualTo(48));
       expect(size.height, greaterThanOrEqualTo(48));
     });
+
+    testWidgets('RIR rapido salva sulla scala RPE compatibile', (tester) async {
+      WorkoutSet? changed;
+      await tester.pumpWidget(
+        _host(
+          WorkoutSetRow(
+            set: const WorkoutSet(weightKg: 20, reps: 10),
+            setNumber: 1,
+            trackingMode: ExerciseTrackingMode.weightReps,
+            onChanged: (value) => changed = value,
+            onComplete: () {},
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('RIR'));
+      await tester.pumpAndSettle();
+      expect(find.text('Quante ne avevi ancora?'), findsOneWidget);
+
+      await tester.tap(
+        find.bySemanticsLabel('2 ripetizioni in riserva, equivalente a RPE 8'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(changed?.rpe, 8);
+    });
   });
 
   group('fascia del recupero', () {

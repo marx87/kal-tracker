@@ -225,9 +225,9 @@ void main() {
     expect(rows[1].sets, hasLength(3)); // dentro: round del blocco
     expect(rows[1].sets.first.durationSec, 50);
     expect(rows[1].restSeconds, 10);
-    // Le righe pre-costruite NON portano l'indice del blocco: quello marca le
-    // righe APPESE da un'esecuzione col cronometro.
-    expect(rows[1].intervalSegmentIndex, isNull);
+    // L'indice collega il piano guidato alle righe già presenti: il timer le
+    // spunta in posto e non appende una seconda copia a fine blocco.
+    expect(rows[1].intervalSegmentIndex, 0);
   });
 
   test('il finisher si esegue con la sua prescrizione, marcato', () {

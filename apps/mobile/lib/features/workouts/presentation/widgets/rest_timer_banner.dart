@@ -19,6 +19,9 @@ class RestTimerBanner extends StatelessWidget {
     this.nextLabel,
     this.guided = false,
     this.onStop,
+    this.onSkip,
+    this.onDismiss,
+    this.onAdjusted,
     super.key,
   });
 
@@ -35,6 +38,12 @@ class RestTimerBanner extends StatelessWidget {
   final bool guided;
   final VoidCallback? onStop;
 
+  /// Hook della regia persistente. Se mancano, il banner continua a
+  /// funzionare da solo come prima (utile nei test e negli usi semplici).
+  final VoidCallback? onSkip;
+  final VoidCallback? onDismiss;
+  final ValueChanged<Duration>? onAdjusted;
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -42,13 +51,16 @@ class RestTimerBanner extends StatelessWidget {
       builder: (context, _) {
         if (!controller.isVisible) return const SizedBox.shrink();
         return controller.isCompleted
-            ? _RestDoneBar(onDismiss: controller.cancel)
+            ? _RestDoneBar(onDismiss: onDismiss ?? controller.cancel)
             : _RestRunningBar(
                 controller: controller,
                 contextLabel: contextLabel,
                 nextLabel: nextLabel,
                 guided: guided,
                 onStop: onStop,
+                onSkip: onSkip,
+                onDismiss: onDismiss,
+                onAdjusted: onAdjusted,
               );
       },
     );
@@ -121,6 +133,9 @@ class _RestRunningBar extends StatelessWidget {
     required this.nextLabel,
     required this.guided,
     required this.onStop,
+    required this.onSkip,
+    required this.onDismiss,
+    required this.onAdjusted,
   });
 
   final RestTimerController controller;
@@ -128,6 +143,9 @@ class _RestRunningBar extends StatelessWidget {
   final String? nextLabel;
   final bool guided;
   final VoidCallback? onStop;
+  final VoidCallback? onSkip;
+  final VoidCallback? onDismiss;
+  final ValueChanged<Duration>? onAdjusted;
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +169,7 @@ class _RestRunningBar extends StatelessWidget {
         child: Material(
           color: scheme.primaryContainer,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -165,23 +183,62 @@ class _RestRunningBar extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ExcludeSemantics(
-                        child: Text(
-                          'RECUPERO',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: scheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'RECUPERO',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: scheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                            if (contextLabel != null || nextLabel != null)
+                              Text(
+                                [
+                                  ?contextLabel,
+                                  if (nextLabel case final next?) 'Poi: $next',
+                                ].join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: scheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                          ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ExcludeSemantics(
+                      child: Text(
+                        '$seconds',
+                        key: const Key('rest_timer_seconds'),
+                        style: theme.textTheme.headlineMedium
+                            ?.copyWith(
+                              color: scheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            )
+                            .tabular,
+                      ),
+                    ),
+                    Text(
+                      's',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     IconButton(
                       key: const Key('rest_timer_close'),
                       onPressed: guided && onStop != null
                           ? onStop
-                          : controller.cancel,
+                          : (onDismiss ?? controller.cancel),
                       tooltip: guided
-                          ? 'Ferma la superserie guidata'
+                          ? 'Ferma la sequenza guidata'
                           : 'Chiudi il recupero',
                       constraints: const BoxConstraints.tightFor(
                         width: 48,
@@ -196,86 +253,56 @@ class _RestRunningBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                ExcludeSemantics(
-                  child: Text(
-                    '$seconds',
-                    key: const Key('rest_timer_seconds'),
-                    style: theme.textTheme.displayLarge
-                        ?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                          letterSpacing: -2,
-                        )
-                        .tabular,
-                  ),
-                ),
-                if (contextLabel != null || nextLabel != null) ...[
-                  const SizedBox(height: 4),
-                  ExcludeSemantics(
-                    child: Text(
-                      [
-                        ?contextLabel,
-                        if (nextLabel case final next?) 'Poi: $next',
-                      ].join(' · '),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: elapsed.clamp(0.0, 1.0),
-                    minHeight: 8,
+                    minHeight: 5,
                     backgroundColor: scheme.onPrimaryContainer.withValues(
                       alpha: 0.2,
                     ),
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 8,
-                  runSpacing: 8,
+                const SizedBox(height: 8),
+                Row(
                   children: [
                     _RestAction(
-                      label: '−15s',
+                      label: '−15',
                       semanticLabel: 'Togli 15 secondi al recupero',
-                      onTap: () => controller.addSeconds(-15),
-                    ),
-                    _RestAction(
-                      key: const Key('rest_timer_skip'),
-                      label: 'Riparti ora',
-                      semanticLabel: 'Salta il recupero e riparti',
                       onTap: () {
-                        controller.skip();
-                        // Nel flusso guidato la callback fa già partire il
-                        // lavoro dopo (e azzera il controller). In quello
-                        // manuale la fascia «finito» resterebbe lì a coprire
-                        // il pulsante della serie: qui si chiude subito.
-                        if (controller.isCompleted) controller.cancel();
+                        controller.addSeconds(-15);
+                        onAdjusted?.call(controller.remaining);
                       },
                     ),
-                    _RestAction(
-                      label: '+15s',
-                      semanticLabel: 'Aggiungi 15 secondi al recupero',
-                      onTap: () => controller.addSeconds(15),
-                    ),
-                    if (guided && onStop != null)
-                      _RestAction(
-                        label: 'Ferma la superserie',
-                        semanticLabel: 'Ferma la superserie guidata',
-                        onTap: onStop!,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _RestAction(
+                        key: const Key('rest_timer_skip'),
+                        label: 'Riparti ora',
+                        semanticLabel: 'Salta il recupero e riparti',
+                        primary: true,
+                        onTap: () {
+                          if (onSkip != null) {
+                            onSkip!();
+                            return;
+                          }
+                          controller.skip();
+                          // Nel flusso guidato la callback fa già partire il
+                          // lavoro dopo. Nel flusso manuale si chiude subito.
+                          if (controller.isCompleted) controller.cancel();
+                        },
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    _RestAction(
+                      label: '+15',
+                      semanticLabel: 'Aggiungi 15 secondi al recupero',
+                      onTap: () {
+                        controller.addSeconds(15);
+                        onAdjusted?.call(controller.remaining);
+                      },
+                    ),
                   ],
                 ),
               ],
@@ -292,12 +319,14 @@ class _RestAction extends StatelessWidget {
     required this.label,
     required this.semanticLabel,
     required this.onTap,
+    this.primary = false,
     super.key,
   });
 
   final String label;
   final String semanticLabel;
   final VoidCallback onTap;
+  final bool primary;
 
   @override
   Widget build(BuildContext context) {
@@ -316,16 +345,20 @@ class _RestAction extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: scheme.surface.withValues(alpha: 0.55),
+              color: primary
+                  ? scheme.primary
+                  : scheme.surface.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: scheme.onPrimaryContainer.withValues(alpha: 0.35),
+                color: primary
+                    ? scheme.primary
+                    : scheme.onPrimaryContainer.withValues(alpha: 0.35),
               ),
             ),
             child: Text(
               label,
               style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.onPrimaryContainer,
+                color: primary ? scheme.onPrimary : scheme.onPrimaryContainer,
                 fontWeight: FontWeight.w800,
               ),
             ),

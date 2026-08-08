@@ -12,6 +12,7 @@ import 'package:kal_tracker/features/foods/presentation/food_catalog_screen.dart
 import 'package:kal_tracker/features/foods/presentation/food_editor_screen.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_screen.dart';
 import 'package:kal_tracker/features/gym_import/presentation/gym_import_screen.dart';
+import 'package:kal_tracker/features/health/presentation/health_screen.dart';
 import 'package:kal_tracker/features/onboarding/presentation/onboarding_gate.dart';
 import 'package:kal_tracker/features/onboarding/presentation/personal_details_screen.dart';
 import 'package:kal_tracker/features/photo_meal/presentation/photo_proposals_listener.dart';
@@ -29,6 +30,8 @@ import 'package:kal_tracker/features/weekly_plan/presentation/weekly_plan_screen
 import 'package:kal_tracker/features/wellbeing/presentation/progress_screen.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/workout_detail_screen.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/workout_history_screen.dart';
+import 'package:kal_tracker/features/workouts/domain/circuit_flow.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/circuit_workout_screen.dart';
 import 'package:kal_tracker/features/workouts/presentation/live/live_workout_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -195,6 +198,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const ScaleScreen(),
               ),
               GoRoute(
+                path: '/health',
+                name: HealthScreen.routeName,
+                builder: (context, state) => const HealthScreen(),
+              ),
+              GoRoute(
                 path: '/progress',
                 name: 'progress',
                 // Progressi porta con sé la porta delle Impostazioni: è già
@@ -267,10 +275,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'workout-live',
         builder: (context, state) => LiveWorkoutScreen(
           workoutId: state.pathParameters['workoutId']!,
+          onOpenPhase: (path) async {
+            await context.push<void>(path);
+          },
           // Chiusa la sessione si torna allo storico, dove è appena comparsa,
           // invece di restare su una schermata che non ha più niente da fare.
           onClosed: (_) => context.goNamed('workout-history'),
         ),
+        routes: [
+          GoRoute(
+            path: 'phase/:kind',
+            name: 'workout-timed-phase',
+            builder: (context, state) => CircuitWorkoutRouteScreen(
+              workoutId: state.pathParameters['workoutId']!,
+              kind:
+                  CircuitKind.tryFromName(state.pathParameters['kind']) ??
+                  CircuitKind.segment,
+              segmentIndex: int.tryParse(
+                state.uri.queryParameters['seg'] ?? '',
+              ),
+              rowIndex: int.tryParse(state.uri.queryParameters['row'] ?? ''),
+            ),
+          ),
+        ],
       ),
       // Fuori dalla shell: la revisione delle proposte foto è a schermo
       // intero e raggiungibile anche dalla notifica in-app.

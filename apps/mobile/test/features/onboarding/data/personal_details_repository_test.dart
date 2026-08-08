@@ -45,6 +45,9 @@ void main() {
     expect(details.birthDate, DateTime.utc(1987, 9, 13));
     expect(details.sex, BiologicalSex.male);
     expect(details.isComplete, isTrue);
+    final outbox = await database.select(database.syncOutbox).getSingle();
+    expect(outbox.entityType, 'profile');
+    expect(outbox.operation, 'upsert');
   });
 
   test(

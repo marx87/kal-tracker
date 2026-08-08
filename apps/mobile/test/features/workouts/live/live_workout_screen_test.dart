@@ -130,6 +130,18 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('rest_timer_seconds'))).data,
         '90',
       );
+      // Durante il recupero c'è una sola azione primaria: il timer non lotta
+      // più con «serie fatta» nello stesso spazio in fondo.
+      expect(
+        find.byKey(const Key('live_workout_complete_current')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const Key('rest_timer_skip')));
+      await _settle(tester);
+      expect(
+        find.byKey(const Key('live_workout_complete_current')),
+        findsOneWidget,
+      );
 
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -346,8 +358,40 @@ void main() {
             BodyWeightSample(measuredAt: DateTime(2026, 6, 19), kg: 94.5),
           ],
         );
+        String? openedPhase;
+        bool? rowsWereIncomplete;
 
-        await tester.pumpWidget(_app(repository));
+        await tester.pumpWidget(
+          _app(
+            repository,
+            child: LiveWorkoutScreen(
+              workoutId: 'w1',
+              onOpenPhase: (path) async {
+                openedPhase = path;
+                final current = repository.current!;
+                final exercises = [
+                  for (final exercise in current.exercises)
+                    if (exercise.isCooldown)
+                      exercise.copyWith(
+                        sets: [
+                          for (final set in exercise.sets)
+                            set.copyWith(completed: true),
+                        ],
+                      )
+                    else
+                      exercise,
+                ];
+                rowsWereIncomplete = current.exercises
+                    .where((exercise) => exercise.isCooldown)
+                    .expand((exercise) => exercise.sets)
+                    .every((set) => !set.completed);
+                await repository.commitCircuitPhase(
+                  current.copyWith(exercises: exercises),
+                );
+              },
+            ),
+          ),
+        );
         await _settle(tester);
 
         await tester.tap(find.byKey(const Key('live_workout_back')));
@@ -365,6 +409,15 @@ void main() {
         expect(closed!.endedAt, isNotNull);
         expect(closed.totalKcal, greaterThan(0));
         expect(closed.exercises.where((e) => e.isCooldown), isNotEmpty);
+        expect(openedPhase, '/workout/w1/phase/cooldown');
+        expect(rowsWereIncomplete, isTrue);
+        expect(
+          closed.exercises
+              .where((exercise) => exercise.isCooldown)
+              .expand((exercise) => exercise.sets)
+              .every((set) => set.completed),
+          isTrue,
+        );
 
         await tester.pumpWidget(const SizedBox.shrink());
       },

@@ -55,7 +55,16 @@ void main() {
   Future<void> openPersonalDetails(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('nav_body')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('body_open_progress_button')));
+    final directProgressButton = find.byKey(
+      const Key('body_open_progress_button'),
+    );
+    if (directProgressButton.evaluate().isNotEmpty) {
+      await tester.tap(directProgressButton);
+    } else {
+      await tester.tap(find.byKey(const Key('body_more_actions_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Progressi e impostazioni').last);
+    }
     await tester.pumpAndSettle();
     final entry = find.byKey(const Key('open_personal_details_button'));
     // La voce sta in fondo alla pagina: si scorre fino a lì, come farebbe

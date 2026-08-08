@@ -115,6 +115,47 @@ void main() {
     );
   });
 
+  test('il formato 3 fa round-trip di tutti i dati Coach360', () async {
+    await _seed(database, profileId, moment);
+    await _seedCoach360(database, profileId, moment);
+    final original = await repository.exportBackup(
+      profileId: profileId,
+      exportedAt: exportedAt,
+    );
+
+    expect(original.formatVersion, 3);
+    expect(original.dailyCheckIns.single.steps, 9200);
+    expect(original.goals.single.targetWeightKg, 78);
+    expect(original.trainingProfiles.single.equipment, isEmpty);
+    expect(original.bodyImpedanceReadings.single.ohm, 512);
+    expect(original.dailyHealthSummaries.single.sleepMinutes, 450);
+    expect(original.coachFeedItems.single.title, 'Rapporto settimanale');
+
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final fresh = AppDatabase(NativeDatabase.memory());
+    addTearDown(() {
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+      return fresh.close();
+    });
+    await LocalProfileRepository(fresh).getOrCreateMarco();
+    final freshRepository = BackupRepository(fresh);
+    await freshRepository.importBackup(
+      original.encode(),
+      mode: BackupRestoreMode.replace,
+    );
+
+    final restored = await freshRepository.exportBackup(
+      profileId: profileId,
+      exportedAt: exportedAt,
+    );
+    expect(restored.encode(), original.encode());
+    expect((await fresh.select(fresh.appProfiles).getSingle()).heightCm, 178);
+    expect(
+      (await fresh.select(fresh.bodyMeasurements).getSingle()).deviceModel,
+      'RENPHO 8 electrodes',
+    );
+  });
+
   test('la sostituzione cancella i dati che il backup non contiene', () async {
     await _seed(database, profileId, moment);
     final document = await repository.exportBackup(
@@ -333,7 +374,7 @@ void main() {
       exportedAt: exportedAt,
     );
 
-    expect(document.formatVersion, 2);
+    expect(document.formatVersion, BackupDocument.currentFormatVersion);
     expect(document.exercises.map((row) => row.id), ['cd-childpose', 'ex-1']);
     expect(document.routines, hasLength(1));
     expect(document.routineExercises, hasLength(2));
@@ -518,6 +559,41 @@ void main() {
   });
 
   test(
+    'il formato 2 non può cancellare dati Coach360 che non contiene',
+    () async {
+      await _seed(database, profileId, moment);
+      final legacy = _copy(
+        await repository.exportBackup(
+          profileId: profileId,
+          exportedAt: exportedAt,
+        ),
+        formatVersion: 2,
+      );
+      await database
+          .into(database.dailyCheckIns)
+          .insert(
+            DailyCheckInsCompanion.insert(
+              id: 'checkin-da-proteggere',
+              profileId: profileId,
+              day: DateTime.utc(2026, 8, 3),
+              energyScore: const Value(4),
+              createdAt: moment,
+              updatedAt: moment,
+            ),
+          );
+
+      await expectLater(
+        repository.importBackup(
+          legacy.encode(),
+          mode: BackupRestoreMode.replace,
+        ),
+        throwsA(isA<BackupWouldLoseDataException>()),
+      );
+      expect(await database.select(database.dailyCheckIns).get(), hasLength(1));
+    },
+  );
+
+  test(
     'sostituendo con un backup del formato 2 le sessioni assenti spariscono',
     () async {
       await _seed(database, profileId, moment);
@@ -644,6 +720,15 @@ BackupDocument _copy(
       : const [],
   workoutProfileStats: keepWorkouts ? source.workoutProfileStats : const [],
   workoutAchievements: keepWorkouts ? source.workoutAchievements : const [],
+  weeklyPlans: source.weeklyPlans,
+  weeklyPlanSlots: source.weeklyPlanSlots,
+  dailyCheckIns: source.dailyCheckIns,
+  goals: source.goals,
+  bodyImpedanceReadings: source.bodyImpedanceReadings,
+  trainingProfiles: source.trainingProfiles,
+  trainingLimitations: source.trainingLimitations,
+  dailyHealthSummaries: source.dailyHealthSummaries,
+  coachFeedItems: source.coachFeedItems,
 );
 
 /// Il file com'era prima che il backup conoscesse gli allenamenti: versione 1
@@ -870,6 +955,161 @@ Future<void> _seed(
           proteinPer100g: 16.9,
           carbsPer100g: 66.3,
           fatPer100g: 6.9,
+        ),
+      );
+}
+
+Future<void> _seedCoach360(
+  AppDatabase database,
+  String profileId,
+  DateTime moment,
+) async {
+  await (database.update(
+    database.appProfiles,
+  )..where((row) => row.id.equals(profileId))).write(
+    AppProfilesCompanion(
+      heightCm: const Value(178),
+      birthDate: Value(DateTime.utc(1985, 4, 12)),
+      sex: const Value('M'),
+      updatedAt: Value(moment),
+    ),
+  );
+  await (database.update(
+    database.bodyMeasurements,
+  )..where((row) => row.id.equals('weight-1'))).write(
+    const BodyMeasurementsCompanion(
+      deviceModel: Value('RENPHO 8 electrodes'),
+      rawPayload: Value('a1b2c3'),
+    ),
+  );
+  await database
+      .into(database.bodyImpedanceReadings)
+      .insert(
+        BodyImpedanceReadingsCompanion.insert(
+          id: 'impedance-1',
+          measurementId: 'weight-1',
+          segment: 'whole',
+          ohm: 512,
+        ),
+      );
+  await database
+      .into(database.weeklyPlans)
+      .insert(
+        WeeklyPlansCompanion.insert(
+          id: 'generated-plan-1',
+          profileId: profileId,
+          startDate: DateTime.utc(2026, 8, 3),
+          days: 7,
+          mealsCsv: 'breakfast,lunch,dinner',
+          status: 'ready',
+          requestJson: '{}',
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.weeklyPlanSlots)
+      .insert(
+        WeeklyPlanSlotsCompanion.insert(
+          id: 'generated-slot-1',
+          planId: 'generated-plan-1',
+          date: DateTime.utc(2026, 8, 3),
+          meal: 'lunch',
+          recipeId: const Value('recipe-1'),
+          recipeNameSnapshot: 'Bowl di Marco',
+          servings: 1,
+        ),
+      );
+  await database
+      .into(database.dailyCheckIns)
+      .insert(
+        DailyCheckInsCompanion.insert(
+          id: 'checkin-1',
+          profileId: profileId,
+          day: DateTime.utc(2026, 8, 3),
+          sleepHours: const Value(7.5),
+          energyScore: const Value(4),
+          steps: const Value(9200),
+          walkMinutes: const Value(55),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.goals)
+      .insert(
+        GoalsCompanion.insert(
+          id: 'goal-1',
+          profileId: profileId,
+          targetWeightKg: 78,
+          targetLevel: 'defined',
+          paceKgPerWeek: 0.4,
+          startedAt: moment,
+          startWeightKg: 80.5,
+          startFatFreeMassKg: 61,
+          phase: const Value('approach'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.trainingProfiles)
+      .insert(
+        TrainingProfilesCompanion.insert(
+          profileId: profileId,
+          equipment: const Value(''),
+          sessionsPerWeek: const Value(4),
+          minutesPerSession: const Value(60),
+          preferredDays: const Value('lun,mar,gio,sab'),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.trainingLimitations)
+      .insert(
+        TrainingLimitationsCompanion.insert(
+          id: 'limitation-1',
+          profileId: profileId,
+          bodyPart: 'spalla_dx',
+          severity: 'fastidio',
+          startedAt: moment,
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.dailyHealthSummaries)
+      .insert(
+        DailyHealthSummariesCompanion.insert(
+          id: 'health-1',
+          profileId: profileId,
+          day: DateTime.utc(2026, 8, 3),
+          source: 'health_connect',
+          externalId: const Value('hc-2026-08-03'),
+          steps: const Value(9300),
+          sleepMinutes: const Value(450),
+          restingHeartRate: const Value(54),
+          createdAt: moment,
+          updatedAt: moment,
+        ),
+      );
+  await database
+      .into(database.coachFeedItems)
+      .insert(
+        CoachFeedItemsCompanion.insert(
+          id: 'feed-1',
+          profileId: profileId,
+          kind: 'weekly_review',
+          source: 'deterministic',
+          externalId: const Value('week-2026-31'),
+          title: 'Rapporto settimanale',
+          body: 'Quattro allenamenti completati.',
+          actionLabel: const Value('Apri il coach'),
+          actionPath: const Value('/coach'),
+          occurredAt: moment,
+          createdAt: moment,
+          updatedAt: moment,
         ),
       );
 }

@@ -8,6 +8,9 @@ import 'package:kal_tracker/core/notifications/water_reminder_providers.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/foods/presentation/food_catalog_providers.dart';
+import 'package:kal_tracker/features/health/data/health_package_data_gateway.dart';
+import 'package:kal_tracker/features/health/domain/health_data_gateway.dart';
+import 'package:kal_tracker/features/health/presentation/health_providers.dart';
 import 'package:kal_tracker/features/recipes/presentation/recipe_providers.dart';
 import 'package:kal_tracker/features/wellbeing/presentation/wellbeing_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,8 +27,12 @@ Future<void> main() async {
     );
   }
 
+  final healthGateway = await _createHealthGateway();
   final container = ProviderContainer(
-    overrides: [appConfigProvider.overrideWithValue(config)],
+    overrides: [
+      appConfigProvider.overrideWithValue(config),
+      healthDataGatewayProvider.overrideWithValue(healthGateway),
+    ],
   );
   // Importa il catalogo piatti senza bloccare l'avvio: se fallisce l'app
   // parte comunque e l'import si ritenta al lancio successivo.
@@ -43,6 +50,16 @@ Future<void> main() async {
       child: const KalTrackerApp(),
     ),
   );
+}
+
+Future<HealthDataGateway> _createHealthGateway() async {
+  try {
+    return await HealthPackageDataGateway.create();
+  } on Object {
+    return const UnavailableHealthDataGateway(
+      detail: 'I dati salute non sono disponibili su questa installazione.',
+    );
+  }
 }
 
 Future<void> _importRecipeCatalog(ProviderContainer container) async {

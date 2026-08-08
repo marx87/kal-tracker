@@ -8,7 +8,8 @@ class FakeWaterReminderGateway implements WaterReminderGateway {
   bool permissionGranted = true;
   int initializeCount = 0;
   int permissionRequests = 0;
-  int cancelAllCount = 0;
+  int cancelSlotsCount = 0;
+  final List<int> cancelledIds = [];
   final List<WaterReminderSlot> scheduled = [];
 
   @override
@@ -28,8 +29,9 @@ class FakeWaterReminderGateway implements WaterReminderGateway {
   }
 
   @override
-  Future<void> cancelAll() async {
-    cancelAllCount += 1;
+  Future<void> cancelSlots(Iterable<int> ids) async {
+    cancelSlotsCount += 1;
+    cancelledIds.addAll(ids);
     scheduled.clear();
   }
 }

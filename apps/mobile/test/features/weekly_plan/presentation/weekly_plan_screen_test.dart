@@ -55,6 +55,7 @@ class _FakeGateway implements WeeklyPlanGateway {
 }
 
 final _startDate = DateTime.utc(2026, 8, 5);
+const _useDefaultPlanWorkoutStarter = Object();
 
 /// Orologio del piano già pronto: il tentativo fallito che segue è più
 /// recente, così l'ordine dei piani nella lista è deciso, non casuale.
@@ -246,7 +247,7 @@ void main() {
       () => _planRoutineOn(database, seed.profileId, _startDate.weekday),
     );
 
-    await tester.pumpWidget(_app(database, gateway));
+    await tester.pumpWidget(_app(database, gateway, starter: null));
     await tester.pumpAndSettle();
     await _openPlanTab(tester);
 
@@ -794,15 +795,16 @@ String? _textOf(WidgetTester tester, Key key) =>
 Widget _app(
   AppDatabase database,
   WeeklyPlanGateway gateway, {
-  PlanWorkoutStarter? starter,
+  Object? starter = _useDefaultPlanWorkoutStarter,
 }) => ProviderScope(
   overrides: [
     databaseProvider.overrideWithValue(database),
     appConfigProvider.overrideWithValue(const AppConfig.offline()),
     weeklyPlanGatewayProvider.overrideWithValue(gateway),
-    // Senza override il piano non sa avviare una sessione: è il modulo
-    // Palestra a collegare questo provider.
-    if (starter != null) planWorkoutStarterProvider.overrideWithValue(starter),
+    if (!identical(starter, _useDefaultPlanWorkoutStarter))
+      planWorkoutStarterProvider.overrideWithValue(
+        starter as PlanWorkoutStarter?,
+      ),
   ],
   child: const KalTrackerApp(),
 );

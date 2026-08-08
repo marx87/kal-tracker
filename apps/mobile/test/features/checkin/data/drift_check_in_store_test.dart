@@ -61,6 +61,9 @@ void main() {
     final row = await database.select(database.dailyCheckIns).getSingle();
     expect(row.day.toUtc(), DateTime.utc(2026, 8, 6));
     expect(row.deletedAt, isNull);
+    final outbox = await database.select(database.syncOutbox).get();
+    expect(outbox, hasLength(3));
+    expect(outbox.every((row) => row.entityType == 'daily_check_in'), isTrue);
   });
 
   test('la giornata ferma si salva come zero, non come niente', () async {
@@ -135,6 +138,12 @@ void main() {
     expect(tombstone.deletedAt, isNotNull);
     expect(tombstone.sleepHours, isNull);
     expect((await storeWith().read()).entries, isEmpty);
+    expect(
+      (await database.select(database.syncOutbox).get()).any(
+        (row) => row.operation == 'delete',
+      ),
+      isTrue,
+    );
 
     // Ricompilare lo stesso giorno riprende la stessa riga invece di crearne
     // una seconda: l'id è derivato da profilo e giorno.

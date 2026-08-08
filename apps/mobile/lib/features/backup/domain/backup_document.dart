@@ -53,6 +53,15 @@ class BackupDocument {
     this.workoutIntervalSegments = const [],
     this.workoutProfileStats = const [],
     this.workoutAchievements = const [],
+    this.weeklyPlans = const [],
+    this.weeklyPlanSlots = const [],
+    this.dailyCheckIns = const [],
+    this.goals = const [],
+    this.bodyImpedanceReadings = const [],
+    this.trainingProfiles = const [],
+    this.trainingLimitations = const [],
+    this.dailyHealthSummaries = const [],
+    this.coachFeedItems = const [],
   });
 
   factory BackupDocument.decode(String raw) {
@@ -164,6 +173,41 @@ class BackupDocument {
         for (final row in _asRows(data, 'workout_achievements'))
           BackupWorkoutAchievement.fromJson(row),
       ],
+      weeklyPlans: [
+        for (final row in _asRows(data, 'weekly_plans'))
+          BackupWeeklyPlan.fromJson(row),
+      ],
+      weeklyPlanSlots: [
+        for (final row in _asRows(data, 'weekly_plan_slots'))
+          BackupWeeklyPlanSlot.fromJson(row),
+      ],
+      dailyCheckIns: [
+        for (final row in _asRows(data, 'daily_check_ins'))
+          BackupDailyCheckIn.fromJson(row),
+      ],
+      goals: [
+        for (final row in _asRows(data, 'goals')) BackupGoal.fromJson(row),
+      ],
+      bodyImpedanceReadings: [
+        for (final row in _asRows(data, 'body_impedance_readings'))
+          BackupBodyImpedanceReading.fromJson(row),
+      ],
+      trainingProfiles: [
+        for (final row in _asRows(data, 'training_profiles'))
+          BackupTrainingProfile.fromJson(row),
+      ],
+      trainingLimitations: [
+        for (final row in _asRows(data, 'training_limitations'))
+          BackupTrainingLimitation.fromJson(row),
+      ],
+      dailyHealthSummaries: [
+        for (final row in _asRows(data, 'daily_health_summaries'))
+          BackupDailyHealthSummary.fromJson(row),
+      ],
+      coachFeedItems: [
+        for (final row in _asRows(data, 'coach_feed_items'))
+          BackupCoachFeedItem.fromJson(row),
+      ],
     );
     if (_text(root, 'checksum', max: 128) != document.checksum) {
       throw const BackupFormatException(
@@ -179,17 +223,21 @@ class BackupDocument {
   ///   modelli.
   /// * **2** — aggiunge gli allenamenti (le tredici sezioni della v6 dello
   ///   schema) e la composizione corporea delle pesate.
+  /// * **3** — copre piano locale, check-in, obiettivi, impedenze grezze,
+  ///   profilo atleta, riepiloghi salute e feed del coach (schema Drift v11).
   ///
   /// Un file della versione 1 si legge ancora e si ripristina: le sezioni
   /// nuove restano vuote. Un file della versione 2 su una app vecchia viene
   /// rifiutato dal controllo qui sotto, che non è cambiato.
-  static const int currentFormatVersion = 2;
+  static const int currentFormatVersion = 3;
 
   /// Prima versione che contiene gli allenamenti. Serve a distinguere «il file
   /// non ha allenamenti perché non ne aveva» da «il file è di prima che
   /// esistessero»: solo il secondo caso non può essere usato per sostituire
   /// tutto senza perdere lo storico.
   static const int workoutsFormatVersion = 2;
+
+  static const int dataContractFormatVersion = 3;
 
   static const String unknownAppVersion = 'sconosciuta';
 
@@ -221,10 +269,21 @@ class BackupDocument {
   final List<BackupWorkoutIntervalSegment> workoutIntervalSegments;
   final List<BackupWorkoutProfileStats> workoutProfileStats;
   final List<BackupWorkoutAchievement> workoutAchievements;
+  final List<BackupWeeklyPlan> weeklyPlans;
+  final List<BackupWeeklyPlanSlot> weeklyPlanSlots;
+  final List<BackupDailyCheckIn> dailyCheckIns;
+  final List<BackupGoal> goals;
+  final List<BackupBodyImpedanceReading> bodyImpedanceReadings;
+  final List<BackupTrainingProfile> trainingProfiles;
+  final List<BackupTrainingLimitation> trainingLimitations;
+  final List<BackupDailyHealthSummary> dailyHealthSummaries;
+  final List<BackupCoachFeedItem> coachFeedItems;
 
   /// Vero quando il file è stato scritto quando gli allenamenti nel backup non
   /// esistevano ancora: le sezioni non sono vuote, sono assenti.
   bool get coversWorkouts => formatVersion >= workoutsFormatVersion;
+
+  bool get coversDataContract => formatVersion >= dataContractFormatVersion;
 
   int get rowCount =>
       1 +
@@ -251,7 +310,16 @@ class BackupDocument {
       workoutPainPoints.length +
       workoutIntervalSegments.length +
       workoutProfileStats.length +
-      workoutAchievements.length;
+      workoutAchievements.length +
+      weeklyPlans.length +
+      weeklyPlanSlots.length +
+      dailyCheckIns.length +
+      goals.length +
+      bodyImpedanceReadings.length +
+      trainingProfiles.length +
+      trainingLimitations.length +
+      dailyHealthSummaries.length +
+      coachFeedItems.length;
 
   String get checksum =>
       sha256.convert(utf8.encode(jsonEncode(_body()))).toString();
@@ -269,14 +337,17 @@ class BackupDocument {
   /// farebbe risultare «danneggiato» ogni backup fatto prima.
   Map<String, Object?> _body() {
     final data = <String, Object?>{
-      'profile': profile.toJson(),
+      'profile': profile.toJson(withDataContract: coversDataContract),
       'meals': [for (final row in meals) row.toJson()],
       'meal_items': [for (final row in mealItems) row.toJson()],
       'nutrition_targets': [for (final row in nutritionTargets) row.toJson()],
       'water_logs': [for (final row in waterLogs) row.toJson()],
       'body_measurements': [
         for (final row in bodyMeasurements)
-          row.toJson(withBodyComposition: coversWorkouts),
+          row.toJson(
+            withBodyComposition: coversWorkouts,
+            withDataContract: coversDataContract,
+          ),
       ],
       'foods': [for (final row in foods) row.toJson()],
       'food_preferences': [for (final row in foodPreferences) row.toJson()],
@@ -318,6 +389,25 @@ class BackupDocument {
         ],
       });
     }
+    if (coversDataContract) {
+      data.addAll({
+        'weekly_plans': [for (final row in weeklyPlans) row.toJson()],
+        'weekly_plan_slots': [for (final row in weeklyPlanSlots) row.toJson()],
+        'daily_check_ins': [for (final row in dailyCheckIns) row.toJson()],
+        'goals': [for (final row in goals) row.toJson()],
+        'body_impedance_readings': [
+          for (final row in bodyImpedanceReadings) row.toJson(),
+        ],
+        'training_profiles': [for (final row in trainingProfiles) row.toJson()],
+        'training_limitations': [
+          for (final row in trainingLimitations) row.toJson(),
+        ],
+        'daily_health_summaries': [
+          for (final row in dailyHealthSummaries) row.toJson(),
+        ],
+        'coach_feed_items': [for (final row in coachFeedItems) row.toJson()],
+      });
+    }
     return {
       'format_version': formatVersion,
       'app_version': appVersion,
@@ -333,6 +423,9 @@ class BackupProfile {
     required this.displayName,
     required this.createdAt,
     required this.updatedAt,
+    this.heightCm,
+    this.birthDate,
+    this.sex,
   });
 
   factory BackupProfile.fromJson(Map<String, Object?> json) => BackupProfile(
@@ -340,18 +433,29 @@ class BackupProfile {
     displayName: _text(json, 'display_name', max: 80),
     createdAt: _instant(json, 'created_at'),
     updatedAt: _instant(json, 'updated_at'),
+    heightCm: _optionalDecimal(json, 'height_cm', minimum: 50, maximum: 260),
+    birthDate: _optionalInstant(json, 'birth_date'),
+    sex: _optionalText(json, 'sex', max: 1),
   );
 
   final String id;
   final String displayName;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? heightCm;
+  final DateTime? birthDate;
+  final String? sex;
 
-  Map<String, Object?> toJson() => {
+  Map<String, Object?> toJson({bool withDataContract = true}) => {
     'id': id,
     'display_name': displayName,
     'created_at': _iso(createdAt),
     'updated_at': _iso(updatedAt),
+    if (withDataContract) ...{
+      'height_cm': heightCm,
+      'birth_date': _isoOrNull(birthDate),
+      'sex': sex,
+    },
   };
 }
 
@@ -587,6 +691,8 @@ class BackupBodyMeasurement {
     this.formulaVersion,
     this.source = 'manual',
     this.externalId,
+    this.deviceModel,
+    this.rawPayload,
     this.note,
     this.deletedAt,
   });
@@ -632,6 +738,8 @@ class BackupBodyMeasurement {
         formulaVersion: _optionalText(json, 'formula_version', max: 40),
         source: _textOr(json, 'source', fallback: 'manual', max: 30),
         externalId: _optionalText(json, 'external_id', max: 120),
+        deviceModel: _optionalText(json, 'device_model', max: 60),
+        rawPayload: _optionalText(json, 'raw_payload', max: 512),
         note: _optionalText(json, 'note', max: 240),
         createdAt: _instant(json, 'created_at'),
         updatedAt: _instant(json, 'updated_at'),
@@ -656,12 +764,17 @@ class BackupBodyMeasurement {
   final String? formulaVersion;
   final String source;
   final String? externalId;
+  final String? deviceModel;
+  final String? rawPayload;
   final String? note;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  Map<String, Object?> toJson({bool withBodyComposition = true}) => {
+  Map<String, Object?> toJson({
+    bool withBodyComposition = true,
+    bool withDataContract = true,
+  }) => {
     'id': id,
     'profile_id': profileId,
     'weight_kg': weightKg,
@@ -681,6 +794,10 @@ class BackupBodyMeasurement {
       'formula_version': formulaVersion,
       'source': source,
       'external_id': externalId,
+      if (withDataContract) ...{
+        'device_model': deviceModel,
+        'raw_payload': rawPayload,
+      },
     },
     'note': note,
     'created_at': _iso(createdAt),
@@ -1850,6 +1967,552 @@ class BackupWorkoutAchievement {
   };
 }
 
+class BackupWeeklyPlan {
+  const BackupWeeklyPlan({
+    required this.id,
+    required this.profileId,
+    required this.startDate,
+    required this.days,
+    required this.mealsCsv,
+    required this.status,
+    required this.requestJson,
+    required this.createdAt,
+    required this.updatedAt,
+    this.remoteJobId,
+    this.notes,
+    this.deletedAt,
+  });
+
+  factory BackupWeeklyPlan.fromJson(Map<String, Object?> json) =>
+      BackupWeeklyPlan(
+        id: _text(json, 'id', max: 64),
+        profileId: _text(json, 'profile_id', max: 64),
+        startDate: _instant(json, 'start_date'),
+        days: _integer(json, 'days', minimum: 1, maximum: 14),
+        mealsCsv: _text(json, 'meals_csv', max: 80),
+        status: _text(json, 'status', max: 16),
+        remoteJobId: _optionalText(json, 'remote_job_id', max: 64),
+        notes: _optionalText(json, 'notes', max: 400),
+        requestJson: _text(json, 'request_json', max: 1000000),
+        createdAt: _instant(json, 'created_at'),
+        updatedAt: _instant(json, 'updated_at'),
+        deletedAt: _optionalInstant(json, 'deleted_at'),
+      );
+
+  final String id;
+  final String profileId;
+  final DateTime startDate;
+  final int days;
+  final String mealsCsv;
+  final String status;
+  final String? remoteJobId;
+  final String? notes;
+  final String requestJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'start_date': _iso(startDate),
+    'days': days,
+    'meals_csv': mealsCsv,
+    'status': status,
+    'remote_job_id': remoteJobId,
+    'notes': notes,
+    'request_json': requestJson,
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
+class BackupWeeklyPlanSlot {
+  const BackupWeeklyPlanSlot({
+    required this.id,
+    required this.planId,
+    required this.date,
+    required this.meal,
+    required this.recipeNameSnapshot,
+    required this.servings,
+    this.recipeId,
+    this.why,
+    this.doneAt,
+    this.diaryEntryIds,
+  });
+
+  factory BackupWeeklyPlanSlot.fromJson(Map<String, Object?> json) =>
+      BackupWeeklyPlanSlot(
+        id: _text(json, 'id', max: 64),
+        planId: _text(json, 'plan_id', max: 64),
+        date: _instant(json, 'date'),
+        meal: _text(json, 'meal', max: 16),
+        recipeId: _optionalText(json, 'recipe_id', max: 64),
+        recipeNameSnapshot: _text(json, 'recipe_name_snapshot', max: 160),
+        servings: _decimal(json, 'servings', strictMinimum: true),
+        why: _optionalText(json, 'why', max: 200),
+        doneAt: _optionalInstant(json, 'done_at'),
+        diaryEntryIds: _optionalText(json, 'diary_entry_ids', max: 400),
+      );
+
+  final String id;
+  final String planId;
+  final DateTime date;
+  final String meal;
+  final String? recipeId;
+  final String recipeNameSnapshot;
+  final double servings;
+  final String? why;
+  final DateTime? doneAt;
+  final String? diaryEntryIds;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'plan_id': planId,
+    'date': _iso(date),
+    'meal': meal,
+    'recipe_id': recipeId,
+    'recipe_name_snapshot': recipeNameSnapshot,
+    'servings': servings,
+    'why': why,
+    'done_at': _isoOrNull(doneAt),
+    'diary_entry_ids': diaryEntryIds,
+  };
+}
+
+class BackupDailyCheckIn {
+  const BackupDailyCheckIn({
+    required this.id,
+    required this.profileId,
+    required this.day,
+    required this.createdAt,
+    required this.updatedAt,
+    this.sleepHours,
+    this.energyScore,
+    this.steps,
+    this.walkMinutes,
+    this.deletedAt,
+  });
+
+  factory BackupDailyCheckIn.fromJson(
+    Map<String, Object?> json,
+  ) => BackupDailyCheckIn(
+    id: _text(json, 'id', max: 64),
+    profileId: _text(json, 'profile_id', max: 64),
+    day: _instant(json, 'day'),
+    sleepHours: _optionalDecimal(json, 'sleep_hours', minimum: 0, maximum: 16),
+    energyScore: _optionalInteger(json, 'energy_score', minimum: 1, maximum: 5),
+    steps: _optionalInteger(json, 'steps', maximum: 200000),
+    walkMinutes: _optionalInteger(json, 'walk_minutes', maximum: 1440),
+    createdAt: _instant(json, 'created_at'),
+    updatedAt: _instant(json, 'updated_at'),
+    deletedAt: _optionalInstant(json, 'deleted_at'),
+  );
+
+  final String id;
+  final String profileId;
+  final DateTime day;
+  final double? sleepHours;
+  final int? energyScore;
+  final int? steps;
+  final int? walkMinutes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'day': _iso(day),
+    'sleep_hours': sleepHours,
+    'energy_score': energyScore,
+    'steps': steps,
+    'walk_minutes': walkMinutes,
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
+class BackupGoal {
+  const BackupGoal({
+    required this.id,
+    required this.profileId,
+    required this.targetWeightKg,
+    required this.targetLevel,
+    required this.paceKgPerWeek,
+    required this.startedAt,
+    required this.startWeightKg,
+    required this.startFatFreeMassKg,
+    required this.phase,
+    required this.createdAt,
+    required this.updatedAt,
+    this.phaseStartedAt,
+    this.closedAt,
+    this.outcome,
+    this.deletedAt,
+  });
+
+  factory BackupGoal.fromJson(Map<String, Object?> json) => BackupGoal(
+    id: _text(json, 'id', max: 64),
+    profileId: _text(json, 'profile_id', max: 64),
+    targetWeightKg: _decimal(
+      json,
+      'target_weight_kg',
+      minimum: 20,
+      maximum: 500,
+    ),
+    targetLevel: _text(json, 'target_level', max: 20),
+    paceKgPerWeek: _decimal(
+      json,
+      'pace_kg_per_week',
+      strictMinimum: true,
+      maximum: 5,
+    ),
+    startedAt: _instant(json, 'started_at'),
+    startWeightKg: _decimal(json, 'start_weight_kg', minimum: 20, maximum: 500),
+    startFatFreeMassKg: _decimal(
+      json,
+      'start_fat_free_mass_kg',
+      strictMinimum: true,
+      maximum: 500,
+    ),
+    phase: _text(json, 'phase', max: 20),
+    phaseStartedAt: _optionalInstant(json, 'phase_started_at'),
+    closedAt: _optionalInstant(json, 'closed_at'),
+    outcome: _optionalText(json, 'outcome', max: 20),
+    createdAt: _instant(json, 'created_at'),
+    updatedAt: _instant(json, 'updated_at'),
+    deletedAt: _optionalInstant(json, 'deleted_at'),
+  );
+
+  final String id;
+  final String profileId;
+  final double targetWeightKg;
+  final String targetLevel;
+  final double paceKgPerWeek;
+  final DateTime startedAt;
+  final double startWeightKg;
+  final double startFatFreeMassKg;
+  final String phase;
+  final DateTime? phaseStartedAt;
+  final DateTime? closedAt;
+  final String? outcome;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'target_weight_kg': targetWeightKg,
+    'target_level': targetLevel,
+    'pace_kg_per_week': paceKgPerWeek,
+    'started_at': _iso(startedAt),
+    'start_weight_kg': startWeightKg,
+    'start_fat_free_mass_kg': startFatFreeMassKg,
+    'phase': phase,
+    'phase_started_at': _isoOrNull(phaseStartedAt),
+    'closed_at': _isoOrNull(closedAt),
+    'outcome': outcome,
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
+class BackupBodyImpedanceReading {
+  const BackupBodyImpedanceReading({
+    required this.id,
+    required this.measurementId,
+    required this.segment,
+    required this.ohm,
+    this.frequencyHz,
+  });
+
+  factory BackupBodyImpedanceReading.fromJson(Map<String, Object?> json) =>
+      BackupBodyImpedanceReading(
+        id: _text(json, 'id', max: 64),
+        measurementId: _text(json, 'measurement_id', max: 64),
+        segment: _text(json, 'segment', max: 16),
+        frequencyHz: _optionalInteger(
+          json,
+          'frequency_hz',
+          minimum: 1,
+          maximum: 10000000,
+        ),
+        ohm: _decimal(json, 'ohm', strictMinimum: true, maximum: 5000),
+      );
+
+  final String id;
+  final String measurementId;
+  final String segment;
+  final int? frequencyHz;
+  final double ohm;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'measurement_id': measurementId,
+    'segment': segment,
+    'frequency_hz': frequencyHz,
+    'ohm': ohm,
+  };
+}
+
+class BackupTrainingProfile {
+  const BackupTrainingProfile({
+    required this.profileId,
+    required this.equipment,
+    required this.preferredDays,
+    required this.deloadPreference,
+    required this.createdAt,
+    required this.updatedAt,
+    this.sessionsPerWeek,
+    this.minutesPerSession,
+  });
+
+  factory BackupTrainingProfile.fromJson(Map<String, Object?> json) =>
+      BackupTrainingProfile(
+        profileId: _text(json, 'profile_id', max: 64),
+        equipment: _possiblyEmptyTextOr(
+          json,
+          'equipment',
+          fallback: '',
+          max: 400,
+        ),
+        sessionsPerWeek: _optionalInteger(
+          json,
+          'sessions_per_week',
+          minimum: 1,
+          maximum: 14,
+        ),
+        minutesPerSession: _optionalInteger(
+          json,
+          'minutes_per_session',
+          minimum: 10,
+          maximum: 300,
+        ),
+        preferredDays: _possiblyEmptyTextOr(
+          json,
+          'preferred_days',
+          fallback: '',
+          max: 60,
+        ),
+        deloadPreference: _text(json, 'deload_preference', max: 16),
+        createdAt: _instant(json, 'created_at'),
+        updatedAt: _instant(json, 'updated_at'),
+      );
+
+  final String profileId;
+  final String equipment;
+  final int? sessionsPerWeek;
+  final int? minutesPerSession;
+  final String preferredDays;
+  final String deloadPreference;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Map<String, Object?> toJson() => {
+    'profile_id': profileId,
+    'equipment': equipment,
+    'sessions_per_week': sessionsPerWeek,
+    'minutes_per_session': minutesPerSession,
+    'preferred_days': preferredDays,
+    'deload_preference': deloadPreference,
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+  };
+}
+
+class BackupTrainingLimitation {
+  const BackupTrainingLimitation({
+    required this.id,
+    required this.profileId,
+    required this.bodyPart,
+    required this.severity,
+    required this.startedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.note,
+    this.resolvedAt,
+    this.deletedAt,
+  });
+
+  factory BackupTrainingLimitation.fromJson(Map<String, Object?> json) =>
+      BackupTrainingLimitation(
+        id: _text(json, 'id', max: 64),
+        profileId: _text(json, 'profile_id', max: 64),
+        bodyPart: _text(json, 'body_part', max: 24),
+        severity: _text(json, 'severity', max: 12),
+        note: _optionalText(json, 'note', max: 300),
+        startedAt: _instant(json, 'started_at'),
+        resolvedAt: _optionalInstant(json, 'resolved_at'),
+        createdAt: _instant(json, 'created_at'),
+        updatedAt: _instant(json, 'updated_at'),
+        deletedAt: _optionalInstant(json, 'deleted_at'),
+      );
+
+  final String id;
+  final String profileId;
+  final String bodyPart;
+  final String severity;
+  final String? note;
+  final DateTime startedAt;
+  final DateTime? resolvedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'body_part': bodyPart,
+    'severity': severity,
+    'note': note,
+    'started_at': _iso(startedAt),
+    'resolved_at': _isoOrNull(resolvedAt),
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
+class BackupDailyHealthSummary {
+  const BackupDailyHealthSummary({
+    required this.id,
+    required this.profileId,
+    required this.day,
+    required this.source,
+    required this.createdAt,
+    required this.updatedAt,
+    this.externalId,
+    this.steps,
+    this.sleepMinutes,
+    this.restingHeartRate,
+    this.deletedAt,
+  });
+
+  factory BackupDailyHealthSummary.fromJson(Map<String, Object?> json) =>
+      BackupDailyHealthSummary(
+        id: _text(json, 'id', max: 64),
+        profileId: _text(json, 'profile_id', max: 64),
+        day: _instant(json, 'day'),
+        source: _text(json, 'source', max: 40),
+        externalId: _optionalText(json, 'external_id', max: 120),
+        steps: _optionalInteger(json, 'steps', maximum: 200000),
+        sleepMinutes: _optionalInteger(json, 'sleep_minutes', maximum: 1440),
+        restingHeartRate: _optionalInteger(
+          json,
+          'resting_heart_rate',
+          minimum: 20,
+          maximum: 250,
+        ),
+        createdAt: _instant(json, 'created_at'),
+        updatedAt: _instant(json, 'updated_at'),
+        deletedAt: _optionalInstant(json, 'deleted_at'),
+      );
+
+  final String id;
+  final String profileId;
+  final DateTime day;
+  final String source;
+  final String? externalId;
+  final int? steps;
+  final int? sleepMinutes;
+  final int? restingHeartRate;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'day': _iso(day),
+    'source': source,
+    'external_id': externalId,
+    'steps': steps,
+    'sleep_minutes': sleepMinutes,
+    'resting_heart_rate': restingHeartRate,
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
+class BackupCoachFeedItem {
+  const BackupCoachFeedItem({
+    required this.id,
+    required this.profileId,
+    required this.kind,
+    required this.source,
+    required this.title,
+    required this.body,
+    required this.occurredAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.externalId,
+    this.actionLabel,
+    this.actionPath,
+    this.readAt,
+    this.dismissedAt,
+    this.deletedAt,
+  });
+
+  factory BackupCoachFeedItem.fromJson(Map<String, Object?> json) =>
+      BackupCoachFeedItem(
+        id: _text(json, 'id', max: 64),
+        profileId: _text(json, 'profile_id', max: 64),
+        kind: _text(json, 'kind', max: 40),
+        source: _text(json, 'source', max: 20),
+        externalId: _optionalText(json, 'external_id', max: 120),
+        title: _text(json, 'title', max: 120),
+        body: _text(json, 'body', max: 1200),
+        actionLabel: _optionalText(json, 'action_label', max: 60),
+        actionPath: _optionalText(json, 'action_path', max: 200),
+        occurredAt: _instant(json, 'occurred_at'),
+        readAt: _optionalInstant(json, 'read_at'),
+        dismissedAt: _optionalInstant(json, 'dismissed_at'),
+        createdAt: _instant(json, 'created_at'),
+        updatedAt: _instant(json, 'updated_at'),
+        deletedAt: _optionalInstant(json, 'deleted_at'),
+      );
+
+  final String id;
+  final String profileId;
+  final String kind;
+  final String source;
+  final String? externalId;
+  final String title;
+  final String body;
+  final String? actionLabel;
+  final String? actionPath;
+  final DateTime occurredAt;
+  final DateTime? readAt;
+  final DateTime? dismissedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'profile_id': profileId,
+    'kind': kind,
+    'source': source,
+    'external_id': externalId,
+    'title': title,
+    'body': body,
+    'action_label': actionLabel,
+    'action_path': actionPath,
+    'occurred_at': _iso(occurredAt),
+    'read_at': _isoOrNull(readAt),
+    'dismissed_at': _isoOrNull(dismissedAt),
+    'created_at': _iso(createdAt),
+    'updated_at': _iso(updatedAt),
+    'deleted_at': _isoOrNull(deletedAt),
+  };
+}
+
 Object? _decodeJson(String raw) {
   try {
     return jsonDecode(raw);
@@ -2004,6 +2667,28 @@ String _textOr(
   required String fallback,
   required int max,
 }) => json[key] == null ? fallback : _text(json, key, max: max);
+
+/// Come [_textOr], ma conserva la stringa vuota. Alcune colonne CSV (per
+/// esempio attrezzatura e giorni preferiti) usano proprio `''` per dire
+/// "nessuna scelta" e non sono campi obbligatori.
+String _possiblyEmptyTextOr(
+  Map<String, Object?> json,
+  String key, {
+  required String fallback,
+  required int max,
+}) {
+  final value = json[key];
+  if (value == null) {
+    return fallback;
+  }
+  if (value is! String) {
+    throw BackupFormatException('Il campo «$key» del backup non è valido.');
+  }
+  if (value.length > max) {
+    throw BackupFormatException('Il campo «$key» del backup è troppo lungo.');
+  }
+  return value;
+}
 
 DateTime _instant(Map<String, Object?> json, String key) {
   final value = json[key];

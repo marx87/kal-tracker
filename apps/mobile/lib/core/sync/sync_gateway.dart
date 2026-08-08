@@ -213,6 +213,8 @@ abstract final class SyncPushMapper {
 
   static MappedMutation map(SyncMutation mutation) {
     switch (mutation.entityType) {
+      case 'profile':
+        return _profile(mutation);
       case 'meal_item':
         return _mealItem(mutation);
       case 'nutrition_target':
@@ -221,6 +223,18 @@ abstract final class SyncPushMapper {
         return _waterLog(mutation);
       case 'body_measurement':
         return _bodyMeasurement(mutation);
+      case 'daily_check_in':
+        return _dailyCheckIn(mutation);
+      case 'goal':
+        return _goal(mutation);
+      case 'training_profile':
+        return _trainingProfile(mutation);
+      case 'training_limitation':
+        return _trainingLimitation(mutation);
+      case 'daily_health_summary':
+        return _dailyHealthSummary(mutation);
+      case 'coach_feed_item':
+        return _coachFeedItem(mutation);
       case 'food':
         return _food(mutation);
       case 'food_preference':
@@ -254,6 +268,42 @@ abstract final class SyncPushMapper {
           retryable: true,
         );
     }
+  }
+
+  static MappedMutation _profile(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['id']) ?? mutation.entityId;
+    final id = SyncIds.remoteId(profileLocalId);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('profiles', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('profiles', [
+          {
+            'id': id,
+            'display_name': _text(p['display_name'], max: 80) ?? 'Marco',
+            'time_zone': timeZone,
+            'locale': 'it_IT',
+            'height_cm': _boundedDouble(p['height_cm'], 50, 260),
+            'birth_date': _calendarDate(p['birth_date']),
+            'sex': _optionalEnum(p['sex'], const {'M', 'F'}),
+            'updated_at': _string(p['updated_at']) ?? _nowIso(),
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
   }
 
   static MappedMutation _mealItem(SyncMutation mutation) {
@@ -410,6 +460,7 @@ abstract final class SyncPushMapper {
     }
     final updatedAt = _string(p['updated_at']) ?? _nowIso();
     final values = _children(p['values']);
+    final impedanceReadings = _children(p['impedance_readings']);
     return MappedMutation(
       ops: [
         RemoteUpsert('body_measurements', [
@@ -418,6 +469,26 @@ abstract final class SyncPushMapper {
             'profile_id': SyncIds.remoteId(_string(p['profile_id']) ?? ''),
             'weight_kg': _double(p['weight_kg']).clamp(20, 500),
             'measured_at': _string(p['measured_at']) ?? updatedAt,
+            'has_impedance': p['has_impedance'] == true,
+            'impedance_ohm': _boundedDouble(p['impedance_ohm'], 0.01, 2000),
+            'body_fat_pct': _boundedDouble(p['body_fat_pct'], 0, 100),
+            'muscle_pct': _boundedDouble(p['muscle_pct'], 0, 100),
+            'skeletal_muscle_pct': _boundedDouble(
+              p['skeletal_muscle_pct'],
+              0,
+              100,
+            ),
+            'bone_pct': _boundedDouble(p['bone_pct'], 0, 100),
+            'protein_pct': _boundedDouble(p['protein_pct'], 0, 100),
+            'water_pct': _boundedDouble(p['water_pct'], 0, 100),
+            'subcutaneous_fat_pct': _boundedDouble(
+              p['subcutaneous_fat_pct'],
+              0,
+              100,
+            ),
+            'visceral_fat_index': _bounded(p['visceral_fat_index'], 1, 60),
+            'bmr_kcal': _bounded(p['bmr_kcal'], 1, 9999),
+            'formula_version': _text(p['formula_version'], max: 40),
             'note': _text(p['note'], max: 240),
             // La sorgente NON si forza: è metà della unique
             // (owner, source, external_id) che deduplica le importazioni.
@@ -425,6 +496,8 @@ abstract final class SyncPushMapper {
             // reimportabile all'infinito.
             'source': _enum(p['source'], _measurementSources, 'kal_tracker'),
             'external_id': _text(p['external_id'], max: 120),
+            'device_model': _text(p['device_model'], max: 60),
+            'raw_payload': _text(p['raw_payload'], max: 512),
             'updated_at': updatedAt,
             'deleted_at': _string(p['deleted_at']),
             'last_mutation_id': mutation.mutationId,
@@ -462,8 +535,297 @@ abstract final class SyncPushMapper {
             ),
             tombstoneAt: updatedAt,
           ),
+        if (p.containsKey('impedance_readings'))
+          RemoteChildrenSwap(
+            table: 'body_impedance_readings',
+            parentColumn: 'measurement_id',
+            parentId: id,
+            rows: [
+              for (final (index, reading) in impedanceReadings.indexed)
+                {
+                  'id': _childId(
+                    reading['id'],
+                    mutation.mutationId,
+                    'impedance',
+                    index,
+                  ),
+                  'measurement_id': id,
+                  'segment': _enum(
+                    reading['segment'],
+                    _impedanceSegments,
+                    'whole',
+                  ),
+                  'frequency_hz': _bounded(
+                    reading['frequency_hz'],
+                    1,
+                    10000000,
+                  ),
+                  'ohm': _boundedDouble(reading['ohm'], 0.01, 5000) ?? 1,
+                  'deleted_at': null,
+                  'last_mutation_id': SyncIds.derived(
+                    mutation.mutationId,
+                    'impedance:$index',
+                  ),
+                },
+            ],
+            tombstoneMutationIdFor: (remoteRowId) => SyncIds.derived(
+              mutation.mutationId,
+              'impedance-tomb:$remoteRowId',
+            ),
+            tombstoneAt: updatedAt,
+          ),
       ],
       profileLocalId: _string(p['profile_id']),
+    );
+  }
+
+  static MappedMutation _dailyCheckIn(SyncMutation mutation) {
+    final p = mutation.payload;
+    final id = SyncIds.remoteId(mutation.entityId);
+    final profileLocalId = _string(p['profile_id']);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('daily_check_ins', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('daily_check_ins', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId ?? ''),
+            'day': _calendarDate(p['day']) ?? _calendarDate(updatedAt),
+            'sleep_hours': _boundedDouble(p['sleep_hours'], 0, 16),
+            'energy_score': _bounded(p['energy_score'], 1, 5),
+            'steps': _bounded(p['steps'], 0, 200000),
+            'walk_minutes': _bounded(p['walk_minutes'], 0, 1440),
+            'updated_at': updatedAt,
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
+  }
+
+  static MappedMutation _goal(SyncMutation mutation) {
+    final p = mutation.payload;
+    final id = SyncIds.remoteId(mutation.entityId);
+    final profileLocalId = _string(p['profile_id']);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('goals', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('goals', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId ?? ''),
+            'target_weight_kg':
+                _boundedDouble(p['target_weight_kg'], 20, 500) ?? 20,
+            'target_level': _enum(p['target_level'], _goalLevels, 'normal'),
+            'pace_kg_per_week':
+                _boundedDouble(p['pace_kg_per_week'], 0.01, 5) ?? 0.01,
+            'started_at': _string(p['started_at']) ?? updatedAt,
+            'start_weight_kg':
+                _boundedDouble(p['start_weight_kg'], 20, 500) ?? 20,
+            'start_fat_free_mass_kg':
+                _boundedDouble(p['start_fat_free_mass_kg'], 0.01, 500) ?? 0.01,
+            'phase': _enum(p['phase'], _goalPhases, 'approach'),
+            'phase_started_at': _string(p['phase_started_at']),
+            'closed_at': _string(p['closed_at']),
+            'outcome': _optionalEnum(p['outcome'], _goalOutcomes),
+            'updated_at': updatedAt,
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
+  }
+
+  static MappedMutation _trainingProfile(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['profile_id']) ?? mutation.entityId;
+    final id = SyncIds.remoteId(mutation.entityId);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('training_profiles', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('training_profiles', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId),
+            'equipment': _text(p['equipment'], max: 400) ?? '',
+            'sessions_per_week': _bounded(p['sessions_per_week'], 1, 14),
+            'minutes_per_session': _bounded(p['minutes_per_session'], 10, 300),
+            'preferred_days': _text(p['preferred_days'], max: 60) ?? '',
+            'deload_preference': _enum(p['deload_preference'], const {
+              'automatico',
+              'suggerito',
+            }, 'suggerito'),
+            'created_at': _string(p['created_at']) ?? _nowIso(),
+            'updated_at': _string(p['updated_at']) ?? _nowIso(),
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
+  }
+
+  static MappedMutation _trainingLimitation(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['profile_id']);
+    final id = SyncIds.remoteId(mutation.entityId);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('training_limitations', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('training_limitations', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId ?? ''),
+            'body_part': _enum(p['body_part'], _limitationBodyParts, 'lombari'),
+            'severity': _enum(p['severity'], const {
+              'fastidio',
+              'dolore',
+              'stop',
+            }, 'fastidio'),
+            'note': _text(p['note'], max: 300),
+            'started_at': _string(p['started_at']) ?? updatedAt,
+            'resolved_at': _string(p['resolved_at']),
+            'created_at': _string(p['created_at']) ?? updatedAt,
+            'updated_at': updatedAt,
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
+  }
+
+  static MappedMutation _dailyHealthSummary(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['profile_id']);
+    final id = SyncIds.remoteId(mutation.entityId);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('daily_health_summaries', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('daily_health_summaries', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId ?? ''),
+            'day': _calendarDate(p['day']) ?? _calendarDate(updatedAt),
+            'source': _text(p['source'], max: 40) ?? 'unknown',
+            'external_id': _text(p['external_id'], max: 120),
+            'steps': _bounded(p['steps'], 0, 200000),
+            'sleep_minutes': _bounded(p['sleep_minutes'], 0, 1440),
+            'resting_heart_rate': _bounded(p['resting_heart_rate'], 20, 250),
+            'created_at': _string(p['created_at']) ?? updatedAt,
+            'updated_at': updatedAt,
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
+    );
+  }
+
+  static MappedMutation _coachFeedItem(SyncMutation mutation) {
+    final p = mutation.payload;
+    final profileLocalId = _string(p['profile_id']);
+    final id = SyncIds.remoteId(mutation.entityId);
+    if (mutation.operation == 'delete') {
+      return MappedMutation(
+        ops: [
+          RemotePatch('coach_feed_items', id, {
+            'deleted_at': _string(p['deleted_at']) ?? _nowIso(),
+            'last_mutation_id': mutation.mutationId,
+          }),
+        ],
+        profileLocalId: profileLocalId,
+      );
+    }
+    final updatedAt = _string(p['updated_at']) ?? _nowIso();
+    return MappedMutation(
+      ops: [
+        RemoteUpsert('coach_feed_items', [
+          {
+            'id': id,
+            'profile_id': SyncIds.remoteId(profileLocalId ?? ''),
+            'kind': _text(p['kind'], max: 40) ?? 'notice',
+            'source': _enum(p['source'], const {
+              'deterministic',
+              'ai',
+            }, 'deterministic'),
+            'external_id': _text(p['external_id'], max: 120),
+            'title': _text(p['title'], max: 120) ?? 'Coach',
+            'body': _text(p['body'], max: 1200) ?? 'Aggiornamento disponibile.',
+            'action_label': _text(p['action_label'], max: 60),
+            'action_path': _text(p['action_path'], max: 200),
+            'occurred_at': _string(p['occurred_at']) ?? updatedAt,
+            'read_at': _string(p['read_at']),
+            'dismissed_at': _string(p['dismissed_at']),
+            'created_at': _string(p['created_at']) ?? updatedAt,
+            'updated_at': updatedAt,
+            'deleted_at': _string(p['deleted_at']),
+            'last_mutation_id': mutation.mutationId,
+          },
+        ]),
+      ],
+      profileLocalId: profileLocalId,
     );
   }
 
@@ -1442,6 +1804,46 @@ abstract final class SyncPushMapper {
   };
 
   static const _healthSyncStates = {'writing', 'synced', 'uncertain'};
+
+  static const _impedanceSegments = {
+    'whole',
+    'leftArm',
+    'rightArm',
+    'leftLeg',
+    'rightLeg',
+    'trunk',
+  };
+
+  static const _goalLevels = {
+    'soft',
+    'normal',
+    'lean',
+    'athletic',
+    'defined',
+    'veryDefined',
+  };
+
+  static const _goalPhases = {'approach', 'consolidation', 'maintenance'};
+
+  static const _goalOutcomes = {'reached', 'replaced', 'abandoned'};
+
+  static const _limitationBodyParts = {
+    'spalla_dx',
+    'spalla_sx',
+    'gomito_dx',
+    'gomito_sx',
+    'polso_dx',
+    'polso_sx',
+    'collo',
+    'costole',
+    'lombari',
+    'anca_dx',
+    'anca_sx',
+    'ginocchio_dx',
+    'ginocchio_sx',
+    'caviglia_dx',
+    'caviglia_sx',
+  };
 
   static String _mealType(String? value) =>
       _mealTypes.contains(value) ? value! : 'other';

@@ -8,6 +8,7 @@ import 'package:kal_tracker/features/goal/domain/definition_level.dart';
 import 'package:kal_tracker/features/goal/domain/goal.dart';
 import 'package:kal_tracker/features/profile/data/local_profile_repository.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 /// Persistenza dell'Obiettivo.
 ///
@@ -97,9 +98,26 @@ class DriftGoalStore implements GoalStore {
           if (row.startedAt.toUtc().isBefore(floor)) {
             continue;
           }
-          await (_database.update(_database.goals)
-                ..where((table) => table.id.equals(row.id)))
-              .write(GoalsCompanion(deletedAt: Value(_now())));
+          final deletedAt = _now();
+          await (_database.update(
+            _database.goals,
+          )..where((table) => table.id.equals(row.id))).write(
+            GoalsCompanion(
+              updatedAt: Value(deletedAt),
+              deletedAt: Value(deletedAt),
+            ),
+          );
+          await _appendOutbox(
+            entityId: row.id,
+            operation: 'delete',
+            payload: {
+              'id': row.id,
+              'profile_id': profileId,
+              'deleted_at': deletedAt.toIso8601String(),
+              'updated_at': deletedAt.toIso8601String(),
+            },
+            now: deletedAt,
+          );
         }
 
         for (final goal in goals) {
@@ -200,7 +218,47 @@ class DriftGoalStore implements GoalStore {
             ),
           ),
         );
+    await _appendOutbox(
+      entityId: goal.id,
+      operation: 'upsert',
+      payload: {
+        'id': goal.id,
+        'profile_id': profileId,
+        'target_weight_kg': goal.targetWeightKg,
+        'target_level': goal.targetLevel.name,
+        'pace_kg_per_week': goal.paceKgPerWeek,
+        'started_at': goal.startedAt.toUtc().toIso8601String(),
+        'start_weight_kg': goal.startWeightKg,
+        'start_fat_free_mass_kg': goal.startFatFreeMassKg,
+        'phase': goal.phase.name,
+        'phase_started_at': goal.phaseStartedAt?.toUtc().toIso8601String(),
+        'closed_at': goal.closedAt?.toUtc().toIso8601String(),
+        'outcome': goal.outcome?.name,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+        'deleted_at': null,
+      },
+      now: now,
+    );
   }
+
+  Future<void> _appendOutbox({
+    required String entityId,
+    required String operation,
+    required Map<String, Object?> payload,
+    required DateTime now,
+  }) => _database
+      .into(_database.syncOutbox)
+      .insert(
+        SyncOutboxCompanion.insert(
+          id: const Uuid().v4(),
+          entityType: 'goal',
+          entityId: entityId,
+          operation: operation,
+          payloadJson: jsonEncode(payload),
+          createdAt: now,
+        ),
+      );
 
   /// Porta dentro il file JSON delle versioni precedenti e poi lo archivia.
   ///
@@ -222,27 +280,18 @@ class DriftGoalStore implements GoalStore {
         ...history.past,
       ].where(_isPersistable).toList(growable: false);
       if (goals.isNotEmpty) {
-        final now = _now();
-        await _database.batch((batch) {
-          batch.insertAll(_database.goals, [
-            for (final goal in goals)
-              GoalsCompanion.insert(
-                id: goal.id,
-                profileId: profileId,
-                targetWeightKg: goal.targetWeightKg,
-                targetLevel: goal.targetLevel.name,
-                paceKgPerWeek: goal.paceKgPerWeek,
-                startedAt: goal.startedAt.toUtc(),
-                startWeightKg: goal.startWeightKg,
-                startFatFreeMassKg: goal.startFatFreeMassKg,
-                createdAt: now,
-                updatedAt: now,
-                phase: Value(goal.phase.name),
-                phaseStartedAt: Value(goal.phaseStartedAt?.toUtc()),
-                closedAt: Value(goal.closedAt?.toUtc()),
-                outcome: Value(goal.outcome?.name),
-              ),
-          ], mode: InsertMode.insertOrIgnore);
+        await _database.transaction(() async {
+          for (final goal in goals) {
+            final existing = await (_database.select(
+              _database.goals,
+            )..where((row) => row.id.equals(goal.id))).getSingleOrNull();
+            if (existing != null) {
+              continue;
+            }
+            // Il JSON legacy entra in Drift una volta sola, ma da qui deve
+            // viaggiare come ogni obiettivo creato nella UI.
+            await _upsert(profileId: profileId, goal: goal);
+          }
         });
       }
       await _legacy.archive();

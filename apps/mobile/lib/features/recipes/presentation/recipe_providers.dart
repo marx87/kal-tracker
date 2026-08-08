@@ -91,7 +91,7 @@ final recipeTagCloudProvider = Provider<List<String>>((ref) {
 
 final remainingMacrosProvider = Provider<RemainingMacros>((ref) {
   final target =
-      ref.watch(nutritionTargetProvider).valueOrNull ??
+      ref.watch(effectiveNutritionTargetProvider).valueOrNull ??
       const NutritionTarget.standard();
   final eaten = ref.watch(todayDiaryProvider).valueOrNull?.totals;
   return RemainingMacros.between(

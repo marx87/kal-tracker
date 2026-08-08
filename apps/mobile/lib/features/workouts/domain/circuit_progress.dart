@@ -27,6 +27,9 @@ class CircuitCompletionTracker {
     _keys.add('$round:$stepIndex');
   }
 
+  bool isCompleted({required int round, required int stepIndex}) =>
+      round >= 1 && stepIndex >= 0 && _keys.contains('$round:$stepIndex');
+
   int completedRoundsForStep(int stepIndex) {
     if (stepIndex < 0) return 0;
     return _keys.where((key) {
@@ -34,6 +37,24 @@ class CircuitCompletionTracker {
       if (separator <= 0 || separator == key.length - 1) return false;
       return int.tryParse(key.substring(separator + 1)) == stepIndex;
     }).length;
+  }
+
+  /// I round esatti completati per una stazione, in ordine crescente.
+  ///
+  /// Il solo conteggio non basta quando si riprende dopo un'uscita: se è
+  /// stata saltata la cella del round 1 ma completata quella del round 2, va
+  /// spuntata la seconda serie e non inventata la prima.
+  List<int> completedRoundIndicesForStep(int stepIndex) {
+    if (stepIndex < 0) return const [];
+    final rounds = <int>[];
+    for (final key in _keys) {
+      final parts = key.split(':');
+      if (parts.length != 2 || int.tryParse(parts[1]) != stepIndex) continue;
+      final round = int.tryParse(parts[0]);
+      if (round != null && round >= 1) rounds.add(round);
+    }
+    rounds.sort();
+    return List.unmodifiable(rounds);
   }
 
   List<String> serialize() => _keys.toList()..sort();

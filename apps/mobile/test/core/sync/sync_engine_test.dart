@@ -898,6 +898,173 @@ void main() {
     expect(stats.lastWorkoutDay!.toUtc(), DateTime.utc(2026, 8, 3, 22));
   });
 
+  test('il pull ricostruisce Renpho, profilo atleta, salute e feed', () async {
+    gateway.changes = const [
+      RemoteChange(
+        changeId: 1,
+        entityType: 'body_measurements',
+        entityId: _itemId,
+        operation: 'upsert',
+        payload: {
+          'id': _itemId,
+          'weight_kg': 82.4,
+          'measured_at': '2026-08-08T06:30:00.000Z',
+          'has_impedance': true,
+          'impedance_ohm': 512.5,
+          'body_fat_pct': 22.1,
+          'water_pct': 55.8,
+          'source': 'renpho_ble',
+          'external_id': 'renpho-reading-1',
+          'device_model': 'RENPHO 8 electrodes',
+          'raw_payload': 'a1b2c3',
+          'updated_at': '2026-08-08T06:31:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 2,
+        entityType: 'body_impedance_readings',
+        entityId: _rowId,
+        operation: 'upsert',
+        payload: {
+          'id': _rowId,
+          'measurement_id': _itemId,
+          'segment': 'whole',
+          'frequency_hz': 50000,
+          'ohm': 512.5,
+        },
+      ),
+      RemoteChange(
+        changeId: 3,
+        entityType: 'daily_check_ins',
+        entityId: _setId,
+        operation: 'upsert',
+        payload: {
+          'id': _setId,
+          'day': '2026-08-08',
+          'sleep_hours': 7.5,
+          'energy_score': 4,
+          'steps': 9000,
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 4,
+        entityType: 'goals',
+        entityId: _exerciseId,
+        operation: 'upsert',
+        payload: {
+          'id': _exerciseId,
+          'target_weight_kg': 78.0,
+          'target_level': 'defined',
+          'pace_kg_per_week': 0.4,
+          'started_at': '2026-08-08T06:00:00.000Z',
+          'start_weight_kg': 82.4,
+          'start_fat_free_mass_kg': 64.2,
+          'phase': 'approach',
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 5,
+        entityType: 'training_profiles',
+        entityId: _routineId,
+        operation: 'upsert',
+        payload: {
+          'equipment': 'manubri,panca',
+          'sessions_per_week': 4,
+          'minutes_per_session': 60,
+          'preferred_days': 'lun,mar,gio,sab',
+          'deload_preference': 'suggerito',
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 6,
+        entityType: 'training_limitations',
+        entityId: _workoutId,
+        operation: 'upsert',
+        payload: {
+          'id': _workoutId,
+          'body_part': 'spalla_dx',
+          'severity': 'fastidio',
+          'started_at': '2026-08-08T06:00:00.000Z',
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 7,
+        entityType: 'daily_health_summaries',
+        entityId: _mealId,
+        operation: 'upsert',
+        payload: {
+          'id': _mealId,
+          'day': '2026-08-08',
+          'source': 'health_connect',
+          'steps': 9100,
+          'sleep_minutes': 450,
+          'resting_heart_rate': 54,
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+      RemoteChange(
+        changeId: 8,
+        entityType: 'coach_feed_items',
+        entityId: _mealId,
+        operation: 'upsert',
+        payload: {
+          'id': _mealId,
+          'kind': 'weekly_review',
+          'source': 'deterministic',
+          'title': 'Rapporto',
+          'body': 'Settimana completata.',
+          'occurred_at': '2026-08-08T07:00:00.000Z',
+          'updated_at': '2026-08-08T07:00:00.000Z',
+        },
+      ),
+    ];
+
+    final report = await engine().sync();
+
+    expect(report.pulled, 8);
+    expect(report.error, isNull);
+    final measurement = await database
+        .select(database.bodyMeasurements)
+        .getSingle();
+    expect(measurement.bodyFatPct, 22.1);
+    expect(measurement.deviceModel, 'RENPHO 8 electrodes');
+    expect(
+      (await database.select(database.bodyImpedanceReadings).getSingle()).ohm,
+      512.5,
+    );
+    expect(
+      (await database.select(database.dailyCheckIns).getSingle()).steps,
+      9000,
+    );
+    expect(
+      (await database.select(database.goals).getSingle()).targetWeightKg,
+      78,
+    );
+    expect(
+      (await database.select(database.trainingProfiles).getSingle())
+          .sessionsPerWeek,
+      4,
+    );
+    expect(
+      (await database.select(database.trainingLimitations).getSingle())
+          .bodyPart,
+      'spalla_dx',
+    );
+    expect(
+      (await database.select(database.dailyHealthSummaries).getSingle())
+          .sleepMinutes,
+      450,
+    );
+    expect(
+      (await database.select(database.coachFeedItems).getSingle()).title,
+      'Rapporto',
+    );
+  });
+
   test('senza configurazione il motore resta spento: zero chiamate', () async {
     final container = ProviderContainer(
       overrides: [

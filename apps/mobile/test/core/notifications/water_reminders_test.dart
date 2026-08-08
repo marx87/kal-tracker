@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kal_tracker/core/notifications/app_notification_ids.dart';
 import 'package:kal_tracker/core/notifications/water_reminders.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/wellbeing/domain/water_settings.dart';
@@ -126,14 +127,22 @@ void main() {
       expect(gateway.scheduled, isEmpty);
     });
 
-    test('disable cancella tutto', () async {
+    test('disable cancella soltanto gli id acqua', () async {
       await service.enable(const WaterSettings(remindersEnabled: true));
       expect(gateway.scheduled, isNotEmpty);
 
       await service.disable();
 
       expect(gateway.scheduled, isEmpty);
-      expect(gateway.cancelAllCount, greaterThanOrEqualTo(2));
+      expect(gateway.cancelSlotsCount, greaterThanOrEqualTo(2));
+      expect(
+        gateway.cancelledIds.every(AppNotificationIds.waterReminders.contains),
+        isTrue,
+      );
+      expect(
+        gateway.cancelledIds.any(AppNotificationIds.workoutCues.contains),
+        isFalse,
+      );
     });
 
     test('applySettings ripianifica al nuovo intervallo senza richiedere '
@@ -162,7 +171,7 @@ void main() {
 
       expect(gateway.initializeCount, 0);
       expect(gateway.scheduled, isEmpty);
-      expect(gateway.cancelAllCount, 0);
+      expect(gateway.cancelSlotsCount, 0);
     });
 
     test('rescheduleOnStartup ripianifica se attivi', () async {

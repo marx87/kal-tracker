@@ -285,6 +285,28 @@ class BodyRepository {
     // senza quella non si separa la massa grassa dalla magra, ed è quello che
     // l'impedenza serve a produrre.
     final hasComposition = composition != null;
+    final impedanceReadings =
+        <({String id, String segment, int? frequencyHz, double ohm})>[];
+    if (impedanceOhm != null) {
+      impedanceReadings.add((
+        id: _uuid.v4(),
+        segment: 'whole',
+        frequencyHz: null,
+        ohm: impedanceOhm,
+      ));
+      final segments = reading.segmentOhms;
+      if (segments.length >= 3) {
+        final minimum = segments.reduce((a, b) => a < b ? a : b);
+        if (minimum > 0 && minimum <= 5000) {
+          impedanceReadings.add((
+            id: _uuid.v4(),
+            segment: 'trunk',
+            frequencyHz: null,
+            ohm: minimum,
+          ));
+        }
+      }
+    }
 
     await _database.transaction(() async {
       await _database
@@ -310,42 +332,22 @@ class BodyRepository {
               updatedAt: now,
             ),
           );
-      if (impedanceOhm != null) {
-        // La lettura di corpo intero, senza frequenza dichiarata: la bilancia
-        // non la trasmette, e scriverci «50 kHz» sarebbe salvare una
-        // supposizione accanto a una misura.
+      for (final impedance in impedanceReadings) {
+        // La frequenza resta nulla quando la bilancia non la dichiara:
+        // scriverci «50 kHz» sarebbe salvare una supposizione accanto a una
+        // misura. Lo stesso vale per il segmento: entra solo quello che il
+        // protocollo permette di riconoscere.
         await _database
             .into(_database.bodyImpedanceReadings)
             .insert(
               BodyImpedanceReadingsCompanion.insert(
-                id: _uuid.v4(),
+                id: impedance.id,
                 measurementId: id,
-                segment: 'whole',
-                ohm: impedanceOhm,
+                segment: impedance.segment,
+                frequencyHz: Value(impedance.frequencyHz),
+                ohm: impedance.ohm,
               ),
             );
-        // Il tronco, l'unico segmento che si riconosce senza ipotesi: un busto
-        // sta sui dieci-venti ohm mentre un arto sta sulle centinaia, quindi
-        // la più bassa delle nove è quella e non può essere altro. Le altre
-        // otto restano nella trama grezza in attesa di un'attribuzione, che
-        // inventare adesso significherebbe scriverla nel database come se
-        // fosse una misura.
-        final segmenti = reading.segmentOhms;
-        if (segmenti.length >= 3) {
-          final minima = segmenti.reduce((a, b) => a < b ? a : b);
-          if (minima > 0 && minima <= 5000) {
-            await _database
-                .into(_database.bodyImpedanceReadings)
-                .insert(
-                  BodyImpedanceReadingsCompanion.insert(
-                    id: _uuid.v4(),
-                    measurementId: id,
-                    segment: 'trunk',
-                    ohm: minima,
-                  ),
-                );
-          }
-        }
       }
       await _appendOutbox(
         entityId: id,
@@ -370,6 +372,16 @@ class BodyRepository {
           // Una pesata appena letta dalla bilancia non ha circonferenze: la
           // lista vuota è la verità, non un'omissione.
           'values': const <Map<String, Object?>>[],
+          'impedance_readings': [
+            for (final impedance in impedanceReadings)
+              {
+                'id': impedance.id,
+                'measurement_id': id,
+                'segment': impedance.segment,
+                'frequency_hz': impedance.frequencyHz,
+                'ohm': impedance.ohm,
+              },
+          ],
         },
         now: now,
       );
@@ -568,6 +580,9 @@ class BodyRepository {
       final values = await (_database.select(
         _database.bodyMeasurementValues,
       )..where((item) => item.measurementId.equals(id))).get();
+      final impedanceReadings = await (_database.select(
+        _database.bodyImpedanceReadings,
+      )..where((item) => item.measurementId.equals(id))).get();
       await _appendOutbox(
         entityId: id,
         operation: 'upsert',
@@ -581,11 +596,32 @@ class BodyRepository {
           bodyFatPct: row.bodyFatPct,
           musclePct: row.musclePct,
           waterPct: row.waterPct,
+          skeletalMusclePct: row.skeletalMusclePct,
+          bonePct: row.bonePct,
+          proteinPct: row.proteinPct,
+          subcutaneousFatPct: row.subcutaneousFatPct,
+          visceralFatIndex: row.visceralFatIndex,
+          bmrKcal: row.bmrKcal,
+          formulaVersion: row.formulaVersion,
+          source: row.source,
+          externalId: row.externalId,
+          deviceModel: row.deviceModel,
+          rawPayload: row.rawPayload,
           note: row.note,
           updatedAt: now,
           values: [
             for (final value in values)
               (id: value.id, label: value.label, value: value.value),
+          ],
+          impedanceReadings: [
+            for (final reading in impedanceReadings)
+              {
+                'id': reading.id,
+                'measurement_id': id,
+                'segment': reading.segment,
+                'frequency_hz': reading.frequencyHz,
+                'ohm': reading.ohm,
+              },
           ],
         ),
         now: now,
@@ -603,9 +639,21 @@ class BodyRepository {
     required double? bodyFatPct,
     required double? musclePct,
     required double? waterPct,
+    double? skeletalMusclePct,
+    double? bonePct,
+    double? proteinPct,
+    double? subcutaneousFatPct,
+    int? visceralFatIndex,
+    int? bmrKcal,
+    String? formulaVersion,
+    String source = 'manual',
+    String? externalId,
+    String? deviceModel,
+    String? rawPayload,
     required String? note,
     required DateTime updatedAt,
     required List<({String id, String label, double value})> values,
+    List<Map<String, Object?>> impedanceReadings = const [],
   }) => {
     'id': id,
     'profile_id': profileId,
@@ -615,8 +663,18 @@ class BodyRepository {
     'impedance_ohm': impedanceOhm,
     'body_fat_pct': bodyFatPct,
     'muscle_pct': musclePct,
+    'skeletal_muscle_pct': skeletalMusclePct,
+    'bone_pct': bonePct,
+    'protein_pct': proteinPct,
     'water_pct': waterPct,
-    'source': 'manual',
+    'subcutaneous_fat_pct': subcutaneousFatPct,
+    'visceral_fat_index': visceralFatIndex,
+    'bmr_kcal': bmrKcal,
+    'formula_version': formulaVersion,
+    'source': source,
+    'external_id': externalId,
+    'device_model': deviceModel,
+    'raw_payload': rawPayload,
     'note': note,
     'updated_at': updatedAt.toIso8601String(),
     // La chiave `values` presente significa «questa scrittura parla anche
@@ -632,6 +690,7 @@ class BodyRepository {
           'value': value.value,
         },
     ],
+    'impedance_readings': impedanceReadings,
   };
 
   Future<void> _appendOutbox({

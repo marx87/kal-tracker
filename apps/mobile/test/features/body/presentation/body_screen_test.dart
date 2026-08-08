@@ -113,6 +113,34 @@ void main() {
     await _dispose(tester, database);
   });
 
+  testWidgets('su telefono e testo al 150% le azioni restano raggiungibili', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(app(textScale: 1.5));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('body_open_scale_button')), findsOneWidget);
+    expect(
+      find.byKey(const Key('body_add_measurement_button')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('body_more_actions_button')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byKey(const Key('body_more_actions_button')));
+    await tester.pumpAndSettle();
+    expect(find.text('Coach'), findsOneWidget);
+    expect(find.text('Health360'), findsOneWidget);
+    expect(find.text('Impostazioni allenamento'), findsOneWidget);
+
+    await _dispose(tester, database);
+  });
+
   testWidgets('con tre settimane di dati riconosce la ricomposizione e '
       'disegna le due aree impilate', (tester) async {
     await seedRecomposition();

@@ -109,6 +109,9 @@ void main() {
     expect(row.targetLevel, 'defined');
     expect(row.closedAt, isNull);
     expect(row.deletedAt, isNull);
+    final outbox = await database.select(database.syncOutbox).getSingle();
+    expect(outbox.entityType, 'goal');
+    expect(outbox.operation, 'upsert');
   });
 
   test('cambiare traguardo archivia il vecchio senza perderlo', () async {

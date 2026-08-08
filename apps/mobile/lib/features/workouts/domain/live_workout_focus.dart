@@ -42,7 +42,14 @@ LiveWorkoutFocus calculateLiveWorkoutFocus(
   final exercises = workout.exercises;
 
   bool isVisible(WorkoutExercise exercise) {
-    if (exercise.isWarmup || exercise.isCooldown) return false;
+    // Le righe a tempo vengono completate esclusivamente dal motore guidato:
+    // offrirle anche come «Fatta» manuale creerebbe due modi concorrenti di
+    // registrare la stessa cella e permetterebbe di saltare il countdown.
+    if (exercise.isWarmup ||
+        exercise.isCooldown ||
+        exercise.trackingMode.isTimed) {
+      return false;
+    }
     return !finisherPhase || exercise.isFinisher;
   }
 

@@ -64,6 +64,12 @@ void main() {
   testWidgets('obiettivi e acqua persistono e il ring usa il nuovo target', (
     tester,
   ) async {
+    // Questo è un test del flusso fra schermate, non della piega a 600 px.
+    // Una viewport alta tiene insieme i controlli iniziali di Progressi anche
+    // dopo l'aggiunta delle nuove card Health360.
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav_body')));
@@ -72,7 +78,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2.000'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('add_water_250')));
+    final addWater = find.byKey(const Key('add_water_250'));
+    await tester.tap(addWater);
     await tester.pumpAndSettle();
     expect(find.text('250 / 2000 ml'), findsOneWidget);
 

@@ -8,9 +8,11 @@ import 'package:kal_tracker/features/coach/data/coach_repository.dart';
 import 'package:kal_tracker/features/coach/data/coach_snapshot_repository.dart';
 import 'package:kal_tracker/features/coach/data/coach_store.dart';
 import 'package:kal_tracker/features/coach/domain/coach_metrics.dart';
+import 'package:kal_tracker/features/coach/domain/coach_feed_item.dart';
 import 'package:kal_tracker/features/coach/domain/coach_narrative.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
+import 'package:kal_tracker/features/coach/presentation/coach_feed_providers.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_providers.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
@@ -38,17 +40,18 @@ final coachWeekProvider = Provider<CoachWeek>(
 
 /// Quello che era previsto. Nell'ordine: i target dell'Obiettivo se c'è,
 /// altrimenti quelli del diario — che esistono sempre.
-final coachTargetsProvider = FutureProvider<CoachTargets>((ref) async {
+final coachTargetsProvider = FutureProvider.autoDispose<CoachTargets>((
+  ref,
+) async {
   final profile = await ref.watch(marcoProfileProvider.future);
-  final plan = ref.watch(goalPlanProvider).valueOrNull;
-  final diaryTargets = await ref.watch(nutritionTargetProvider.future);
+  final targets = await ref.watch(effectiveNutritionTargetProvider.future);
   final workouts = await ref
       .watch(coachSnapshotRepositoryProvider)
       .plannedWorkoutsPerWeek(profile.id);
 
   return CoachTargets(
-    dailyCalories: plan?.targets.calories ?? diaryTargets.calories,
-    dailyProtein: plan?.targets.protein ?? diaryTargets.protein,
+    dailyCalories: targets.calories,
+    dailyProtein: targets.protein,
     weeklyWorkouts: workouts,
   );
 });
@@ -69,7 +72,9 @@ final coachGoalContextProvider = Provider<CoachGoalContext?>((ref) {
 });
 
 /// La fotografia su cui lavora il motore.
-final coachSnapshotProvider = FutureProvider<CoachSnapshot>((ref) async {
+final coachSnapshotProvider = FutureProvider.autoDispose<CoachSnapshot>((
+  ref,
+) async {
   final profile = await ref.watch(marcoProfileProvider.future);
   final targets = await ref.watch(coachTargetsProvider.future);
   return ref
@@ -84,7 +89,9 @@ final coachSnapshotProvider = FutureProvider<CoachSnapshot>((ref) async {
 
 /// **Il rapporto, per la parte che è aritmetica.** Si ricalcola a ogni
 /// apertura dal database locale: c'è sempre, anche offline e col Mac spento.
-final coachMetricsProvider = Provider<AsyncValue<CoachMetrics>>((ref) {
+final coachMetricsProvider = Provider.autoDispose<AsyncValue<CoachMetrics>>((
+  ref,
+) {
   final snapshot = ref.watch(coachSnapshotProvider);
   return snapshot.whenData(
     (value) => CoachEngine.run(value, today: ref.watch(coachWeekProvider).end),
@@ -97,7 +104,7 @@ final coachMetricsProvider = Provider<AsyncValue<CoachMetrics>>((ref) {
 /// Sta fuori da [coachMetricsProvider] perché il motore non lo calcola: il
 /// NEAT non entra in nessuna formula del rapporto, spiega i numeri che quelle
 /// formule hanno già prodotto.
-final coachNeatProvider = Provider<NeatTrend?>(
+final coachNeatProvider = Provider.autoDispose<NeatTrend?>(
   (ref) => ref.watch(coachSnapshotProvider).valueOrNull?.neat,
 );
 
@@ -226,6 +233,7 @@ class CoachController extends AsyncNotifier<CoachUiState> {
           .read(coachRepositoryProvider)
           .refresh()
           .timeout(checkTimeout);
+      await _publishNarrativeIfNew(current.archive.last, archive.last);
       if (!_disposed) {
         state = AsyncData(
           current.copyWith(
@@ -276,9 +284,34 @@ class CoachController extends AsyncNotifier<CoachUiState> {
     );
   }
 
+  Future<void> _publishNarrativeIfNew(
+    CoachNarrative? previous,
+    CoachNarrative? next,
+  ) async {
+    if (next == null ||
+        (previous?.week == next.week &&
+            previous?.writtenAt == next.writtenAt)) {
+      return;
+    }
+    final profile = await ref.read(marcoProfileProvider.future);
+    final weekEnd = next.week.end.toIso8601String().substring(0, 10);
+    await ref
+        .read(coachFeedRepositoryProvider)
+        .publish(
+          profileId: profile.id,
+          kind: 'weekly_narrative',
+          source: CoachFeedSource.ai,
+          externalId: 'week:$weekEnd',
+          title: next.headline ?? 'Il commento del Coach è pronto',
+          body: next.paragraphs.first,
+          occurredAt: next.writtenAt,
+          actionLabel: 'Leggi il rapporto',
+          actionPath: '/coach',
+        );
+  }
+
   String _messageOf(Object error) => switch (error) {
     CoachException(:final message) => message,
-    FormatException(:final message) => message,
     _ => 'Qualcosa è andato storto con il coach: riprova.',
   };
 }

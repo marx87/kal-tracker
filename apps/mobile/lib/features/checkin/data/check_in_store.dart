@@ -131,6 +131,18 @@ class DriftCheckInStore implements CheckInStore {
               deletedAt: Value(now),
             ),
           );
+          await _appendOutbox(
+            entityId: row.id,
+            operation: 'delete',
+            payload: {
+              'id': row.id,
+              'profile_id': profileId,
+              'day': row.day.toUtc().toIso8601String(),
+              'deleted_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+            },
+            now: now,
+          );
         }
 
         // 2. Il resto è un upsert sulla chiave naturale: un giorno cancellato
@@ -191,7 +203,47 @@ class DriftCheckInStore implements CheckInStore {
             ],
           ),
         );
+    final row =
+        await (_database.select(_database.dailyCheckIns)..where(
+              (table) =>
+                  table.profileId.equals(profileId) & table.day.equals(day),
+            ))
+            .getSingle();
+    await _appendOutbox(
+      entityId: row.id,
+      operation: 'upsert',
+      payload: {
+        'id': row.id,
+        'profile_id': profileId,
+        'day': day.toIso8601String(),
+        'sleep_hours': entry.sleepHours,
+        'energy_score': entry.energyScore,
+        'steps': entry.steps,
+        'walk_minutes': entry.walkMinutes,
+        'updated_at': entry.updatedAt.toUtc().toIso8601String(),
+        'deleted_at': null,
+      },
+      now: now,
+    );
   }
+
+  Future<void> _appendOutbox({
+    required String entityId,
+    required String operation,
+    required Map<String, Object?> payload,
+    required DateTime now,
+  }) => _database
+      .into(_database.syncOutbox)
+      .insert(
+        SyncOutboxCompanion.insert(
+          id: const Uuid().v4(),
+          entityType: 'daily_check_in',
+          entityId: entityId,
+          operation: operation,
+          payloadJson: jsonEncode(payload),
+          createdAt: now,
+        ),
+      );
 
   /// Porta dentro il file JSON delle versioni precedenti e poi lo archivia.
   ///
@@ -210,22 +262,29 @@ class DriftCheckInStore implements CheckInStore {
       }
       final log = await _legacy.read();
       if (log.entries.isNotEmpty) {
-        await _database.batch((batch) {
-          batch.insertAll(_database.dailyCheckIns, [
-            for (final entry in log.entries.values)
-              if (!entry.isEmpty)
-                DailyCheckInsCompanion.insert(
-                  id: checkInRowId(profileId: profileId, day: _dayOf(entry)),
-                  profileId: profileId,
-                  day: _dayOf(entry),
-                  createdAt: entry.updatedAt,
-                  updatedAt: entry.updatedAt,
-                  sleepHours: Value(entry.sleepHours),
-                  energyScore: Value(entry.energyScore),
-                  steps: Value(entry.steps),
-                  walkMinutes: Value(entry.walkMinutes),
-                ),
-          ], mode: InsertMode.insertOrIgnore);
+        await _database.transaction(() async {
+          for (final entry in log.entries.values) {
+            if (entry.isEmpty) {
+              continue;
+            }
+            final day = _dayOf(entry);
+            final existing =
+                await (_database.select(_database.dailyCheckIns)..where(
+                      (row) =>
+                          row.profileId.equals(profileId) & row.day.equals(day),
+                    ))
+                    .getSingleOrNull();
+            if (existing != null) {
+              continue;
+            }
+            // Anche le righe migrate devono entrare nella coda: altrimenti il
+            // primo telefono le vede, un secondo dispositivo sincronizzato no.
+            await _upsert(
+              profileId: profileId,
+              entry: entry,
+              now: entry.updatedAt.toUtc(),
+            );
+          }
         });
       }
       await _legacy.archive();

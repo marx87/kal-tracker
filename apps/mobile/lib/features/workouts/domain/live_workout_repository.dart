@@ -46,6 +46,14 @@ abstract interface class LiveWorkoutRepository {
   /// gambe e cardio. Vedi `muscle_group_snapshot.dart`.
   Future<void> saveWorkout(Workout workout);
 
+  /// Registra il risultato di una fase a tempo e cancella il suo checkpoint
+  /// nella STESSA transazione.
+  ///
+  /// È idempotente: le righe della sessione esistono già e vengono riscritte
+  /// con le sole serie concluse. Se l'app cade dopo il commit, al riavvio non
+  /// trova un checkpoint da rieseguire; se cade prima, ritenta senza duplicare.
+  Future<void> commitCircuitPhase(Workout workout);
+
   /// Chiude la sessione con l'istantanea costruita da
   /// `finalizeWorkoutSnapshot`: `endedAt`, durata e calorie insieme.
   ///

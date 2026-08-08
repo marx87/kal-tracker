@@ -1419,6 +1419,93 @@ class TrainingLimitations extends Table {
   ];
 }
 
+/// Riepilogo giornaliero importato da una sorgente salute esterna.
+///
+/// Non sostituisce il check-in: sonno percepito ed energia sono risposte di
+/// Marco, mentre passi, minuti di sonno e frequenza a riposo sono osservazioni
+/// del dispositivo. Tenerli separati conserva la provenienza e impedisce a un
+/// import automatico di sovrascrivere una risposta manuale.
+///
+/// [day] e' l'etichetta UTC del giorno civile, come in `DailyCheckIns`.
+/// [source] resta aperta: il gateway dichiara le proprie capacita' a runtime e
+/// qui si registra cio' che ha davvero prodotto, senza promettere integrazioni
+/// con produttori specifici che il dispositivo non ha verificato.
+@DataClassName('LocalDailyHealthSummary')
+@TableIndex(
+  name: 'idx_daily_health_summaries_profile_day',
+  columns: {#profileId, #day},
+)
+class DailyHealthSummaries extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  DateTimeColumn get day => dateTime()();
+  TextColumn get source => text().withLength(min: 1, max: 40)();
+  TextColumn get externalId => text().withLength(max: 120).nullable()();
+  IntColumn get steps => integer().nullable()();
+  IntColumn get sleepMinutes => integer().nullable()();
+  IntColumn get restingHeartRate => integer().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (steps IS NULL OR (steps >= 0 AND steps <= 200000))',
+    'CHECK (sleep_minutes IS NULL OR '
+        '(sleep_minutes >= 0 AND sleep_minutes <= 1440))',
+    'CHECK (resting_heart_rate IS NULL OR '
+        '(resting_heart_rate >= 20 AND resting_heart_rate <= 250))',
+    'CHECK (deleted_at IS NOT NULL OR steps IS NOT NULL OR '
+        'sleep_minutes IS NOT NULL OR resting_heart_rate IS NOT NULL)',
+    'UNIQUE (profile_id, day, source)',
+  ];
+}
+
+/// Messaggi operativi del coach, sincronizzabili e azionabili.
+///
+/// I numeri restano nel motore deterministico; questa tabella conserva solo il
+/// messaggio mostrato e l'eventuale destinazione nell'app. [externalId] rende
+/// idempotente la pubblicazione di eventi come "rapporto della settimana" o
+/// "allenamento concluso". La sorgente distingue le card prodotte localmente
+/// da una spiegazione riscritta dall'AI, senza dare al modello autorita' sui
+/// dati sottostanti.
+@DataClassName('LocalCoachFeedItem')
+@TableIndex(
+  name: 'idx_coach_feed_profile_occurred',
+  columns: {#profileId, #occurredAt},
+)
+class CoachFeedItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get profileId =>
+      text().references(AppProfiles, #id, onDelete: KeyAction.cascade)();
+  TextColumn get kind => text().withLength(min: 1, max: 40)();
+  TextColumn get source => text().withLength(min: 1, max: 20)();
+  TextColumn get externalId => text().withLength(max: 120).nullable()();
+  TextColumn get title => text().withLength(min: 1, max: 120)();
+  TextColumn get body => text().withLength(min: 1, max: 1200)();
+  TextColumn get actionLabel => text().withLength(max: 60).nullable()();
+  TextColumn get actionPath => text().withLength(max: 200).nullable()();
+  DateTimeColumn get occurredAt => dateTime()();
+  DateTimeColumn get readAt => dateTime().nullable()();
+  DateTimeColumn get dismissedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<String> get customConstraints => [
+    "CHECK (source IN ('deterministic', 'ai'))",
+    'UNIQUE (profile_id, source, external_id)',
+  ];
+}
+
 /// Le impostazioni che valgono su **questo telefono** e non si sincronizzano.
 ///
 /// Esiste separata da `app_profiles` per una ragione precisa: l'indirizzo
@@ -1475,6 +1562,9 @@ class LocalSettings extends Table {
     // v9 — chi è Marco come atleta
     TrainingProfiles,
     TrainingLimitations,
+    // v11 — osservazioni salute e feed operativo del coach
+    DailyHealthSummaries,
+    CoachFeedItems,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1491,7 +1581,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1677,6 +1767,10 @@ class AppDatabase extends _$AppDatabase {
           // prima del DROP che in SQLite se lo porterebbe via.
           await migrator.alterTable(TableMigration(dailyCheckIns));
         }
+      }
+      if (from < 11) {
+        await migrator.createTable(dailyHealthSummaries);
+        await migrator.createTable(coachFeedItems);
       }
       // Fuori dalla guardia di proposito: ripara anche gli indici delle
       // versioni 2-5, che nessun database migrato ha mai avuto.

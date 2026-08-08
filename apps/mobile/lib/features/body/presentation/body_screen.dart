@@ -33,6 +33,7 @@ class BodyScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final accents = AppAccents.of(context);
     final insights = ref.watch(bodyInsightsProvider);
+    final compactActions = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
       appBar: AppBar(
@@ -61,30 +62,82 @@ class BodyScreen extends ConsumerWidget {
             onPressed: () => context.goNamed('scale'),
             icon: const Icon(Icons.bluetooth_searching_rounded),
           ),
-          IconButton(
-            key: const Key('body_open_coach_button'),
-            tooltip: 'Rapporto del coach',
-            onPressed: () => context.goNamed('coach'),
-            icon: const Icon(Icons.insights_outlined),
-          ),
-          IconButton(
-            key: const Key('body_open_goal_button'),
-            tooltip: 'Obiettivo',
-            onPressed: () => context.goNamed('goal'),
-            icon: const Icon(Icons.flag_outlined),
-          ),
-          IconButton(
-            key: const Key('body_open_training_settings_button'),
-            tooltip: 'Impostazioni allenamento',
-            onPressed: () => context.goNamed(TrainingSettingsScreen.routeName),
-            icon: const Icon(Icons.fitness_center_outlined),
-          ),
-          IconButton(
-            key: const Key('body_open_progress_button'),
-            tooltip: 'Progressi e impostazioni',
-            onPressed: () => context.goNamed('progress'),
-            icon: const Icon(Icons.tune_rounded),
-          ),
+          if (compactActions)
+            PopupMenuButton<_BodyMenuAction>(
+              key: const Key('body_more_actions_button'),
+              tooltip: 'Altre azioni',
+              onSelected: (action) => _openBodyAction(context, action),
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _BodyMenuAction.coach,
+                  child: ListTile(
+                    leading: Icon(Icons.insights_outlined),
+                    title: Text('Coach'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _BodyMenuAction.health,
+                  child: ListTile(
+                    leading: Icon(Icons.favorite_outline_rounded),
+                    title: Text('Health360'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _BodyMenuAction.goal,
+                  child: ListTile(
+                    leading: Icon(Icons.flag_outlined),
+                    title: Text('Obiettivo'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _BodyMenuAction.training,
+                  child: ListTile(
+                    leading: Icon(Icons.fitness_center_outlined),
+                    title: Text('Impostazioni allenamento'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _BodyMenuAction.progress,
+                  child: ListTile(
+                    leading: Icon(Icons.tune_rounded),
+                    title: Text('Progressi e impostazioni'),
+                  ),
+                ),
+              ],
+            )
+          else ...[
+            IconButton(
+              key: const Key('body_open_health_button'),
+              tooltip: 'Health360',
+              onPressed: () => context.pushNamed('health'),
+              icon: const Icon(Icons.favorite_outline_rounded),
+            ),
+            IconButton(
+              key: const Key('body_open_coach_button'),
+              tooltip: 'Rapporto del coach',
+              onPressed: () => context.goNamed('coach'),
+              icon: const Icon(Icons.insights_outlined),
+            ),
+            IconButton(
+              key: const Key('body_open_goal_button'),
+              tooltip: 'Obiettivo',
+              onPressed: () => context.goNamed('goal'),
+              icon: const Icon(Icons.flag_outlined),
+            ),
+            IconButton(
+              key: const Key('body_open_training_settings_button'),
+              tooltip: 'Impostazioni allenamento',
+              onPressed: () =>
+                  context.goNamed(TrainingSettingsScreen.routeName),
+              icon: const Icon(Icons.fitness_center_outlined),
+            ),
+            IconButton(
+              key: const Key('body_open_progress_button'),
+              tooltip: 'Progressi e impostazioni',
+              onPressed: () => context.goNamed('progress'),
+              icon: const Icon(Icons.tune_rounded),
+            ),
+          ],
           IconButton.filled(
             key: const Key('body_add_measurement_button'),
             tooltip: 'Registra una pesata',
@@ -117,7 +170,25 @@ class BodyScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _openBodyAction(BuildContext context, _BodyMenuAction action) {
+    switch (action) {
+      case _BodyMenuAction.coach:
+        return context.goNamed('coach');
+      case _BodyMenuAction.health:
+        context.pushNamed('health');
+        return;
+      case _BodyMenuAction.goal:
+        return context.goNamed('goal');
+      case _BodyMenuAction.training:
+        return context.goNamed(TrainingSettingsScreen.routeName);
+      case _BodyMenuAction.progress:
+        return context.goNamed('progress');
+    }
+  }
 }
+
+enum _BodyMenuAction { coach, health, goal, training, progress }
 
 /// Apre il foglio della pesata e salva quello che torna.
 ///

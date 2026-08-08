@@ -21,7 +21,7 @@ class ProgressScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final target = ref.watch(nutritionTargetProvider);
+    final target = ref.watch(effectiveNutritionTargetProvider);
     final water = ref.watch(todayWaterProvider);
     final weights = ref.watch(recentWeightsProvider);
     // L'obiettivo acqua ora è configurabile dal widget del diario:
@@ -85,6 +85,23 @@ class ProgressScreen extends ConsumerWidget {
             children: [
               const _ProgressIntro(),
               const SizedBox(height: 18),
+              Card(
+                child: ListTile(
+                  key: const Key('open_health_button'),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  leading: const Icon(Icons.favorite_outline_rounded),
+                  title: const Text('Health360'),
+                  subtitle: const Text(
+                    'Passi, sonno, frequenza a riposo e allenamenti.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.pushNamed('health'),
+                ),
+              ),
+              const SizedBox(height: 14),
               target.when(
                 data: (value) => _TargetCard(
                   target: value,
@@ -93,7 +110,8 @@ class ProgressScreen extends ConsumerWidget {
                 loading: () => const _LoadingCard(),
                 error: (error, stackTrace) => _ErrorCard(
                   label: 'Ricarica obiettivi',
-                  onRetry: () => ref.invalidate(nutritionTargetProvider),
+                  onRetry: () =>
+                      ref.invalidate(effectiveNutritionTargetProvider),
                 ),
               ),
               const SizedBox(height: 14),

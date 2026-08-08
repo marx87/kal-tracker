@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
+import 'package:kal_tracker/features/workouts/domain/live_load_guidance.dart';
 import 'package:kal_tracker/features/workouts/domain/live_workout_focus.dart';
 import 'package:kal_tracker/features/workouts/domain/superset_flow.dart';
 import 'package:kal_tracker/features/workouts/domain/workout.dart';
+import 'package:kal_tracker/features/workouts/presentation/widgets/live_load_guidance_card.dart';
 import 'package:kal_tracker/features/workouts/presentation/widgets/workout_set_row.dart';
 
 /// Cosa la card sa fare, in un oggetto solo: così aggiungere un'azione non
@@ -39,6 +41,9 @@ class ExerciseBlockCard extends StatelessWidget {
     required this.actions,
     this.current,
     this.busyCursor,
+    this.guidance,
+    this.onApplyGuidance,
+    this.onUndoGuidance,
     super.key,
   });
 
@@ -51,6 +56,9 @@ class ExerciseBlockCard extends StatelessWidget {
 
   /// La cella con un salvataggio in volo.
   final WorkoutCursor? busyCursor;
+  final LiveLoadGuidance? guidance;
+  final VoidCallback? onApplyGuidance;
+  final VoidCallback? onUndoGuidance;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +81,14 @@ class ExerciseBlockCard extends StatelessWidget {
                 ? null
                 : () => actions.onEditRest!([exerciseIndex]),
           ),
+          if (guidance case final suggestion?) ...[
+            const SizedBox(height: 12),
+            LiveLoadGuidanceCard(
+              guidance: suggestion,
+              onApply: onApplyGuidance,
+              onUndo: onUndoGuidance,
+            ),
+          ],
           const SizedBox(height: 12),
           for (var setIndex = 0; setIndex < exercise.sets.length; setIndex++)
             WorkoutSetRow(
@@ -110,6 +126,10 @@ class SupersetGroupCard extends StatelessWidget {
     required this.actions,
     this.current,
     this.busyCursor,
+    this.guidanceByExercise = const {},
+    this.guidanceUndoIndices = const {},
+    this.onApplyGuidance,
+    this.onUndoGuidance,
     super.key,
   });
 
@@ -118,6 +138,10 @@ class SupersetGroupCard extends StatelessWidget {
   final WorkoutBlockActions actions;
   final WorkoutCursor? current;
   final WorkoutCursor? busyCursor;
+  final Map<int, LiveLoadGuidance> guidanceByExercise;
+  final Set<int> guidanceUndoIndices;
+  final void Function(int exerciseIndex)? onApplyGuidance;
+  final void Function(int exerciseIndex)? onUndoGuidance;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +181,21 @@ class SupersetGroupCard extends StatelessWidget {
                 ),
             ],
           ),
+          for (final exerciseIndex in memberIndices)
+            if (guidanceByExercise[exerciseIndex] case final suggestion?) ...[
+              const SizedBox(height: 10),
+              LiveLoadGuidanceCard(
+                guidance: suggestion,
+                onApply: onApplyGuidance == null
+                    ? null
+                    : () => onApplyGuidance!(exerciseIndex),
+                onUndo:
+                    onUndoGuidance == null ||
+                        !guidanceUndoIndices.contains(exerciseIndex)
+                    ? null
+                    : () => onUndoGuidance!(exerciseIndex),
+              ),
+            ],
           const SizedBox(height: 12),
           for (var round = 0; round < flow.roundCount; round++) ...[
             _RoundHeader(round: round + 1, total: flow.roundCount),

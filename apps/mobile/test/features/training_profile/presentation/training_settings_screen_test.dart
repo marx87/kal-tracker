@@ -15,6 +15,9 @@ import 'package:kal_tracker/features/profile/data/local_profile_repository.dart'
 import 'package:kal_tracker/features/training_profile/data/training_profile_repository.dart';
 import 'package:kal_tracker/features/training_profile/domain/training_profile.dart';
 import 'package:kal_tracker/features/training_profile/presentation/training_settings_screen.dart';
+import 'package:kal_tracker/features/workouts/cues/application/workout_cue_ports.dart';
+import 'package:kal_tracker/features/workouts/cues/data/workout_cue_store.dart';
+import 'package:kal_tracker/features/workouts/cues/workout_cue_providers.dart';
 
 void main() {
   late AppDatabase database;
@@ -33,14 +36,29 @@ void main() {
   /// La finestra dei test è più corta di un telefono vero, e questa pagina è
   /// lunga: si allunga finché ci sta tutta, altrimenti ogni prova diventa una
   /// prova dello scorrimento invece che di quello che le interessa.
-  void tallViewport(WidgetTester tester, {double height = 3600}) {
+  void tallViewport(WidgetTester tester, {double height = 5000}) {
     tester.view.physicalSize = Size(400 * 3, height * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
   }
 
   Widget app({ThemeData? theme, double textScale = 1}) => ProviderScope(
-    overrides: [databaseProvider.overrideWithValue(database)],
+    overrides: [
+      databaseProvider.overrideWithValue(database),
+      workoutCueStoreProvider.overrideWith((ref) => InMemoryWorkoutCueStore()),
+      workoutSpeechOutputProvider.overrideWith(
+        (ref) => const SilentWorkoutSpeechOutput(),
+      ),
+      workoutSignalOutputProvider.overrideWith(
+        (ref) => const SilentWorkoutSignalOutput(),
+      ),
+      workoutNotificationOutputProvider.overrideWith(
+        (ref) => const SilentWorkoutNotificationOutput(),
+      ),
+      workoutWakeLockOutputProvider.overrideWith(
+        (ref) => const SilentWorkoutWakeLockOutput(),
+      ),
+    ],
     child: MaterialApp(
       theme: theme ?? AppTheme.light,
       locale: const Locale('it'),
@@ -285,6 +303,32 @@ void main() {
       (await readBack(tester)).deloadPreference,
       DeloadPreference.automatico,
     );
+
+    await _dispose(tester, database);
+  });
+
+  testWidgets('la guida vocale si configura e si prova dalla stessa pagina', (
+    tester,
+  ) async {
+    tallViewport(tester, height: 4600);
+    await tester.pumpWidget(app());
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('workout_cue_settings')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('voice_level_detailed')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ChoiceChip>(find.byKey(const Key('voice_level_detailed')))
+          .selected,
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const Key('workout_awake_toggle')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('workout_test_voice')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
 
     await _dispose(tester, database);
   });

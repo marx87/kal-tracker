@@ -1,3 +1,4 @@
+import 'package:kal_tracker/core/notifications/app_notification_ids.dart';
 import 'package:kal_tracker/features/wellbeing/domain/water_settings.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -8,7 +9,8 @@ import 'package:timezone/timezone.dart' as tz;
 /// con un fake e nessun platform channel viene mai toccato.
 
 /// Base degli id notifica: range riservato ai promemoria acqua.
-const int waterReminderBaseNotificationId = 4200;
+final int waterReminderBaseNotificationId =
+    AppNotificationIds.waterReminders.first;
 
 /// Messaggi italiani variati: simpatici ma sobri, mai colpevolizzanti.
 const List<({String title, String body})> waterReminderMessages = [
@@ -78,7 +80,7 @@ List<WaterReminderSlot> waterReminderSlots(WaterSettings settings) {
     final message = waterReminderMessages[index % waterReminderMessages.length];
     slots.add(
       WaterReminderSlot(
-        id: waterReminderBaseNotificationId + index,
+        id: AppNotificationIds.waterReminders.at(index),
         hour: hour,
         title: message.title,
         body: message.body,
@@ -113,7 +115,8 @@ abstract class WaterReminderGateway {
   /// Pianifica una notifica che si ripete ogni giorno alla stessa ora.
   Future<void> scheduleDailySlot(WaterReminderSlot slot);
 
-  Future<void> cancelAll();
+  /// Cancella soltanto gli id posseduti dai promemoria acqua.
+  Future<void> cancelSlots(Iterable<int> ids);
 }
 
 /// Orchestrazione: attiva (con richiesta permesso), aggiorna, spegne.
@@ -138,7 +141,7 @@ class WaterRemindersService {
   /// Toggle off: via tutte le notifiche pianificate.
   Future<void> disable() async {
     await _gateway.initialize();
-    await _gateway.cancelAll();
+    await _gateway.cancelSlots(AppNotificationIds.waterReminders.all);
   }
 
   /// Nuovo intervallo o nuova fascia oraria a promemoria già attivi:
@@ -147,7 +150,7 @@ class WaterRemindersService {
   Future<void> applySettings(WaterSettings settings) async {
     await _gateway.initialize();
     if (!settings.remindersEnabled) {
-      await _gateway.cancelAll();
+      await _gateway.cancelSlots(AppNotificationIds.waterReminders.all);
       return;
     }
     await _scheduleAll(settings);
@@ -164,7 +167,7 @@ class WaterRemindersService {
   }
 
   Future<void> _scheduleAll(WaterSettings settings) async {
-    await _gateway.cancelAll();
+    await _gateway.cancelSlots(AppNotificationIds.waterReminders.all);
     for (final slot in waterReminderSlots(settings)) {
       await _gateway.scheduleDailySlot(slot);
     }

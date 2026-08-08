@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.8.0+35
+version: 1.9.0+36
 
 environment:
   sdk: ^3.12.2
@@ -55,6 +55,17 @@ dependencies:
   image: ^4.5.4
   mobile_scanner: ^7.4.0
   flutter_local_notifications: ^22.2.0
+  # Guida vocale della sessione. L'adapter resta dietro un'interfaccia pura:
+  # i test e il motore dell'allenamento non aprono platform channel.
+  flutter_tts: ^4.2.5
+  # Opzionale durante una sessione attiva: evita che lo schermo si spenga.
+  # L'engine lo abilita solo se l'utente sceglie la relativa preferenza.
+  wakelock_plus: ^1.7.0
+  # HealthKit su iOS e Health Connect su Android. L'app parla con il package
+  # solo attraverso un adapter/facade iniettabile e testabile senza device.
+  health: 13.3.1
+  # Consenso Android separato richiesto dal package per i dati di attivita.
+  permission_handler: ^11.3.1
   # Il selettore di file di sistema. Serve perché sul telefono i file da
   # importare (export di Gym, backup) finiscono in Download e quel percorso
   # non lo conosce nessuno: digitarlo a mano è impraticabile.
@@ -88,6 +99,13 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.34.5
   build_runner: ^2.15.1
+
+# health 13.3.1 dichiara device_info_plus ^12.1.0, mentre gli altri plugin
+# richiedono win32 6. La copia locale e l'upstream 13.2.0 con una sola patch
+# Objective-C per compilare l'API iOS 26 con Xcode 16.4; vedi PATCH_NOTES.md.
+dependency_overrides:
+  device_info_plus:
+    path: third_party/device_info_plus
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

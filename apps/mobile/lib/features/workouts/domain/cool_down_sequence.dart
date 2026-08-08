@@ -21,9 +21,10 @@ export 'package:kal_tracker/features/gym_import/domain/cool_down_sequence.dart'
 /// - [MuscleGroup.mobilita] come snapshot, che vale 2.5 MET. Senza,
 ///   `estimateKcal` userebbe il ripiego a 5.0 e gli allungamenti conterebbero
 ///   il doppio di quello che valgono;
-/// - le serie nascono già `completed: true`, come in Gym: il defaticamento si
-///   registra quando è finito, non si spunta a mano.
-List<WorkoutExercise> coolDownAsWorkoutExercises() => [
+/// - [completed] resta `true` per import e storico; la sessione dal vivo passa
+///   `false`, lascia che sia il motore a tempo a spuntare ogni allungamento e
+///   non attribuisce lavoro solo perché l'utente ha accettato la proposta.
+List<WorkoutExercise> coolDownAsWorkoutExercises({bool completed = true}) => [
   for (final item in kCoolDownSequence)
     WorkoutExercise(
       exerciseId: item.slug,
@@ -32,7 +33,7 @@ List<WorkoutExercise> coolDownAsWorkoutExercises() => [
       muscleGroup: MuscleGroup.mobilita,
       restSeconds: CoolDownItem.restSec,
       isCooldown: true,
-      sets: [WorkoutSet(durationSec: item.durationSec, completed: true)],
+      sets: [WorkoutSet(durationSec: item.durationSec, completed: completed)],
     ),
 ];
 

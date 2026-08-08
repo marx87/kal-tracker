@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
+import 'package:kal_tracker/features/workouts/domain/effort_scale.dart';
 
 /// I comandi con cui si registra una serie: il pulsante −/valore/+, il
 /// selettore di durata e la pastiglia dell'RPE.
@@ -314,7 +315,11 @@ class DurationStepper extends StatelessWidget {
   );
 }
 
-/// La pastiglia dello sforzo percepito. Aprendola si sceglie da 1 a 10.
+/// La pastiglia dello sforzo percepito.
+///
+/// In palestra il gesto principale è RIR 0–4, più veloce da stimare appena
+/// posato il peso. Sotto resta disponibile la scala RPE completa, perché i
+/// dati storici 1–10 non devono essere appiattiti.
 class RpeChip extends StatelessWidget {
   const RpeChip({required this.value, required this.onChanged, super.key});
 
@@ -325,7 +330,8 @@ class RpeChip extends StatelessWidget {
     HapticFeedback.selectionClick();
     final picked = await showModalBottomSheet<int>(
       context: context,
-      builder: (sheetContext) => _RpeSheet(selected: value),
+      isScrollControlled: true,
+      builder: (sheetContext) => _EffortSheet(selectedRpe: value),
     );
     if (picked == null) return;
     // -1 è il sentinella «cancella», scelto perché nessun RPE valido lo usa.
@@ -342,10 +348,7 @@ class RpeChip extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: current == null
-          ? 'Sforzo percepito non impostato. Tocca per sceglierlo.'
-          : 'Sforzo percepito $current su 10, ${rpeMeaning(current)}. '
-                'Tocca per modificarlo.',
+      label: '${EffortScale.semanticLabel(current)} Tocca per modificarlo.',
       onTap: () => _pick(context),
       child: ExcludeSemantics(
         child: InkWell(
@@ -360,13 +363,16 @@ class RpeChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: color.withValues(alpha: 0.65)),
             ),
-            child: Text(
-              current == null ? 'RPE' : '$current',
-              style:
-                  (current == null
-                          ? theme.textTheme.labelSmall
-                          : theme.textTheme.titleMedium)
-                      ?.copyWith(fontWeight: FontWeight.w900, color: color),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                EffortScale.compactLabel(current),
+                style:
+                    (current == null
+                            ? theme.textTheme.labelSmall
+                            : theme.textTheme.labelMedium)
+                        ?.copyWith(fontWeight: FontWeight.w900, color: color),
+              ),
             ),
           ),
         ),
@@ -375,10 +381,10 @@ class RpeChip extends StatelessWidget {
   }
 }
 
-class _RpeSheet extends StatelessWidget {
-  const _RpeSheet({required this.selected});
+class _EffortSheet extends StatelessWidget {
+  const _EffortSheet({required this.selectedRpe});
 
-  final int? selected;
+  final int? selectedRpe;
 
   @override
   Widget build(BuildContext context) {
@@ -395,13 +401,14 @@ class _RpeSheet extends StatelessWidget {
             Semantics(
               header: true,
               child: Text(
-                'Quanto è stata dura?',
+                'Quante ne avevi ancora?',
                 style: theme.textTheme.headlineSmall,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              '1 è una passeggiata, 10 è tutto quello che avevi.',
+              'RIR 0 significa nessuna ripetizione rimasta; RIR 4 significa '
+              'che avresti potuto farne circa quattro.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: accents.mutedInk,
                 height: 1.35,
@@ -412,18 +419,103 @@ class _RpeSheet extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
+                for (var rir = 0; rir <= 4; rir++)
+                  _RirOption(
+                    rir: rir,
+                    selected: EffortScale.rirFromRpe(selectedRpe) == rir,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Oppure usa RPE',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '1 è una passeggiata, 10 è il massimo.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.mutedInk,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
                 for (var value = 1; value <= 10; value++)
-                  _RpeOption(value: value, selected: selected == value),
+                  _RpeOption(value: value, selected: selectedRpe == value),
               ],
             ),
             const SizedBox(height: 14),
-            Center(
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(-1),
-                child: const Text('Togli lo sforzo'),
-              ),
+            Row(
+              children: [
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(-1),
+                  child: const Text('Togli lo sforzo'),
+                ),
+                const Spacer(),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RirOption extends StatelessWidget {
+  const _RirOption({required this.rir, required this.selected});
+
+  final int rir;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final rpe = EffortScale.rpeFromRir(rir);
+    final color = rpeColor(context, rpe);
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$rir ripetizioni in riserva, equivalente a RPE $rpe',
+      onTap: () => Navigator.of(context).pop(rpe),
+      child: ExcludeSemantics(
+        child: InkWell(
+          onTap: () => Navigator.of(context).pop(rpe),
+          borderRadius: BorderRadius.circular(15),
+          child: Container(
+            width: 58,
+            height: 58,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: selected ? 1 : 0.16),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: color, width: selected ? 2.4 : 1),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$rir',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: selected ? theme.colorScheme.onPrimary : color,
+                  ),
+                ),
+                Text(
+                  'RIR',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: selected ? theme.colorScheme.onPrimary : color,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

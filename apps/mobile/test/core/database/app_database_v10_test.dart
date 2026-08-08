@@ -840,7 +840,7 @@ void main() {
         .map((row) => row.read<int>('user_version'))
         .getSingle();
 
-    expect(version, 10);
+    expect(version, 11);
 
     // La riga completa: il movimento sta in fondo alla tabella vecchia e in
     // mezzo a quella nuova. Se la copia fosse posizionale invece che per nome,

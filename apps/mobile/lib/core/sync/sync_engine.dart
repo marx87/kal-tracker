@@ -208,6 +208,7 @@ class SyncEngine {
     SyncMutation mutation,
   ) {
     const idKeyed = {
+      'profile',
       'meal_item',
       'water_log',
       'body_measurement',
@@ -221,6 +222,12 @@ class SyncEngine {
       'routine',
       'workout',
       'workout_profile_stats',
+      'daily_check_in',
+      'goal',
+      'training_profile',
+      'training_limitation',
+      'daily_health_summary',
+      'coach_feed_item',
     };
     var updated = aliases;
     void record(String localId) {
@@ -305,6 +312,8 @@ class SyncEngine {
     }
 
     switch (change.entityType) {
+      case 'profiles':
+        return _applyProfile(p, marcoId);
       case 'meals':
         return _applyMeal(p, marcoId, localId);
       case 'meal_items':
@@ -315,6 +324,18 @@ class SyncEngine {
         return _applyWaterLog(p, marcoId, localId);
       case 'body_measurements':
         return _applyBodyMeasurement(p, marcoId, localId);
+      case 'daily_check_ins':
+        return _applyDailyCheckIn(p, marcoId, localId);
+      case 'goals':
+        return _applyGoal(p, marcoId, localId);
+      case 'training_profiles':
+        return _applyTrainingProfile(p, marcoId);
+      case 'training_limitations':
+        return _applyTrainingLimitation(p, marcoId, localId);
+      case 'daily_health_summaries':
+        return _applyDailyHealthSummary(p, marcoId, localId);
+      case 'coach_feed_items':
+        return _applyCoachFeedItem(p, marcoId, localId);
       case 'foods':
         return _applyFood(p, marcoId, localId);
       case 'recipes':
@@ -351,10 +372,46 @@ class SyncEngine {
         return _applyAchievement(p, change.operation, marcoId, localId);
       case 'body_measurement_values':
         return _applyMeasurementValue(p, change.operation, localId);
+      case 'body_impedance_readings':
+        return _applyImpedanceReading(p, change.operation, localId);
       default:
-        // profiles, external_workouts, meal_analysis_jobs: niente da fare.
+        // external_workouts, meal_analysis_jobs: niente da fare.
         return false;
     }
+  }
+
+  Future<bool> _applyProfile(Map<String, Object?> p, String marcoId) async {
+    if (p['deleted_at'] != null) {
+      // Il profilo locale e' il padre di tutto il diario: un tombstone remoto
+      // non puo' cancellare a cascata un'installazione ancora utilizzata.
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.appProfiles,
+    )..where((row) => row.id.equals(marcoId))).getSingleOrNull();
+    if (existing == null) {
+      return false;
+    }
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final height = _nullableDouble(p['height_cm']);
+    final sex = _oneOf(p['sex'], const {'M', 'F'});
+    await (_database.update(
+      _database.appProfiles,
+    )..where((row) => row.id.equals(marcoId))).write(
+      AppProfilesCompanion(
+        displayName: Value(_string(p['display_name']) ?? existing.displayName),
+        heightCm: Value(
+          height != null && height >= 50 && height <= 260 ? height : null,
+        ),
+        birthDate: Value(_calendarDay(p['birth_date'])),
+        sex: Value(sex),
+        updatedAt: Value(remoteUpdated),
+      ),
+    );
+    return true;
   }
 
   Future<bool> _applyMeal(
@@ -551,7 +608,332 @@ class SyncEngine {
             profileId: Value(marcoId),
             weightKg: Value(weight),
             measuredAt: Value(_time(p['measured_at']) ?? remoteUpdated),
+            hasImpedance: Value(p['has_impedance'] == true),
+            impedanceOhm: Value(_boundedDouble(p['impedance_ohm'], 0.01, 2000)),
+            bodyFatPct: Value(_boundedDouble(p['body_fat_pct'], 0, 100)),
+            musclePct: Value(_boundedDouble(p['muscle_pct'], 0, 100)),
+            skeletalMusclePct: Value(
+              _boundedDouble(p['skeletal_muscle_pct'], 0, 100),
+            ),
+            bonePct: Value(_boundedDouble(p['bone_pct'], 0, 100)),
+            proteinPct: Value(_boundedDouble(p['protein_pct'], 0, 100)),
+            waterPct: Value(_boundedDouble(p['water_pct'], 0, 100)),
+            subcutaneousFatPct: Value(
+              _boundedDouble(p['subcutaneous_fat_pct'], 0, 100),
+            ),
+            visceralFatIndex: Value(
+              _boundedInt(p['visceral_fat_index'], 1, 60),
+            ),
+            bmrKcal: Value(_boundedInt(p['bmr_kcal'], 1, 9999)),
+            formulaVersion: Value(_string(p['formula_version'])),
+            source: Value(_oneOf(p['source'], _measurementSources) ?? 'manual'),
+            externalId: Value(_string(p['external_id'])),
+            deviceModel: Value(_string(p['device_model'])),
+            rawPayload: Value(_string(p['raw_payload'])),
             note: Value(_string(p['note'])),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyDailyCheckIn(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final day = _calendarDay(p['day']);
+    if (id.isEmpty || day == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.dailyCheckIns,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final deletedAt = _time(p['deleted_at']);
+    final sleep = _boundedDouble(p['sleep_hours'], 0, 16);
+    final energy = _boundedInt(p['energy_score'], 1, 5);
+    final steps = _boundedInt(p['steps'], 0, 200000);
+    final walkMinutes = _boundedInt(p['walk_minutes'], 0, 1440);
+    if (deletedAt == null &&
+        sleep == null &&
+        energy == null &&
+        steps == null &&
+        walkMinutes == null) {
+      return false;
+    }
+    await _database
+        .into(_database.dailyCheckIns)
+        .insertOnConflictUpdate(
+          DailyCheckInsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            day: Value(day),
+            sleepHours: Value(sleep),
+            energyScore: Value(energy),
+            steps: Value(steps),
+            walkMinutes: Value(walkMinutes),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(deletedAt),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyGoal(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final targetWeight = _boundedDouble(p['target_weight_kg'], 20, 500);
+    final startWeight = _boundedDouble(p['start_weight_kg'], 20, 500);
+    final startFfm = _boundedDouble(p['start_fat_free_mass_kg'], 0.01, 500);
+    final pace = _boundedDouble(p['pace_kg_per_week'], 0.01, 5);
+    final startedAt = _time(p['started_at']);
+    final level = _oneOf(p['target_level'], _goalLevels);
+    if (id.isEmpty ||
+        targetWeight == null ||
+        startWeight == null ||
+        startFfm == null ||
+        pace == null ||
+        startedAt == null ||
+        level == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.goals,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final phase = _oneOf(p['phase'], _goalPhases) ?? 'approach';
+    final outcome = _oneOf(p['outcome'], _goalOutcomes);
+    final closedAt = _time(p['closed_at']);
+    if (outcome != null && closedAt == null) {
+      return false;
+    }
+    await _database
+        .into(_database.goals)
+        .insertOnConflictUpdate(
+          GoalsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            targetWeightKg: Value(targetWeight),
+            targetLevel: Value(level),
+            paceKgPerWeek: Value(pace),
+            startedAt: Value(startedAt),
+            startWeightKg: Value(startWeight),
+            startFatFreeMassKg: Value(startFfm),
+            phase: Value(phase),
+            phaseStartedAt: Value(_time(p['phase_started_at'])),
+            closedAt: Value(closedAt),
+            outcome: Value(outcome),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyTrainingProfile(
+    Map<String, Object?> p,
+    String marcoId,
+  ) async {
+    if (p['deleted_at'] != null) {
+      await (_database.delete(
+        _database.trainingProfiles,
+      )..where((row) => row.profileId.equals(marcoId))).go();
+      return true;
+    }
+    final existing = await (_database.select(
+      _database.trainingProfiles,
+    )..where((row) => row.profileId.equals(marcoId))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    await _database
+        .into(_database.trainingProfiles)
+        .insertOnConflictUpdate(
+          TrainingProfilesCompanion(
+            profileId: Value(marcoId),
+            equipment: Value(_string(p['equipment']) ?? ''),
+            sessionsPerWeek: Value(_boundedInt(p['sessions_per_week'], 1, 14)),
+            minutesPerSession: Value(
+              _boundedInt(p['minutes_per_session'], 10, 300),
+            ),
+            preferredDays: Value(_string(p['preferred_days']) ?? ''),
+            deloadPreference: Value(
+              _oneOf(p['deload_preference'], const {
+                    'automatico',
+                    'suggerito',
+                  }) ??
+                  'suggerito',
+            ),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyTrainingLimitation(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    if (id.isEmpty) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.trainingLimitations,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final bodyPart = _oneOf(p['body_part'], _limitationBodyParts);
+    final severity = _oneOf(p['severity'], const {
+      'fastidio',
+      'dolore',
+      'stop',
+    });
+    final startedAt = _time(p['started_at']);
+    if (bodyPart == null || severity == null || startedAt == null) {
+      return false;
+    }
+    await _database
+        .into(_database.trainingLimitations)
+        .insertOnConflictUpdate(
+          TrainingLimitationsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            bodyPart: Value(bodyPart),
+            severity: Value(severity),
+            note: Value(_string(p['note'])),
+            startedAt: Value(startedAt),
+            resolvedAt: Value(_time(p['resolved_at'])),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(_time(p['deleted_at'])),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyDailyHealthSummary(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final day = _calendarDay(p['day']);
+    final source = _string(p['source']);
+    if (id.isEmpty || day == null || source == null || source.length > 40) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.dailyHealthSummaries,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    final deletedAt = _time(p['deleted_at']);
+    final steps = _boundedInt(p['steps'], 0, 200000);
+    final sleepMinutes = _boundedInt(p['sleep_minutes'], 0, 1440);
+    final restingHeartRate = _boundedInt(p['resting_heart_rate'], 20, 250);
+    if (deletedAt == null &&
+        steps == null &&
+        sleepMinutes == null &&
+        restingHeartRate == null) {
+      return false;
+    }
+    await _database
+        .into(_database.dailyHealthSummaries)
+        .insertOnConflictUpdate(
+          DailyHealthSummariesCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            day: Value(day),
+            source: Value(source),
+            externalId: Value(_string(p['external_id'])),
+            steps: Value(steps),
+            sleepMinutes: Value(sleepMinutes),
+            restingHeartRate: Value(restingHeartRate),
+            createdAt: Value(
+              existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
+            ),
+            updatedAt: Value(remoteUpdated),
+            deletedAt: Value(deletedAt),
+          ),
+        );
+    return true;
+  }
+
+  Future<bool> _applyCoachFeedItem(
+    Map<String, Object?> p,
+    String marcoId,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final kind = _string(p['kind']);
+    final source = _oneOf(p['source'], const {'deterministic', 'ai'});
+    final title = _string(p['title']);
+    final body = _string(p['body']);
+    final occurredAt = _time(p['occurred_at']);
+    if (id.isEmpty ||
+        kind == null ||
+        source == null ||
+        title == null ||
+        body == null ||
+        occurredAt == null) {
+      return false;
+    }
+    final existing = await (_database.select(
+      _database.coachFeedItems,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    final remoteUpdated = _time(p['updated_at']) ?? _now();
+    if (existing != null && existing.updatedAt.isAfter(remoteUpdated)) {
+      return false;
+    }
+    await _database
+        .into(_database.coachFeedItems)
+        .insertOnConflictUpdate(
+          CoachFeedItemsCompanion(
+            id: Value(id),
+            profileId: Value(marcoId),
+            kind: Value(kind),
+            source: Value(source),
+            externalId: Value(_string(p['external_id'])),
+            title: Value(title),
+            body: Value(body),
+            actionLabel: Value(_string(p['action_label'])),
+            actionPath: Value(_string(p['action_path'])),
+            occurredAt: Value(occurredAt),
+            readAt: Value(_time(p['read_at'])),
+            dismissedAt: Value(_time(p['dismissed_at'])),
             createdAt: Value(
               existing?.createdAt ?? _time(p['created_at']) ?? remoteUpdated,
             ),
@@ -1528,6 +1910,57 @@ class SyncEngine {
     return true;
   }
 
+  Future<bool> _applyImpedanceReading(
+    Map<String, Object?> p,
+    String operation,
+    String Function(Object?) localId,
+  ) async {
+    final id = localId(p['id']);
+    final measurementId = localId(p['measurement_id']);
+    if (id.isEmpty || measurementId.isEmpty) {
+      return false;
+    }
+    if (_isTombstone(operation, p)) {
+      await (_database.delete(
+        _database.bodyImpedanceReadings,
+      )..where((row) => row.id.equals(id))).go();
+      return true;
+    }
+    final measurement = await (_database.select(
+      _database.bodyMeasurements,
+    )..where((row) => row.id.equals(measurementId))).getSingleOrNull();
+    final segment = _oneOf(p['segment'], _impedanceSegments);
+    final frequency = _boundedInt(p['frequency_hz'], 1, 10000000);
+    final ohm = _boundedDouble(p['ohm'], 0.01, 5000);
+    if (measurement == null || segment == null || ohm == null) {
+      return false;
+    }
+    // La chiave naturale e' piu forte dell'id remoto: uno swap dopo un retry
+    // non deve lasciare due letture dello stesso segmento/frequenza.
+    await (_database.delete(_database.bodyImpedanceReadings)..where(
+          (row) =>
+              row.measurementId.equals(measurementId) &
+              row.segment.equals(segment) &
+              (frequency == null
+                  ? row.frequencyHz.isNull()
+                  : row.frequencyHz.equals(frequency)) &
+              row.id.equals(id).not(),
+        ))
+        .go();
+    await _database
+        .into(_database.bodyImpedanceReadings)
+        .insertOnConflictUpdate(
+          BodyImpedanceReadingsCompanion(
+            id: Value(id),
+            measurementId: Value(measurementId),
+            segment: Value(segment),
+            frequencyHz: Value(frequency),
+            ohm: Value(ohm),
+          ),
+        );
+    return true;
+  }
+
   /// La FK viva vale solo se l'esercizio esiste già qui: `exercise_ref_id`
   /// conserva comunque l'id originale, che è la chiave di raggruppamento.
   Future<String?> _liveExerciseId(
@@ -1624,6 +2057,20 @@ class SyncEngine {
   double? _nullableDouble(Object? value) =>
       value is num && value.toDouble().isFinite ? value.toDouble() : null;
 
+  int? _boundedInt(Object? value, int minimum, int maximum) {
+    final parsed = _nullableInt(value);
+    return parsed != null && parsed >= minimum && parsed <= maximum
+        ? parsed
+        : null;
+  }
+
+  double? _boundedDouble(Object? value, double minimum, double maximum) {
+    final parsed = _nullableDouble(value);
+    return parsed != null && parsed >= minimum && parsed <= maximum
+        ? parsed
+        : null;
+  }
+
   static const _muscleGroups = {
     'petto',
     'schiena',
@@ -1654,6 +2101,54 @@ class SyncEngine {
   static const _workoutSources = {'manual', 'gym_tracker'};
 
   static const _healthSyncStates = {'writing', 'synced', 'uncertain'};
+
+  static const _measurementSources = {
+    'manual',
+    'renpho_ble',
+    'renpho_csv',
+    'gym_tracker',
+    'health_connect',
+  };
+
+  static const _impedanceSegments = {
+    'whole',
+    'leftArm',
+    'rightArm',
+    'leftLeg',
+    'rightLeg',
+    'trunk',
+  };
+
+  static const _goalLevels = {
+    'soft',
+    'normal',
+    'lean',
+    'athletic',
+    'defined',
+    'veryDefined',
+  };
+
+  static const _goalPhases = {'approach', 'consolidation', 'maintenance'};
+
+  static const _goalOutcomes = {'reached', 'replaced', 'abandoned'};
+
+  static const _limitationBodyParts = {
+    'spalla_dx',
+    'spalla_sx',
+    'gomito_dx',
+    'gomito_sx',
+    'polso_dx',
+    'polso_sx',
+    'collo',
+    'costole',
+    'lombari',
+    'anca_dx',
+    'anca_sx',
+    'ginocchio_dx',
+    'ginocchio_sx',
+    'caviglia_dx',
+    'caviglia_sx',
+  };
 
   /// I CHECK locali sono chiusi quanto quelli remoti: un valore fuori elenco
   /// farebbe fallire la scrittura e il pull resterebbe fermo su quel cursore.

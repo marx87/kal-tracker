@@ -92,5 +92,9 @@ class FlutterLocalNotificationsWaterGateway implements WaterReminderGateway {
   }
 
   @override
-  Future<void> cancelAll() => _plugin.cancelAll();
+  Future<void> cancelSlots(Iterable<int> ids) async {
+    for (final id in ids) {
+      await _plugin.cancel(id: id);
+    }
+  }
 }

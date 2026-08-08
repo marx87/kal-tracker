@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/routines/presentation/routine_providers.dart';
 import 'package:kal_tracker/features/targets/presentation/target_providers.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_gateway.dart';
 import 'package:kal_tracker/features/weekly_plan/data/weekly_plan_repository.dart';
@@ -10,6 +11,10 @@ import 'package:kal_tracker/features/weekly_plan/data/workout_plan_repository.da
 import 'package:kal_tracker/features/weekly_plan/domain/plan_week.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/plan_workout_start.dart';
 import 'package:kal_tracker/features/weekly_plan/domain/weekly_plan_models.dart';
+import 'package:kal_tracker/features/workouts/data/routine_to_workout.dart';
+import 'package:kal_tracker/features/workouts/domain/live_workout_repository.dart';
+import 'package:kal_tracker/features/workouts/domain/start_workout.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 
 /// Tutti i piani del profilo, dal più recente. Sorgente unica per la
 /// schermata Piano e per la lista della spesa: legge solo il database
@@ -80,18 +85,49 @@ final planWeekProvider = Provider<List<PlanWeekDay>>((ref) {
 
 /// Come si avvia l'allenamento previsto dal giorno.
 ///
-/// Comporre una sessione dalla scheda è lavoro del modulo Palestra, che oggi
-/// non ha ancora il suo repository collegato (`liveWorkoutRepositoryProvider`
-/// lancia apposta, finché non arriva l'implementazione Drift). Questo è il
-/// punto d'innesto: chi lo collega sovrascrive il provider e «Inizia
-/// allenamento» parte, senza cambiare una riga di questa cartella.
-///
-/// Finché è null il piano non promette quello che non può fare: il pulsante
-/// dice «Apri la scheda» e porta in Palestra.
+/// Il tipo resta nullable per i test e per eventuali shell ridotte che
+/// vogliono esplicitamente disattivare l'avvio; nell'app vera il default usa
+/// i repository Drift della Palestra e apre la sessione con un solo tocco.
 typedef PlanWorkoutStarter =
     Future<PlanWorkoutStartResult> Function(String routineId);
 
-final planWorkoutStarterProvider = Provider<PlanWorkoutStarter?>((ref) => null);
+final planWorkoutStarterProvider = Provider<PlanWorkoutStarter?>((ref) {
+  final routines = ref.watch(routineRepositoryProvider);
+  final live = ref.watch(liveWorkoutRepositoryProvider);
+
+  return (routineId) async {
+    try {
+      final routine = await routines.getRoutine(routineId);
+      if (routine == null) {
+        return const PlanWorkoutNotStarted(
+          'Questa scheda non esiste più. Aggiorna il piano o scegline '
+          'un’altra.',
+        );
+      }
+      final result = await startLiveWorkout(
+        live,
+        routineId: routine.id,
+        routineName: routine.name,
+        exercises: workoutExercisesFromRoutine(routine),
+      );
+      ref.invalidate(activeWorkoutProvider);
+      return switch (result) {
+        WorkoutStarted(:final workout) => PlanWorkoutRunning(workout.id),
+        WorkoutAlreadyRunning(:final existing) => PlanWorkoutRunning(
+          existing.id,
+          resumed: true,
+        ),
+        WorkoutStartFailed() => const PlanWorkoutNotStarted(
+          'Non sono riuscito ad aprire l’allenamento. Riprova.',
+        ),
+      };
+    } on Object {
+      return const PlanWorkoutNotStarted(
+        'Non sono riuscito ad aprire l’allenamento. Riprova.',
+      );
+    }
+  };
+});
 
 /// Polling gentile mentre il Mac lavora: una lettura ogni 15 s, e solo
 /// finché esiste un piano in preparazione.
@@ -195,7 +231,7 @@ class WeeklyPlanController extends Notifier<WeeklyPlanUiState> {
     state = state.copyWith(busy: true, clearError: true);
     try {
       final profile = await ref.read(marcoProfileProvider.future);
-      final targets = await ref.read(nutritionTargetProvider.future);
+      final targets = await ref.read(effectiveNutritionTargetProvider.future);
       await ref
           .read(weeklyPlanRepositoryProvider)
           .generatePlan(

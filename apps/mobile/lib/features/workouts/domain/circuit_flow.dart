@@ -130,19 +130,38 @@ class CircuitFlowState {
     required int totalRounds,
     int? segmentIndex,
     CircuitCompletionTracker? completed,
-  }) => CircuitFlowState(
-    kind: kind,
-    steps: List.unmodifiable(steps),
-    phase: CircuitPhase.prep,
-    stepIndex: 0,
-    round: 1,
-    totalRounds: totalRounds < 1 ? 1 : totalRounds,
-    secondsLeft: kPrepSeconds,
-    restSec: restSec,
-    longRestSec: longRestSec,
-    segmentIndex: segmentIndex,
-    completed: completed ?? CircuitCompletionTracker(),
-  );
+  }) {
+    final safeRounds = totalRounds < 1 ? 1 : totalRounds;
+    final tracker = completed ?? CircuitCompletionTracker();
+    var firstRound = 1;
+    var firstStep = 0;
+    var foundPending = steps.isEmpty;
+    for (var round = 1; round <= safeRounds && !foundPending; round++) {
+      for (var step = 0; step < steps.length; step++) {
+        if (!tracker.isCompleted(round: round, stepIndex: step)) {
+          firstRound = round;
+          firstStep = step;
+          foundPending = true;
+          break;
+        }
+      }
+    }
+    return CircuitFlowState(
+      kind: kind,
+      steps: List.unmodifiable(steps),
+      phase: !foundPending && steps.isNotEmpty
+          ? CircuitPhase.done
+          : CircuitPhase.prep,
+      stepIndex: firstStep,
+      round: firstRound,
+      totalRounds: safeRounds,
+      secondsLeft: !foundPending && steps.isNotEmpty ? 0 : kPrepSeconds,
+      restSec: restSec,
+      longRestSec: longRestSec,
+      segmentIndex: segmentIndex,
+      completed: tracker,
+    );
+  }
 
   /// I secondi di «pronti» all'avvio della fase.
   static const int kPrepSeconds = 5;
@@ -220,13 +239,11 @@ class CircuitFlowState {
     if (steps.isEmpty) return null;
     switch (phase) {
       case CircuitPhase.work:
-        if (stepIndex < steps.length - 1) return steps[stepIndex + 1];
-        if (round < totalRounds) return steps.first;
-        return null;
+        return _nextPendingCell(this)?.step;
       case CircuitPhase.shortRest:
-        return stepIndex + 1 < steps.length ? steps[stepIndex + 1] : null;
+        return _nextPendingCell(this)?.step;
       case CircuitPhase.longRest:
-        return steps.first;
+        return _nextPendingCell(this)?.step;
       case CircuitPhase.prep:
         return currentStep;
       case CircuitPhase.done:
@@ -309,8 +326,6 @@ class CircuitTransition {
 /// segna completata PRIMA di decidere dove andare, perché anche l'ultima
 /// cella dell'ultimo round — quella che chiude tutto — deve risultare fatta.
 CircuitTransition advanceCircuitPhase(CircuitFlowState state) {
-  final lastStep = state.steps.length - 1;
-
   switch (state.phase) {
     case CircuitPhase.prep:
       return CircuitTransition(
@@ -323,55 +338,66 @@ CircuitTransition advanceCircuitPhase(CircuitFlowState state) {
 
     case CircuitPhase.work:
       final completed = _markCompleted(state);
-      if (state.stepIndex < lastStep) {
+      final withCompletion = state.copyWith(completed: completed);
+      final next = _nextPendingCell(withCompletion);
+      if (next == null) {
         return CircuitTransition(
-          state: state.copyWith(
+          state: withCompletion.copyWith(
+            phase: CircuitPhase.done,
+            secondsLeft: 0,
+          ),
+          event: CircuitEvent.finished,
+        );
+      }
+      if (next.round == state.round) {
+        return CircuitTransition(
+          state: withCompletion.copyWith(
             phase: CircuitPhase.shortRest,
             secondsLeft: state.restSec,
-            completed: completed,
           ),
           event: CircuitEvent.shortRestStarted,
         );
       }
-      if (state.round < state.totalRounds) {
+      return CircuitTransition(
+        state: withCompletion.copyWith(
+          phase: CircuitPhase.longRest,
+          secondsLeft: state.longRestSec,
+        ),
+        event: CircuitEvent.longRestStarted,
+      );
+
+    case CircuitPhase.shortRest:
+      final next = _nextPendingCell(state);
+      if (next == null) {
         return CircuitTransition(
-          state: state.copyWith(
-            phase: CircuitPhase.longRest,
-            secondsLeft: state.longRestSec,
-            completed: completed,
-          ),
-          event: CircuitEvent.longRestStarted,
+          state: state.copyWith(phase: CircuitPhase.done, secondsLeft: 0),
+          event: CircuitEvent.finished,
         );
       }
       return CircuitTransition(
         state: state.copyWith(
-          phase: CircuitPhase.done,
-          secondsLeft: 0,
-          completed: completed,
-        ),
-        event: CircuitEvent.finished,
-      );
-
-    case CircuitPhase.shortRest:
-      final nextIndex = state.stepIndex + 1;
-      return CircuitTransition(
-        state: state.copyWith(
           phase: CircuitPhase.work,
-          stepIndex: nextIndex,
-          secondsLeft: nextIndex < state.steps.length
-              ? state.steps[nextIndex].workSec
-              : 30,
+          stepIndex: next.stepIndex,
+          round: next.round,
+          secondsLeft: next.step.workSec,
         ),
         event: CircuitEvent.workStarted,
       );
 
     case CircuitPhase.longRest:
+      final next = _nextPendingCell(state);
+      if (next == null) {
+        return CircuitTransition(
+          state: state.copyWith(phase: CircuitPhase.done, secondsLeft: 0),
+          event: CircuitEvent.finished,
+        );
+      }
       return CircuitTransition(
         state: state.copyWith(
           phase: CircuitPhase.work,
-          stepIndex: 0,
-          round: state.round + 1,
-          secondsLeft: state.steps.isEmpty ? 30 : state.steps.first.workSec,
+          stepIndex: next.stepIndex,
+          round: next.round,
+          secondsLeft: next.step.workSec,
         ),
         event: CircuitEvent.workStarted,
       );
@@ -394,8 +420,6 @@ CircuitTransition skipCircuitStep(CircuitFlowState state) {
     return CircuitTransition(state: state, event: CircuitEvent.none);
   }
 
-  final lastStep = state.steps.length - 1;
-
   if (state.phase == CircuitPhase.prep) {
     // Già in preparazione: si accorcia a un secondo così parte subito.
     return CircuitTransition(
@@ -404,43 +428,21 @@ CircuitTransition skipCircuitStep(CircuitFlowState state) {
     );
   }
 
-  if (state.phase == CircuitPhase.longRest) {
+  final next = _nextPendingCell(state);
+  if (next == null) {
     return CircuitTransition(
-      state: state.copyWith(
-        phase: CircuitPhase.prep,
-        stepIndex: 0,
-        round: state.round + 1,
-        secondsLeft: CircuitFlowState.kSkipPrepSeconds,
-      ),
-      event: CircuitEvent.shortRestStarted,
-    );
-  }
-
-  // Lavoro o riposo breve.
-  if (state.stepIndex < lastStep) {
-    return CircuitTransition(
-      state: state.copyWith(
-        phase: CircuitPhase.prep,
-        stepIndex: state.stepIndex + 1,
-        secondsLeft: CircuitFlowState.kSkipPrepSeconds,
-      ),
-      event: CircuitEvent.shortRestStarted,
-    );
-  }
-  if (state.round < state.totalRounds) {
-    return CircuitTransition(
-      state: state.copyWith(
-        phase: CircuitPhase.prep,
-        stepIndex: 0,
-        round: state.round + 1,
-        secondsLeft: CircuitFlowState.kSkipPrepSeconds,
-      ),
-      event: CircuitEvent.shortRestStarted,
+      state: state.copyWith(phase: CircuitPhase.done, secondsLeft: 0),
+      event: CircuitEvent.finished,
     );
   }
   return CircuitTransition(
-    state: state.copyWith(phase: CircuitPhase.done, secondsLeft: 0),
-    event: CircuitEvent.finished,
+    state: state.copyWith(
+      phase: CircuitPhase.prep,
+      stepIndex: next.stepIndex,
+      round: next.round,
+      secondsLeft: CircuitFlowState.kSkipPrepSeconds,
+    ),
+    event: CircuitEvent.shortRestStarted,
   );
 }
 
@@ -472,6 +474,22 @@ CircuitCompletionTracker _markCompleted(CircuitFlowState state) {
   final next = CircuitCompletionTracker(state.completed.serialize())
     ..markCompleted(round: state.round, stepIndex: state.stepIndex);
   return next;
+}
+
+({int round, int stepIndex, CircuitStep step})? _nextPendingCell(
+  CircuitFlowState state,
+) {
+  if (state.steps.isEmpty) return null;
+  final start = (state.round - 1) * state.steps.length + state.stepIndex + 1;
+  final total = state.totalRounds * state.steps.length;
+  for (var linear = start; linear < total; linear++) {
+    final round = linear ~/ state.steps.length + 1;
+    final stepIndex = linear % state.steps.length;
+    if (!state.completed.isCompleted(round: round, stepIndex: stepIndex)) {
+      return (round: round, stepIndex: stepIndex, step: state.steps[stepIndex]);
+    }
+  }
+  return null;
 }
 
 /// Perché un checkpoint non è stato applicato. Non è un dettaglio da log: le

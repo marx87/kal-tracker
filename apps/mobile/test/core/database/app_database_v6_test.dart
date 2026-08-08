@@ -656,7 +656,7 @@ void main() {
         .select(database.workoutProfileStats)
         .getSingle();
 
-    expect(version, 10);
+    expect(version, 11);
     expect(profile.displayName, 'Marco');
     expect(profile.heightCm, closeTo(182, 0.0001));
     expect(profile.sex, 'M');
@@ -1050,7 +1050,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .map((row) => row.read<int>('user_version'))
         .getSingle();
-    expect(version, 10);
+    expect(version, 11);
     expect(
       (await database.select(database.appProfiles).getSingle()).displayName,
       'Marco v1',

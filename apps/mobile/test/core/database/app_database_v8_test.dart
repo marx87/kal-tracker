@@ -792,7 +792,7 @@ void main() {
     // non fosse girato, qui uscirebbe «no such table».
     final impostazioni = await database.select(database.localSettings).get();
 
-    expect(version, 10);
+    expect(version, 11);
     expect(impostazioni, isEmpty);
     expect(profile.displayName, 'Marco');
     expect(profile.heightCm, closeTo(182, 0.0001));
