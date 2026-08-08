@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
+import 'package:kal_tracker/features/checkin/domain/neat_trend.dart';
 import 'package:kal_tracker/features/coach/domain/coach_adherence.dart';
 import 'package:kal_tracker/features/coach/domain/coach_dates.dart';
 import 'package:kal_tracker/features/coach/domain/coach_false_movement.dart';
@@ -31,6 +32,82 @@ AppStatusLevel? statusOfLeanTrend(LeanMassTrend trend) => switch (trend) {
   LeanMassTrend.falling => AppStatusLevel.critical,
   LeanMassTrend.unknown => null,
 };
+
+/// Un colore solo, per il calo.
+///
+/// «Ti stai muovendo di più» non prende il verde e «il movimento è lo stesso»
+/// non prende niente: il dominio del NEAT emette un solo verdetto che chiede
+/// qualcosa a chi legge, ed è quello. Colorare anche gli altri due
+/// aggiungerebbe un giudizio che nessuno ha dato — camminare di più può anche
+/// essere la fame che sale, non è per forza una buona notizia.
+///
+/// Ed è `warning`, non `critical`: la risposta è guardare qui prima di
+/// tagliare le calorie, non fermare tutto.
+AppStatusLevel? statusOfNeat(NeatDirection direction) => switch (direction) {
+  NeatDirection.down => AppStatusLevel.warning,
+  NeatDirection.up || NeatDirection.steady || NeatDirection.unknown => null,
+};
+
+/// **Quanto ci si è mossi, contro la settimana prima.**
+///
+/// Nel rapporto sta sopra il consumo apposta: il consumo misurato registra il
+/// crollo del NEAT ma non sa spiegarlo, e chi legge «consumi meno» per primo
+/// pensa alle calorie da togliere. La causa possibile si nomina prima della
+/// proposta, non dopo.
+class CoachNeatCard extends StatelessWidget {
+  const CoachNeatCard({required this.trend, super.key});
+
+  final NeatTrend trend;
+
+  @override
+  Widget build(BuildContext context) {
+    final line = trend.line;
+    if (line == null) {
+      return const SizedBox.shrink();
+    }
+    final fell = trend.direction == NeatDirection.down;
+
+    return SectionCard(
+      key: const Key('coach_neat_card'),
+      title: 'Movimento',
+      // Il sottotitolo dichiara l'esclusione: questo numero non entra in
+      // nessuna formula del rapporto, e prometterlo sarebbe peggio che tacerlo.
+      subtitle: 'Quello fuori dalla palestra: spiega i numeri, non li cambia',
+      icon: Icons.directions_walk_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Headline(text: line, status: statusOfNeat(trend.direction)),
+          // La percentuale compare solo dopo che il calo è stato dichiarato.
+          // Da sei a quattro minuti al giorno è lo stesso −33 % di diecimila
+          // passi che diventano seimila, e stamparlo sotto «il movimento è lo
+          // stesso» farebbe litigare la card con sé stessa: la soglia in
+          // valore assoluto sta nel dominio, e qui si rispetta.
+          if (trend.change case final change? when fell)
+            StatRow(
+              label: 'Quanto in meno',
+              value: coachSignedNumber(change * 100, decimals: 0),
+              unit: '%',
+              unitSemantics: 'per cento',
+              caption: 'Sulla media al giorno, non su un giorno solo',
+            ),
+          // Il perché la frase del dominio non lo può dire, perché il dominio
+          // del check-in non sa che esiste un consumo misurato: è il pezzo che
+          // trasforma «ti muovi di meno» nella causa di quello che si legge
+          // nella card dopo.
+          if (fell)
+            const _Note(
+              key: Key('coach_neat_cause'),
+              text:
+                  'Il consumo misurato ha già dentro questa camminata in meno: '
+                  'registra il calo, ma non sa dire che è stato il movimento a '
+                  'farlo.',
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Il consumo della settimana e da dove viene il numero.
 class CoachTdeeCard extends StatelessWidget {

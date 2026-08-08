@@ -317,9 +317,9 @@ abstract final class ExerciseScreener {
     if (excluded) {
       return limitation.severity == LimitationSeverity.stop
           ? 'Fuori: $zona è in stop e questo esercizio la carica.'
-          : 'Fuori: $zona fa male e $carico.';
+          : 'Fuori: $zona fa male ed $carico.';
     }
-    return 'Da tenere d\'occhio: $zona dà fastidio e $carico.';
+    return 'Da tenere d\'occhio: $zona dà fastidio ed $carico.';
   }
 
   /// La coda che nomina le limitazioni che la ragione non ha già raccontato.

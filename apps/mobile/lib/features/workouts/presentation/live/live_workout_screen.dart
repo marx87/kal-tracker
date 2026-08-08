@@ -783,7 +783,7 @@ class _ProgressCard extends StatelessWidget {
       workout: projected,
       exerciseGroups: muscleGroupsFromSnapshots(workout),
       bodyKg: bodyKg,
-    );
+    ).kcal;
 
     return SectionCard(
       title: 'A che punto sei',

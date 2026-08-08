@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kal_tracker/features/checkin/data/check_in_store.dart';
+import 'package:kal_tracker/features/checkin/presentation/check_in_providers.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/goal/data/goal_store.dart';
+import 'package:kal_tracker/features/goal/domain/activity_multiplier.dart';
 import 'package:kal_tracker/features/goal/domain/body_state.dart';
 import 'package:kal_tracker/features/goal/domain/definition_level.dart';
 import 'package:kal_tracker/features/goal/domain/goal.dart';
@@ -55,8 +58,20 @@ void main() {
   Widget host({required BodyState state, GoalStore? store, ThemeData? theme}) =>
       ProviderScope(
         overrides: [
+          // Il moltiplicatore legge i passi dal check-in: senza questo override
+          // la schermata aprirebbe il database vero.
+          checkInStoreProvider.overrideWithValue(InMemoryCheckInStore()),
           goalStoreProvider.overrideWithValue(store ?? InMemoryGoalStore()),
           bodyStateProvider.overrideWith((ref) => Stream.value(state)),
+          // Nessun allenamento: senza questa sostituzione la card del
+          // moltiplicatore aprirebbe il database vero per una domanda che
+          // questi test non fanno.
+          activityTrainingHistoryProvider.overrideWith(
+            (ref) async => (
+              sessions: const <TrainingSessionKcal>[],
+              firstRecordedAt: null,
+            ),
+          ),
         ],
         child: MaterialApp(
           theme: theme,

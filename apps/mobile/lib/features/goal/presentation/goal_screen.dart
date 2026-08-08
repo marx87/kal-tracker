@@ -7,6 +7,7 @@ import 'package:kal_tracker/features/goal/domain/goal.dart';
 import 'package:kal_tracker/features/goal/domain/goal_pace.dart';
 import 'package:kal_tracker/features/goal/domain/goal_plan.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_providers.dart';
+import 'package:kal_tracker/features/goal/presentation/widgets/activity_multiplier_card.dart';
 import 'package:kal_tracker/features/goal/presentation/widgets/goal_cards.dart';
 import 'package:kal_tracker/features/goal/presentation/widgets/goal_pace_sheet.dart';
 import 'package:kal_tracker/features/goal/presentation/widgets/goal_target_sheet.dart';
@@ -56,7 +57,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
         child: RefreshIndicator(
           // Le calorie del diario entrano nel TDEE misurato alla pesata
           // successiva: questa è la scorciatoia per non aspettarla.
-          onRefresh: () async => ref.invalidate(bodyStateProvider),
+          onRefresh: () async {
+            ref.invalidate(bodyStateProvider);
+            // Gli allenamenti si leggono una volta e restano: senza questa
+            // riga la seduta chiusa stamattina non entrerebbe nella proposta
+            // fino al riavvio dell'app.
+            ref.invalidate(activityTrainingHistoryProvider);
+          },
           child: ListView(
             key: const Key('goal_list'),
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
@@ -196,6 +203,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
         plan: current,
         onChangePace: () => _changePace(context, ref, current),
       ),
+      // Subito sotto il consumo, che è il numero di cui parla: la domanda
+      // «gli allenamenti dicono 1,48 invece di 1,55» letta a schermate di
+      // distanza dalle calorie che cambierebbe non si capisce. Lo spazio se
+      // lo porta dietro la card, che il più delle volte non c'è.
+      const ActivityMultiplierCard(key: Key('goal_activity_card')),
       const SizedBox(height: 14),
       GoalPhaseCard(plan: current),
       if (current.band case final band?) ...[

@@ -495,6 +495,94 @@ void main() {
     });
   });
 
+  group('il check-in', () {
+    /// Un giorno di check-in. Il sonno c'è sempre perché la tabella pretende
+    /// almeno quello o l'energia: qui si prova il movimento che arriva al
+    /// coach, non cosa il database accetta di tenere in vita.
+    Future<void> addCheckIn(
+      DateTime day, {
+      int? steps,
+      int? walkMinutes,
+      double? sleepHours = 7,
+      bool deleted = false,
+    }) => database
+        .into(database.dailyCheckIns)
+        .insert(
+          DailyCheckInsCompanion.insert(
+            id: 'checkin-${day.toIso8601String()}',
+            profileId: profileId,
+            day: day,
+            createdAt: now,
+            updatedAt: now,
+            sleepHours: Value(sleepHours),
+            steps: Value(steps),
+            walkMinutes: Value(walkMinutes),
+            deletedAt: Value(deleted ? now : null),
+          ),
+        );
+
+    test('i passi delle due settimane arrivano nella fotografia', () async {
+      for (var back = 0; back < 14; back++) {
+        await addCheckIn(
+          sunday.subtract(Duration(days: back)),
+          steps: back < 7 ? 4000 : 10000,
+        );
+      }
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.checkIns.entries, hasLength(14));
+      final neat = snapshot.neat!;
+      expect(neat.current, closeTo(4000, 0.001));
+      expect(neat.previous, closeTo(10000, 0.001));
+      expect(neat.line, contains('prima di togliere calorie'));
+    });
+
+    test('un check-in cancellato non conta', () async {
+      await addCheckIn(sunday, steps: 9000, deleted: true);
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      expect(snapshot.checkIns.entries, isEmpty);
+      expect(snapshot.neat, isNull);
+    });
+
+    test('una settimana di solo sonno non inventa un movimento', () async {
+      for (var back = 0; back < 7; back++) {
+        await addCheckIn(sunday.subtract(Duration(days: back)));
+      }
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      // I check-in ci sono — servono al semaforo — ma del movimento non si
+      // dice niente: è la differenza fra «non l'ha segnato» e «è stato fermo».
+      expect(snapshot.checkIns.entries, hasLength(7));
+      expect(snapshot.neat, isNull);
+    });
+
+    test('i minuti a piedi arrivano insieme ai passi', () async {
+      await addCheckIn(sunday, steps: 8000, walkMinutes: 45);
+
+      final snapshot = await repository.load(
+        profileId: profileId,
+        week: testWeek,
+      );
+
+      final entry = snapshot.checkIns.forDay(sunday)!;
+      expect(entry.steps, 8000);
+      expect(entry.walkMinutes, 45);
+    });
+  });
+
   group('gli allenamenti previsti', () {
     test('contano i giorni con una scheda, non quelli di riposo', () async {
       await database

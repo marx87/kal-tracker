@@ -393,6 +393,44 @@ void main() {
       );
     });
 
+    test('dopo il sì la stessa domanda non torna', () {
+      final proposal = proposeFor([
+        for (var week = 0; week < 3; week++)
+          for (final offset in const [1, 3, 5])
+            session(week * 7 + offset, grossFor(0.28 * marcoBasal * 7 / 3)),
+      ]);
+      final accettato = proposal.proposedMultiplier!;
+
+      // Il dichiarato resta 1,55 anche dopo che Marco ha detto sì: è la
+      // scelta a cui si torna togliendo il derivato, non un campo che il sì
+      // aggiorna. Misurata su quella, la domanda tornerebbe identica ogni
+      // giorno — e una domanda che non accetta risposta si impara a saltare.
+      expect(proposal.shouldPropose, isTrue);
+      expect(proposal.shouldProposeOver(accettato), isFalse);
+      expect(proposal.questionOver(accettato), isNull);
+    });
+
+    test(
+      'ma se gli allenamenti cambiano, si richiede sul numero in vigore',
+      () {
+        final proposal = proposeFor([
+          for (var week = 0; week < 3; week++)
+            for (final offset in const [1, 3, 5])
+              session(week * 7 + offset, grossFor(0.28 * marcoBasal * 7 / 3)),
+        ]);
+
+        // In vigore c'è un derivato accettato mesi fa: i due numeri della frase
+        // sono quello di adesso e quello che sta davvero moltiplicando il
+        // basale, non la voce della tendina che nessuno usa più.
+        expect(proposal.shouldProposeOver(1.3), isTrue);
+        expect(
+          proposal.questionOver(1.3),
+          'Le tue ultime 3 settimane dicono 1,48 invece di 1,30 — vuoi '
+          'aggiornare?',
+        );
+      },
+    );
+
     test('sotto i cinque centesimi non si chiede niente', () {
       // 1,55 dichiarato contro un derivato che gli sta a ridosso: chiedere
       // «vuoi aggiornare?» per meno di cento calorie insegna a rispondere no

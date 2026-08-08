@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kal_tracker/features/checkin/data/check_in_store.dart';
+import 'package:kal_tracker/features/checkin/presentation/check_in_providers.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
 import 'package:kal_tracker/features/goal/data/activity_settings_store.dart';
@@ -11,7 +13,13 @@ import 'package:kal_tracker/features/goal/domain/definition_level.dart';
 import 'package:kal_tracker/features/goal/domain/goal.dart';
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
 import 'package:kal_tracker/features/goal/presentation/goal_providers.dart';
+import 'package:kal_tracker/features/workouts/domain/exercise_kind.dart';
+import 'package:kal_tracker/features/workouts/domain/kcal_estimator.dart';
+import 'package:kal_tracker/features/workouts/domain/live_workout_repository.dart';
+import 'package:kal_tracker/features/workouts/domain/workout.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 
+import '../../workouts/live/fake_live_workout_repository.dart';
 import '../marco.dart';
 
 /// Stesso «adesso» fisso del test del dominio: le finestre sono sette giorni
@@ -57,22 +65,68 @@ ActivityTrainingHistory get threeWeeksOfTraining => (
   firstRecordedAt: now.subtract(const Duration(days: 120)),
 );
 
+/// Una sessione chiusa come la scrive la palestra: un esercizio con il suo
+/// gruppo congelato, un'ora piena, e le kcal della chiusura solo se le aveva.
+Workout closedWorkout({
+  required int daysAgo,
+  int minutes = 60,
+  MuscleGroup? group = MuscleGroup.gambe,
+  double? totalKcal,
+}) {
+  final endedAt = now.subtract(Duration(days: daysAgo));
+  return Workout(
+    id: 'w-$daysAgo',
+    startedAt: endedAt.subtract(Duration(minutes: minutes)),
+    endedAt: endedAt,
+    finalDurationSeconds: minutes * 60,
+    totalKcal: totalKcal,
+    exercises: [
+      WorkoutExercise(
+        exerciseId: 'squat',
+        exerciseName: 'Squat',
+        muscleGroup: group,
+        sets: const [WorkoutSet(weightKg: 80, reps: 8, completed: true)],
+      ),
+    ],
+  );
+}
+
+/// Il repository della palestra con dentro delle sessioni vere e l'ultima
+/// pesata di Marco.
+FakeLiveWorkoutRepository gymWith(List<Workout> closed) =>
+    FakeLiveWorkoutRepository(
+      closedHistory: closed,
+      bodyWeights: [BodyWeightSample(measuredAt: now, kg: marcoWeight)],
+    );
+
+/// [workouts] non nullo mette alla prova il provider VERO, quello che legge
+/// il repository: gli altri test gli passano davanti con uno storico già
+/// pronto, perché parlano di quello che succede a valle.
 ProviderContainer containerWith({
   required ActivitySettingsStore store,
   BodyState? body,
   ActivityTrainingHistory? history,
+  LiveWorkoutRepository? workouts,
 }) {
   final container = ProviderContainer(
     overrides: [
+      // Il moltiplicatore legge i passi dal check-in: senza questo override
+      // la schermata aprirebbe il database vero.
+      checkInStoreProvider.overrideWithValue(InMemoryCheckInStore()),
       activitySettingsStoreProvider.overrideWithValue(store),
       goalStoreProvider.overrideWithValue(
         InMemoryGoalStore(GoalHistory(current: marcoGoal)),
       ),
       bodyStateProvider.overrideWith((ref) => Stream.value(body ?? marcoBody)),
-      activityTrainingHistoryProvider.overrideWithValue(
-        // Nessuna sorgente collegata: è lo stato in cui l'app si trova oggi.
-        history ?? (sessions: const [], firstRecordedAt: null),
-      ),
+      if (workouts != null)
+        liveWorkoutRepositoryProvider.overrideWithValue(workouts)
+      else
+        activityTrainingHistoryProvider.overrideWith(
+          // Nessun allenamento: è l'app appena installata.
+          (ref) async =>
+              history ??
+              (sessions: const <TrainingSessionKcal>[], firstRecordedAt: null),
+        ),
       todayProvider.overrideWithValue(now),
     ],
   );
@@ -80,12 +134,13 @@ ProviderContainer containerWith({
   return container;
 }
 
-/// Le due letture che il piano aspetta: senza, `goalPlanProvider` è ancora in
+/// Le letture che il piano aspetta: senza, `goalPlanProvider` è ancora in
 /// caricamento e ogni asserzione guarderebbe il vuoto.
 Future<void> settle(ProviderContainer container) async {
   await container.read(activitySettingsProvider.future);
   await container.read(goalControllerProvider.future);
   await container.read(bodyStateProvider.future);
+  await container.read(activityTrainingHistoryProvider.future);
 }
 
 void main() {
@@ -204,7 +259,7 @@ void main() {
     );
 
     test('senza allenamenti non si propone niente, e si dice perché', () async {
-      // Nessuna sorgente collegata: lo storico comincia adesso, zero
+      // Nessun allenamento registrato: lo storico comincia adesso, zero
       // settimane coperte. Il rifiuto è quello giusto — non «ti alleni poco».
       final container = containerWith(store: InMemoryActivitySettingsStore());
       await settle(container);
@@ -224,10 +279,129 @@ void main() {
       );
       await container.read(activitySettingsProvider.future);
       await container.read(bodyStateProvider.future);
+      await container.read(activityTrainingHistoryProvider.future);
 
       final proposal = container.read(activityMultiplierProposalProvider)!;
       expect(proposal.refusal, DerivedMultiplierRefusal.noBasalMetabolicRate);
       expect(proposal.explanation, contains('pesata completa'));
+    });
+
+    test('finché gli allenamenti non sono letti non si dice niente', () {
+      // Il rifiuto «non ho abbastanza storico» dato mentre la lettura è in
+      // corso sarebbe una risposta sbagliata, e per giunta sulla causa.
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith([closedWorkout(daysAgo: 2)]),
+      );
+
+      expect(container.read(activityMultiplierProposalProvider), isNull);
+    });
+  });
+
+  group('gli allenamenti veri arrivano dalla palestra', () {
+    test('una sessione chiusa porta kcal, MET medio e affidabilità', () async {
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith([closedWorkout(daysAgo: 2)]),
+      );
+
+      final history = await container.read(
+        activityTrainingHistoryProvider.future,
+      );
+      final session = history.sessions.single;
+
+      // Un'ora di gambe a 6,0 MET sul peso dell'ultima pesata.
+      expect(session.averageMet, 6.0);
+      expect(session.kcal, closeTo(6 * marcoWeight, 0.01));
+      expect(session.muscleGroupsComplete, isTrue);
+      expect(session.endedAt, now.subtract(const Duration(days: 2)));
+      expect(history.firstRecordedAt, closedWorkout(daysAgo: 2).startedAt);
+    });
+
+    test('le kcal della chiusura non si riscrivono col peso di oggi', () async {
+      // Sono il numero che Marco ha visto in cima alla scheda, calcolato col
+      // peso di quel giorno: rifarlo adesso riscriverebbe lo storico.
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith([closedWorkout(daysAgo: 2, totalKcal: 700)]),
+      );
+
+      final history = await container.read(
+        activityTrainingHistoryProvider.future,
+      );
+
+      expect(history.sessions.single.kcal, 700);
+      // Il MET invece si rifà: una colonna sua non ce l'ha, e senza di lui
+      // dal lordo non si toglie il riposo.
+      expect(history.sessions.single.averageMet, 6.0);
+    });
+
+    test('una riga senza gruppo muscolare marca la sessione', () async {
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith([closedWorkout(daysAgo: 2, group: null)]),
+      );
+
+      final history = await container.read(
+        activityTrainingHistoryProvider.future,
+      );
+
+      expect(history.sessions.single.muscleGroupsComplete, isFalse);
+      expect(history.sessions.single.isTrustworthy, isFalse);
+    });
+
+    test('senza allenamenti lo storico non comincia', () async {
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith(const []),
+      );
+      await settle(container);
+
+      final history = await container.read(
+        activityTrainingHistoryProvider.future,
+      );
+
+      expect(history.sessions, isEmpty);
+      expect(history.firstRecordedAt, isNull);
+      // E il rifiuto è quello vero, non più una costante vuota che lo
+      // produceva per finta.
+      expect(
+        container.read(activityMultiplierProposalProvider)!.refusal,
+        DerivedMultiplierRefusal.notEnoughHistory,
+      );
+    });
+
+    test('tre settimane di palestra fanno una proposta vera', () async {
+      final container = containerWith(
+        store: InMemoryActivitySettingsStore(),
+        workouts: gymWith([
+          for (var week = 0; week < 3; week++)
+            for (final offset in const [1, 3, 5])
+              closedWorkout(daysAgo: week * 7 + offset),
+          // Due mesi fa: fuori finestra, ma dice che quelle tre settimane
+          // sono settimane vere e non l'app appena installata.
+          closedWorkout(daysAgo: 60),
+        ]),
+      );
+      await settle(container);
+
+      final proposal = container.read(activityMultiplierProposalProvider)!;
+
+      expect(proposal.refusal, isNull);
+      expect(proposal.weeksUsed, 3);
+      expect(proposal.sessionsUsed, 9);
+      // Tre ore di gambe a settimana: 3 × 6,0 × 95,5 kcal lorde.
+      expect(
+        proposal.averageWeeklyGrossTrainingKcal,
+        closeTo(3 * 6 * marcoWeight, 0.01),
+      );
+      expect(proposal.shouldPropose, isTrue);
+
+      // E resta una proposta: il piano usa ancora il dichiarato.
+      expect(
+        container.read(goalPlanProvider).valueOrNull!.tdee.multiplierWasDerived,
+        isFalse,
+      );
     });
   });
 }

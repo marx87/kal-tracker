@@ -84,6 +84,27 @@ class TrainingSessionKcal {
       kcal >= 0 &&
       averageMet.isFinite &&
       averageMet >= 1;
+
+  /// Una sessione **senza lavoro dentro**: aperta e chiusa per sbaglio, o tre
+  /// minuti di solo defaticamento.
+  ///
+  /// Va riconosciuta perché altrimenti conta, e conta nel modo peggiore. Gli
+  /// esercizi arrivano dalla scheda, quindi lo snapshot dei gruppi muscolari è
+  /// completo e la settimana passa per buona; il MET vale 1 e la supera; ma le
+  /// calorie sono zero. Tre aperture sbagliate in tre settimane aprono il
+  /// cancello delle sessioni minime con un totale di allenamento vicino allo
+  /// zero, e il derivato scende al pavimento del NEAT: l'app propone di
+  /// tagliare seicento calorie al giorno e chiama «le calorie vere di tre
+  /// allenamenti» tre sedute in cui non è stato sollevato niente.
+  ///
+  /// Non si butta la settimana, però: non è un difetto, è una seduta che non
+  /// c'è stata. Si toglie dal conto e basta.
+  ///
+  /// Il criterio sono le **calorie a zero**, non il MET a uno. Un MET sotto il
+  /// riposo con calorie vere dentro è un'altra cosa — è un dato sbagliato a
+  /// monte — e quello deve continuare a buttare la settimana, non a sparire in
+  /// silenzio.
+  bool get isPhantom => kcal <= 0;
 }
 
 /// Perché il derivato non si può usare. Non è una lista di errori: è quello
@@ -176,12 +197,22 @@ class ActivityMultiplierProposal {
   /// cambia di meno di cento calorie al giorno sul basale di Marco: dentro il
   /// rumore della misura, e chiedere di aggiornare per quello vuol dire
   /// insegnare a rispondere «no» senza leggere.
-  bool get shouldPropose {
+  bool get shouldPropose => shouldProposeOver(null);
+
+  /// La stessa soglia, misurata su quello che è DAVVERO in vigore.
+  ///
+  /// [inForce] è il derivato già accettato, quando c'è; nullo vuol dire che
+  /// vale il dichiarato. La distinzione non è teorica: il dichiarato resta
+  /// invariato anche dopo un sì — è la scelta a cui si torna togliendo il
+  /// derivato, non un campo che il sì aggiorna — quindi senza [inForce] la
+  /// domanda tornerebbe identica il giorno dopo che Marco ha risposto, e per
+  /// sempre.
+  bool shouldProposeOver(double? inForce) {
     final derived = proposedMultiplier;
     if (derived == null) {
       return false;
     }
-    return (derived - declared.multiplier).abs() >= minimumGap;
+    return (derived - (inForce ?? declared.multiplier)).abs() >= minimumGap;
   }
 
   /// Sotto questa differenza il derivato conferma il dichiarato e si tace.
@@ -189,13 +220,17 @@ class ActivityMultiplierProposal {
 
   /// La domanda da fare a Marco. Nulla quando non c'è niente da chiedere:
   /// l'app propone, non applica, e non insiste.
-  String? get question {
+  String? get question => questionOver(null);
+
+  /// La domanda quando in vigore c'è già un derivato accettato: il confronto
+  /// è con quello, e anche i due numeri della frase sono quelli.
+  String? questionOver(double? inForce) {
     final derived = proposedMultiplier;
-    if (derived == null || !shouldPropose) {
+    if (derived == null || !shouldProposeOver(inForce)) {
       return null;
     }
     return 'Le tue ultime $weeksUsed settimane dicono ${_n(derived)} invece '
-        'di ${_n(declared.multiplier)} — vuoi aggiornare?';
+        'di ${_n(inForce ?? declared.multiplier)} — vuoi aggiornare?';
   }
 
   /// Da dove viene il numero, o perché non c'è. Stessa regola di
@@ -416,6 +451,14 @@ abstract final class DerivedActivityMultiplier {
       // Una sessione con data futura è un orologio sbagliato, non un
       // allenamento: sta fuori come quelle troppo vecchie.
       if (session.endedAt.isAfter(now)) {
+        continue;
+      }
+      // Le sedute vuote escono **prima** dei bucket, e non attraverso
+      // `isTrustworthy`: quella butta la settimana intera, e una sessione
+      // aperta per sbaglio non deve poter cancellare gli allenamenti veri
+      // fatti negli altri giorni. Non è un difetto del dato, è una seduta che
+      // non c'è stata: si toglie dal conto e basta.
+      if (session.isPhantom) {
         continue;
       }
       final index = now.difference(session.endedAt).inDays ~/ 7;

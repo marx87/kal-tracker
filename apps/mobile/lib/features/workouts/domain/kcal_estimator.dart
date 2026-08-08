@@ -31,6 +31,26 @@ const Map<MuscleGroup, double> kMetByGroup = {
 /// serve a non produrre zero calorie, non a essere giusto.
 const double kDefaultBodyKg = 70.0;
 
+/// Quello che una sessione è costata, e con che intensità.
+///
+/// I due numeri escono insieme perché insieme sono stati calcolati — `kcal =
+/// MET × peso × ore` — e dal solo totale non si torna indietro: senza sapere
+/// per quante volte il riposo è stato moltiplicato non si può togliere, e il
+/// riposo di quelle ore qualcuno lo ha già contato (il NEAT copre la giornata
+/// intera). Prima il MET medio veniva calcolato e buttato alla riga dopo, e
+/// chi ne aveva bisogno avrebbe dovuto rifare la media su una seconda copia
+/// di [kMetByGroup].
+typedef SessionEnergy = ({double kcal, double averageMet});
+
+/// Nessun minuto attivo: niente calorie sopra il riposo, e l'intensità del
+/// riposo è 1 MET per definizione.
+///
+/// Lo zero sarebbe più comodo e sarebbe falso: chi legge il MET per togliere
+/// la quota di riposo tratta un valore sotto l'unità come un difetto a monte
+/// e butta la settimana intera. Una sessione aperta e chiusa per sbaglio non
+/// deve avere quel potere.
+const SessionEnergy _noActiveWork = (kcal: 0, averageMet: 1);
+
 double _metForExercise(WorkoutExercise ex, MuscleGroup group) {
   if (ex.isCooldown) return 2.5;
   if (ex.trackingMode == ExerciseTrackingMode.timed ||
@@ -46,7 +66,9 @@ double _metForExercise(WorkoutExercise ex, MuscleGroup group) {
 ///
 /// Realistic model: kcal ≈ avgMET × bodyKg × (activeHours)
 /// Where activeHours = totalDuration − cooldownDuration.
-double estimateKcal({
+///
+/// Il MET medio esce insieme alle calorie: vedi [SessionEnergy].
+SessionEnergy estimateKcal({
   required Workout workout,
   required Map<String, MuscleGroup> exerciseGroups,
   required double bodyKg,
@@ -54,7 +76,7 @@ double estimateKcal({
   // Cap absurd durations (e.g. workout left open overnight) at 4 hours so a
   // bug somewhere upstream doesn't produce 1000+ kcal numbers.
   final totalMinutes = (workout.duration?.inMinutes ?? 0).clamp(0, 240);
-  if (totalMinutes == 0) return 0;
+  if (totalMinutes == 0) return _noActiveWork;
 
   // Estimate how many minutes of the session belonged to the cool-down so
   // we can subtract them from the active time. Each cool-down set has a
@@ -68,12 +90,13 @@ double estimateKcal({
   }
   final cooldownMinutes = (cooldownSeconds / 60).round();
   final activeMinutes = (totalMinutes - cooldownMinutes).clamp(0, 240);
-  if (activeMinutes == 0) return 0;
+  if (activeMinutes == 0) return _noActiveWork;
 
   // Manual sessions (no tracked exercises) get a moderate 5.0 MET default,
   // like brisk circuit training.
   if (workout.exercises.isEmpty) {
-    return 5.0 * bodyKg * (activeMinutes / 60);
+    const met = 5.0;
+    return (kcal: met * bodyKg * (activeMinutes / 60), averageMet: met);
   }
 
   // MET average across non-cool-down exercises only.
@@ -89,7 +112,7 @@ double estimateKcal({
     weight += w;
   }
   final avgMet = weight > 0 ? totalMet / weight : 5.0;
-  return avgMet * bodyKg * (activeMinutes / 60);
+  return (kcal: avgMet * bodyKg * (activeMinutes / 60), averageMet: avgMet);
 }
 
 /// Una pesata, ridotta a quello che serve qui.

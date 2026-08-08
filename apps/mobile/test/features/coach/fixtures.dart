@@ -7,6 +7,7 @@
 library;
 
 import 'package:kal_tracker/features/body/domain/body_models.dart';
+import 'package:kal_tracker/features/checkin/domain/daily_check_in.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
 import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
@@ -67,6 +68,40 @@ List<CoachDiaryDay> diaryWeek({
       proteinGrams: proteinGrams,
     ),
 ];
+
+/// Check-in a ritroso da [lastDay]: l'indice 0 è [lastDay], il 7 è lo stesso
+/// giorno della settimana prima — cioè il termine di paragone del NEAT.
+///
+/// Un `null` è un giorno **non segnato**, che non è uno zero: la media si fa
+/// sui giorni con il dato, e distinguere le due cose è tutto il senso del
+/// campo. Le due misure convivono nello stesso giorno perché il rapporto ne
+/// sceglie una sola, e la scelta si prova solo dandogliele entrambe.
+CheckInLog checkInLog({
+  required DateTime lastDay,
+  List<int?> steps = const [],
+  List<int?> walkMinutes = const [],
+}) {
+  final entries = <String, DailyCheckIn>{};
+  final days = steps.length > walkMinutes.length
+      ? steps.length
+      : walkMinutes.length;
+  for (var back = 0; back < days; back++) {
+    final stepsOfDay = back < steps.length ? steps[back] : null;
+    final walkOfDay = back < walkMinutes.length ? walkMinutes[back] : null;
+    if (stepsOfDay == null && walkOfDay == null) {
+      continue;
+    }
+    final day = lastDay.subtract(Duration(days: back));
+    final entry = DailyCheckIn(
+      day: day,
+      updatedAt: day,
+      steps: stepsOfDay,
+      walkMinutes: walkOfDay,
+    );
+    entries[entry.dayKey] = entry;
+  }
+  return CheckInLog(Map.unmodifiable(entries));
+}
 
 /// Una sessione di allenamento alle 18 di Roma.
 CoachSession session(DateTime day, {int? rpe, int? mood, int? satisfaction}) =>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/workouts/data/workout_history_models.dart';
+import 'package:kal_tracker/features/workouts/presentation/history/widgets/weekly_volume_card.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/widgets/workout_session_card.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/workout_detail_screen.dart';
 import 'package:kal_tracker/features/workouts/presentation/history/workout_formatting.dart';
@@ -98,6 +99,12 @@ class _HistoryBody extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _TotalsCard(stats: stats, period: period),
+          const SizedBox(height: 18),
+          // Il volume settimanale sta SOTTO i totali e non sopra perché non
+          // obbedisce alle pastiglie del periodo: ha una settimana sua, con
+          // le sue frecce, e messo in mezzo alle pastiglie sembrerebbe
+          // filtrato da loro.
+          const WeeklyVolumeCard(),
           const SizedBox(height: 18),
           if (filtered.isEmpty)
             const AppEmptyState(

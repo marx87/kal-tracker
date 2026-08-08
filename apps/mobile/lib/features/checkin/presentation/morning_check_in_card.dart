@@ -210,18 +210,6 @@ class _NeatSection extends ConsumerWidget {
           key: const Key('check_in_neat_caption'),
           style: theme.textTheme.bodySmall?.copyWith(color: accents.mutedInk),
         ),
-        if (entry != null && entry.hasNeat && !entry.isStorable) ...[
-          const SizedBox(height: 8),
-          Text(
-            // Detto invece di taciuto: la riga di sola camminata oggi non
-            // arriva al database (vedi `DailyCheckIn.isStorable`), e sparire
-            // alla riapertura senza aver avvisato è il modo peggiore.
-            'Il movimento da solo non basta a salvare il check-in: aggiungi '
-            'il sonno o l\'energia.',
-            key: const Key('check_in_neat_needs_anchor'),
-            style: theme.textTheme.bodySmall?.copyWith(color: accents.warning),
-          ),
-        ],
       ],
     );
   }

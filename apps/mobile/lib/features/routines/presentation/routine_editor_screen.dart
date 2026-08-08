@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/diary/presentation/diary_providers.dart';
+import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
+import 'package:kal_tracker/features/exercises/presentation/exercise_providers.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/muscle_group_presentation.dart';
 import 'package:kal_tracker/features/routines/domain/routine_draft.dart';
 import 'package:kal_tracker/features/routines/domain/routine_models.dart';
@@ -12,6 +14,12 @@ import 'package:kal_tracker/features/routines/presentation/routine_providers.dar
 import 'package:kal_tracker/features/routines/presentation/widgets/exercise_picker_sheet.dart';
 import 'package:kal_tracker/features/routines/presentation/widgets/interval_segment_sheet.dart';
 import 'package:kal_tracker/features/routines/presentation/widgets/prescription_sheet.dart';
+import 'package:kal_tracker/features/training_profile/domain/exercise_screening.dart';
+import 'package:kal_tracker/features/training_profile/domain/training_profile.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_profile_providers.dart';
+import 'package:kal_tracker/features/workouts/domain/load_progression.dart';
+import 'package:kal_tracker/features/workouts/domain/personal_records.dart';
+import 'package:kal_tracker/features/workouts/domain/workout.dart';
 
 /// Apre l'editor di una scheda (nuova se [routineId] è nullo).
 ///
@@ -189,6 +197,30 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
   }
 
+  /// Accetta l'intervallo proposto per una riga che ha ancora un numero
+  /// fisso. È una PROPOSTA che diventa scheda solo qui, con un tocco di
+  /// Marco, e nemmeno subito: resta in bozza finché non salva.
+  void _acceptRange(int index, RepRange range) {
+    final exercise = _draft.main[index];
+    _apply(
+      _draft.replaceAt(
+        RoutineBlock.main,
+        index,
+        (current) => current.copyWith(
+          prescription: current.prescription.withRange(range),
+        ),
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '«${exercise.name}» ora chiede ${range.label}. Salva la scheda '
+          'per confermarlo.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _editSegment({DraftSegment? existing}) async {
     final range = existing == null ? null : _draft.rangeOf(existing);
     final segment = await showIntervalSegmentSheet(
@@ -286,6 +318,10 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
             if (_draft.isCircuit) ...[
               const SizedBox(height: 14),
               _finisherSection(),
+            ],
+            if (!_draft.isCircuit && _draft.main.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _progressionSection(),
             ],
             const SizedBox(height: 20),
             _EstimateLine(minutes: preview.estimatedMinutes),
@@ -637,6 +673,131 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
   }
 
+  /// **La proposta di carico**, la parte che alla scheda mancava: fin qui
+  /// l'app registrava i chili e non aveva mai un'opinione su quelli della
+  /// prossima volta.
+  ///
+  /// Non applica niente. Dove c'è un intervallo dice cosa farne; dove c'è
+  /// ancora un numero fisso offre l'intervallo, ed è l'unica cosa che un
+  /// tocco qui può cambiare — perché il carico non sta sulla scheda, sta
+  /// nella sessione.
+  Widget _progressionSection() {
+    final rows = <({int index, DraftExercise exercise})>[];
+    var timedRows = 0;
+    var segmentRows = 0;
+    for (final (index, exercise) in _draft.main.indexed) {
+      if (exercise.trackingMode.isTimed) {
+        timedRows++;
+        continue;
+      }
+      // Dentro un blocco a tempo comanda il blocco: le ripetizioni della
+      // prescrizione non le esegue nessuno, e farle progredire sarebbe una
+      // proposta su un numero che non viene usato.
+      if (_segmentLabelFor(index) != null) {
+        segmentRows++;
+        continue;
+      }
+      rows.add((index: index, exercise: exercise));
+    }
+
+    final key = lastWorkSetsKey([
+      for (final row in rows) row.exercise.exerciseRefId,
+    ]);
+    final lastSets = ref.watch(lastWorkSetsProvider(key)).valueOrNull;
+    final owned =
+        ref.watch(trainingProfileProvider).valueOrNull?.equipment ??
+        const <Equipment>{};
+    final catalog = ref.watch(exerciseCatalogProvider).valueOrNull;
+    final byId = {
+      for (final exercise in catalog ?? const <Exercise>[])
+        exercise.id: exercise,
+    };
+
+    return SectionCard(
+      title: 'Progressione del carico',
+      subtitle:
+          'Cosa dice l\'ultima seduta di ogni esercizio. Qui si propone e '
+          'basta: la scheda la cambi tu.',
+      icon: Icons.trending_up_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (rows.isEmpty)
+            const AppEmptyState(
+              compact: true,
+              icon: Icons.trending_up_rounded,
+              message:
+                  'Nessun esercizio a ripetizioni: qui non c\'è un carico da '
+                  'far salire.',
+            )
+          // Il catalogo serve quanto le serie: senza, ogni riga direbbe «non
+          // so con che attrezzo si fa» per il tempo di una query.
+          else if (lastSets == null || catalog == null)
+            const _ProgressionLoading()
+          else
+            for (final row in rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _ProgressionRow(
+                  key: Key('progression_${row.exercise.key}'),
+                  exercise: row.exercise,
+                  advice: LoadProgression.advise(
+                    sets:
+                        lastSets[row.exercise.exerciseRefId] ??
+                        const <WorkoutSet>[],
+                    range: row.exercise.prescription.range,
+                    tools: _toolsOf(byId[row.exercise.exerciseRefId]),
+                    owned: owned,
+                    prescribedSets: row.exercise.prescription.sets,
+                  ),
+                  suggestion: RepRange.suggestedFor(
+                    row.exercise.prescription.reps ?? PrescriptionDefaults.reps,
+                  ),
+                  onAcceptRange: (range) => _acceptRange(row.index, range),
+                ),
+              ),
+          // Un esercizio tolto dal conto senza dirlo è un esercizio che Marco
+          // crede considerato.
+          if (timedRows > 0) ...[
+            const SizedBox(height: 2),
+            _Declaration(
+              text:
+                  'Fuori dal conto: ${_exercises(timedRows)} a tempo, dove '
+                  'non ci sono ripetizioni da far salire.',
+            ),
+          ],
+          if (segmentRows > 0) ...[
+            const SizedBox(height: 2),
+            _Declaration(
+              text:
+                  'Fuori dal conto: ${_exercises(segmentRows)} dentro un '
+                  'blocco a tempo, dove è il blocco a dire quanto si lavora.',
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// «un esercizio» / «3 esercizi»: un conto scritto sempre al plurale
+  /// stonerebbe proprio nel caso più frequente, quello da uno.
+  static String _exercises(int count) =>
+      count == 1 ? 'un esercizio' : '$count esercizi';
+
+  /// Gli attrezzi con cui un esercizio si fa.
+  ///
+  /// Li dice già lo screening — è lui a sapere che «Panca piana con manubri»
+  /// chiede i manubri e che un goblet lo regge anche un kettlebell — e
+  /// riscrivere quelle regole qui vorrebbe dire tenerne due copie che prima o
+  /// poi divergono. Fuori dal catalogo non c'è niente da leggere, e allora
+  /// l'insieme resta vuoto: [LoadStep] lo dichiara al posto nostro.
+  Set<Equipment> _toolsOf(Exercise? exercise) => exercise == null
+      ? const <Equipment>{}
+      : {
+          for (final requirement in ExerciseScreener.requirementsOf(exercise))
+            ...requirement.options,
+        };
+
   Widget _finisherSection() => SectionCard(
     title: 'Finisher',
     subtitle: 'Dopo il circuito e prima del defaticamento.',
@@ -951,6 +1112,153 @@ class _SimpleExerciseRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// La proposta su un esercizio: il verdetto, la frase che lo spiega, quello
+/// che è rimasto fuori dal conto e — quando manca l'intervallo — l'unica
+/// azione che da qui si può fare.
+class _ProgressionRow extends StatelessWidget {
+  const _ProgressionRow({
+    required this.exercise,
+    required this.advice,
+    required this.suggestion,
+    required this.onAcceptRange,
+    super.key,
+  });
+
+  final DraftExercise exercise;
+  final LoadProgressionAdvice advice;
+
+  /// L'intervallo da offrire a chi ha ancora un numero fisso.
+  final RepRange? suggestion;
+
+  final ValueChanged<RepRange> onAcceptRange;
+
+  /// Il verdetto letto come stato. «Non lo so dire» sta con gli avvisi e non
+  /// con i via libera: è una risposta mancante, non una rassicurazione.
+  AppStatusLevel get _level => switch (advice.verdict) {
+    ProgressionVerdict.salire ||
+    ProgressionVerdict.restare => AppStatusLevel.good,
+    ProgressionVerdict.consolidare ||
+    ProgressionVerdict.senzaGradino ||
+    ProgressionVerdict.nonSoDire => AppStatusLevel.warning,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    final range = suggestion;
+    return _RowFrame(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  exercise.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+              const SizedBox(width: 8),
+              StatusChip(compact: true, level: _level, label: _verdictLabel),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            advice.reason,
+            style: theme.textTheme.bodySmall?.copyWith(height: 1.35),
+          ),
+          for (final declaration in advice.declarations) ...[
+            const SizedBox(height: 4),
+            _Declaration(text: declaration),
+          ],
+          if (advice.range == null && range != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: Key('accept_range_${exercise.key}'),
+              onPressed: () => onAcceptRange(range),
+              icon: const Icon(Icons.trending_up_rounded, size: 18),
+              label: Text('Passa a ${range.label}'),
+            ),
+          ],
+          // Da dove si parte e quanto vale il gradino: sono i due numeri che
+          // la frase non dice, e ripetere quelli che dice già non aiuta
+          // nessuno a decidere.
+          if (advice.isProposal &&
+              advice.currentKg != null &&
+              advice.step != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.fitness_center_rounded,
+                  size: 16,
+                  color: accents.positive,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Ultima seduta a ${formatKg(advice.currentKg!)} kg, '
+                    'gradino ${advice.step!.label}.',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: accents.positive,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// L'etichetta del verdetto, con l'intervallo quando c'è: «Sali di un
+  /// gradino» da sola non dice su quale banda si sta ragionando.
+  String get _verdictLabel => advice.range == null
+      ? advice.verdict.label
+      : '${advice.verdict.label} · ${advice.range!.label}';
+}
+
+/// La riga grigia con cui si dichiara un dato lasciato fuori da un conto.
+class _Declaration extends StatelessWidget {
+  const _Declaration({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: AppAccents.of(context).mutedInk,
+        height: 1.3,
+      ),
+    );
+  }
+}
+
+class _ProgressionLoading extends StatelessWidget {
+  const _ProgressionLoading();
+
+  @override
+  Widget build(BuildContext context) => Row(
+    key: const Key('progression_loading'),
+    children: [
+      const SizedBox.square(
+        dimension: 16,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      const SizedBox(width: 10),
+      Expanded(child: _Declaration(text: 'Sto leggendo l\'ultima seduta…')),
+    ],
+  );
 }
 
 /// Passo di riscaldamento: il tempo è suo, non della scheda, perché

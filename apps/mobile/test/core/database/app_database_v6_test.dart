@@ -656,7 +656,7 @@ void main() {
         .select(database.workoutProfileStats)
         .getSingle();
 
-    expect(version, 9);
+    expect(version, 10);
     expect(profile.displayName, 'Marco');
     expect(profile.heightCm, closeTo(182, 0.0001));
     expect(profile.sex, 'M');
@@ -1050,7 +1050,7 @@ void main() {
         .customSelect('PRAGMA user_version')
         .map((row) => row.read<int>('user_version'))
         .getSingle();
-    expect(version, 9);
+    expect(version, 10);
     expect(
       (await database.select(database.appProfiles).getSingle()).displayName,
       'Marco v1',
@@ -1073,5 +1073,33 @@ void main() {
     final saved = await database.select(database.bodyMeasurements).getSingle();
     expect(saved.deviceModel, 'QN-Scale');
     expect(saved.rawPayload, '02:0f');
+  });
+
+  test('chi arriva dalla v1 riceve la CHECK larga della v10', () async {
+    final database = AppDatabase(_schemaV1());
+    addTearDown(database.close);
+    final now = AppTime.nowUtc();
+
+    // `daily_check_ins` qui nasce nel ramo della v7, cioè dalla definizione
+    // Dart di OGGI, che la CHECK allargata ce l'ha già dentro: è la ragione
+    // per cui il ramo della v10 non ricostruisce la tabella quando `from < 7`.
+    // Se quella guardia fosse scritta al contrario, questo telefono resterebbe
+    // l'unico a cui la giornata dei soli passi viene rifiutata.
+    await database
+        .into(database.dailyCheckIns)
+        .insert(
+          DailyCheckInsCompanion.insert(
+            id: 'solo-passi-v1',
+            profileId: 'marco-v1',
+            day: DateTime.utc(2026, 8, 7),
+            createdAt: now,
+            updatedAt: now,
+            steps: const Value(9200),
+          ),
+        );
+
+    final riga = await database.select(database.dailyCheckIns).getSingle();
+    expect(riga.steps, 9200);
+    expect(riga.sleepHours, isNull);
   });
 }

@@ -4,10 +4,12 @@ import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercise_providers.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/exercise_editor_sheet.dart';
+import 'package:kal_tracker/features/exercises/presentation/widgets/exercise_screening_presentation.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/muscle_group_presentation.dart';
 import 'package:kal_tracker/features/routines/domain/routine_models.dart';
 import 'package:kal_tracker/features/routines/presentation/routine_editor_screen.dart';
 import 'package:kal_tracker/features/routines/presentation/routine_providers.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_profile_providers.dart';
 
 /// Apre la scheda di un esercizio.
 ///
@@ -90,6 +92,8 @@ class ExerciseDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
+            const SizedBox(height: 14),
+            _ScreeningSection(exerciseId: exercise.id),
             if (exercise.imageUrl case final imageUrl?) ...[
               const SizedBox(height: 14),
               _DemoImage(url: imageUrl),
@@ -201,6 +205,103 @@ class _IdentityCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// **Che cosa dice il profilo di allenamento di questo esercizio.**
+///
+/// È la versione per esteso di quello che nella lista sta in due righe: cosa
+/// lo tocca, con quale gravità, e cosa fare al posto suo. Resta una proposta —
+/// niente qui toglie l'esercizio dalle schede o lo cancella dalla libreria.
+class _ScreeningSection extends ConsumerWidget {
+  const _ScreeningSection({required this.exerciseId});
+
+  final String exerciseId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(exerciseScreeningActiveProvider);
+    final screening = ref.watch(exerciseScreeningProvider(exerciseId));
+    final profile = ref.watch(trainingProfileProvider).valueOrNull;
+
+    if (!active || screening == null || profile == null) {
+      // Una card intera per dire «non ho niente da dirti» sarebbe la stessa
+      // decorazione vuota che il profilo esiste per evitare: qui basta una
+      // riga, ma la riga ci vuole — tacere farebbe passare per controllato
+      // un esercizio che nessuno ha guardato.
+      final theme = Theme.of(context);
+      return Padding(
+        key: const Key('exercise_screening_section'),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(
+                Icons.tune_rounded,
+                size: 16,
+                color: AppAccents.of(context).mutedInk,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Il profilo di allenamento è vuoto: nessuno ha controllato '
+                'se questo esercizio fa per te.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppAccents.of(context).mutedInk,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SectionCard(
+      key: const Key('exercise_screening_section'),
+      title: 'Con il tuo profilo',
+      subtitle: 'Attrezzatura e limitazioni, lette su questo esercizio',
+      icon: Icons.rule_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ExerciseScreeningTag(
+              key: const Key('exercise_detail_outcome'),
+              outcome: screening.outcome,
+              compact: false,
+            ),
+          ),
+          if (screening.reason == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                // Senza attrezzatura dichiarata lo screening il controllo
+                // sull'attrezzo non l'ha proprio fatto: dire «ce l'hai»
+                // sarebbe un via libera che nessuno ha dato.
+                profile.hasDeclaredEquipment
+                    ? 'Niente di quello che hai dichiarato lo tocca, e quel '
+                          'che serve per farlo ce l\'hai.'
+                    : 'Nessuna delle tue limitazioni lo tocca. L\'attrezzatura '
+                          'non è entrata nel conto: non hai ancora detto cosa '
+                          'hai in casa.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppAccents.of(context).mutedInk,
+                ),
+              ),
+            )
+          else ...[
+            const SizedBox(height: 10),
+            ExerciseScreeningNote(screening: screening),
+            const SizedBox(height: 14),
+            ExerciseScreeningCauses(screening: screening),
+          ],
+        ],
       ),
     );
   }

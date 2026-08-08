@@ -1,4 +1,5 @@
 import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
+import 'package:kal_tracker/features/workouts/domain/load_progression.dart';
 
 /// I tre blocchi di una scheda. In Gym erano tre liste separate
 /// (`warmupSteps`, `exerciseIds`, `finisherExerciseIds`); qui sono lo stesso
@@ -41,6 +42,8 @@ class ExercisePrescription {
   const ExercisePrescription({
     this.sets,
     this.reps,
+    this.repsMin,
+    this.repsMax,
     this.durationSec,
     this.restSec,
   });
@@ -49,15 +52,53 @@ class ExercisePrescription {
 
   final int? sets;
   final int? reps;
+
+  /// I due estremi della doppia progressione, le colonne `presc_reps_min` e
+  /// `presc_reps_max`. Restano FACOLTATIVI: le schede di oggi hanno solo
+  /// [reps], e continuano a valere come numero fisso.
+  ///
+  /// [reps] non sparisce quando l'intervallo c'è, e non è un doppione: è il
+  /// numero da cui la sessione parte (`routine_to_workout` prepara le serie
+  /// da lì) e sta al fondo dell'intervallo.
+  final int? repsMin;
+  final int? repsMax;
+
   final int? durationSec;
   final int? restSec;
 
   bool get isEmpty =>
-      sets == null && reps == null && durationSec == null && restSec == null;
+      sets == null &&
+      reps == null &&
+      repsMin == null &&
+      repsMax == null &&
+      durationSec == null &&
+      restSec == null;
 
-  /// Riga leggibile: «3×10 · rec 75″», oppure i predefiniti quando non è
-  /// stata scritta. [mode] decide se il lavoro si conta in ripetizioni o in
-  /// secondi.
+  /// L'intervallo, quando i due estremi ne fanno davvero uno.
+  ///
+  /// La regola non si riscrive qui: è [RepRange.resolve] a dire cosa conta
+  /// come banda e cosa è un numero fisso travestito (un `12-12`), e due file
+  /// che rispondono a quella domanda finirebbero per non dire lo stesso.
+  RepRange? get range => RepRange.resolve(min: repsMin, max: repsMax);
+
+  /// La stessa prescrizione con l'intervallo scritto sopra; [range] nullo lo
+  /// toglie e lascia il numero fisso.
+  ///
+  /// [reps] segue il fondo dell'intervallo perché è da lì che la sessione
+  /// riparte: lasciarlo a dieci con una banda `8-12` farebbe cominciare la
+  /// seduta due ripetizioni sopra il pavimento appena scelto.
+  ExercisePrescription withRange(RepRange? range) => ExercisePrescription(
+    sets: sets,
+    reps: range?.min ?? reps,
+    repsMin: range?.min,
+    repsMax: range?.max,
+    durationSec: durationSec,
+    restSec: restSec,
+  );
+
+  /// Riga leggibile: «3×10 · rec 75″» oppure «3×8-12 · rec 75″», e i
+  /// predefiniti quando non è stata scritta. [mode] decide se il lavoro si
+  /// conta in ripetizioni o in secondi.
   String summary(ExerciseTrackingMode mode) {
     final timed = mode.isTimed;
     if (isEmpty) {
@@ -70,7 +111,7 @@ class ExercisePrescription {
     final setsText = sets ?? PrescriptionDefaults.sets;
     final work = timed
         ? '${durationSec ?? PrescriptionDefaults.durationSec}″'
-        : '${reps ?? PrescriptionDefaults.reps}';
+        : (range?.label ?? '${reps ?? PrescriptionDefaults.reps}');
     final rest = switch (restSec) {
       null => 'rec predefinito',
       0 => 'senza recupero',

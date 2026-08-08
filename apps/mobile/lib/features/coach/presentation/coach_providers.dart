@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
+import 'package:kal_tracker/features/checkin/domain/neat_trend.dart';
 import 'package:kal_tracker/features/coach/data/coach_gateway.dart';
 import 'package:kal_tracker/features/coach/data/coach_repository.dart';
 import 'package:kal_tracker/features/coach/data/coach_snapshot_repository.dart';
@@ -89,6 +90,16 @@ final coachMetricsProvider = Provider<AsyncValue<CoachMetrics>>((ref) {
     (value) => CoachEngine.run(value, today: ref.watch(coachWeekProvider).end),
   );
 });
+
+/// **Il movimento della settimana contro quella prima.** Nullo quando Marco
+/// non l'ha mai segnato: il rapporto non ha niente da dire e non lo finge.
+///
+/// Sta fuori da [coachMetricsProvider] perché il motore non lo calcola: il
+/// NEAT non entra in nessuna formula del rapporto, spiega i numeri che quelle
+/// formule hanno già prodotto.
+final coachNeatProvider = Provider<NeatTrend?>(
+  (ref) => ref.watch(coachSnapshotProvider).valueOrNull?.neat,
+);
 
 /// Polling gentile mentre il Mac scrive: una lettura ogni 15 s, e solo
 /// finché c'è una richiesta in volo.

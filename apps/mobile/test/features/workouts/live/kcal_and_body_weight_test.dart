@@ -38,6 +38,15 @@ WorkoutExercise _exercise(
   ],
 );
 
+/// Calorie e MET medio della sessione, con i gruppi letti dagli snapshot come
+/// li legge la chiusura vera.
+SessionEnergy _energyOf(Workout workout, {double bodyKg = 94.5}) =>
+    estimateKcal(
+      workout: workout,
+      exerciseGroups: muscleGroupsFromSnapshots(workout),
+      bodyKg: bodyKg,
+    );
+
 void main() {
   group('peso corporeo', () {
     test('si prende l\'ultima pesata, non la prima della lista', () {
@@ -73,12 +82,12 @@ void main() {
         workout: withGroup,
         exerciseGroups: muscleGroupsFromSnapshots(withGroup),
         bodyKg: 94.5,
-      );
+      ).kcal;
       final wrong = estimateKcal(
         workout: withoutGroup,
         exerciseGroups: muscleGroupsFromSnapshots(withoutGroup),
         bodyKg: 94.5,
-      );
+      ).kcal;
 
       // 6.0 MET contro 5.0 di ripiego: un sesto in meno.
       expect(wrong, lessThan(right));
@@ -95,12 +104,12 @@ void main() {
         workout: withGroup,
         exerciseGroups: muscleGroupsFromSnapshots(withGroup),
         bodyKg: 94.5,
-      );
+      ).kcal;
       final wrong = estimateKcal(
         workout: withoutGroup,
         exerciseGroups: muscleGroupsFromSnapshots(withoutGroup),
         bodyKg: 94.5,
-      );
+      ).kcal;
 
       // 8.0 contro 5.0: si perde il 37,5%.
       expect((right - wrong) / right, greaterThan(0.35));
@@ -142,6 +151,74 @@ void main() {
     );
   });
 
+  group('il MET medio esce insieme alle calorie', () {
+    test('una seduta di sole gambe esce a 6,0', () {
+      final workout = _session(
+        exercises: [_exercise('squat', group: MuscleGroup.gambe)],
+      );
+
+      expect(_energyOf(workout).averageMet, 6.0);
+    });
+
+    test('la media pesa le serie completate, non gli esercizi', () {
+      // Quattro serie di gambe (6,0) e due di polpacci (4,0): la media resta
+      // vicina alle gambe, che è dove il tempo è passato davvero.
+      final workout = _session(
+        exercises: [
+          _exercise('squat', group: MuscleGroup.gambe),
+          _exercise('calf', group: MuscleGroup.polpacci, completedSets: 2),
+        ],
+      );
+
+      expect(_energyOf(workout).averageMet, closeTo((6 * 4 + 4 * 2) / 6, 1e-9));
+    });
+
+    test('gli allungamenti non abbassano l\'intensità della seduta', () {
+      final base = _session(
+        exercises: [_exercise('squat', group: MuscleGroup.gambe)],
+      );
+      final withCoolDown = base.copyWith(
+        exercises: [...base.exercises, ...coolDownAsWorkoutExercises()],
+      );
+
+      // 2,5 MET di mobilità in mezzo alla media direbbero che si è spinto
+      // meno: il defaticamento esce dal tempo attivo, non dall'intensità.
+      expect(_energyOf(withCoolDown).averageMet, 6.0);
+    });
+
+    test('le calorie tornano dal MET: MET × peso × ore', () {
+      // È l'invariante di chi il riposo lo deve togliere: dal lordo si risale
+      // alla quota netta solo se il MET è QUELLO con cui il lordo è uscito.
+      final workout = _session(
+        exercises: [_exercise('squat', group: MuscleGroup.gambe)],
+        minutes: 90,
+      );
+
+      final energy = _energyOf(workout);
+
+      expect(energy.kcal, closeTo(energy.averageMet * 94.5 * 1.5, 1e-9));
+    });
+
+    test('senza minuti attivi il MET è quello del riposo, non zero', () {
+      // Sotto l'unità il moltiplicatore di attività legge un difetto a monte
+      // e butta la settimana intera: una sessione aperta e chiusa per sbaglio
+      // non deve avere quel potere.
+      final energy = _energyOf(
+        _session(
+          exercises: [_exercise('squat', group: MuscleGroup.gambe)],
+          minutes: 0,
+        ),
+      );
+
+      expect(energy.kcal, 0);
+      expect(energy.averageMet, 1);
+    });
+
+    test('la sessione senza esercizi dichiara il suo 5,0 di ripiego', () {
+      expect(_energyOf(_session(exercises: const [])).averageMet, 5.0);
+    });
+  });
+
   group('defaticamento', () {
     test('le righe generate portano mobilità e nascono già fatte', () {
       final rows = coolDownAsWorkoutExercises();
@@ -169,12 +246,12 @@ void main() {
         workout: base,
         exerciseGroups: muscleGroupsFromSnapshots(base),
         bodyKg: 94.5,
-      );
+      ).kcal;
       final with_ = estimateKcal(
         workout: withCoolDown,
         exerciseGroups: muscleGroupsFromSnapshots(withCoolDown),
         bodyKg: 94.5,
-      );
+      ).kcal;
 
       // Il defaticamento toglie i suoi minuti dal tempo attivo invece di
       // aggiungerne: non si guadagnano calorie stando a terra a respirare.

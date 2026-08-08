@@ -280,7 +280,7 @@ void main() {
     )..orderBy([(row) => OrderingTerm(expression: row.measuredAt)])).get();
     final plans = await database.select(database.weeklyPlans).get();
 
-    expect(version, 9);
+    expect(version, 10);
     expect(profile.displayName, 'Marco v4');
     expect(measurements.map((row) => row.weightKg), [96.2, 94.5]);
     expect(measurements.last.note, 'dopo le ferie');

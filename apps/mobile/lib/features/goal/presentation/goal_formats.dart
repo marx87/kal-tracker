@@ -16,6 +16,15 @@ abstract final class GoalFormats {
   static String kgPrecise(double value) =>
       value.toStringAsFixed(2).replaceAll('.', ',');
 
+  /// Il moltiplicatore di attività: «1,48».
+  ///
+  /// Non è [kgPrecise] con un altro nome: quello dice chili, e il giorno in
+  /// cui i chili volessero un decimale solo il moltiplicatore non c'entrerebbe
+  /// niente. Gli stessi due decimali della spiegazione del dominio, così il
+  /// numero della card e quello della frase sotto sono lo stesso numero.
+  static String multiplier(double value) =>
+      value.toStringAsFixed(2).replaceAll('.', ',');
+
   /// Calorie e grammi arrotondati: «1.865».
   static String round(double value) =>
       NumberFormat.decimalPattern('it').format(value.round());

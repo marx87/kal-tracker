@@ -5,6 +5,8 @@ import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercise_providers.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/exercise_editor_sheet.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/muscle_group_presentation.dart';
+import 'package:kal_tracker/features/training_profile/domain/exercise_screening.dart'
+    show ScreeningOutcome;
 
 /// Sceglie più esercizi in una volta sola e li restituisce nell'ordine in cui
 /// sono stati toccati.
@@ -248,7 +250,7 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
   }
 }
 
-class _PickerRow extends StatelessWidget {
+class _PickerRow extends ConsumerWidget {
   const _PickerRow({
     required this.exercise,
     required this.selected,
@@ -260,21 +262,55 @@ class _PickerRow extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    // **Lo stesso esito del catalogo, qui dove la scheda si scrive.** Senza,
+    // due schermate della stessa app si contraddicevano sullo stesso
+    // esercizio: nel catalogo military press in rosso «Escluso: spalla fa
+    // male», e nel foglio da cui si costruisce la scheda pulito, senza un
+    // segno. Quella che sbagliava era proprio quella che scrive.
+    final screening = ref.watch(exerciseScreeningProvider(exercise.id));
+    final fuori = screening?.outcome == ScreeningOutcome.escluso;
+    final segnalato = screening?.outcome == ScreeningOutcome.segnalato;
+    final accents = AppAccents.of(context);
+
     return CheckboxListTile(
       key: Key('pick_exercise_${exercise.id}'),
       value: selected,
       controlAffinity: ListTileControlAffinity.leading,
       contentPadding: EdgeInsets.zero,
       secondary: MuscleGroupBadge(group: exercise.muscleGroup, size: 42),
-      title: Text(exercise.name, style: theme.textTheme.titleSmall),
-      subtitle: Text(
-        '${exercise.muscleGroup.label} · ${exercise.trackingMode.label}',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: AppAccents.of(context).mutedInk,
+      title: Text(
+        exercise.name,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: fuori ? accents.mutedInk : null,
         ),
       ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${exercise.muscleGroup.label} · ${exercise.trackingMode.label}',
+            style: theme.textTheme.bodySmall?.copyWith(color: accents.mutedInk),
+          ),
+          // La ragione tiene il colore pieno anche su una riga spenta: è
+          // l'unica cosa che vale la pena leggere di un esercizio escluso.
+          if (screening?.reason case final ragione?
+              when fuori || segnalato) ...[
+            const SizedBox(height: 2),
+            Text(
+              ragione,
+              key: Key('pick_exercise_reason_${exercise.id}'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: fuori ? accents.critical : accents.warning,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+      // Escluso non vuol dire vietato: si sceglie lo stesso, sapendolo. È
+      // Marco a conoscere la sua spalla, non l'euristica sul nome.
       onChanged: (value) => onChanged(value ?? false),
     );
   }

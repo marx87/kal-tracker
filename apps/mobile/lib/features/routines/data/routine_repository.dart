@@ -6,6 +6,7 @@ import 'package:kal_tracker/core/time/app_time.dart';
 import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
 import 'package:kal_tracker/features/routines/domain/routine_draft.dart';
 import 'package:kal_tracker/features/routines/domain/routine_models.dart';
+import 'package:kal_tracker/features/workouts/domain/load_progression.dart';
 import 'package:uuid/uuid.dart';
 
 /// Lettura e scrittura delle schede.
@@ -269,6 +270,7 @@ class RoutineRepository {
             7200,
           );
           final restSec = _optionalBounded(prescription.restSec, 0, 3600);
+          final range = _rangeOf(prescription);
           final linked = known.contains(row.exerciseRefId)
               ? row.exerciseRefId
               : null;
@@ -288,6 +290,8 @@ class RoutineRepository {
                   warmupDurationSec: Value(duration),
                   prescSets: Value(sets),
                   prescReps: Value(reps),
+                  prescRepsMin: Value(range?.min),
+                  prescRepsMax: Value(range?.max),
                   prescDurationSec: Value(durationSec),
                   prescRestSec: Value(restSec),
                 ),
@@ -304,6 +308,8 @@ class RoutineRepository {
             'warmup_duration_sec': duration,
             'presc_sets': sets,
             'presc_reps': reps,
+            'presc_reps_min': range?.min,
+            'presc_reps_max': range?.max,
             'presc_duration_sec': durationSec,
             'presc_rest_sec': restSec,
           });
@@ -481,6 +487,12 @@ class RoutineRepository {
       prescription: ExercisePrescription(
         sets: child.row.prescSets,
         reps: child.row.prescReps,
+        // I due estremi si leggono come stanno su disco, anche quando non
+        // fanno un intervallo: le colonne sono nullable e senza CHECK, e a
+        // dire se quella coppia è una banda è `ExercisePrescription.range`.
+        // Correggerli qui vorrebbe dire avere una seconda regola.
+        repsMin: child.row.prescRepsMin,
+        repsMax: child.row.prescRepsMax,
         durationSec: child.row.prescDurationSec,
         restSec: child.row.prescRestSec,
       ),
@@ -520,4 +532,19 @@ class RoutineRepository {
 
   static int? _optionalBounded(int? value, int min, int max) =>
       value?.clamp(min, max);
+
+  /// L'intervallo da scrivere sulle due colonne della v9, **o niente**.
+  ///
+  /// Si salva solo una banda vera: mezzo intervallo (`8` senza tetto) o uno
+  /// al contrario (`12-8`) sono due colonne piene che nessun lettore può
+  /// usare, cioè un'impostazione che promette una progressione che non
+  /// scatterà mai. Meglio il numero fisso, che almeno dice la verità.
+  ///
+  /// Il giudizio è quello di [RepRange.resolve] e non una copia locale; i
+  /// limiti sono quelli di `presc_reps`, perché è la stessa grandezza.
+  static RepRange? _rangeOf(ExercisePrescription prescription) =>
+      RepRange.resolve(
+        min: _optionalBounded(prescription.repsMin, 1, 500),
+        max: _optionalBounded(prescription.repsMax, 1, 500),
+      );
 }

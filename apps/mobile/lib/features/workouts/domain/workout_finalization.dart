@@ -59,10 +59,13 @@ Workout finalizeWorkoutSnapshot({
     clearResumeState: true,
     clearPausedAt: true,
   );
-  final kcal = estimateKcal(
+  // Delle due metà di `SessionEnergy` qui serve solo la prima: il MET medio
+  // non ha una colonna sua e si ricava di nuovo da chi legge lo storico, che
+  // ha comunque in mano gli esercizi con i loro snapshot.
+  final energy = estimateKcal(
     workout: ended,
     exerciseGroups: muscleGroupsFromSnapshots(ended),
     bodyKg: bodyKg,
   );
-  return ended.copyWith(totalKcal: kcal);
+  return ended.copyWith(totalKcal: energy.kcal);
 }

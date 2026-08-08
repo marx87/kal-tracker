@@ -1,24 +1,31 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
-import 'package:kal_tracker/core/database/local_settings_store.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
+import 'package:kal_tracker/features/checkin/data/check_in_repository.dart';
+import 'package:kal_tracker/features/checkin/data/check_in_store.dart';
+import 'package:kal_tracker/features/checkin/domain/daily_check_in.dart';
 
-/// Fixture della v7 scritta a mano: le 31 tabelle che il telefono di Marco ha
-/// dopo check-in, obiettivo e impedenze multiple, con i soli vincoli
-/// significativi. Generarla dalla definizione Dart di oggi non proverebbe
-/// niente — sarebbe la migrazione a confrontarsi con se stessa. Chi porterà lo
-/// schema a v9 dovrà scrivere la propria fixture v8 con lo stesso pattern.
+/// Fixture della v9 scritta a mano: le 34 tabelle che il telefono di Marco ha
+/// dopo il profilo atleta, con i soli vincoli significativi. Generarla dalla
+/// definizione Dart di oggi non proverebbe niente — sarebbe la migrazione a
+/// confrontarsi con se stessa, e la CHECK che la v10 deve allargare arriverebbe
+/// già larga. Chi porterà lo schema a v11 dovrà scrivere la propria fixture v10
+/// con lo stesso pattern.
 ///
-/// Gli indici ci sono TUTTI, a differenza della fixture v6: alla v7 non ci si
-/// arriva se non per creazione o per migrazione, e sia `onCreate` sia
-/// `_createMissingIndexes` li lasciano tutti sul posto. Riprodurne solo due
-/// racconterebbe un telefono che non esiste, e soprattutto non metterebbe alla
-/// prova il passo che rischia davvero: il `CREATE INDEX` generato non ha
-/// `IF NOT EXISTS`, quindi la v8 deve saltare uno per uno i ventisette indici
-/// che trova già lì.
-QueryExecutor _schemaV7({required List<String> seed}) {
+/// Due dettagli sono qui apposta perché è così che sta il telefono vero, non
+/// perché siano comodi:
+///
+/// - `daily_check_ins` porta `steps` e `walk_minutes` **in fondo**, dopo
+///   `deleted_at`: la v9 le ha aggiunte con `addColumn`, che accoda. Una
+///   copia posizionale le scambierebbe con le date; questa fixture è l'unico
+///   posto dove quello sbaglio si vede.
+/// - la CHECK di `daily_check_ins` è ancora quella stretta della v7, che
+///   pretende sonno o energia. È esattamente il difetto che la v10 rimuove.
+QueryExecutor _schemaV9({required List<String> seed}) {
   return NativeDatabase.memory(
     setup: (raw) {
       raw
@@ -116,8 +123,6 @@ QueryExecutor _schemaV7({required List<String> seed}) {
           'CREATE INDEX idx_water_logs_profile_logged_at '
           'ON water_logs (profile_id, logged_at)',
         )
-        // Qui la v7 ha già messo device_model e raw_payload: sono le due
-        // colonne che distinguono questa fixture da quella della v6.
         ..execute('''
           CREATE TABLE body_measurements (
             id TEXT NOT NULL PRIMARY KEY,
@@ -375,6 +380,8 @@ QueryExecutor _schemaV7({required List<String> seed}) {
           'CREATE INDEX idx_routines_profile_name '
           'ON routines (profile_id, name)',
         )
+        // Le due colonne della doppia progressione sono in fondo, come le
+        // lascia l'`addColumn` della v9.
         ..execute('''
           CREATE TABLE routine_exercises (
             id TEXT NOT NULL PRIMARY KEY,
@@ -392,6 +399,8 @@ QueryExecutor _schemaV7({required List<String> seed}) {
             presc_reps INTEGER NULL,
             presc_duration_sec INTEGER NULL,
             presc_rest_sec INTEGER NULL,
+            presc_reps_min INTEGER NULL,
+            presc_reps_max INTEGER NULL,
             CHECK (block IN ('warmup', 'main', 'finisher')),
             CHECK ((block = 'warmup') = (warmup_duration_sec IS NOT NULL)),
             UNIQUE (routine_id, block, position)
@@ -604,6 +613,8 @@ QueryExecutor _schemaV7({required List<String> seed}) {
           'CREATE INDEX idx_body_measurement_values_label '
           'ON body_measurement_values (measurement_id, label)',
         )
+        // La tabella al centro di questa migrazione, com'è davvero alla v9:
+        // colonne del movimento accodate e CHECK ancora stretta.
         ..execute('''
           CREATE TABLE daily_check_ins (
             id TEXT NOT NULL PRIMARY KEY,
@@ -615,6 +626,8 @@ QueryExecutor _schemaV7({required List<String> seed}) {
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL,
             deleted_at INTEGER NULL,
+            steps INTEGER NULL,
+            walk_minutes INTEGER NULL,
             CHECK (sleep_hours IS NULL OR
                    (sleep_hours >= 0 AND sleep_hours <= 16)),
             CHECK (energy_score IS NULL OR
@@ -675,40 +688,79 @@ QueryExecutor _schemaV7({required List<String> seed}) {
           'CREATE INDEX idx_body_impedance_readings_measurement '
           'ON body_impedance_readings (measurement_id)',
         )
-        // Il secondo indice parziale della v7. Come quello dei workout,
-        // `_createPartialIndexes` lo riemette a ogni apertura: senza
-        // IF NOT EXISTS la v8 morirebbe qui.
         ..execute(
           'CREATE UNIQUE INDEX idx_body_impedance_readings_undeclared '
           'ON body_impedance_readings (measurement_id, segment) '
           'WHERE frequency_hz IS NULL',
-        );
+        )
+        // v8: le impostazioni dell'apparecchio.
+        ..execute('''
+          CREATE TABLE local_settings (
+            key TEXT NOT NULL PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+          )
+        ''')
+        // v9: chi è Marco come atleta.
+        ..execute('''
+          CREATE TABLE training_profiles (
+            profile_id TEXT NOT NULL PRIMARY KEY
+              REFERENCES app_profiles(id) ON DELETE CASCADE,
+            equipment TEXT NOT NULL DEFAULT '',
+            sessions_per_week INTEGER NULL,
+            minutes_per_session INTEGER NULL,
+            preferred_days TEXT NOT NULL DEFAULT '',
+            deload_preference TEXT NOT NULL DEFAULT 'suggerito',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            CHECK (deload_preference IN ('automatico', 'suggerito'))
+          )
+        ''')
+        ..execute('''
+          CREATE TABLE training_limitations (
+            id TEXT NOT NULL PRIMARY KEY,
+            profile_id TEXT NOT NULL
+              REFERENCES app_profiles(id) ON DELETE CASCADE,
+            body_part TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            note TEXT NULL,
+            started_at INTEGER NOT NULL,
+            resolved_at INTEGER NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            deleted_at INTEGER NULL,
+            CHECK (severity IN ('fastidio', 'dolore', 'stop'))
+          )
+        ''');
       for (final statement in seed) {
         raw.execute(statement);
       }
-      raw.execute('PRAGMA user_version = 7');
+      raw.execute('PRAGMA user_version = 9');
     },
   );
 }
 
-/// Il giorno del check-in seminato, in secondi dall'epoca: è l'etichetta del
-/// 6 agosto 2026, mezzanotte UTC, la stessa convenzione con cui
-/// `daily_check_ins` scrive il giorno civile.
-const _giornoCheckIn = 1785974400;
+/// Il 6 agosto 2026 a mezzanotte UTC, in secondi: l'etichetta del giorno con
+/// cui `daily_check_ins` scrive la colonna `day`.
+const _seiAgosto = 1785974400;
+const _cinqueAgosto = _seiAgosto - 86400;
+const _quattroAgosto = _seiAgosto - 172800;
 
-/// Il telefono di Marco alla v7: anagrafica, una pesata Bluetooth completa con
-/// la sua impedenza e una circonferenza, il check-in del mattino, l'obiettivo
-/// in corso, una sessione chiusa coi suoi XP — e due righe già in coda per la
-/// sincronizzazione, che servono a rendere non banale il confronto sull'outbox.
-List<String> get _seedV7 => [
+/// Il telefono di Marco alla v9: anagrafica, una pesata Bluetooth con la sua
+/// impedenza, tre check-in di forma diversa, l'obiettivo in corso, una sessione
+/// chiusa, il profilo atleta con la sua limitazione e la bilancia ricordata.
+///
+/// I tre check-in sono tre casi che la ricostruzione della tabella deve
+/// attraversare intatti: uno completo di movimento, uno di solo sonno, e un
+/// tombstone — che è l'unica riga a cui la CHECK stretta permetteva di essere
+/// vuota, ed è quindi quella che una CHECK sbagliata butterebbe fuori.
+List<String> get _seedV9 => [
   "INSERT INTO app_profiles VALUES "
-      "('marco-v7', 'Marco', 182.0, -72576000, 'M', 0, 0)",
-  // La pesata è arrivata dalla bilancia, non dal CSV: alla v7 device_model e
-  // raw_payload esistono già e devono attraversare la migrazione intatti.
+      "('marco-v9', 'Marco', 182.0, -72576000, 'M', 0, 0)",
   "INSERT INTO body_measurements (id, profile_id, weight_kg, measured_at, "
       "has_impedance, impedance_ohm, body_fat_pct, formula_version, source, "
       "external_id, device_model, raw_payload, created_at, updated_at) VALUES "
-      "('pesata-1', 'marco-v7', 94.5, 1000, 1, 512.5, 25.2, 'bia-v1', "
+      "('pesata-1', 'marco-v9', 94.5, 1000, 1, 512.5, 25.2, 'bia-v1', "
       "'renpho_ble', 'QN-Scale:2026-08-05T08:39:30', 'QN-Scale', "
       "'02:0f:1a:00:25:5e:03:c9', 0, 0)",
   "INSERT INTO body_impedance_readings (id, measurement_id, segment, ohm) "
@@ -716,33 +768,41 @@ List<String> get _seedV7 => [
   "INSERT INTO body_measurement_values VALUES "
       "('giro-1', 'pesata-1', 'Vita', 106.0)",
   "INSERT INTO daily_check_ins (id, profile_id, day, sleep_hours, "
-      "energy_score, created_at, updated_at) VALUES "
-      "('chk-1', 'marco-v7', $_giornoCheckIn, 7.5, 4, 0, 0)",
+      "energy_score, created_at, updated_at, steps, walk_minutes) VALUES "
+      "('chk-6', 'marco-v9', $_seiAgosto, 7.5, 4, 100, 200, 8000, 40)",
+  "INSERT INTO daily_check_ins (id, profile_id, day, sleep_hours, "
+      "created_at, updated_at) VALUES "
+      "('chk-5', 'marco-v9', $_cinqueAgosto, 6.5, 100, 200)",
+  "INSERT INTO daily_check_ins (id, profile_id, day, created_at, updated_at, "
+      "deleted_at) VALUES "
+      "('chk-4', 'marco-v9', $_quattroAgosto, 100, 200, 300)",
   "INSERT INTO goals (id, profile_id, target_weight_kg, target_level, "
       "pace_kg_per_week, started_at, start_weight_kg, start_fat_free_mass_kg, "
       "phase, created_at, updated_at) VALUES "
-      "('goal-1', 'marco-v7', 80.5, 'defined', 0.5, 1000, 95.8, 71.66, "
+      "('goal-1', 'marco-v9', 80.5, 'defined', 0.5, 1000, 95.8, 71.66, "
       "'approach', 0, 0)",
   "INSERT INTO exercises (id, profile_id, name, muscle_group, tracking_mode, "
       "source, external_id, created_at, updated_at) VALUES "
-      "('ex-1', 'marco-v7', 'Panca piana', 'petto', 'weightReps', "
+      "('ex-1', 'marco-v9', 'Panca piana', 'petto', 'weightReps', "
       "'gym_tracker', 'ex-1', 0, 0)",
   "INSERT INTO workouts (id, profile_id, started_at, ended_at, source, "
       "external_id, total_kcal, xp_earned, created_at, updated_at) VALUES "
-      "('wk-1', 'marco-v7', 1000, 4600, 'gym_tracker', 'wk-1', 412.5, 320, "
+      "('wk-1', 'marco-v9', 1000, 4600, 'gym_tracker', 'wk-1', 412.5, 320, "
       "0, 0)",
-  "INSERT INTO workout_exercises (id, workout_id, position, exercise_ref_id, "
-      "exercise_id, exercise_name_snapshot, tracking_mode) VALUES "
-      "('wkex-1', 'wk-1', 0, 'ex-1', 'ex-1', 'Panca piana', 'weightReps')",
-  "INSERT INTO workout_sets (id, workout_exercise_id, position, weight_kg, "
-      "reps, completed) VALUES ('set-1', 'wkex-1', 0, 80.0, 8, 1)",
   "INSERT INTO workout_profile_stats (id, profile_id, total_xp, "
       "current_streak, longest_streak, created_at, updated_at) VALUES "
-      "('stats-1', 'marco-v7', 11370, 2, 5, 0, 0)",
+      "('stats-1', 'marco-v9', 11370, 2, 5, 0, 0)",
+  "INSERT INTO training_profiles (profile_id, equipment, sessions_per_week, "
+      "minutes_per_session, preferred_days, deload_preference, created_at, "
+      "updated_at) VALUES ('marco-v9', 'manubri,elastici_anello', 3, 45, "
+      "'lun,mer,ven', 'suggerito', 0, 0)",
+  "INSERT INTO training_limitations (id, profile_id, body_part, severity, "
+      "started_at, created_at, updated_at) VALUES "
+      "('lim-1', 'marco-v9', 'spalla_dx', 'dolore', 1000, 0, 0)",
+  "INSERT INTO local_settings VALUES "
+      "('scale.device.id', 'AA:BB:CC:DD:EE:FF', 0)",
   "INSERT INTO sync_outbox VALUES ('out-1', 'body_measurement', 'pesata-1', "
       "'upsert', '{}', 1000, 0, NULL)",
-  "INSERT INTO sync_outbox VALUES ('out-2', 'goal', 'goal-1', 'upsert', "
-      "'{}', 1001, 0, NULL)",
 ];
 
 Future<Set<String>> _indexNames(AppDatabase database) async {
@@ -752,25 +812,68 @@ Future<Set<String>> _indexNames(AppDatabase database) async {
   return {for (final row in rows) row.read<String>('name')};
 }
 
-Future<List<String>> _outboxIds(AppDatabase database) async {
-  final rows = await (database.select(
-    database.syncOutbox,
-  )..orderBy([(row) => OrderingTerm.asc(row.id)])).get();
-  return [for (final row in rows) row.id];
+Future<String?> _tableSql(AppDatabase database, String name) async {
+  final rows = await database
+      .customSelect(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+        variables: [Variable<String>(name)],
+      )
+      .get();
+  return rows.single.readNullable<String>('sql');
 }
+
+/// Il check-in di un giorno, letto per id.
+Future<LocalDailyCheckIn> _checkIn(AppDatabase database, String id) =>
+    (database.select(
+      database.dailyCheckIns,
+    )..where((row) => row.id.equals(id))).getSingle();
 
 void main() {
   setUpAll(AppTime.initialize);
 
-  test('migra v7 a v8 conservando profilo, pesate, obiettivo e '
-      'allenamenti', () async {
-    final database = AppDatabase(_schemaV7(seed: _seedV7));
+  test('migra v9 a v10 senza perdere una riga di check-in', () async {
+    final database = AppDatabase(_schemaV9(seed: _seedV9));
     addTearDown(database.close);
 
     final version = await database
         .customSelect('PRAGMA user_version')
         .map((row) => row.read<int>('user_version'))
         .getSingle();
+
+    expect(version, 10);
+
+    // La riga completa: il movimento sta in fondo alla tabella vecchia e in
+    // mezzo a quella nuova. Se la copia fosse posizionale invece che per nome,
+    // gli 8000 passi finirebbero in `created_at` e nessuno se ne accorgerebbe
+    // finché il coach non legge una giornata nata nel 1970.
+    final completo = await _checkIn(database, 'chk-6');
+    expect(completo.day.toUtc(), DateTime.utc(2026, 8, 6));
+    expect(completo.sleepHours, closeTo(7.5, 0.0001));
+    expect(completo.energyScore, 4);
+    expect(completo.steps, 8000);
+    expect(completo.walkMinutes, 40);
+    expect(completo.createdAt.toUtc(), DateTime.utc(1970, 1, 1, 0, 1, 40));
+    expect(completo.updatedAt.toUtc(), DateTime.utc(1970, 1, 1, 0, 3, 20));
+    expect(completo.deletedAt, isNull);
+
+    final soloSonno = await _checkIn(database, 'chk-5');
+    expect(soloSonno.sleepHours, closeTo(6.5, 0.0001));
+    expect(soloSonno.steps, isNull);
+
+    // Il tombstone è la riga più fragile della ricostruzione: è vuota per
+    // definizione, e una CHECK scritta male la rifiuterebbe in copia facendo
+    // fallire tutta la migrazione.
+    final tombstone = await _checkIn(database, 'chk-4');
+    expect(tombstone.deletedAt, isNotNull);
+    expect(tombstone.sleepHours, isNull);
+
+    expect(await database.select(database.dailyCheckIns).get(), hasLength(3));
+  });
+
+  test('la v10 non tocca niente che non sia il check-in', () async {
+    final database = AppDatabase(_schemaV9(seed: _seedV9));
+    addTearDown(database.close);
+
     final profile = await database.select(database.appProfiles).getSingle();
     final measurement = await database
         .select(database.bodyMeasurements)
@@ -778,183 +881,102 @@ void main() {
     final impedenza = await database
         .select(database.bodyImpedanceReadings)
         .getSingle();
-    final circonferenza = await database
-        .select(database.bodyMeasurementValues)
-        .getSingle();
-    final checkIn = await database.select(database.dailyCheckIns).getSingle();
     final goal = await database.select(database.goals).getSingle();
     final workout = await database.select(database.workouts).getSingle();
-    final serie = await database.select(database.workoutSets).getSingle();
     final stats = await database
         .select(database.workoutProfileStats)
         .getSingle();
-    // Interrogarla è l'unico modo di dire che è nata: se il ramo `from < 8`
-    // non fosse girato, qui uscirebbe «no such table».
-    final impostazioni = await database.select(database.localSettings).get();
+    final atleta = await database.select(database.trainingProfiles).getSingle();
+    final limite = await database
+        .select(database.trainingLimitations)
+        .getSingle();
+    final impostazione = await database
+        .select(database.localSettings)
+        .getSingle();
 
-    expect(version, 10);
-    expect(impostazioni, isEmpty);
     expect(profile.displayName, 'Marco');
-    expect(profile.heightCm, closeTo(182, 0.0001));
-    expect(profile.sex, 'M');
-    expect(measurement.weightKg, closeTo(94.5, 0.0001));
-    expect(measurement.impedanceOhm, closeTo(512.5, 0.0001));
     expect(measurement.deviceModel, 'QN-Scale');
-    expect(measurement.rawPayload, '02:0f:1a:00:25:5e:03:c9');
-    expect(impedenza.segment, 'whole');
-    expect(impedenza.frequencyHz, isNull);
-    expect(circonferenza.label, 'Vita');
-    expect(checkIn.sleepHours, closeTo(7.5, 0.0001));
-    expect(checkIn.energyScore, 4);
-    // Drift rilegge gli istanti in ora locale: quel che deve tornare è
-    // l'etichetta del giorno, cioè la mezzanotte UTC del 6 agosto.
-    expect(checkIn.day.toUtc(), DateTime.utc(2026, 8, 6));
+    expect(impedenza.ohm, closeTo(512.5, 0.0001));
     expect(goal.targetLevel, 'defined');
-    expect(goal.targetWeightKg, closeTo(80.5, 0.0001));
-    expect(goal.closedAt, isNull);
     expect(workout.totalKcal, closeTo(412.5, 0.0001));
-    expect(serie.weightKg, closeTo(80, 0.0001));
     expect(stats.totalXp, 11370);
+    expect(atleta.equipment, 'manubri,elastici_anello');
+    expect(atleta.deloadPreference, 'suggerito');
+    expect(limite.bodyPart, 'spalla_dx');
+    expect(impostazione.value, 'AA:BB:CC:DD:EE:FF');
+    // La coda di sincronizzazione non deve aver visto niente: la v10 cambia un
+    // vincolo, non i dati, e un tablet che si vedesse riproporre tre check-in
+    // avrebbe ricevuto una notizia falsa.
+    expect(await database.select(database.syncOutbox).get(), hasLength(1));
   });
 
-  test('la tabella nasce e nasce vuota: nessuna bilancia inventata', () async {
-    final database = AppDatabase(_schemaV7(seed: _seedV7));
-    addTearDown(database.close);
-    final store = LocalSettingsStore(database);
-
-    // La v8 crea la tabella, non ci scrive dentro: finché Marco non sceglie
-    // una bilancia a mano non c'è nessun indirizzo da ricordare, e «assente»
-    // deve leggersi come null, non come stringa vuota.
-    expect(await database.select(database.localSettings).get(), isEmpty);
-    expect(await store.read(LocalSettingsStore.scaleDeviceId), isNull);
-    expect(await store.read('chiave.mai.scritta'), isNull);
-  });
-
-  test(
-    'lo store ricorda la bilancia e la dimentica, su migrato e su nuovo',
-    () async {
-      for (final (label, database) in <(String, AppDatabase)>[
-        ('migrato', AppDatabase(_schemaV7(seed: _seedV7))),
-        ('nuovo', AppDatabase(NativeDatabase.memory())),
-      ]) {
-        addTearDown(database.close);
-        final store = LocalSettingsStore(database);
-
-        await store.write(
-          LocalSettingsStore.scaleDeviceId,
-          'AA:BB:CC:DD:EE:FF',
-        );
-        await store.write(LocalSettingsStore.scaleDeviceName, 'QN-Scale');
-
-        expect(
-          await store.read(LocalSettingsStore.scaleDeviceId),
-          'AA:BB:CC:DD:EE:FF',
-          reason: 'indirizzo non riletto su database $label',
-        );
-        expect(
-          await store.read(LocalSettingsStore.scaleDeviceName),
-          'QN-Scale',
-          reason: 'nome non riletto su database $label',
-        );
-
-        // Marco cambia bilancia: la chiave è la stessa, e
-        // `insertOnConflictUpdate` deve sovrascrivere la riga, non affiancarne
-        // una seconda — due indirizzi ricordati insieme sono un indirizzo
-        // scelto a caso alla prossima pesata.
-        // L'orario si spinge indietro di un giorno prima di riscrivere. Senza,
-        // il confronto sarebbe vuoto: `updated_at` viaggia in secondi, due
-        // scritture di fila cadono nello stesso secondo, e l'asserzione
-        // passerebbe identica anche se `write` non toccasse mai quel campo.
-        final ieri = DateTime.utc(2026, 8, 5, 7, 12);
-        await (database.update(
-              database.localSettings,
-            )..where((row) => row.key.equals(LocalSettingsStore.scaleDeviceId)))
-            .write(LocalSettingsCompanion(updatedAt: Value(ieri)));
-        final prima =
-            await (database.select(database.localSettings)..where(
-                  (row) => row.key.equals(LocalSettingsStore.scaleDeviceId),
-                ))
-                .getSingle();
-        expect(prima.updatedAt.toUtc(), ieri);
-        await store.write(
-          LocalSettingsStore.scaleDeviceId,
-          '11:22:33:44:55:66',
-        );
-        final dopo =
-            await (database.select(database.localSettings)..where(
-                  (row) => row.key.equals(LocalSettingsStore.scaleDeviceId),
-                ))
-                .getSingle();
-
-        expect(
-          dopo.value,
-          '11:22:33:44:55:66',
-          reason: 'sovrascrittura non applicata su database $label',
-        );
-        expect(
-          dopo.updatedAt.isAfter(prima.updatedAt),
-          isTrue,
-          reason: 'updated_at non aggiornato dalla riscrittura su $label',
-        );
-        expect(
-          await database.select(database.localSettings).get(),
-          hasLength(2),
-          reason: 'la chiave si è duplicata su database $label',
-        );
-
-        // «Dimentica questa bilancia» toglie l'indirizzo e lascia stare il
-        // resto: le chiavi qui dentro sono indipendenti.
-        await store.remove(LocalSettingsStore.scaleDeviceId);
-
-        expect(
-          await store.read(LocalSettingsStore.scaleDeviceId),
-          isNull,
-          reason: 'indirizzo ancora presente su database $label',
-        );
-        expect(
-          await store.read(LocalSettingsStore.scaleDeviceName),
-          'QN-Scale',
-          reason: 'remove ha portato via anche il nome su database $label',
-        );
-
-        // Dimenticare due volte non è un errore: il pulsante resta lì anche
-        // quando non c'è più niente da dimenticare.
-        await store.remove(LocalSettingsStore.scaleDeviceId);
-        expect(
-          await database.select(database.localSettings).get(),
-          hasLength(1),
-        );
-      }
-    },
-  );
-
-  test(
-    'l’indirizzo della bilancia non parte per la sincronizzazione',
-    () async {
-      final database = AppDatabase(_schemaV7(seed: _seedV7));
+  test('la giornata dei soli passi entra, su migrato e su nuovo', () async {
+    for (final (label, database) in <(String, AppDatabase)>[
+      ('migrato', AppDatabase(_schemaV9(seed: _seedV9))),
+      ('nuovo', AppDatabase(NativeDatabase.memory())),
+    ]) {
       addTearDown(database.close);
-      final store = LocalSettingsStore(database);
+      final profileId = label == 'migrato' ? 'marco-v9' : 'marco-nuovo';
+      if (label == 'nuovo') {
+        await database
+            .into(database.appProfiles)
+            .insert(
+              AppProfilesCompanion.insert(
+                id: profileId,
+                displayName: 'Marco',
+                createdAt: DateTime.utc(2026, 8, 7),
+                updatedAt: DateTime.utc(2026, 8, 7),
+              ),
+            );
+      }
 
-      final codaPrima = await _outboxIds(database);
+      // È il difetto che la v10 esiste per chiudere: fino alla v9 questa riga
+      // veniva rifiutata dal database, e i passi di una giornata camminata
+      // sparivano perché quel giorno Marco non aveva risposto sul sonno.
+      await database
+          .into(database.dailyCheckIns)
+          .insert(
+            DailyCheckInsCompanion.insert(
+              id: 'solo-passi',
+              profileId: profileId,
+              day: DateTime.utc(2026, 8, 7),
+              createdAt: DateTime.utc(2026, 8, 7),
+              updatedAt: DateTime.utc(2026, 8, 7),
+              steps: const Value(9200),
+            ),
+          );
 
-      await store.write(LocalSettingsStore.scaleDeviceId, 'AA:BB:CC:DD:EE:FF');
-      await store.write(LocalSettingsStore.scaleDeviceName, 'QN-Scale');
-      await store.remove(LocalSettingsStore.scaleDeviceName);
+      final riga = await _checkIn(database, 'solo-passi');
+      expect(riga.steps, 9200, reason: 'passi persi su database $label');
+      expect(riga.sleepHours, isNull, reason: 'sonno inventato su $label');
+    }
+  });
 
-      // È il punto della tabella: il MAC è quello che vede QUESTO telefono, e
-      // spedirlo al tablet significherebbe dirgli di collegarsi a un indirizzo
-      // che lì non esiste. Le due righe in coda sono quelle di prima, nessuna
-      // in più.
-      expect(await _outboxIds(database), codaPrima);
-      expect(codaPrima, ['out-1', 'out-2']);
-      // Senza questo la prova sarebbe vuota: la coda non cambia perché la
-      // scrittura è avvenuta, non perché non è successo niente.
-      expect(await database.select(database.localSettings).get(), hasLength(1));
-    },
-  );
+  test('una riga viva del tutto vuota resta rifiutata', () async {
+    final database = AppDatabase(_schemaV9(seed: _seedV9));
+    addTearDown(database.close);
 
-  test('gli indici della v7 sopravvivono alla v8', () async {
-    final migrato = AppDatabase(_schemaV7(seed: _seedV7));
+    // La CHECK è stata allargata, non tolta: senza nemmeno un campo la riga
+    // farebbe contare come «compilato» un giorno in cui non è stata data
+    // nessuna risposta. Solo il tombstone può essere vuoto.
+    await expectLater(
+      database
+          .into(database.dailyCheckIns)
+          .insert(
+            DailyCheckInsCompanion.insert(
+              id: 'vuota',
+              profileId: 'marco-v9',
+              day: DateTime.utc(2026, 8, 7),
+              createdAt: DateTime.utc(2026, 8, 7),
+              updatedAt: DateTime.utc(2026, 8, 7),
+            ),
+          ),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('la tabella ricostruita è identica a quella nata da zero', () async {
+    final migrato = AppDatabase(_schemaV9(seed: _seedV9));
     final nuovo = AppDatabase(NativeDatabase.memory());
     addTearDown(migrato.close);
     addTearDown(nuovo.close);
@@ -963,46 +985,74 @@ void main() {
     await migrato.select(migrato.appProfiles).get();
     await nuovo.select(nuovo.appProfiles).get();
 
-    final indiciMigrato = await _indexNames(migrato);
-    final indiciNuovo = await _indexNames(nuovo);
+    final sqlMigrato = await _tableSql(migrato, 'daily_check_ins');
 
-    for (final index in [
-      'idx_meals_profile_eaten_at',
-      'idx_body_measurements_profile_measured_at',
-      'idx_daily_check_ins_profile_day',
-      'idx_goals_profile_started',
-      'idx_body_impedance_readings_measurement',
-      'idx_body_impedance_readings_undeclared',
-      'idx_workouts_one_active',
-    ]) {
-      expect(indiciMigrato, contains(index), reason: 'manca $index');
-      expect(indiciNuovo, contains(index), reason: 'manca $index');
-    }
+    // Due telefoni che si comportano in modo diverso sullo stesso gesto sono
+    // il difetto che questa migrazione poteva introdurre: il vincolo va
+    // riscritto su entrambi, non solo su chi installa oggi.
+    expect(sqlMigrato, await _tableSql(nuovo, 'daily_check_ins'));
+    expect(sqlMigrato, contains('walk_minutes IS NOT NULL'));
+    // E le colonne devono restare nell'ordine della definizione Dart: la
+    // ricostruzione ha rimesso in fila quelle che l'`addColumn` della v9 aveva
+    // accodato.
+    expect(
+      sqlMigrato!.indexOf('steps'),
+      lessThan(sqlMigrato.indexOf('created_at')),
+    );
+  });
+
+  test('indice e chiave esterna sopravvivono alla ricostruzione', () async {
+    final database = AppDatabase(_schemaV9(seed: _seedV9));
+    addTearDown(database.close);
+
+    // `alterTable` fa DROP della tabella vecchia, e in SQLite un DROP si porta
+    // via gli indici. Drift li rilegge da `sqlite_master` prima di buttarla;
+    // se un giorno smettesse di farlo, il check-in tornerebbe a leggersi con
+    // una scansione completa e nessun test se ne accorgerebbe.
+    expect(
+      await _indexNames(database),
+      contains('idx_daily_check_ins_profile_day'),
+    );
+
+    // La chiave esterna è l'altra cosa che una ricostruzione può perdere in
+    // silenzio, perché durante la migrazione le FK sono spente: qui sono
+    // riaccese da `beforeOpen`, e cancellare il profilo deve portarsi via i
+    // suoi check-in invece di lasciarli orfani.
+    await (database.delete(
+      database.appProfiles,
+    )..where((row) => row.id.equals('marco-v9'))).go();
+
+    expect(await database.select(database.dailyCheckIns).get(), isEmpty);
   });
 
   test(
-    'un database migrato e uno nuovo hanno la stessa local_settings',
+    'togliere il sonno da un giorno camminato non porta via i passi',
     () async {
-      final migrato = AppDatabase(_schemaV7(seed: _seedV7));
-      final nuovo = AppDatabase(NativeDatabase.memory());
-      addTearDown(migrato.close);
-      addTearDown(nuovo.close);
+      final database = AppDatabase(_schemaV9(seed: _seedV9));
+      addTearDown(database.close);
+      DriftCheckInStore store() => DriftCheckInStore(
+        database,
+        legacy: FileCheckInStore(directory: Directory.systemTemp.createTemp),
+        profileId: () async => 'marco-v9',
+      );
 
-      Future<String?> sql(AppDatabase database) async {
-        final rows = await database
-            .customSelect(
-              "SELECT sql FROM sqlite_master WHERE type = 'table' "
-              "AND name = 'local_settings'",
-            )
-            .get();
-        return rows.single.readNullable<String>('sql');
-      }
+      // Lo scenario vero, sul telefono vero: il 6 agosto ha sonno ed energia, e
+      // Marco corregge la notte che non ha dormito lasciando i suoi 8000 passi.
+      final giorno = DateTime.utc(2026, 8, 6);
+      final repository = CheckInRepository(store());
+      await repository.save(day: giorno, clearSleep: true, clearEnergy: true);
 
-      // La tabella creata dalla migrazione e quella creata da zero escono dalla
-      // stessa definizione Dart: se un domani divergessero, la chiave finirebbe
-      // per essere PRIMARY KEY solo su uno dei due telefoni.
-      expect(await sql(migrato), await sql(nuovo));
-      expect(await sql(nuovo), contains('PRIMARY KEY'));
+      final riga = await _checkIn(database, 'chk-6');
+      expect(riga.deletedAt, isNull, reason: 'il giorno è stato spento');
+      expect(riga.steps, 8000);
+      expect(riga.walkMinutes, 40);
+      expect(riga.sleepHours, isNull);
+
+      // E alla riapertura i passi ci sono ancora, che è tutto il punto.
+      final entry = (await store().read()).forDay(checkInDayOf(giorno))!;
+      expect(entry.steps, 8000);
+      expect(entry.hasNeat, isTrue);
+      expect(entry.sleepHours, isNull);
     },
   );
 }

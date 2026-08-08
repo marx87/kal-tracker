@@ -5,21 +5,31 @@ import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercise_detail_screen.dart';
 import 'package:kal_tracker/features/exercises/presentation/exercise_providers.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/exercise_editor_sheet.dart';
+import 'package:kal_tracker/features/exercises/presentation/widgets/exercise_screening_presentation.dart';
 import 'package:kal_tracker/features/exercises/presentation/widgets/muscle_group_presentation.dart';
+import 'package:kal_tracker/features/training_profile/presentation/training_profile_providers.dart';
 
 /// Il catalogo esercizi: una lista sola con due origini (base e miei), come
 /// in Gym Tracker, ma vestita come Kal.
+///
+/// **È qui che il profilo di allenamento viene letto.** Attrezzatura e
+/// limitazioni non restano dati scritti in Impostazioni: ogni riga porta il
+/// suo esito — libero, segnalato, escluso — e la ragione per cui l'ha preso.
+/// Un esercizio escluso non sparisce, resta spento con il perché accanto: una
+/// libreria che si accorcia in silenzio sembra rotta.
 class ExercisesScreen extends ConsumerWidget {
   const ExercisesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final exercises = ref.watch(visibleExercisesProvider);
+    final exercises = ref.watch(screenedExercisesProvider);
     final catalog = ref.watch(exerciseCatalogProvider).valueOrNull;
+    final practicableOnly = ref.watch(exercisePracticableOnlyProvider);
     final hasFilters =
         ref.watch(exerciseSearchQueryProvider).trim().isNotEmpty ||
         ref.watch(exerciseMuscleFilterProvider) != null ||
-        ref.watch(exerciseOriginFilterProvider) != ExerciseOrigin.all;
+        ref.watch(exerciseOriginFilterProvider) != ExerciseOrigin.all ||
+        practicableOnly;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,12 +47,12 @@ class ExercisesScreen extends ConsumerWidget {
             ),
             Expanded(
               child: exercises.when(
-                data: (items) => ListView(
+                data: (screened) => ListView(
                   key: const Key('exercises_list'),
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
                   children: [
                     _LibraryIntroCard(
-                      total: catalog?.length ?? items.length,
+                      total: catalog?.length ?? screened.shown.length,
                       mine:
                           catalog
                               ?.where(
@@ -52,8 +62,21 @@ class ExercisesScreen extends ConsumerWidget {
                               .length ??
                           0,
                     ),
+                    if (screened.hidden > 0) ...[
+                      const SizedBox(height: 10),
+                      _HiddenNotice(
+                        hidden: screened.hidden,
+                        onShow: () =>
+                            ref
+                                    .read(
+                                      exercisePracticableOnlyProvider.notifier,
+                                    )
+                                    .state =
+                                false,
+                      ),
+                    ],
                     const SizedBox(height: 16),
-                    if (items.isEmpty)
+                    if (screened.shown.isEmpty)
                       AppEmptyState(
                         key: const Key('exercises_empty_state'),
                         icon: Icons.fitness_center_rounded,
@@ -69,7 +92,7 @@ class ExercisesScreen extends ConsumerWidget {
                         onAction: hasFilters ? () => _resetFilters(ref) : null,
                       )
                     else
-                      ..._groupedRows(context, items),
+                      ..._groupedRows(context, screened.shown),
                   ],
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -116,6 +139,7 @@ class ExercisesScreen extends ConsumerWidget {
     ref.read(exerciseSearchQueryProvider.notifier).state = '';
     ref.read(exerciseMuscleFilterProvider.notifier).state = null;
     ref.read(exerciseOriginFilterProvider.notifier).state = ExerciseOrigin.all;
+    ref.read(exercisePracticableOnlyProvider.notifier).state = false;
   }
 }
 
@@ -244,6 +268,20 @@ class _ExerciseFiltersState extends ConsumerState<_ExerciseFilters> {
                     ref.read(exerciseOriginFilterProvider.notifier).state =
                         value,
               ),
+            // Compare solo se il profilo ha davvero qualcosa da setacciare:
+            // un interruttore che promette di nascondere gli esclusi quando
+            // non c'è nessun escluso è peggio di un interruttore assente.
+            if (ref.watch(exerciseScreeningActiveProvider))
+              FilterChip(
+                key: const Key('exercise_practicable_filter'),
+                label: const Text('Solo praticabili'),
+                avatar: const Icon(Icons.filter_alt_rounded, size: 18),
+                selected: ref.watch(exercisePracticableOnlyProvider),
+                showCheckmark: false,
+                onSelected: (value) =>
+                    ref.read(exercisePracticableOnlyProvider.notifier).state =
+                        value,
+              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -317,11 +355,143 @@ class _LibraryIntroCard extends StatelessWidget {
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
+                  // Dentro la card e non sotto: cosa sta facendo il profilo
+                  // fa parte di «com'è messa la libreria», e una riga in più
+                  // qui costa meno spazio di un blocco a sé sopra le sezioni.
+                  const _ProfileNotice(),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Cosa sta facendo (o non facendo) il profilo di allenamento sul catalogo.
+///
+/// Quattro cose da dire, e nessuna si può tacere — perché tutte cambiano cosa
+/// significa la pastiglia verde su una riga:
+/// - il profilo è muto, e allora la libreria non è filtrata da niente;
+/// - il profilo filtra, e quanti esercizi tocca;
+/// - l'attrezzatura non è dichiarata, e allora metà del controllo non è stata
+///   fatta;
+/// - ci sono limitazioni che questa versione dell'app non sa leggere, e allora
+///   il setaccio sta lavorando con meno informazioni di quante ce ne sono.
+class _ProfileNotice extends ConsumerWidget {
+  const _ProfileNotice();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final profile = ref.watch(trainingProfileProvider).valueOrNull;
+    if (profile == null) {
+      return const SizedBox.shrink();
+    }
+    final active = ref.watch(exerciseScreeningActiveProvider);
+    final screenings = ref.watch(exerciseScreeningsProvider).values;
+    final excluded = screenings.where((esito) => esito.isExcluded).length;
+    final flagged = screenings.where((esito) => esito.isFlagged).length;
+    final unreadable = profile.unreadableLimitations;
+
+    final lines = <String>[
+      if (!active)
+        'Il profilo di allenamento è vuoto: la libreria non è filtrata da '
+            'niente. Dì in Impostazioni cosa hai in casa e cosa ti fa male.'
+      else
+        _screeningLine(excluded: excluded, flagged: flagged),
+      // Il setaccio salta del tutto il controllo sull'attrezzatura finché
+      // Marco non ha dichiarato niente: senza dirlo, «libero» sembrerebbe
+      // «l'ho controllato tutto».
+      if (active && !profile.hasDeclaredEquipment)
+        'L\'attrezzatura non entra nel conto: non hai ancora detto cosa hai '
+            'in casa.',
+      if (unreadable > 0)
+        unreadable == 1
+            ? 'C\'è 1 limitazione che questa versione dell\'app non sa '
+                  'leggere: sta filtrando senza tenerne conto.'
+            : 'Ci sono $unreadable limitazioni che questa versione dell\'app '
+                  'non sa leggere: sta filtrando senza tenerne conto.',
+    ];
+
+    return Padding(
+      key: const Key('exercises_profile_notice'),
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        lines.join(' '),
+        // Sul fondo della card il testo tenue del tema non si leggerebbe:
+        // qui il colore giusto è quello del contenitore.
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+  /// Una frase, non due numeri appaiati: «3 · 1» si legge solo se si sa già
+  /// cosa conta.
+  static String _screeningLine({required int excluded, required int flagged}) {
+    if (excluded == 0 && flagged == 0) {
+      return 'Con il tuo profilo di oggi non c\'è niente da escludere né da '
+          'adattare.';
+    }
+    final esclusi = excluded == 1 ? '1 esercizio' : '$excluded esercizi';
+    if (flagged == 0) {
+      return 'Il tuo profilo esclude $esclusi.';
+    }
+    if (excluded == 0) {
+      final segnalati = flagged == 1 ? '1 esercizio' : '$flagged esercizi';
+      return 'Il tuo profilo segnala $segnalati da adattare.';
+    }
+    final altri = flagged == 1 ? 'un altro' : 'altri $flagged';
+    return 'Il tuo profilo esclude $esclusi e ne segnala $altri da adattare.';
+  }
+}
+
+/// Quanti esercizi il filtro sta tenendo fuori, con la via per rivederli.
+///
+/// Il numero c'è sempre quando è maggiore di zero: una lista più corta senza
+/// niente accanto sembra un catalogo rotto, non un catalogo filtrato.
+class _HiddenNotice extends StatelessWidget {
+  const _HiddenNotice({required this.hidden, required this.onShow});
+
+  final int hidden;
+  final VoidCallback onShow;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accents = AppAccents.of(context);
+    return Container(
+      key: const Key('exercises_hidden_notice'),
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: accents.warningSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accents.warning.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.visibility_off_rounded, size: 18, color: accents.warning),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              hidden == 1
+                  ? 'Sto nascondendo 1 esercizio escluso dal tuo profilo.'
+                  : 'Sto nascondendo $hidden esercizi esclusi dal tuo profilo.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accents.warning,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const Key('exercises_show_hidden'),
+            onPressed: onShow,
+            child: const Text('Mostrali'),
+          ),
+        ],
       ),
     );
   }
@@ -371,8 +541,16 @@ class _ExerciseCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final accents = AppAccents.of(context);
+    final screening = ref.watch(exerciseScreeningProvider(exercise.id));
+    final excluded = screening?.isExcluded ?? false;
+
     return Card(
       clipBehavior: Clip.antiAlias,
+      // Escluso si vede spento, non sparito: la card perde il suo fondo e il
+      // nome scolorisce, ma resta lì e resta apribile. La ragione qui sotto
+      // invece tiene il colore pieno — è l'unica cosa che Marco deve leggere
+      // di una riga spenta.
+      color: excluded ? theme.colorScheme.surfaceContainerHighest : null,
       child: InkWell(
         key: Key('exercise_card_${exercise.id}'),
         onTap: () => openExerciseDetail(context, exercise.id),
@@ -381,7 +559,10 @@ class _ExerciseCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              MuscleGroupBadge(group: exercise.muscleGroup),
+              Opacity(
+                opacity: excluded ? 0.5 : 1,
+                child: MuscleGroupBadge(group: exercise.muscleGroup),
+              ),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -394,7 +575,9 @@ class _ExerciseCard extends ConsumerWidget {
                             exercise.name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: excluded ? accents.mutedInk : null,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -418,6 +601,22 @@ class _ExerciseCard extends ConsumerWidget {
                           color: accents.mutedInk,
                         ),
                       ),
+                    ],
+                    if (screening case final screening?) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        key: Key('exercise_outcome_${exercise.id}'),
+                        alignment: Alignment.centerLeft,
+                        child: ExerciseScreeningTag(outcome: screening.outcome),
+                      ),
+                      if (screening.reason != null) ...[
+                        const SizedBox(height: 6),
+                        ExerciseScreeningNote(
+                          key: Key('exercise_reason_${exercise.id}'),
+                          screening: screening,
+                          compact: true,
+                        ),
+                      ],
                     ],
                   ],
                 ),

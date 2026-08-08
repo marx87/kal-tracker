@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
+import 'package:kal_tracker/features/checkin/domain/neat_trend.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 
@@ -153,6 +154,66 @@ void main() {
       );
 
       expect(snapshot.latestFatFreeMassKg, isNull);
+    });
+
+    test('senza check-in il movimento non ha niente da dire', () {
+      // Nullo, non «zero passi»: il rapporto non deve rimproverare un campo
+      // che Marco non ha mai promesso di compilare.
+      expect(CoachSnapshot(week: testWeek).neat, isNull);
+    });
+
+    test('il movimento della settimana si confronta con quella prima', () {
+      final snapshot = CoachSnapshot(
+        week: testWeek,
+        checkIns: checkInLog(
+          lastDay: testWeek.end,
+          steps: [...List.filled(7, 4000), ...List.filled(7, 10000)],
+        ),
+      );
+
+      final neat = snapshot.neat!;
+      expect(neat.current, closeTo(4000, 0.001));
+      expect(neat.previous, closeTo(10000, 0.001));
+      expect(neat.direction, NeatDirection.down);
+      // La frase arriva già scritta dal dominio del check-in, causa compresa.
+      expect(neat.line, contains('prima di togliere calorie'));
+    });
+
+    test('la misura è quella con più giorni segnati', () {
+      final snapshot = CoachSnapshot(
+        week: testWeek,
+        checkIns: checkInLog(
+          lastDay: testWeek.end,
+          steps: const [8000, 8000, 8000],
+          walkMinutes: const [40, 40, 40, 40, 40],
+        ),
+      );
+
+      // Passi e minuti raccontano la stessa camminata: due righe darebbero lo
+      // stesso fatto con due numeri diversi.
+      expect(snapshot.neat!.measure, NeatMeasure.walkMinutes);
+    });
+
+    test('i giorni fuori dalle due settimane non entrano', () {
+      final snapshot = CoachSnapshot(
+        week: testWeek,
+        checkIns: checkInLog(
+          lastDay: testWeek.end,
+          // Sette giorni segnati, poi il vuoto: la settimana prima non esiste
+          // e il confronto sparisce invece di nascere da un giorno solo.
+          steps: [
+            ...List.filled(7, 4000),
+            ...List.filled(7, null),
+            ...List.filled(7, 10000),
+          ],
+        ),
+      );
+
+      final neat = snapshot.neat!;
+      expect(neat.currentDays, 7);
+      expect(neat.previousDays, 0);
+      expect(neat.hasComparison, isFalse);
+      expect(neat.direction, NeatDirection.unknown);
     });
 
     test('le finestre filtrano diario, sessioni e acqua', () {

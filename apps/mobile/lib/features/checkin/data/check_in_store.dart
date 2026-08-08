@@ -38,12 +38,12 @@ abstract class CheckInStore {
 /// finestra nessuna scrittura tocca niente — è quello che impedisce alla
 /// potatura del log di trasformarsi in cancellazioni vere.
 ///
-/// **Il movimento della v9 non basta a tenere in piedi una riga.** Passi e
-/// minuti a piedi hanno le loro colonne, ma la CHECK scritta con la v7
-/// pretende ancora almeno sonno o energia: una giornata di sola camminata
-/// viene rifiutata dal database. Qui la si salta apposta — vedi
-/// [DailyCheckIn.isStorable] — perché una riga rifiutata dentro la
-/// transazione si porterebbe dietro anche tutti gli altri giorni.
+/// **Dalla v10 il movimento tiene in piedi la riga da solo.** Fino alla v9 la
+/// CHECK della tabella pretendeva sonno o energia, e questo store saltava le
+/// giornate di sola camminata per non far abortire la transazione — con il
+/// risultato che togliere il sonno da un giorno camminato cancellava anche i
+/// passi. Adesso l'unico motivo per non scrivere una voce è che sia vuota:
+/// quello che il dominio considera compilato arriva al database.
 class DriftCheckInStore implements CheckInStore {
   DriftCheckInStore(
     this._database, {
@@ -109,12 +109,11 @@ class DriftCheckInStore implements CheckInStore {
                 .get();
         for (final row in live) {
           final key = DailyCheckIn.dayKeyOf(row.day.toUtc());
-          // Anche il giorno che nel log è rimasto di solo movimento va
-          // spento: la CHECK non lo lascia riscrivere (vedi il punto 2) e
-          // lasciare la riga com'era resusciterebbe alla riapertura il sonno
-          // che Marco ha appena tolto.
+          // Il giorno rimasto di solo movimento NON si spegne più: dalla v10
+          // il punto 2 lo riscrive, e spegnerlo qui vorrebbe dire cancellare i
+          // passi per poi reinserirli.
           final entry = log.entries[key];
-          if (entry != null && entry.isStorable) {
+          if (entry != null && !entry.isEmpty) {
             continue;
           }
           await (_database.update(
@@ -137,11 +136,10 @@ class DriftCheckInStore implements CheckInStore {
         // 2. Il resto è un upsert sulla chiave naturale: un giorno cancellato
         //    e poi ricompilato riprende la sua riga, tombstone compreso.
         for (final entry in log.entries.values) {
-          // Le giornate di solo movimento restano fuori: la CHECK della
-          // tabella le rifiuta (vedi [DailyCheckIn.isStorable]) e una sola
-          // riga rifiutata farebbe abortire la transazione, portandosi dietro
-          // anche i giorni che si sarebbero salvati benissimo.
-          if (entry.isEmpty || !entry.isStorable) {
+          // Resta fuori solo il giorno vuoto, che è il punto 1: scriverlo
+          // farebbe contare come «compilato» un giorno in cui non c'è nessuna
+          // risposta. Le giornate dei soli passi passano di qui dalla v10.
+          if (entry.isEmpty) {
             continue;
           }
           await _upsert(profileId: profileId, entry: entry, now: now);
@@ -215,7 +213,7 @@ class DriftCheckInStore implements CheckInStore {
         await _database.batch((batch) {
           batch.insertAll(_database.dailyCheckIns, [
             for (final entry in log.entries.values)
-              if (entry.isStorable)
+              if (!entry.isEmpty)
                 DailyCheckInsCompanion.insert(
                   id: checkInRowId(profileId: profileId, day: _dayOf(entry)),
                   profileId: profileId,

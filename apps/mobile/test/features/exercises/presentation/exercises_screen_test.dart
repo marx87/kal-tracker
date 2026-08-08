@@ -66,6 +66,15 @@ void main() {
     await seed('Squat', group: MuscleGroup.gambe);
     await seed('Affondi bulgari', group: MuscleGroup.gambe);
 
+    // La finestra di prova standard lascia alla lista 342 punti: due sezioni
+    // ci stanno per un pelo, e i finder non vedono quello che il viewport ha
+    // costruito ma non dipinge. Qui si prova il raggruppamento, non quanto
+    // entra in mezzo schermo: la finestra si allarga e l'asserzione resta
+    // quella vera.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
     await tester.pumpWidget(_app(database));
     await tester.pumpAndSettle();
 

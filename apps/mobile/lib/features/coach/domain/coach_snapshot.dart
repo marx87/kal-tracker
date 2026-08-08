@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:kal_tracker/features/body/domain/body_analysis.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
+import 'package:kal_tracker/features/checkin/domain/daily_check_in.dart';
+import 'package:kal_tracker/features/checkin/domain/neat_trend.dart';
 import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
 import 'package:kal_tracker/features/coach/domain/coach_week.dart';
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
@@ -111,6 +113,7 @@ class CoachSnapshot {
     this.sessions = const [],
     this.strengthSets = const [],
     this.water = const [],
+    this.checkIns = const CheckInLog.empty(),
     this.targets,
     this.goal,
     this.activity = ActivityLevel.moderate,
@@ -139,6 +142,15 @@ class CoachSnapshot {
 
   final List<CoachWaterDay> water;
 
+  /// I check-in del mattino, interi come li scrive la schermata Oggi.
+  ///
+  /// Si riusa [CheckInLog] invece di ricopiarne i giorni in un tipo del coach
+  /// per la stessa ragione delle pesate: del movimento di Marco deve esistere
+  /// un vocabolario solo. Vuoto significa «non l'ha mai segnato», e allora la
+  /// riga del movimento sparisce dal rapporto invece di rimproverare un campo
+  /// che nessuno era obbligato a compilare.
+  final CheckInLog checkIns;
+
   final CoachTargets? targets;
   final CoachGoalContext? goal;
 
@@ -162,6 +174,21 @@ class CoachSnapshot {
 
   CoachAverages averagesIn(CoachWeek window) =>
       CoachAverages.of(weighIns, window);
+
+  /// **Quanto ci si è mossi, contro la settimana prima.** Nullo quando non c'è
+  /// nemmeno un giorno segnato: allora non c'è niente da dire.
+  ///
+  /// Non è un numero che entra in qualche formula del rapporto — il consumo si
+  /// misura dal peso e dal diario, e continua a farlo — ma la spiegazione che
+  /// quei numeri da soli non possono dare: il plateau arriva quando il NEAT
+  /// crolla senza che nessuno se ne accorga, e senza questa riga il rapporto
+  /// direbbe «togli calorie» quando la risposta era «hai camminato metà».
+  ///
+  /// Quale delle due misure si legge lo decide [CheckInNeat.strongest] e non
+  /// il coach: due regole per la stessa scelta finirebbero per divergere, e a
+  /// divergere sarebbe la frase che il rapporto stampa.
+  NeatTrend? get neat =>
+      CheckInNeat.strongest(log: checkIns, weekEnd: week.end);
 
   /// La massa magra più recente misurata davvero, in tutta la fotografia.
   ///

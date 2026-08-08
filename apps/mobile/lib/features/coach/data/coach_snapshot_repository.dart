@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:kal_tracker/core/database/app_database.dart';
 import 'package:kal_tracker/features/body/domain/body_models.dart';
+import 'package:kal_tracker/features/checkin/domain/daily_check_in.dart';
 import 'package:kal_tracker/features/coach/domain/coach_metrics.dart';
 import 'package:kal_tracker/features/coach/domain/coach_snapshot.dart';
 import 'package:kal_tracker/features/coach/domain/coach_strength.dart';
@@ -54,6 +55,7 @@ class CoachSnapshotRepository {
         to: to,
       ),
       water: await _water(profileId: profileId, from: from, to: to),
+      checkIns: await _checkIns(profileId: profileId, from: from, to: to),
       targets: targets,
       goal: goal,
     );
@@ -264,6 +266,53 @@ class CoachSnapshotRepository {
           reps: row.readTable(sets).reps!,
         ),
     ];
+  }
+
+  /// I check-in del mattino della finestra, per il movimento della settimana.
+  ///
+  /// **Non passa da `CheckInStore`** di proposito: quello risolve il profilo da
+  /// sé e si porta dietro la migrazione una-tantum del vecchio file JSON, cioè
+  /// il mestiere di chi scrive. Qui si legge, per un profilo già deciso.
+  ///
+  /// La finestra è quella di tutta la fotografia e non le due settimane che il
+  /// confronto usa: i giorni in più non costano niente ed è il dominio del
+  /// check-in a ritagliare i suoi, ancorandoli alla domenica del rapporto.
+  Future<CheckInLog> _checkIns({
+    required String profileId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final query = _database.select(_database.dailyCheckIns)
+      ..where(
+        (row) =>
+            row.profileId.equals(profileId) &
+            row.deletedAt.isNull() &
+            row.day.isBiggerOrEqualValue(from) &
+            row.day.isSmallerThanValue(to),
+      );
+
+    final entries = <String, DailyCheckIn>{};
+    for (final row in await query.get()) {
+      // Drift rilegge gli istanti nel fuso della macchina: senza `toUtc` la
+      // mezzanotte UTC con cui il giorno è scritto tornerebbe come le 02:00
+      // del giorno giusto a Roma d'estate e come le 20:00 di quello prima a
+      // New York, cioè un giorno intero spostato di settimana.
+      final day = row.day.toUtc();
+      final entry = DailyCheckIn(
+        day: DateTime.utc(day.year, day.month, day.day),
+        updatedAt: row.updatedAt.toUtc(),
+        sleepHours: row.sleepHours,
+        energyScore: row.energyScore,
+        steps: row.steps,
+        walkMinutes: row.walkMinutes,
+      );
+      // Una riga svuotata ma non ancora tombstonata non è un giorno segnato:
+      // farla entrare la conterebbe fra quelli con il dato.
+      if (!entry.isEmpty) {
+        entries[entry.dayKey] = entry;
+      }
+    }
+    return CheckInLog(Map.unmodifiable(entries));
   }
 
   Future<List<CoachWaterDay>> _water({

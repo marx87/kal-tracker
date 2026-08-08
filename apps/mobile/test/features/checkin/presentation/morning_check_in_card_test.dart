@@ -255,23 +255,29 @@ void main() {
     );
   });
 
-  testWidgets('il movimento da solo lo dice, non lo perde in silenzio', (
+  testWidgets('il movimento da solo si salva, e non si avvisa del contrario', (
     tester,
   ) async {
-    await tester.pumpWidget(_host(store: InMemoryCheckInStore()));
+    // **Questo test faceva da guardia a un'affermazione diventata falsa.** La
+    // card diceva «il movimento da solo non basta a salvare il check-in», e
+    // fino alla v7 era vero: il vincolo dello schema pretendeva sonno o
+    // energia. La v10 l'ha allargato, il magazzino ha smesso di cancellare
+    // quelle righe — e l'avviso è rimasto, a dire a Marco che stava perdendo
+    // ottomila passi mentre l'app glieli salvava. Peggio: per «ancorarli»
+    // avrebbe inventato un'ora di sonno, sporcando l'unico dato che quella
+    // riga aveva davvero.
+    final store = InMemoryCheckInStore();
+    await tester.pumpWidget(_host(store: store));
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsNothing);
 
     await _tap(tester, 'check_in_walk_plus');
 
-    expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsOneWidget);
-
-    // Con il sonno la riga diventa salvabile e l'avviso sparisce da solo.
-    await tester.tap(find.byKey(const Key('check_in_sleep_plus')));
-    await tester.pumpAndSettle();
-
     expect(find.byKey(const Key('check_in_neat_needs_anchor')), findsNothing);
+    expect(
+      find.textContaining('non basta a salvare'),
+      findsNothing,
+      reason: 'la v10 ha reso salvabile la giornata di solo movimento',
+    );
   });
 
   testWidgets('completo si richiude, «Modifica» lo riapre', (tester) async {

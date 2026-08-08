@@ -4,6 +4,8 @@ import 'package:kal_tracker/features/goal/data/activity_settings_store.dart';
 import 'package:kal_tracker/features/goal/data/body_state_repository.dart';
 import 'package:kal_tracker/features/goal/data/goal_repository.dart';
 import 'package:kal_tracker/features/goal/data/goal_store.dart';
+import 'package:kal_tracker/features/checkin/domain/neat_trend.dart';
+import 'package:kal_tracker/features/checkin/presentation/check_in_providers.dart';
 import 'package:kal_tracker/features/goal/domain/activity_multiplier.dart';
 import 'package:kal_tracker/features/goal/domain/body_composition.dart';
 import 'package:kal_tracker/features/goal/domain/body_state.dart';
@@ -11,6 +13,9 @@ import 'package:kal_tracker/features/goal/domain/definition_level.dart';
 import 'package:kal_tracker/features/goal/domain/goal.dart';
 import 'package:kal_tracker/features/goal/domain/goal_plan.dart';
 import 'package:kal_tracker/features/goal/domain/tdee.dart';
+import 'package:kal_tracker/features/workouts/domain/kcal_estimator.dart';
+import 'package:kal_tracker/features/workouts/domain/muscle_group_snapshot.dart';
+import 'package:kal_tracker/features/workouts/presentation/live/live_workout_providers.dart';
 
 /// Store Drift dell'Obiettivo (v7): nei test si sostituisce con quello in
 /// memoria. Alla prima lettura porta dentro il vecchio file JSON e lo
@@ -111,16 +116,76 @@ typedef ActivityTrainingHistory = ({
   DateTime? firstRecordedAt,
 });
 
-/// Da dove arrivano gli allenamenti. **Oggi è vuoto.**
+/// Quante sessioni chiuse si rileggono.
 ///
-/// Riempirlo tocca al repository degli allenamenti, che deve esporre per ogni
-/// sessione le kcal, il MET medio con cui sono state calcolate e se gli
-/// snapshot dei gruppi muscolari erano completi: tre cose che oggi
-/// `WorkoutSummary` non porta. Finché resta vuoto la proposta si rifiuta da
-/// sola e dichiara il perché — nessun numero inventato entra da qui, e il
-/// TDEE continua a usare il livello dichiarato.
-final activityTrainingHistoryProvider = Provider<ActivityTrainingHistory>(
-  (ref) => (sessions: const [], firstRecordedAt: null),
+/// La finestra del derivato è di tre settimane, e sessanta sedute in tre
+/// settimane non le fa nessuno: il tetto serve a non tirare su esercizi e
+/// serie di tutto lo storico per rispondere a una domanda che guarda un mese.
+/// Taglia dalla parte prudente anche `firstRecordedAt` — se lo storico è più
+/// lungo, la più vecchia delle sessanta resta comunque molto più indietro
+/// delle tre settimane che servono.
+const int _sessionsForActivityMultiplier = 60;
+
+/// Gli allenamenti VERI, riletti dal repository della palestra.
+///
+/// Le kcal buone sono quelle scritte alla chiusura: calcolate col peso di
+/// quel giorno, e soprattutto le stesse che Marco ha visto in cima alla
+/// scheda della sessione. Si ricalcolano SOLO dove mancano — le sessioni
+/// importate da Gym potevano non portarle — e lì si usa l'ultima pesata, che
+/// dentro tre settimane è il peso di allora a meno di niente.
+///
+/// Il MET medio invece si rifà sempre da capo: una colonna sua non ce l'ha, e
+/// senza di lui dalla kcal lorda non si risale alla quota che l'allenamento
+/// ha davvero aggiunto al riposo. Vedi [TrainingSessionKcal.netKcal].
+final activityTrainingHistoryProvider = FutureProvider<ActivityTrainingHistory>(
+  (ref) async {
+    final repository = ref.watch(liveWorkoutRepositoryProvider);
+    // Il giorno è una dipendenza vera: le settimane si contano a ritroso da
+    // adesso, e chi calcola la proposta guarda già questo stesso `today`. Se
+    // di qui non passasse, a mezzanotte la finestra si sposterebbe su una
+    // lista di sessioni letta ieri. Il resto lo rilegge la tirata in giù
+    // della schermata Obiettivo, che è il gesto con cui si chiede «guarda di
+    // nuovo».
+    ref.watch(todayProvider);
+    final workouts = await repository.recentClosedWorkouts(
+      limit: _sessionsForActivityMultiplier,
+    );
+    if (workouts.isEmpty) {
+      return (sessions: const <TrainingSessionKcal>[], firstRecordedAt: null);
+    }
+
+    final bodyKg = latestBodyKgOrDefault(await repository.recentBodyWeights());
+    final sessions = <TrainingSessionKcal>[];
+    DateTime? firstRecordedAt;
+    for (final workout in workouts) {
+      if (firstRecordedAt == null ||
+          workout.startedAt.isBefore(firstRecordedAt)) {
+        firstRecordedAt = workout.startedAt;
+      }
+      // Il repository consegna solo sessioni chiuse: una senza fine sarebbe
+      // ancora in corso, e una sessione in corso non ha calorie definitive
+      // da mandare in una media settimanale. Resta però dentro il conto di
+      // quando lo storico comincia, perché quel giorno l'app c'era.
+      final endedAt = workout.endedAt;
+      if (endedAt == null) {
+        continue;
+      }
+      final energy = estimateKcal(
+        workout: workout,
+        exerciseGroups: muscleGroupsFromSnapshots(workout),
+        bodyKg: bodyKg,
+      );
+      sessions.add(
+        TrainingSessionKcal(
+          endedAt: endedAt,
+          kcal: workout.totalKcal ?? energy.kcal,
+          averageMet: energy.averageMet,
+          muscleGroupsComplete: hasCompleteMuscleGroupSnapshots(workout),
+        ),
+      );
+    }
+    return (sessions: sessions, firstRecordedAt: firstRecordedAt);
+  },
 );
 
 /// La proposta del moltiplicatore derivato, o `null` mentre il corpo si sta
@@ -136,8 +201,25 @@ final activityMultiplierProposalProvider =
         return null;
       }
       final fatFreeMass = body.valueOrNull?.fatFreeMassKg;
-      final history = ref.watch(activityTrainingHistoryProvider);
+      // Gli allenamenti non sono ancora arrivati, o non arrivano affatto
+      // perché la lettura è fallita. In entrambi i casi l'unica proposta
+      // possibile sarebbe «non ho abbastanza storico»: una risposta sbagliata
+      // data in fretta, e per giunta sulla causa. Meglio tacere e lasciare
+      // che il TDEE dica da sé da dove viene il suo numero.
+      final history = ref.watch(activityTrainingHistoryProvider).valueOrNull;
+      if (history == null) {
+        return null;
+      }
       final now = ref.watch(todayProvider);
+      // La media dei passi della settimana, quando i giorni compilati bastano
+      // a farne una: sotto la soglia il dominio del NEAT torna nullo da sé, e
+      // qui nullo vuol dire «resta al pavimento», che è la verità. Il registro
+      // si legge senza aspettarlo: mentre carica la proposta tace comunque,
+      // perché tace già per lo storico degli allenamenti.
+      final registro = ref.watch(checkInControllerProvider).valueOrNull;
+      final passiMedi = registro == null
+          ? null
+          : CheckInNeat.strongest(log: registro, weekEnd: now)?.current;
 
       return DerivedActivityMultiplier.propose(
         // Zero non è una massa magra: si passa di proposito perché la frase
@@ -149,9 +231,15 @@ final activityMultiplierProposalProvider =
         declared: ref.watch(activityLevelProvider),
         sessions: history.sessions,
         now: now,
-        // I passi non li misura nessuno, per ora: il NEAT resta al pavimento
-        // invece di inventare il movimento che non si è visto.
-        averageDailySteps: null,
+        // **I passi ci sono, dalla v9.** Il commento che stava qui — «non li
+        // misura nessuno» — è stato smentito nello stesso giro in cui era
+        // scritto: il check-in li registra e il rapporto del coach li legge
+        // già. Buttarli qui teneva il NEAT al pavimento di 1,20 invece dell'
+        // 1,30 di chi cammina diecimila passi, e siccome il derivato entra in
+        // una proposta, il risultato era proporre **sistematicamente** di
+        // abbassare il consumo — presentando come misura un pavimento scelto
+        // perché il dato «non c'era», mentre era in tabella.
+        averageDailySteps: passiMedi,
         // Senza nemmeno un allenamento registrato lo storico comincia adesso:
         // zero settimane coperte, e il derivato si rifiuta da sé.
         historyStartsAt: history.firstRecordedAt ?? now,

@@ -73,6 +73,14 @@ class CoachScreen extends ConsumerWidget {
 
     return [
       _HeaderCard(metrics: report),
+      // Il movimento prima del consumo, sempre: è l'ordine in cui si legge
+      // una settimana che si è fermata. Al contrario il rapporto direbbe
+      // «consumi meno» e solo dopo «ti sei mosso meno», cioè proporrebbe di
+      // togliere calorie prima di aver nominato la causa.
+      if (ref.watch(coachNeatProvider) case final neat?) ...[
+        const SizedBox(height: 14),
+        CoachNeatCard(trend: neat),
+      ],
       const SizedBox(height: 14),
       CoachTdeeCard(metrics: report),
       const SizedBox(height: 14),

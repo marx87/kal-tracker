@@ -249,7 +249,7 @@ void main() {
     final plans = await database.select(database.weeklyPlans).get();
     final slots = await database.select(database.weeklyPlanSlots).get();
 
-    expect(version, 9);
+    expect(version, 10);
     expect(diary.entries.single.foodName, 'Riso v3');
     expect(diary.totals.calories, closeTo(195, 0.0001));
     expect(recipe.name, 'Bowl v3');

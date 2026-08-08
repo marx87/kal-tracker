@@ -294,6 +294,126 @@ void main() {
     expect(saved.main.single.prescription.reps, 500);
   });
 
+  test('l\'intervallo di ripetizioni va su disco e torna indietro', () async {
+    final squat = await seedExercise('Squat', group: MuscleGroup.gambe);
+
+    final id = await routines.saveRoutine(
+      profileId: profileId,
+      draft: RoutineDraft(
+        name: 'Gambe',
+        warmup: const [],
+        main: [
+          draftOf(
+            squat,
+            prescription: const ExercisePrescription(
+              sets: 3,
+              reps: 8,
+              repsMin: 8,
+              repsMax: 12,
+            ),
+          ),
+        ],
+        finisher: const [],
+        segments: const [],
+      ),
+    );
+
+    final row = (await database.select(database.routineExercises).get()).single;
+    expect(row.prescRepsMin, 8);
+    expect(row.prescRepsMax, 12);
+
+    final saved = (await routines.getRoutine(id))!.main.single.prescription;
+    expect(saved.range?.label, '8-12');
+    expect(
+      saved.summary(ExerciseTrackingMode.weightReps),
+      '3×8-12 · rec predefinito',
+    );
+
+    // Il gateway deve vedere le due colonne come le vede il database: senza,
+    // la scheda sincronizzata tornerebbe a essere un numero fisso.
+    final entry = await (database.select(
+      database.syncOutbox,
+    )..where((row) => row.entityType.equals('routine'))).getSingle();
+    final payload = jsonDecode(entry.payloadJson) as Map<String, Object?>;
+    final child = (payload['exercises']! as List<Object?>).single;
+    expect((child as Map<String, Object?>)['presc_reps_min'], 8);
+    expect(child['presc_reps_max'], 12);
+  });
+
+  test('un intervallo che non è un intervallo non si salva a metà', () async {
+    final squat = await seedExercise('Squat', group: MuscleGroup.gambe);
+    final affondi = await seedExercise('Affondi', group: MuscleGroup.gambe);
+
+    final id = await routines.saveRoutine(
+      profileId: profileId,
+      draft: RoutineDraft(
+        name: 'Gambe',
+        warmup: const [],
+        main: [
+          // Un fondo senza tetto e un tetto sotto il fondo: due modi di non
+          // essere una banda, e nessuno dei due deve restare su disco a
+          // promettere una progressione che non scatterà mai.
+          draftOf(
+            squat,
+            key: 's',
+            prescription: const ExercisePrescription(reps: 10, repsMin: 10),
+          ),
+          draftOf(
+            affondi,
+            key: 'a',
+            prescription: const ExercisePrescription(
+              reps: 12,
+              repsMin: 12,
+              repsMax: 8,
+            ),
+          ),
+        ],
+        finisher: const [],
+        segments: const [],
+      ),
+    );
+
+    final rows = await (database.select(
+      database.routineExercises,
+    )..orderBy([(row) => OrderingTerm.asc(row.position)])).get();
+    for (final row in rows) {
+      expect(row.prescRepsMin, isNull);
+      expect(row.prescRepsMax, isNull);
+    }
+    final saved = (await routines.getRoutine(id))!.main;
+    expect(saved.first.prescription.reps, 10, reason: 'il numero fisso resta');
+    expect(saved.first.prescription.range, isNull);
+    expect(saved.last.prescription.range, isNull);
+  });
+
+  test('una scheda con le sole ripetizioni continua a valere', () async {
+    final squat = await seedExercise('Squat', group: MuscleGroup.gambe);
+
+    final id = await routines.saveRoutine(
+      profileId: profileId,
+      draft: RoutineDraft(
+        name: 'Gambe',
+        warmup: const [],
+        main: [
+          draftOf(
+            squat,
+            prescription: const ExercisePrescription(sets: 4, reps: 10),
+          ),
+        ],
+        finisher: const [],
+        segments: const [],
+      ),
+    );
+
+    final saved = (await routines.getRoutine(id))!.main.single.prescription;
+    expect(saved.reps, 10);
+    expect(saved.range, isNull);
+    expect(
+      saved.summary(ExerciseTrackingMode.weightReps),
+      '4×10 · rec predefinito',
+    );
+  });
+
   test(
     'la scheda importata da Gym resta importata anche dopo una modifica',
     () async {

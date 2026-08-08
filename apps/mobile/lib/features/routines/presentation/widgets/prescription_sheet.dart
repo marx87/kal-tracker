@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:kal_tracker/core/presentation/design_system.dart';
 import 'package:kal_tracker/features/exercises/domain/exercise_models.dart';
 import 'package:kal_tracker/features/routines/domain/routine_models.dart';
+import 'package:kal_tracker/features/workouts/domain/load_progression.dart';
 
 /// Apre il foglio serie / ripetizioni / recupero di un esercizio dentro una
 /// scheda. Restituisce null se Marco esce senza confermare, e una
@@ -43,7 +44,13 @@ class PrescriptionSheet extends StatefulWidget {
 class _PrescriptionSheetState extends State<PrescriptionSheet> {
   late final TextEditingController _sets;
   late final TextEditingController _work;
+  late final TextEditingController _workMax;
   late final TextEditingController _rest;
+
+  /// Il tetto scritto non regge come intervallo. Compare solo dopo un
+  /// tentativo di conferma: segnalare mentre si digita farebbe lampeggiare un
+  /// errore a ogni cifra battuta.
+  var _showRangeError = false;
 
   bool get _timed => widget.mode.isTimed;
 
@@ -53,9 +60,14 @@ class _PrescriptionSheetState extends State<PrescriptionSheet> {
     _sets = TextEditingController(text: widget.initial.sets?.toString() ?? '');
     _work = TextEditingController(
       text:
-          (_timed ? widget.initial.durationSec : widget.initial.reps)
+          (_timed
+                  ? widget.initial.durationSec
+                  : (widget.initial.range?.min ?? widget.initial.reps))
               ?.toString() ??
           '',
+    );
+    _workMax = TextEditingController(
+      text: widget.initial.range?.max.toString() ?? '',
     );
     _rest = TextEditingController(
       text: widget.initial.restSec?.toString() ?? '',
@@ -66,26 +78,50 @@ class _PrescriptionSheetState extends State<PrescriptionSheet> {
   void dispose() {
     _sets.dispose();
     _work.dispose();
+    _workMax.dispose();
     _rest.dispose();
     super.dispose();
   }
 
+  int? _read(TextEditingController controller) =>
+      int.tryParse(controller.text.trim());
+
   void _confirm() {
-    final work = int.tryParse(_work.text.trim());
+    final work = _read(_work);
+    final top = _timed ? null : _read(_workMax);
+    final range = RepRange.resolve(min: work, max: top);
+    // Un tetto scritto che non forma un intervallo non si può né salvare né
+    // ignorare in silenzio: sarebbe una banda promessa e mai applicata.
+    if (top != null && range == null) {
+      setState(() => _showRangeError = true);
+      return;
+    }
     Navigator.of(context).pop(
       ExercisePrescription(
-        sets: int.tryParse(_sets.text.trim()),
-        reps: _timed ? null : work,
+        sets: _read(_sets),
+        // Con l'intervallo le ripetizioni restano il suo fondo: è da lì che
+        // la sessione riparte quando il carico sale.
+        reps: _timed ? null : (range?.min ?? work),
+        repsMin: range?.min,
+        repsMax: range?.max,
         durationSec: _timed ? work : null,
-        restSec: int.tryParse(_rest.text.trim()),
+        restSec: _read(_rest),
       ),
     );
+  }
+
+  /// Riempie il tetto con l'intervallo che la progressione propone per un
+  /// numero fisso: `10` diventa `10-12`, non `8-12`.
+  void _suggestRange(RepRange suggestion) {
+    _workMax.text = '${suggestion.max}';
+    setState(() => _showRangeError = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accents = AppAccents.of(context);
+    final suggestion = _timed ? null : RepRange.suggestedFor(_read(_work));
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -137,6 +173,7 @@ class _PrescriptionSheetState extends State<PrescriptionSheet> {
                       controller: _work,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onChanged: (_) => setState(() => _showRangeError = false),
                       decoration: InputDecoration(
                         labelText: _timed ? 'Durata' : 'Ripetizioni',
                         hintText: _timed
@@ -148,6 +185,45 @@ class _PrescriptionSheetState extends State<PrescriptionSheet> {
                   ),
                 ],
               ),
+              if (!_timed) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('prescription_reps_max_field'),
+                  controller: _workMax,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (_) => setState(() => _showRangeError = false),
+                  decoration: InputDecoration(
+                    labelText: 'Fino a (facoltativo)',
+                    hintText: '12',
+                    // È l'impostazione che accende la doppia progressione: se
+                    // non si dice a cosa serve, resta un secondo numero senza
+                    // motivo di esistere.
+                    helperText: _showRangeError
+                        ? null
+                        : 'Vuoto = numero fisso. Con il tetto la scheda dice '
+                              '«8-12» e l\'app può proporti il carico.',
+                    helperMaxLines: 3,
+                    errorText: _showRangeError
+                        ? 'Il tetto deve stare sopra le ripetizioni: 8-12, '
+                              'non 12-8.'
+                        : null,
+                    errorMaxLines: 2,
+                  ),
+                ),
+                if (suggestion != null && _workMax.text.trim().isEmpty) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('prescription_suggest_range_button'),
+                      onPressed: () => _suggestRange(suggestion),
+                      icon: const Icon(Icons.trending_up_rounded, size: 18),
+                      label: Text('Prova con ${suggestion.label}'),
+                    ),
+                  ),
+                ],
+              ],
               const SizedBox(height: 12),
               TextField(
                 key: const Key('prescription_rest_field'),

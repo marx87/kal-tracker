@@ -79,42 +79,46 @@ void main() {
     expect(entry.hasNeat, isTrue);
   });
 
-  test(
-    'il movimento da solo non arriva alla tabella, e non fa danni',
-    () async {
-      final walkOnly = DateTime.utc(2026, 8, 6);
-      final normale = DateTime.utc(2026, 8, 5);
-      final repository = CheckInRepository(storeWith());
-      await repository.save(day: normale, sleepHours: 7, steps: 5000);
+  test('il movimento da solo arriva alla tabella', () async {
+    final soloCammino = DateTime.utc(2026, 8, 6);
+    final normale = DateTime.utc(2026, 8, 5);
+    final repository = CheckInRepository(storeWith());
+    await repository.save(day: normale, sleepHours: 7, steps: 5000);
 
-      await repository.save(day: walkOnly, walkMinutes: 45);
+    await repository.save(day: soloCammino, walkMinutes: 45);
 
-      // La CHECK della v7 pretende sonno o energia e rifiuta la riga di sola
-      // camminata. Quello che NON deve succedere è che si porti dietro anche
-      // il giorno buono: l'intera transazione abortirebbe.
-      final righe = await database.select(database.dailyCheckIns).get();
-      expect(righe, hasLength(1));
-      expect(righe.single.day.toUtc(), DateTime.utc(2026, 8, 5));
-      expect(righe.single.steps, 5000);
-      expect((await storeWith().read()).entries, hasLength(1));
-    },
-  );
+    // Fino alla v9 la CHECK pretendeva sonno o energia e questa riga veniva
+    // saltata: una giornata camminata spariva perché quel giorno Marco non
+    // aveva risposto sulla notte. Dalla v10 la camminata basta a sé stessa.
+    final righe = await database.select(database.dailyCheckIns).get();
+    expect(righe, hasLength(2));
+    final riga = righe.firstWhere(
+      (row) => row.day.toUtc() == DateTime.utc(2026, 8, 6),
+    );
+    expect(riga.walkMinutes, 45);
+    expect(riga.sleepHours, isNull);
+    expect(riga.deletedAt, isNull);
+    expect((await storeWith().read()).entries, hasLength(2));
+  });
 
-  test('togliendo il sonno il giorno non resuscita alla riapertura', () async {
+  test('togliendo il sonno resta la camminata, e il sonno non torna', () async {
     final day = DateTime.utc(2026, 8, 6);
     final repository = CheckInRepository(storeWith());
     await repository.save(day: day, sleepHours: 7, walkMinutes: 45);
 
     await repository.save(day: day, clearSleep: true);
 
-    // Resta solo la camminata: la riga non è più riscrivibile, quindi va
-    // spenta. Lasciarla com'era rimetterebbe in vita alla riapertura il
-    // sonno che Marco ha appena tolto.
+    // È lo scenario che la v10 esiste per riparare: prima la riga non era più
+    // riscrivibile e andava spenta, e i 45 minuti se ne andavano con il sonno
+    // che Marco aveva appena tolto. Adesso resta viva con quello che ha.
     final row = await database.select(database.dailyCheckIns).getSingle();
-    expect(row.deletedAt, isNotNull);
+    expect(row.deletedAt, isNull);
     expect(row.sleepHours, isNull);
-    expect(row.walkMinutes, isNull);
-    expect((await storeWith().read()).entries, isEmpty);
+    expect(row.walkMinutes, 45);
+
+    final entry = (await storeWith().read()).forDay(checkInDayOf(day))!;
+    expect(entry.walkMinutes, 45);
+    expect(entry.sleepHours, isNull);
   });
 
   test('il giorno cancellato resta come tombstone e può tornare', () async {

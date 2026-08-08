@@ -1149,6 +1149,12 @@ class BodyMeasurementValues extends Table {
 /// offline producono la STESSA riga e la sincronizzazione la fonde invece di
 /// duplicarla. È per questo che l'unicità qui è totale e non parziale sulle
 /// righe vive: un giorno cancellato e ricompilato riusa la sua riga.
+///
+/// **Nessuno la referenzia**, ed è la ragione per cui la v10 ha potuto
+/// allargarne un CHECK ricostruendola con `TableMigration`: è il caso opposto
+/// ad `app_profiles` e a `body_measurements`, che da quando hanno figli si
+/// estendono soltanto con `addColumn`. Chi un giorno le attaccherà una tabella
+/// figlia si porta via anche questa possibilità.
 @DataClassName('LocalDailyCheckIn')
 @TableIndex(
   name: 'idx_daily_check_ins_profile_day',
@@ -1180,11 +1186,18 @@ class DailyCheckIns extends Table {
     // 16 ore non è più una notte, è un errore di digitazione.
     'CHECK (sleep_hours IS NULL OR (sleep_hours >= 0 AND sleep_hours <= 16))',
     'CHECK (energy_score IS NULL OR (energy_score >= 1 AND energy_score <= 5))',
-    // Una riga viva senza nessuno dei due campi non è un check-in: farebbe
-    // contare come «compilato» un giorno vuoto. Il tombstone invece è proprio
-    // una riga svuotata, e resta lecito.
+    // Una riga viva senza NIENTE dentro non è un check-in: farebbe contare
+    // come «compilato» un giorno vuoto. Il tombstone invece è proprio una riga
+    // svuotata, e resta lecito.
+    //
+    // **Il movimento tiene in piedi la riga da solo (v10).** Fino alla v9 qui
+    // c'erano soltanto sonno ed energia, e una giornata di sola camminata non
+    // entrava: chi toglieva il sonno da un giorno con gli ottomila passi si
+    // portava via anche i passi. Che il NEAT valga meno di una notte lo decide
+    // il coach quando legge, non un vincolo che cancella il dato.
     'CHECK (deleted_at IS NOT NULL OR '
-        'sleep_hours IS NOT NULL OR energy_score IS NOT NULL)',
+        'sleep_hours IS NOT NULL OR energy_score IS NOT NULL OR '
+        'steps IS NOT NULL OR walk_minutes IS NOT NULL)',
     'UNIQUE (profile_id, day)',
   ];
 }
@@ -1478,7 +1491,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1636,6 +1649,33 @@ class AppDatabase extends _$AppDatabase {
         if (from >= 7) {
           await migrator.addColumn(dailyCheckIns, dailyCheckIns.steps);
           await migrator.addColumn(dailyCheckIns, dailyCheckIns.walkMinutes);
+        }
+      }
+      // La v10 non porta né tabelle né colonne: allarga la CHECK di
+      // `daily_check_ins`, perché una giornata dei soli passi è una giornata
+      // valida. La v9 aveva dato al movimento le sue colonne lasciando il
+      // vincolo della v7 al suo posto, e il risultato era che togliere il sonno
+      // da un giorno camminato cancellava anche la camminata.
+      if (from < 10) {
+        // Un CHECK si cambia solo ricostruendo la tabella: `ALTER TABLE` in
+        // SQLite non tocca i vincoli. Qui si può, perché `daily_check_ins` non
+        // è referenziata da nessuno — è la condizione che ad `app_profiles` e
+        // a `body_measurements` manca, ed è per quello che loro si estendono
+        // soltanto con `addColumn`.
+        //
+        // La guardia è la solita, rovesciata: chi arriva da prima della v7 ha
+        // appena ricevuto la tabella dal ramo `from < 7`, cioè dalla
+        // definizione Dart di OGGI, che la CHECK larga ce l'ha già dentro.
+        // Ricostruirla sarebbe copiare una tabella per riscriverla identica.
+        if (from >= 7) {
+          // Nessun `newColumns`: `steps` e `walk_minutes` a questo punto
+          // esistono di sicuro — o le ha appena aggiunte il ramo della v9, o
+          // il database era già alla v9 — e dichiararle nuove le
+          // escluderebbe dall'INSERT ... SELECT, cioè butterebbe via proprio
+          // il movimento che questa migrazione esiste per salvare. L'indice
+          // lo ricrea `alterTable` da sé, rileggendolo da `sqlite_master`
+          // prima del DROP che in SQLite se lo porterebbe via.
+          await migrator.alterTable(TableMigration(dailyCheckIns));
         }
       }
       // Fuori dalla guardia di proposito: ripara anche gli indici delle

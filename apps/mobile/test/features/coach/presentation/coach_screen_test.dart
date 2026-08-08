@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kal_tracker/core/theme/app_theme.dart';
 import 'package:kal_tracker/core/time/app_time.dart';
+import 'package:kal_tracker/features/checkin/domain/daily_check_in.dart';
 import 'package:kal_tracker/features/coach/data/coach_gateway.dart';
 import 'package:kal_tracker/features/coach/data/coach_store.dart';
 import 'package:kal_tracker/features/coach/domain/coach_narrative.dart';
@@ -38,47 +39,45 @@ class SilentCoachGateway implements CoachGateway {
 }
 
 /// Una settimana vera: diario pieno, pesate con composizione, allenamenti.
-CoachSnapshot fullSnapshot({List<CoachStrengthSet> strengthSets = const []}) =>
-    CoachSnapshot(
-      week: testWeek,
-      diary: diaryWeek(
-        lastDay: sunday,
-        kcal: 2200,
-        proteinGrams: 145,
-        days: 14,
-      ),
-      weighIns: weighInSeries(
-        lastDay: sunday,
-        weights: const [
-          95.9,
-          95.8,
-          95.8,
-          95.7,
-          95.6,
-          95.6,
-          95.5,
-          95.4,
-          95.4,
-          95.3,
-          95.2,
-          95.1,
-          95.1,
-          95,
-        ],
-        bodyFatPcts: List.filled(14, 25),
-        waterPcts: List.filled(14, 54),
-      ),
-      sessions: [
-        session(DateTime.utc(2026, 7, 28), rpe: 7),
-        session(DateTime.utc(2026, 7, 30), rpe: 7),
-      ],
-      strengthSets: strengthSets,
-      targets: const CoachTargets(
-        dailyCalories: 2200,
-        dailyProtein: 143,
-        weeklyWorkouts: 3,
-      ),
-    );
+CoachSnapshot fullSnapshot({
+  List<CoachStrengthSet> strengthSets = const [],
+  CheckInLog checkIns = const CheckInLog.empty(),
+}) => CoachSnapshot(
+  week: testWeek,
+  diary: diaryWeek(lastDay: sunday, kcal: 2200, proteinGrams: 145, days: 14),
+  weighIns: weighInSeries(
+    lastDay: sunday,
+    weights: const [
+      95.9,
+      95.8,
+      95.8,
+      95.7,
+      95.6,
+      95.6,
+      95.5,
+      95.4,
+      95.4,
+      95.3,
+      95.2,
+      95.1,
+      95.1,
+      95,
+    ],
+    bodyFatPcts: List.filled(14, 25),
+    waterPcts: List.filled(14, 54),
+  ),
+  sessions: [
+    session(DateTime.utc(2026, 7, 28), rpe: 7),
+    session(DateTime.utc(2026, 7, 30), rpe: 7),
+  ],
+  strengthSets: strengthSets,
+  checkIns: checkIns,
+  targets: const CoachTargets(
+    dailyCalories: 2200,
+    dailyProtein: 143,
+    weeklyWorkouts: 3,
+  ),
+);
 
 CoachNarrative narrativeOf(CoachWeek week) => CoachNarrative(
   week: week,
@@ -186,6 +185,77 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(const Key('coach_header_card')), findsOneWidget);
+    });
+  });
+
+  group('il movimento', () {
+    /// Una settimana camminata a metà: quattromila passi contro i diecimila
+    /// dei sette giorni prima.
+    CoachSnapshot halvedWalking() => fullSnapshot(
+      checkIns: checkInLog(
+        lastDay: sunday,
+        steps: [...List.filled(7, 4000), ...List.filled(7, 10000)],
+      ),
+    );
+
+    testWidgets('senza un giorno segnato la card non c\'è', (tester) async {
+      // Un rapporto non rimprovera un campo che nessuno era obbligato a
+      // compilare: quando manca del tutto, sparisce.
+      await tester.pumpWidget(host(theme: AppTheme.light));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('coach_neat_card')), findsNothing);
+    });
+
+    testWidgets('il crollo si legge, con il suo quanto', (tester) async {
+      await tester.pumpWidget(
+        host(theme: AppTheme.light, snapshot: halvedWalking()),
+      );
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.byKey(const Key('coach_neat_card')));
+
+      expect(find.textContaining('Ti stai muovendo di meno'), findsOneWidget);
+      expect(find.text('−60'), findsOneWidget);
+      expect(find.byKey(const Key('coach_neat_cause')), findsOneWidget);
+    });
+
+    testWidgets('il movimento si nomina prima del consumo', (tester) async {
+      // L'ordine è il punto: al contrario il rapporto proporrebbe di togliere
+      // calorie prima di aver nominato la camminata che è sparita.
+      //
+      // Lo schermo alto serve a tenere le due card vive insieme: la lista è
+      // pigra e a 600 px il consumo non sarebbe ancora costruito, quindi
+      // scorrere per raggiungerlo perderebbe proprio il confronto.
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        host(theme: AppTheme.light, snapshot: halvedWalking()),
+      );
+      await tester.pumpAndSettle();
+
+      final neat = tester.getTopLeft(find.byKey(const Key('coach_neat_card')));
+      final tdee = tester.getTopLeft(find.byKey(const Key('coach_tdee_card')));
+      expect(neat.dy, lessThan(tdee.dy));
+    });
+
+    testWidgets('quando il movimento tiene non si grida', (tester) async {
+      await tester.pumpWidget(
+        host(
+          theme: AppTheme.light,
+          snapshot: fullSnapshot(
+            checkIns: checkInLog(lastDay: sunday, steps: List.filled(14, 9000)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.byKey(const Key('coach_neat_card')));
+
+      expect(find.textContaining('Il movimento è lo stesso'), findsOneWidget);
+      // Niente percentuale e niente causa: non c'è niente da spiegare, e la
+      // riga resta un dato invece di diventare un allarme.
+      expect(find.byKey(const Key('coach_neat_cause')), findsNothing);
     });
   });
 
